@@ -7,6 +7,7 @@
  * Chapter numbers come from POSITION in the hub's nav — never typed
  * anywhere, so inserting a chapter renumbers the rail at once.
  */
+import SidebarMemory from 'astro-inkstone/components/SidebarMemory.astro';
 import { renderTocLabel } from 'astro-inkstone/lib/toc';
 import type { TocData } from 'astro-inkstone/lib/toc-types';
 import { href, UI, type Locale } from '../lib/i18n';
@@ -158,4 +159,5 @@ const anchors: Anchor[] = toc.items
       }
     </ul>
   </nav>
+  <SidebarMemory />
 </aside>

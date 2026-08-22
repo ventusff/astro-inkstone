@@ -26,6 +26,7 @@ The module contract is one default export, `mount(ctx)`, returning a cleanup fun
 The remaining components are the quiet ones:
 
 - `LocalToc` renders an in-page jump list; it accepts both ToC shapes the two numbering presets produce, and hides itself under a configurable minimum.
+- `SidebarMemory` keeps a scrolling sidebar where the reader left it across page loads, and centres the current item (`[aria-current="page"]` by default) whenever it would otherwise be out of view. Drop it inside the sidebar's scroll box, after the navigation markup; it runs before first paint, so the sidebar never flashes at the top. The demo's own sidebar carries it.
 - `Hero` and `PartHero` are page and part headers for sites whose notes open with a full-width banner; this garden's note heads are assembled by its own layout instead — which is exactly the intended split ([[three-way-split]]).
 - `PageFooter` is the small print at a note's foot.
 - The browse pieces live in [[components/wiki|the wiki chapter]]; the Markdown-side of the gallery is the [[kitchen-sink]].

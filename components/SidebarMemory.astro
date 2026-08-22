@@ -1,0 +1,71 @@
+---
+/**
+ * SidebarMemory — keeps a scrolling sidebar where the reader left it across
+ * full page loads, and brings the current item into view when it is not.
+ *
+ * Place it inside the element that scrolls (the sidebar's scroll box), after
+ * the navigation markup. The script runs inline, before first paint, so the
+ * sidebar never flashes at the top.
+ *
+ * Behaviour, in order:
+ *   1. restore the scroll offset saved for this site (sessionStorage);
+ *   2. if the current item is outside the visible box, centre it;
+ *   3. keep saving the offset while the reader scrolls and when the page is
+ *      left.
+ * Without sessionStorage (private mode, storage blocked) only step 2 runs.
+ *
+ * Props:
+ *   current — selector for the current item; `[aria-current="page"]` by
+ *             default, which is also the accessible way to mark it
+ *   key     — storage key suffix; the site base by default, so sites that
+ *             share an origin keep separate positions
+ */
+interface Props {
+  current?: string;
+  key?: string;
+}
+const { current = '[aria-current="page"]', key = import.meta.env.BASE_URL } = Astro.props;
+---
+
+<script is:inline data-current={current} data-key={key}>
+  (() => {
+    const script = document.currentScript;
+    const box = script.parentElement;
+    const key = `inkstone:sidebar:${script.dataset.key}`;
+    let store = null;
+    try {
+      store = window.sessionStorage;
+    } catch {
+      store = null;
+    }
+
+    // Restore and reveal happen instantly: a smooth-scrolling sidebar would
+    // otherwise animate on every page load.
+    const behaviour = box.style.scrollBehavior;
+    box.style.scrollBehavior = 'auto';
+
+    const saved = store && store.getItem(key);
+    if (saved !== null) box.scrollTop = Number(saved);
+
+    const item = box.querySelector(script.dataset.current);
+    if (item) {
+      const top = item.getBoundingClientRect().top - box.getBoundingClientRect().top;
+      const visible = top >= 0 && top + item.offsetHeight <= box.clientHeight;
+      if (!visible) box.scrollTop += top - (box.clientHeight - item.offsetHeight) / 2;
+    }
+    box.style.scrollBehavior = behaviour;
+
+    if (!store) return;
+    const save = () => store.setItem(key, String(box.scrollTop));
+    let timer;
+    box.addEventListener(
+      'scroll',
+      () => {
+        clearTimeout(timer);
+        timer = setTimeout(save, 120);
+      },
+      { passive: true },
+    );
+    addEventListener('pagehide', save);
+  })();
+</script>
