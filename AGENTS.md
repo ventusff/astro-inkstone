@@ -83,5 +83,4 @@ node ../scripts/ui_probe.mjs dist    # render-layer probe (needs Chrome)
 Style/component changes go through a demo build + probe before committing.
 Comments and documentation are written in English; the README ships in
 English and Simplified Chinese (`README.zh-CN.md`) — keep both in sync.
-Commit messages: English subject line; a Chinese mirror line in the body is
-welcome.
+Commit messages: English, entirely — subject and body.

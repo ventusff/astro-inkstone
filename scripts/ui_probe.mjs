@@ -111,14 +111,11 @@ for (const r of routes(DIST)) {
         if (a.width > b.width + 2 && !intentionalBleed && !hasScrollAncestor(el))
           out.wide.push({ el: sel(el), w: Math.round(a.width), parent: sel(p), pw: Math.round(b.width) });
       }
-      // 2) Classes used in markup that no stylesheet rule actually styles.
-      //    The evidence comes from the real document.styleSheets: collect
-      //    every rule's selector, then ask two questions per used class —
-      //    ① does any selector mention this class at all;
-      //    ② among those that do, does any actually match this element?
-      //    ② is the key: `.callout > .label` mentions .label, but MDX wraps
-      //    the span in a <p>, so the child combinator never matches — asking
-      //    only ① would miss that false positive.
+      // 2) Classes no stylesheet rule actually styles. Evidence is the live
+      //    document.styleSheets: a used class must be mentioned by some
+      //    selector, and at least one mentioning selector must be able to
+      //    apply — a mention behind a combinator that can never match still
+      //    counts as unstyled.
       const selectors = [];
       for (const sheet of document.styleSheets) {
         let rules;
@@ -152,8 +149,16 @@ for (const r of routes(DIST)) {
           if (el.closest && el.closest('.katex, .mermaid-block')) { seenCls.add(cls); continue; }
           const cands = mentions(cls);
           if (!cands.length) { seenCls.add(cls); out.unstyled.push({ el: '.' + cls, why: 'no stylesheet rule mentions it' }); continue; }
+          // A mention inside a non-subject compound (`.item + .item`,
+          // `.list .item > a`) styles structure and needs no live match;
+          // subject-position mentions must match a real element.
+          const clsRe = new RegExp('\\.' + cls.replace(/[-[\]{}()*+?.,\\^$|#]/g, '\\$&') + '(?![\\w-])');
+          const anchorsElsewhere = (s) => s.split(',').some((one) => {
+            const compounds = one.trim().split(/\s*[>+~]\s*|\s+/);
+            return compounds.slice(0, -1).some((c) => clsRe.test(c));
+          });
           const matched = cands.some((s) => {
-            try { return el.matches(s) || document.querySelector('main ' + s); } catch { return true; }
+            try { return el.matches(s) || document.querySelector('main ' + s) || anchorsElsewhere(s); } catch { return true; }
           });
           if (!matched) { seenCls.add(cls); out.unstyled.push({ el: '.' + cls, why: 'mentioned but no selector matches (e.g. a > child combinator blocked by <p>)' }); }
         }
