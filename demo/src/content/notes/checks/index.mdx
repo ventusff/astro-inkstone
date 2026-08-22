@@ -65,7 +65,7 @@ node vendor/astro-inkbrush/scripts/check-dist.mjs dist
 
 ## The render-layer probe
 
-Source and output can both be right while the page is still broken — the classic case being landing cards that no stylesheet rule matches, rendering as one crammed line of bare text: link and anchor checks stay green because they never look at a rendered page. `ui_probe` drives a real browser over every page in `dist` at four viewport widths (1440/1024/768/430) and measures: horizontal overflow, unstyled classes, dead anchors, skipped heading levels, images without alt. It reports only what a machine can prove — no aesthetic judgment.
+Source and output can both be right while the page is still broken — the classic case being landing cards that no stylesheet rule matches, rendering as one crammed line of bare text: link and anchor checks stay green because they never look at a rendered page. `ui_probe` drives a real browser over every page in `dist` at four viewport widths (1440/1024/768/430) and measures: horizontal overflow of the page, elements wider than their container with no scroll box to live in, classes no stylesheet rule styles, skipped heading levels, duplicate ids, images without an `alt` attribute, in-page anchors and `aria-controls` that point at nothing. It reports only what a machine can prove — no aesthetic judgment.
 
 ```bash title="needs a local Chrome/Chromium"
 npm run build
@@ -76,10 +76,10 @@ Green means the report's last line reads `PAGES WITH FINDINGS: 0`.
 
 ## The contrast probe
 
-The tokens claim AA, so the claim is measured rather than asserted. `contrast_probe` loads every page of `dist` in a real browser, in the light theme and again in the dark one, and for every visible text node computes the WCAG ratio between its rendered color and the ground it actually sits on — the nearest opaque ancestor background, with translucent layers composited in. Small text is held to 4.5:1, large text (18px bold, or 24px) to 3:1; the report names the page, the selector, the two colors and the ratio of every node under the bar. Tinted chips, `color-mix()` grounds and the night palette are all measured as rendered, so a token change that quietly drops a label to 3.8:1 shows up the same evening:
+The tokens claim AA, so the claim is measured rather than asserted. `contrast_probe` loads every page of `dist` in a real browser — light and dark theme, desktop and phone width — and measures every rendered text run: HTML text, SVG text and the generated text of `::before` / `::after`. The ground is not read from a stylesheet; the page is rendered with every glyph made transparent, screenshotted, and the pixel under each run is its ground, so gradients, `color-mix()` tints, translucent layers and the night palette are all measured as they render. Small text is held to 4.5:1, large text (24px, or 18.66px bold) to 3:1; a run whose color cannot be parsed or whose ground cannot be sampled counts as a finding. The report names the page, theme, width, selector, the two colors and the ratio of every run under the bar:
 
 ```bash title="after a build, both themes"
-node ../scripts/contrast_probe.mjs dist
+node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS narrow the matrix
 ```
 
 <div class="callout system">

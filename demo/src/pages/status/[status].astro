@@ -1,0 +1,39 @@
+---
+/** /status/<id>/ — browse by maturity status (only non-empty values prerender). */
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import BrowseLayout from '../../layouts/BrowseLayout.astro';
+import { cardOf, facetBase } from '../../lib/display';
+import { getWikiUnits, groupByKind, groupByDomain, tagIndex, type ResolvedNote } from '../../lib/taxonomy';
+import { STATUSES, type StatusDef } from '../../content/notes/_meta/taxonomy';
+
+export async function getStaticPaths() {
+  const units = await getWikiUnits();
+  return STATUSES.map((def) => ({ def, notes: units.filter((u) => u.status === def.id) }))
+    .filter((g) => g.notes.length > 0)
+    .map((g) => ({ params: { status: g.def.id }, props: { def: g.def, notes: g.notes } }));
+}
+
+interface Props {
+  def: StatusDef;
+  notes: ResolvedNote[];
+}
+const { def, notes } = Astro.props;
+
+const units = await getWikiUnits();
+const kinds = groupByKind(units).map((g) => ({ def: g.def, count: g.notes.length }));
+const domains = groupByDomain(units).map((g) => ({ def: g.def, count: g.notes.length }));
+const tags = [...tagIndex(units).entries()].slice(0, 10).map(([tag, list]) => ({ tag, count: list.length }));
+---
+
+<BrowseLayout title={`${def.label} · ${def.zh}`} description={`${def.desc} (${notes.length} notes)`} crumbs={[{ label: def.label }]}>
+  <header class="wb-hero">
+    <p class="wb-kicker">By status <span class="sep">·</span> 按成熟度</p>
+    <h1 class="wb-title">{def.label}<span class="en">{def.zh}</span></h1>
+    <p class="wb-lede">{def.desc} — <strong>{notes.length}</strong> notes.</p>
+  </header>
+  <FacetNav base={facetBase} kinds={kinds} domains={domains} tags={tags} />
+  <ul class="wb-grid">
+    {notes.map((note) => <NoteCard note={cardOf(note)} />)}
+  </ul>
+</BrowseLayout>

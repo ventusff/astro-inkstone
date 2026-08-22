@@ -1,13 +1,11 @@
 /**
- * ui_probe — a quantitative render-layer probe. Loads every page of a built
- * site at several viewport widths and reports real layout problems.
- *
- * Why it exists: source-level checks (links, ids, types) can all pass while
- * the rendered page is broken — an unstyled card row, a figure pushing the
- * page into horizontal scroll. Eyes and screenshots are not enough either:
- * a scrollable container always looks clipped in a static image. So this
- * probe reports only what a machine can verify, and makes no aesthetic
- * judgments — those belong to humans (or a separate review model).
+ * ui_probe — a render-layer probe. Loads every page of a built site at four
+ * viewport widths in headless Chrome and reports what a machine can verify
+ * about the rendered result: horizontal overflow of the page, elements wider
+ * than their container with no scroll box to live in, classes no stylesheet
+ * rule styles, skipped heading levels, duplicate ids, images without an alt
+ * attribute, in-page anchors and aria-controls pointing at ids that do not
+ * exist. It makes no aesthetic judgement.
  *
  * Usage (site-agnostic — everything site-specific arrives via args/env):
  *   node scripts/ui_probe.mjs [distDir] [baseUrl] [outFile]
@@ -80,7 +78,7 @@ for (const r of routes(DIST)) {
     await page.goto(BASE + r, { waitUntil: 'load', timeout: 60_000 });
     await page.waitForNetworkIdle({ idleTime: 400, timeout: 5_000 }).catch(() => {});
     const res = await page.evaluate(() => {
-      const out = { hOverflow: null, wide: [], unstyled: [], lowContrast: [], headingJump: [], noAlt: [] };
+      const out = { hOverflow: null, wide: [], unstyled: [], headingJump: [], noAlt: [], dupId: [], deadAnchor: [], deadControl: [] };
       const de = document.documentElement;
       if (de.scrollWidth > de.clientWidth + 1)
         out.hOverflow = { doc: de.scrollWidth, view: de.clientWidth };
@@ -89,16 +87,17 @@ for (const r of routes(DIST)) {
         const cls = (el.className && typeof el.className === 'string') ? '.' + el.className.trim().split(/\s+/).join('.') : '';
         return el.tagName.toLowerCase() + cls;
       };
-      // 1) Elements wider than their own container (the thing actually
-      //    breaking the page). The scroll exemption walks the WHOLE ancestor
-      //    chain, not just the direct parent (e.g. a shiki diff line lives in
-      //    a scrollable <pre> with a wrapper in between). KaTeX's hidden
-      //    MathML (.katex-mathml/<math>) is screen-reader-only markup and is
-      //    excluded from visual judgment.
+      // 1) Elements wider than their own container. An ancestor that scrolls
+      //    (overflow auto/scroll) is the element's legitimate home; an
+      //    ancestor that clips (overflow hidden) is not — clipped content is
+      //    lost content. KaTeX's hidden MathML is screen-reader-only markup,
+      //    excluded from visual judgement.
       const hasScrollAncestor = (el) => {
         for (let n = el.parentElement; n && n.tagName !== 'MAIN'; n = n.parentElement) {
-          const o = getComputedStyle(n).overflowX;
-          if (o === 'auto' || o === 'scroll' || o === 'hidden') return true;
+          const cs = getComputedStyle(n);
+          if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') return true;
+          // the visually-hidden idiom (a 1px clipped box for assistive technology)
+          if (cs.overflow === 'hidden' && n.clientWidth <= 1 && n.clientHeight <= 1) return true;
         }
         return false;
       };
@@ -111,11 +110,9 @@ for (const r of routes(DIST)) {
         if (a.width > b.width + 2 && !intentionalBleed && !hasScrollAncestor(el))
           out.wide.push({ el: sel(el), w: Math.round(a.width), parent: sel(p), pw: Math.round(b.width) });
       }
-      // 2) Classes no stylesheet rule actually styles. Evidence is the live
-      //    document.styleSheets: a used class must be mentioned by some
-      //    selector, and at least one mentioning selector must be able to
-      //    apply — a mention behind a combinator that can never match still
-      //    counts as unstyled.
+      // 2) Classes no stylesheet rule styles: a used class must be mentioned
+      //    by a selector in the live document.styleSheets, and at least one
+      //    mentioning selector must be able to apply.
       const selectors = [];
       for (const sheet of document.styleSheets) {
         let rules;
@@ -132,20 +129,14 @@ for (const r of routes(DIST)) {
       const seenCls = new Set();
       for (const el of document.querySelectorAll('main [class]')) {
         for (const cls of el.classList) {
-          // Shiki-generated classes are colored via CSS variables, not class
-          // selectors (the theme names it stamps on <pre> included); `.line` is
-          // deliberately rule-free (a display:block rule would double every
-          // line break inside <pre> — see base.css).
-          // has-diff / is-collapsible / code-frame-body are structural markers
-          // from the code-frame transformer — styled through element selectors
-          // (details.code-frame …), so no class rule mentions them by name.
-          // data-footnote-backref is GFM's marker class on footnote
-          // back-links — deliberately rule-free.
+          // Classes that carry no rule by contract: Shiki's theme markers on
+          // <pre> and its `.line`; the code-frame transformer's structural
+          // markers (styled through element selectors); GFM's footnote
+          // back-reference marker.
           if (el.matches('pre.astro-code')) continue;
           const GENERATED = new Set(['line', 'has-diff', 'is-collapsible', 'code-frame-body', 'data-footnote-backref']);
-          // Generated/stateful families that must not count as "unstyled":
-          // KaTeX's internal classes (.mord etc. — katex.css does not style
-          // them one by one), mermaid/shiki, and copy-button state classes.
+          // generated/stateful families: KaTeX internals, mermaid, shiki,
+          // the CMS client's classes, copy-button states
           const GEN_PREFIX = ['astro-', 'wiki-', 'katex', 'shiki', 'code-copy', 'mermaid'];
           if (seenCls.has(cls) || GEN_PREFIX.some((p) => cls.startsWith(p)) || GENERATED.has(cls)) continue;
           if (el.closest && el.closest('.katex, .mermaid-block')) { seenCls.add(cls); continue; }
@@ -159,30 +150,44 @@ for (const r of routes(DIST)) {
             const compounds = one.trim().split(/\s*[>+~]\s*|\s+/);
             return compounds.slice(0, -1).some((c) => clsRe.test(c));
           });
+          // a selector the browser cannot parse matches nothing
           const matched = cands.some((s) => {
-            try { return el.matches(s) || document.querySelector('main ' + s) || anchorsElsewhere(s); } catch { return true; }
+            try { return el.matches(s) || document.querySelector('main ' + s) || anchorsElsewhere(s); } catch { return false; }
           });
           if (!matched) { seenCls.add(cls); out.unstyled.push({ el: '.' + cls, why: 'mentioned but no selector matches (e.g. a > child combinator blocked by <p>)' }); }
         }
       }
-      // 3) Heading level skips
+      // 3) Heading level skips, over the whole document
       let last = 0;
-      for (const h of document.querySelectorAll('main h1,main h2,main h3,main h4')) {
+      for (const h of document.querySelectorAll('h1,h2,h3,h4,h5,h6')) {
         const lvl = +h.tagName[1];
         if (last && lvl > last + 1) out.headingJump.push({ from: 'h' + last, to: h.tagName.toLowerCase(), text: (h.textContent || '').slice(0, 30) });
         last = lvl;
       }
-      // 4) Images without alt
-      for (const img of document.querySelectorAll('main img')) if (!img.getAttribute('alt')) out.noAlt.push({ src: img.getAttribute('src') });
-      // 5) In-page anchors pointing at ids that do not exist
-      out.deadAnchor = [];
-      for (const a of document.querySelectorAll('main a[href^="#"]')) {
+      // 4) Images without an alt attribute (alt="" is a declared decorative image)
+      for (const img of document.querySelectorAll('img')) if (!img.hasAttribute('alt')) out.noAlt.push({ src: img.getAttribute('src') });
+      // 5) Duplicate ids: an anchor must have one target
+      const seenId = new Map();
+      for (const el of document.querySelectorAll('[id]')) {
+        const n = (seenId.get(el.id) ?? 0) + 1;
+        seenId.set(el.id, n);
+        if (n === 2) out.dupId.push({ id: el.id });
+      }
+      // 6) In-page anchors and aria-controls pointing at ids that do not exist
+      for (const a of document.querySelectorAll('a[href^="#"]')) {
         const id = decodeURIComponent(a.getAttribute('href').slice(1));
         if (id && !document.getElementById(id)) out.deadAnchor.push({ href: a.getAttribute('href'), text: (a.textContent || '').slice(0, 20) });
       }
+      for (const el of document.querySelectorAll('[aria-controls]')) {
+        for (const id of el.getAttribute('aria-controls').split(/\s+/)) {
+          if (id && !document.getElementById(id)) out.deadControl.push({ el: sel(el), id });
+        }
+      }
       return out;
     });
-    const hit = res.hOverflow || res.wide.length || res.unstyled.length || res.headingJump.length || res.noAlt.length || res.deadAnchor?.length;
+    const hit =
+      res.hOverflow || res.wide.length || res.unstyled.length || res.headingJump.length ||
+      res.noAlt.length || res.dupId.length || res.deadAnchor.length || res.deadControl.length;
     if (hit) findings.push({ route: r, width: w, ...res });
   }
 }
@@ -195,8 +200,10 @@ const brief = findings.map((f) => {
   if (f.wide.length) bits.push('breaks its container: ' + [...new Set(f.wide.map((x) => `${x.el}(${x.w}) > ${x.parent}(${x.pw})`))].slice(0, 4).join('; '));
   if (f.unstyled.length) bits.push('unstyled classes: ' + f.unstyled.map((x) => `${x.el}(${x.why})`).slice(0, 6).join(', '));
   if (f.headingJump.length) bits.push('heading level skips: ' + f.headingJump.map((x) => `${x.from}→${x.to}`).join(', '));
-  if (f.noAlt.length) bits.push(`missing alt ×${f.noAlt.length}`);
-  if (f.deadAnchor?.length) bits.push('dead anchors: ' + f.deadAnchor.map((x) => `${x.href}(${x.text})`).join(', '));
+  if (f.noAlt.length) bits.push(`images without alt ×${f.noAlt.length}`);
+  if (f.dupId.length) bits.push('duplicate ids: ' + f.dupId.map((x) => `#${x.id}`).join(', '));
+  if (f.deadAnchor.length) bits.push('dead anchors: ' + f.deadAnchor.map((x) => `${x.href}(${x.text})`).join(', '));
+  if (f.deadControl.length) bits.push('aria-controls without target: ' + f.deadControl.map((x) => `${x.el}→#${x.id}`).join(', '));
   return `${f.route} @${f.width}\n    ${bits.join('\n    ')}`;
 });
 writeFileSync(process.argv[4] || 'ui-probe.txt', brief.join('\n') + `\n\nPAGES WITH FINDINGS: ${findings.length}\n`);

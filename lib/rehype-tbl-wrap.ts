@@ -1,38 +1,31 @@
 /**
  * rehype-tbl-wrap — give every markdown table its own scroll box, and the
- * markup it needs to survive being re-laid-out as cards.
+ * markup it needs to be re-laid-out as cards.
  *
  * Emits `<div class="tbl-wrap [wide|wide-narrow]"><div class="tbl-scroll">`
  * around the table and tags it `.tbl`. Six-or-more-column tables get `.wide`,
  * four-or-five-column ones `.wide-narrow`: below a container width those two
- * turn into one-card-per-row (see the `@container tbl` block in
- * styles/base.css), while two- and three-column tables stay tables, which is
- * what they should be.
+ * become one card per row (the `@container tbl` block in styles/base.css);
+ * two- and three-column tables stay tables. A table with a spanning cell
+ * (rowspan / colspan) has no card form: it is wrapped and scrolls only.
  *
- * Two things the stylesheet cannot do for itself, and so are done here:
+ * Written into the markup because a stylesheet cannot:
+ *   1. `data-label` on every body cell — its column's header text, printed
+ *      in the card form by `td::before { content: attr(data-label) }`;
+ *   2. explicit ARIA roles on every part of the table, so the row/column
+ *      relationships survive the card form's non-table display.
  *
- *   1. `data-label` on every body cell — the column's own header text, so the
- *      card form can print "field — value" with `td::before{content:attr()}`.
- *      Written at build time — no client JS required.
- *   2. Explicit ARIA roles on the whole table. Changing `display` away from
- *      `table` strips the implicit roles, and with them every row/column
- *      relationship a screen reader has — a card grid would be announced as an
- *      undifferentiated pile of text. `role="table"` etc. put them back, and
- *      they are correct in the table form too, so they are unconditional.
- *
- * The first cell of each body row is `role="rowheader"`: the writing
- * convention is that a table's first column is the row's key (term, name,
- * id), and it is what the card form uses as the card's title.
+ * The row header of a body row is its `<th>` when it has one, else its first
+ * cell (a table's first column is the row's key); the card form uses it as
+ * the card's title.
  */
 import type { Element, Root } from 'hast';
 
 type AnyNode = { type: string; children?: AnyNode[] } & Record<string, unknown>;
 
+/** from this many columns the table reflows into cards below the wide threshold */
 const WIDE_AT = 6;
-/** Narrow-container threshold: a desktop column fits five columns, a phone
- *  does not — from four columns up the table should reflow into cards rather
- *  than squeeze every cell down to a couple of words. Separate class names so
- *  the stylesheet can pick by container width. */
+/** from this many columns it reflows below the narrow threshold */
 const WIDE_AT_NARROW = 4;
 
 const isEl = (node: AnyNode | undefined, tag?: string): boolean =>
@@ -52,6 +45,23 @@ function textOf(node: AnyNode): string {
   let s = '';
   for (const c of node.children ?? []) s += textOf(c);
   return s;
+}
+
+/** true when any cell spans rows or columns */
+function hasSpans(table: Element): boolean {
+  let found = false;
+  const walk = (node: AnyNode): void => {
+    if (found) return;
+    if (isEl(node, 'td') || isEl(node, 'th')) {
+      const props = (node as unknown as Element).properties ?? {};
+      const span = (v: unknown): number => (typeof v === 'string' || typeof v === 'number' ? Number(v) : 1);
+      if (span(props['rowSpan']) > 1 || span(props['colSpan']) > 1) found = true;
+      return;
+    }
+    for (const c of node.children ?? []) walk(c);
+  };
+  walk(table as unknown as AnyNode);
+  return found;
 }
 
 /** column count = cells in the first row that has any */
@@ -95,7 +105,7 @@ function annotate(table: Element): void {
           props['role'] = 'columnheader';
           return;
         }
-        props['role'] = i === 0 ? 'rowheader' : 'cell';
+        props['role'] = cell.tagName === 'th' || i === 0 ? 'rowheader' : 'cell';
         const label = labels[i];
         if (label) props['data-label'] = label;
       });
@@ -122,8 +132,10 @@ export function rehypeTblWrap() {
 
           const wrapperClasses = ['tbl-wrap'];
           const cols = columnCount(table);
-          if (cols >= WIDE_AT) wrapperClasses.push('wide');
-          else if (cols >= WIDE_AT_NARROW) wrapperClasses.push('wide-narrow');
+          if (!hasSpans(table)) {
+            if (cols >= WIDE_AT) wrapperClasses.push('wide');
+            else if (cols >= WIDE_AT_NARROW) wrapperClasses.push('wide-narrow');
+          }
           children[i] = {
             type: 'element',
             tagName: 'div',

@@ -1,12 +1,14 @@
 /**
- * Code-frame transformer: Astro runs shiki highlighting after user rehype
- * plugins, so the wrapping has to happen in a transformer's root hook (the
- * rehype stage never sees the astro-code element).
- * Fence meta contract: `title="train.py"` shows a filename in the title bar;
- * `collapse` renders the frame collapsed by default.
+ * Code-frame transformer — wraps every highlighted block in a frame with a
+ * title bar (file name or language), a copy button and, for `collapse`
+ * fences, a fold. Runs in Shiki's root hook: Astro highlights after the
+ * site's rehype plugins, so the rehype stage never sees the code element.
+ *
+ * Fence meta: `title="train.py"` names the frame; `collapse` renders it
+ * folded. Every visible and accessible string is a label (English defaults).
  *
  * Usage (in the site markdown preset's shikiConfig.transformers):
- *   transformers: [transformerCodeFrame({ copyLabel: 'Copy code' }), ...]
+ *   transformers: [transformerCodeFrame({ copy: '复制' }), ...]
  */
 import type { Element } from 'hast';
 import { h } from 'hastscript';
@@ -18,16 +20,24 @@ import type { transformerMetaHighlight } from '@shikijs/transformers';
 type ShikiTransformer = ReturnType<typeof transformerMetaHighlight>;
 
 export interface CodeFrameLabels {
-  /** copy-button tooltip + accessible name. Default 'Copy code' */
+  /** copy button, idle. Default 'copy' */
+  copy?: string;
+  /** copy button after a successful copy. Default '✓ copied' */
+  copied?: string;
+  /** copy button's accessible name. Default 'Copy code' */
   copyLabel?: string;
-  /** collapsed-frame hint in the summary bar (the open-state marker is
-   *  CSS-only). Default 'Expand' */
+  /** fold hint while the frame is collapsed. Default 'Expand' */
   expandLabel?: string;
+  /** fold hint while the frame is open. Default 'Collapse' */
+  collapseLabel?: string;
 }
 
 export function transformerCodeFrame(opts: CodeFrameLabels = {}): ShikiTransformer {
+  const copy = opts.copy ?? 'copy';
+  const copied = opts.copied ?? '✓ copied';
   const copyLabel = opts.copyLabel ?? 'Copy code';
   const expandLabel = opts.expandLabel ?? 'Expand';
+  const collapseLabel = opts.collapseLabel ?? 'Collapse';
   return {
     name: 'code-frame',
     root(root) {
@@ -49,8 +59,8 @@ export function transformerCodeFrame(opts: CodeFrameLabels = {}): ShikiTransform
           title: copyLabel,
         },
         [
-          h('span', { className: ['code-copy-idle'] }, 'copy'),
-          h('span', { className: ['code-copy-done'] }, '✓ copied'),
+          h('span', { className: ['code-copy-idle'] }, copy),
+          h('span', { className: ['code-copy-done'] }, copied),
         ],
       );
 
@@ -58,7 +68,10 @@ export function transformerCodeFrame(opts: CodeFrameLabels = {}): ShikiTransform
         ? h('details', { className: ['code-frame', 'is-collapsible'] }, [
             h('summary', { className: ['code-frame-head'] }, [
               h('span', { className: ['code-lang'] }, title ?? lang),
-              h('span', { className: ['code-fold-hint'] }, expandLabel),
+              h('span', { className: ['code-fold-hint'] }, [
+                h('span', { className: ['code-fold-closed'] }, expandLabel),
+                h('span', { className: ['code-fold-open'] }, collapseLabel),
+              ]),
             ]),
             h('div', { className: ['code-frame-body'] }, [
               h('div', { className: ['code-frame-head'] }, [

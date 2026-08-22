@@ -27,6 +27,9 @@
     "cjk",
     "typography"
   ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "exports": {
     ".": "./lib/index.ts",
     "./markdown-preset": "./lib/markdown-preset.ts",
@@ -39,6 +42,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
+    "test": "node --test 'test/**/*.test.ts'",
     "probe": "node scripts/ui_probe.mjs demo/dist",
     "contrast": "node scripts/contrast_probe.mjs demo/dist"
   },

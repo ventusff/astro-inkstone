@@ -1,11 +1,8 @@
 /**
- * Build-time search index for the ⌘K palette — endpoint factory.
- *
- * Why not Pagefind alone: Pagefind indexes `dist/`, so it only exists after a
- * build — and an editing host that runs a permanent `astro dev` never serves
- * that directory, leaving its search box dead on the very host people edit
- * from. This endpoint is prerendered into the static bundle AND served live
- * by the dev server, so the palette works in both forms.
+ * Build-time search index for the ⌘K palette — endpoint factory. The
+ * endpoint is prerendered into the static bundle and served live by the dev
+ * server, so the palette works on a reading host and on an editing host
+ * alike (an index built from `dist/` exists only after a build).
  *
  * Site wiring: create `src/pages/search-index.json.ts` and hand over "which
  * documents, and how routes/locales/breadcrumbs are computed" as a callback;
@@ -33,7 +30,7 @@
  */
 import type { APIRoute } from 'astro';
 
-import type { SearchDoc } from './search-client';
+import type { SearchDoc } from './search-client.ts';
 
 /** Raw material from the site callback: one record per searchable page;
  *  body is the uncleaned MDX/markdown source. */
@@ -51,14 +48,15 @@ export interface SearchIndexSource {
 export interface SearchIndexOptions {
   /** return every searchable page (usually a thin getCollection wrapper) */
   loadDocs: () => SearchIndexSource[] | Promise<SearchIndexSource[]>;
-  /** how much body text of one page goes into the index (default 12_000) */
+  /** how much body text of one page goes into the index (a positive integer; default 12_000) */
   maxChars?: number;
 }
 
 /**
- * MDX source → searchable prose. Strips the syntax nobody types into a search
- * box (frontmatter, imports, JSX tags, link targets, fences) while keeping
- * the words inside them.
+ * MDX source → searchable prose. Removes frontmatter, import/export lines,
+ * JSX tags, link targets and image syntax; keeps link text and inline-code
+ * words; drops fenced code blocks entirely (code is found through the prose
+ * that explains it, not by token).
  */
 function plainText(body: string, maxChars: number): string {
   return body
@@ -69,22 +67,25 @@ function plainText(body: string, maxChars: number): string {
     .replace(/<\/?[A-Za-z][^>]*>/g, ' ')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    // NOT `_`: technical prose is full of snake_case identifiers
-    // (batch_size, eval_runner, …), and stripping the underscore splits each
-    // into separate words — making every identifier unfindable while plain
-    // words still match. Markdown emphasis via underscores is not used here.
+    // `_` stays: snake_case identifiers are searched whole
     .replace(/[#>*`|]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, maxChars);
 }
 
+/** h2/h3 lines, without markers and without a trailing `{#id …}` attribute block */
 function headingsOf(body: string): string[] {
-  return [...body.matchAll(/^#{2,3}\s+(.+?)\s*$/gm)].map((m) => m[1]!.replace(/[`*_]/g, ''));
+  return [...body.matchAll(/^#{2,3}\s+(.+?)\s*$/gm)].map((m) =>
+    m[1]!.replace(/\s*`\{[^{}]*\}`\s*$/, '').replace(/[`*_]/g, ''),
+  );
 }
 
 export function buildSearchIndexEndpoint(opts: SearchIndexOptions): APIRoute {
   const maxChars = opts.maxChars ?? 12_000;
+  if (!Number.isInteger(maxChars) || maxChars < 1) {
+    throw new Error(`buildSearchIndexEndpoint: maxChars must be a positive integer, got ${opts.maxChars}`);
+  }
   return async () => {
     const sources = await opts.loadDocs();
     const out: SearchDoc[] = sources.map((s) => ({

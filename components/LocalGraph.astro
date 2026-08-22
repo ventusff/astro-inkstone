@@ -39,10 +39,10 @@ const placed = neighbors.map((n, i) => {
   return { ...n, x, y, above: y < CY, color: n.color ?? 'var(--color-accent)' };
 });
 
-/* A label gets about 18 Latin cells of room on the ellipse; a Hanzi takes two.
+/* A label gets about 14 Latin cells of room on the ellipse; a Hanzi takes two.
    Clipping counts cells, so "三维高斯泼溅重建" and "Gaussian splatting" are
    cut at the same visual width. */
-const CELLS = 18;
+const CELLS = 14;
 const cellsOf = (ch: string): number => (/[\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef]/.test(ch) ? 2 : 1);
 const short = (s: string): string => {
   let used = 0;
@@ -59,9 +59,11 @@ const short = (s: string): string => {
 
 {
   neighbors.length > 0 && (
-    <div class="lg-wrap">
-      <p class="lg-title">{label}</p>
-      <svg class="lg-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${centerTitle}: ${label}`}>
+    <nav class="lg-wrap" aria-label={label}>
+      <p class="lg-title" aria-hidden="true">{label}</p>
+      {/* the drawing is decoration for sighted readers; the list below it is
+          the navigation — one link per neighbour, the same targets */}
+      <svg class="lg-svg" viewBox={`0 0 ${W} ${H}`} aria-hidden="true" focusable="false">
         {placed.map((n) => (
           <line
             x1={CX}
@@ -76,7 +78,7 @@ const short = (s: string): string => {
         ))}
         <circle cx={CX} cy={CY} r="5" fill="var(--color-ink)" />
         {placed.map((n) => (
-          <a href={n.href}>
+          <a href={n.href} tabindex="-1">
             <circle cx={n.x.toFixed(1)} cy={n.y.toFixed(1)} r="3.6" fill={n.color} />
             <text
               x={n.x.toFixed(1)}
@@ -89,12 +91,20 @@ const short = (s: string): string => {
           </a>
         ))}
       </svg>
-    </div>
+      <ul class="lg-list">
+        {neighbors.map((n) => (
+          <li>
+            <a href={n.href}>{n.title}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   )
 }
 
 <style>
   .lg-wrap {
+    position: relative;
     margin-top: 20px;
     padding-top: 14px;
     border-top: 1px solid var(--color-line);
@@ -122,5 +132,30 @@ const short = (s: string): string => {
   .lg-svg a:hover .lg-label {
     fill: var(--color-accent);
     font-weight: 600;
+  }
+  /* the accessible list: visually hidden until a link in it takes focus */
+  .lg-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .lg-list:not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .lg-list a {
+    display: block;
+    font: 500 12px/1.5 var(--font-ui);
+    color: var(--color-ink-soft);
+    text-decoration: none;
+  }
+  .lg-list a:focus-visible {
+    color: var(--color-accent);
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
   }
 </style>

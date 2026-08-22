@@ -9,10 +9,11 @@
  * own registry) and passes them in. Tags are typically capped upstream
  * (e.g. top 10), with the rest reachable via the "all" page.
  */
-export interface FacetDef {
-  id: string;
-  label: string;
-  tone?: { bg: string; fg: string } | undefined;
+import type { KindDisplay, Tone } from '../../lib/wiki-display.ts';
+
+/** a facet value: a kind, or a domain with its tone */
+export interface FacetDef extends KindDisplay {
+  tone?: Tone | undefined;
 }
 
 interface Props {
@@ -35,8 +36,8 @@ interface Props {
 }
 const { kinds, domains, tags, base, active, labels = {} } = Astro.props;
 const label = {
-  kind: labels.kind ?? 'Type',
-  domain: labels.domain ?? 'Topics',
+  kind: labels.kind ?? 'Kind',
+  domain: labels.domain ?? 'Domain',
   tag: labels.tag ?? 'Tags',
   all: labels.all ?? 'All →',
   aria: labels.aria ?? 'Browse index',
@@ -93,8 +94,8 @@ const isActive = (dim: string, value: string): boolean =>
   .facet-nav {
     margin: 1.4rem 0 0;
     padding: 14px 16px;
-    background: color-mix(in srgb, var(--wb-bg-card, #f6f0dc) 55%, transparent);
-    border: 1px solid var(--wb-border-soft, #e2d9c3);
+    background: color-mix(in srgb, var(--wb-bg-card) 55%, transparent);
+    border: 1px solid var(--wb-border-soft);
     border-radius: 8px;
     display: flex;
     flex-direction: column;
@@ -107,16 +108,16 @@ const isActive = (dim: string, value: string): boolean =>
     gap: 6px;
   }
   .dim {
-    font: 600 11px/1 var(--wb-sans, sans-serif);
+    font: 600 11px/1 var(--wb-sans);
     letter-spacing: 0.12em;
-    color: var(--wb-text-muted, #968b73);
+    color: var(--wb-text-muted);
     width: 42px;
     flex-shrink: 0;
   }
   .pill {
-    font: 500 12px/1 var(--wb-sans, sans-serif);
-    color: var(--pill-fg, var(--wb-text-soft, #4a4137));
-    border: 1px solid var(--wb-border, #d6cbb1);
+    font: 500 12px/1 var(--wb-sans);
+    color: var(--pill-fg, var(--wb-text-soft));
+    border: 1px solid var(--wb-border);
     border-radius: 999px;
     padding: 4.5px 10px;
     text-decoration: none;
@@ -126,31 +127,31 @@ const isActive = (dim: string, value: string): boolean =>
   }
   .pill b {
     font-weight: 600;
-    color: var(--wb-text-muted, #968b73);
+    color: var(--wb-text-muted);
     margin-left: 2px;
   }
   .pill:hover {
-    border-color: var(--wb-rule, #b8a98a);
-    background: color-mix(in srgb, var(--wb-bg, #faf6ec) 45%, transparent);
+    border-color: var(--wb-rule);
+    background: color-mix(in srgb, var(--wb-bg) 45%, transparent);
   }
   .pill[aria-current='page'] {
-    background: var(--wb-text, #2b2622);
-    border-color: var(--wb-text, #2b2622);
-    color: var(--wb-bg, #faf6ec);
+    background: var(--wb-text);
+    border-color: var(--wb-text);
+    color: var(--wb-bg);
   }
   .pill[aria-current='page'] b {
-    color: var(--wb-bg, #faf6ec);
+    color: var(--wb-bg);
     opacity: 0.7;
   }
   .more {
-    color: var(--wb-wine, #7d3a3a);
+    color: var(--wb-wine);
   }
   /* registry tones are tuned for the light ground; on night the pill takes a
      lightened mix of its tone instead */
   :global(:root[data-theme='dark']) .pill[style] {
-    color: color-mix(in srgb, var(--pill-fg) 45%, var(--wb-text, #e6e4dc));
+    color: color-mix(in srgb, var(--pill-fg) 45%, var(--wb-text));
   }
   :global(:root[data-theme='dark']) .pill[aria-current='page'][style] {
-    color: var(--wb-bg, #12141d);
+    color: var(--wb-bg);
   }
 </style>

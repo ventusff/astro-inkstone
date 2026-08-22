@@ -1,9 +1,10 @@
 ---
 /**
  * /all/ — every browse unit, newest first, with instant filters and the
- * full tag index. The filter pills are plain links to the facet pages; the
- * script below turns them into in-page filters (one value per dimension,
- * AND across dimensions) — without it nothing is lost.
+ * full tag index. The filter pills are links to the facet pages (kind /
+ * domain / status routes); the script below turns them into in-page filters
+ * (one value per dimension, AND across dimensions) that announce their
+ * result count — without it every pill still leads somewhere.
  */
 import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
 import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
@@ -41,9 +42,10 @@ const statusDefs = STATUSES.filter((s) => units.some((u) => u.status === s.id));
     ))}
     <span class="f-dim">Status</span>
     {statusDefs.map((s) => (
-      <a class="f-pill" href={browseHref.all()} data-filter="status" data-value={s.id}>{s.label}</a>
+      <a class="f-pill" href={browseHref.status(s.id)} data-filter="status" data-value={s.id}>{s.label}</a>
     ))}
     <button class="f-clear" type="button" data-clear hidden>Clear filters</button>
+    <span class="wb-count" role="status" aria-live="polite" data-count></span>
   </div>
 
   <ul class="wb-grid" data-cards>
@@ -59,12 +61,14 @@ const statusDefs = STATUSES.filter((s) => units.some((u) => u.status === s.id));
 
 <script>
   // Progressive enhancement: pills become instant filters. Card attributes
-  // come from NoteCard's data-* (kind / domains / status).
+  // come from NoteCard's data-* (kind / domains / status). An active pill is
+  // marked aria-current; the live region announces the count.
   const root = document.querySelector('[data-filters]');
   const cards = [...document.querySelectorAll<HTMLElement>('[data-cards] > li')];
   const empty = document.querySelector<HTMLElement>('[data-empty]');
   const clearBtn = document.querySelector<HTMLButtonElement>('[data-clear]');
-  if (root && cards.length > 0 && empty && clearBtn) {
+  const count = document.querySelector<HTMLElement>('[data-count]');
+  if (root && cards.length > 0 && empty && clearBtn && count) {
     const active = new Map<string, string>(); // dimension → value (one per dimension)
     const pills = [...root.querySelectorAll<HTMLAnchorElement>('.f-pill')];
 
@@ -80,9 +84,12 @@ const statusDefs = STATUSES.filter((s) => units.some((u) => u.status === s.id));
       }
       empty.hidden = shown > 0;
       clearBtn.hidden = active.size === 0;
+      count.textContent = active.size === 0 ? '' : `${shown} / ${cards.length}`;
       for (const p of pills) {
         const on = active.get(p.dataset['filter'] ?? '') === p.dataset['value'];
         p.toggleAttribute('data-on', on);
+        if (on) p.setAttribute('aria-current', 'true');
+        else p.removeAttribute('aria-current');
       }
     };
 

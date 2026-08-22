@@ -2,17 +2,14 @@
  * rehype-base-links — rewrite root-absolute links in note prose onto the
  * mount prefix.
  *
- * Content is written as if mounted at the site root (cross-note links
- * `/getting-started/#s2`, co-located attachments `/topic/file.pdf`, imported
- * images `/inbox/<slug>/x.png` are all root-absolute); when the notes are
- * mounted under a subpath (base ≠ ''), every such reference gets the prefix.
- * Root-absolute references inside note prose only ever point into the note
- * system itself, so prefixing them all is the correct semantics.
- * Only enters the pipeline when base is non-empty (siteMarkdown({ base })).
- * `exempt`: prefixes of other on-site mount points, left untouched.
- * Rewrites both hast elements AND MDX JSX attributes (href/src/poster on
- * lowercase native tags) — missing the JSX side silently breaks cross-note
- * navigation in MDX-authored prose.
+ * Content is written as if mounted at the site root (`/getting-started/#s2`,
+ * `/topic/file.pdf`, `/inbox/<slug>/x.png`); with the notes mounted under a
+ * subpath (siteMarkdown({ base })) every such reference gets the prefix.
+ * A reference that already starts with the base, or with one of the `exempt`
+ * mount points, is left as it is. Prefixes match whole path segments:
+ * base `/docs` owns `/docs` and `/docs/...`, not `/docs-old`.
+ * Applies to hast elements and to MDX JSX attributes alike (href / src /
+ * poster on lowercase native tags; component props are the component's).
  */
 import type { Element, Root } from 'hast';
 
@@ -31,13 +28,16 @@ export function rehypeBaseLinks(options: { base: string; exempt?: string[] }) {
   const exempt = options.exempt ?? [];
   return function transform(tree: Root): void {
     if (!base) return;
+    /** `prefix` owns `path` when they are equal or `path` continues past a `/` */
+    const owns = (prefix: string, path: string): boolean =>
+      path === prefix || path.startsWith(`${prefix}/`) || path.startsWith(`${prefix}?`) || path.startsWith(`${prefix}#`);
     const rewrite = (value: unknown): string | null => {
       if (
         typeof value === 'string' &&
         value.startsWith('/') &&
         !value.startsWith('//') &&
-        !value.startsWith(`${base}/`) &&
-        !exempt.some((p) => value.startsWith(p))
+        !owns(base, value) &&
+        !exempt.some((p) => owns(p, value))
       ) {
         return base + value;
       }

@@ -1,4 +1,5 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
+import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
 
 import { DOMAIN_IDS, KIND_IDS, STATUS_IDS } from './content/notes/_meta/taxonomy';
@@ -28,18 +29,22 @@ const notes = defineCollection({
     /** sidebar brand line; falls back to title */
     brand: z.string().optional(),
     subtitle: z.string().optional(),
-    /** classification (see _meta/taxonomy.ts); chapters inherit the hub's */
+    /** classification (see _meta/taxonomy.ts). A chapter or mirror inherits
+     *  every field it leaves out; a field it sets — `[]` included — is its
+     *  own. Inheritable arrays are therefore optional, never defaulted. */
     kind: z.enum(KIND_IDS).optional(),
-    domains: z.array(z.enum(DOMAIN_IDS)).default([]),
-    tags: z.array(z.string()).default([]),
+    domains: z.array(z.enum(DOMAIN_IDS)).optional(),
+    /** free tags; slug-safe so a tag is also its browse route segment */
+    tags: z.array(z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'tag must be a lowercase slug')).optional(),
     status: z.enum(STATUS_IDS).optional(),
     created: z.coerce.date().optional(),
     updated: z.coerce.date().optional(),
     aliases: z.array(z.string()).default([]),
-    sources: z.array(z.object({ title: z.string(), href: z.string().optional() })).default([]),
+    sources: z.array(z.object({ title: z.string(), href: z.string().optional() })).optional(),
     /** hubs only: chapter membership and order (ids relative to the hub) */
     nav: z.array(z.object({ group: z.string(), pages: z.array(z.string()) })).optional(),
-    /** hub chapters: 1-based position — must match the hub's nav order */
+    /** hub chapters: 1-based position, equal to the chapter's position in
+     *  the hub's nav (the build fails on a mismatch or a missing value) */
     part: z.number().int().positive().optional(),
     /** sidebar row label for hub chapters; falls back to title */
     navLabel: z.string().optional(),

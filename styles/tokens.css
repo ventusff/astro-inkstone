@@ -50,17 +50,15 @@
 
   /* ---- paper ---- */
   --p-paper: #faf6ec; /* 纸 · browse ground */
-  --p-paper-deep: #f3ecd6; /* 笺 · browse secondary surface */
   --p-paper-card: #f6f0dc; /* 页 · browse card face */
   --p-paper-read: #fbf9f4; /* 素 · reading ground (a notch cooler, easier on the eyes) */
   --p-paper-soft: #f3efe5; /* 帛 · reading secondary surface */
   --p-white: #ffffff; /* reading card face */
-  --p-code: #f3f1ea; /* code ground */
+  --p-code: #f4f3ee; /* code ground (the syntax theme's faintest token, comments, is 4.5:1 here) */
   --p-math: #f6f1e3; /* math / callout ground */
 
   /* ---- ink, warm (browse) ---- */
   --p-ink: #2b2622;
-  --p-ink-soft: #5a5344;
   --p-ink-warm-soft: #4a4137; /* browse body copy */
   --p-ink-dim: #6e6453;
   --p-ink-faint: #756c5a; /* small print; 4.8:1 on paper, 4.6:1 on the card face */

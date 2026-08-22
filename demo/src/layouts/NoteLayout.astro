@@ -13,6 +13,7 @@ import Backlinks from 'astro-inkstone/components/Backlinks.astro';
 import LocalGraph, { type LocalGraphNeighbor } from 'astro-inkstone/components/LocalGraph.astro';
 import PageFooter from 'astro-inkstone/components/PageFooter.astro';
 import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+import type { DomainDisplay, KindDisplay, StatusDisplay } from 'astro-inkstone/lib/wiki-display';
 import type { BacklinkItem } from 'astro-inkstone/lib/backlinks';
 import type { TocData } from 'astro-inkstone/lib/toc-types';
 import Base from './Base.astro';
@@ -35,16 +36,11 @@ export interface HubPageChrome {
 
 /** display-ready taxonomy strip data (assembled by the route) */
 export interface TaxonomyStrip {
-  kind?: { id: string; label: string; desc?: string | undefined } | undefined;
-  domains: {
-    id: string;
-    label: string;
-    desc?: string | undefined;
-    tone: { bg: string; fg: string };
-    href?: string | undefined;
-  }[];
-  status?: { id: string; label: string; desc?: string | undefined; dot: string } | undefined;
+  kind?: KindDisplay | undefined;
+  domains: DomainDisplay[];
+  status?: StatusDisplay | undefined;
   updated?: string | undefined;
+  reading?: string | undefined;
 }
 
 interface Props {
@@ -98,9 +94,10 @@ const zh = locale === 'zh';
   crumbs={crumbs}
   translateRoute={translateRoute}
   noteId={noteId}
+  hasSidebar
 >
   <div class="layout">
-    <Sidebar brand={brand} brandHref={brandHref} subtitle={subtitle} toc={toc} tocDepth={tocDepth} hub={hub} lang={lang}>
+    <Sidebar brand={brand} brandHref={brandHref} subtitle={subtitle} toc={toc} tocDepth={tocDepth} hub={hub} lang={lang} labels={{ contents: t.contents, languages: t.languages }}>
       {graph.length > 0 && <LocalGraph centerTitle={title} neighbors={graph} label={t.localGraph} />}
     </Sidebar>
     <main class="note-main">
@@ -112,6 +109,7 @@ const zh = locale === 'zh';
               domains={taxonomy.domains}
               status={taxonomy.status}
               updated={taxonomy.updated}
+              reading={taxonomy.reading}
               labels={{ updated: t.updated }}
             />
           )
@@ -133,18 +131,18 @@ const zh = locale === 'zh';
         }
         {
           hubPage && (hubPage.prev || hubPage.next) && (
-            <nav class="pagination" aria-label="Chapter pagination">
+            <nav class="pagination" aria-label={t.chapterNav}>
               {hubPage.prev ? (
-                <a class="prev" href={hubPage.prev.href}>
-                  <div class="dir">← prev</div>
+                <a class="prev" href={hubPage.prev.href} rel="prev">
+                  <div class="dir">{t.prev}</div>
                   <div class="title">{hubPage.prev.label}</div>
                 </a>
               ) : (
                 <span />
               )}
               {hubPage.next ? (
-                <a class="next" href={hubPage.next.href}>
-                  <div class="dir">next →</div>
+                <a class="next" href={hubPage.next.href} rel="next">
+                  <div class="dir">{t.next}</div>
                   <div class="title">{hubPage.next.label}</div>
                 </a>
               ) : (

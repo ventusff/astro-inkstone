@@ -30,9 +30,19 @@
 ::view-transition-new(root) {
   animation-duration: 0.12s;
 }
+/* reduced motion: no page transition, no smooth scrolling, no cross-fades */
 @media (prefers-reduced-motion: reduce) {
   @view-transition {
     navigation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
   }
 }
 
@@ -119,18 +129,16 @@ h4 {
   margin-right: 10px;
   vertical-align: 2px;
 }
-/* an h2 straight after the jump list needs no rule — the box already drew one */
+/* an h2 straight after the jump list: the box is its rule */
 .col .local-toc + h2 {
   border-top: none;
   padding-top: 0;
   margin-top: 40px;
 }
-/* a page-footer is never the page's own h1: the footer slot takes prose */
 
 .col p {
   margin: 0 0 14px;
-  /* In mixed CJK/Latin prose the last line often ends up a single Hanzi plus
-     a full stop; letting the engine balance line widths removes the orphan */
+  /* balanced line widths: no last line of a single Hanzi plus a full stop */
   text-wrap: pretty;
 }
 .col li {
@@ -207,12 +215,10 @@ h4 {
   padding: 0;
   font-size: inherit;
   color: inherit;
-  /* never add `.line { display:block }` — <pre> already keeps the \n and a
-     block display doubles every line break */
+  /* `.line` stays inline: <pre> keeps the newline, a block line would double it */
 }
-/* Shiki dual theme: `defaultColor: false` emits both --shiki-light and
-   --shiki-dark on every token; the active one is picked here, so there is
-   exactly one place that decides and no !important tug-of-war. */
+/* Shiki dual theme (`defaultColor: false`): every token carries --shiki-light
+   and --shiki-dark; this is the one place that picks the active one. */
 .astro-code,
 .astro-code span {
   color: var(--shiki-light);
@@ -223,15 +229,6 @@ h4 {
 }
 :root[data-theme='dark'] .astro-code,
 :root[data-theme='dark'] .astro-code span {
-  color: var(--shiki-dark);
-}
-/* The light theme's comment color is tuned for a white code ground and lands
-   at 4.46:1 on this paper; Shiki writes colors as inline styles, so that one
-   token is rewritten by value to the faint ink (4.6:1). */
-.astro-code span[style*='--shiki-light:#66707b' i] {
-  color: var(--color-ink-faint);
-}
-:root[data-theme='dark'] .astro-code span[style*='--shiki-light:#66707b' i] {
   color: var(--shiki-dark);
 }
 
@@ -298,7 +295,15 @@ details.code-frame > summary::-webkit-details-marker {
 details.code-frame .code-fold-hint {
   font-size: 11px;
 }
-details.code-frame[open] .code-fold-hint::after {
+/* the hint names the action available now: expand while closed, collapse while open */
+details.code-frame .code-fold-open,
+details.code-frame[open] .code-fold-closed {
+  display: none;
+}
+details.code-frame[open] .code-fold-open {
+  display: inline;
+}
+details.code-frame[open] .code-fold-open::after {
   content: ' ▴';
 }
 
@@ -314,7 +319,7 @@ pre.astro-code .line.highlighted {
   background: color-mix(in oklab, var(--color-accent) 10%, transparent);
 }
 pre.astro-code .line.diff.add {
-  background: color-mix(in oklab, var(--color-accent2) 14%, transparent);
+  background: color-mix(in oklab, var(--color-accent2) 10%, transparent);
 }
 pre.astro-code .line.diff.add::before {
   content: '+';
@@ -327,19 +332,25 @@ pre.astro-code .line.diff.remove {
 }
 pre.astro-code .line.diff.remove::before {
   content: '-';
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   margin-right: 8px;
 }
-pre.astro-code.has-focused .line:not(.focused) {
-  filter: blur(1.6px);
-  opacity: 0.55;
-  transition:
-    filter 0.25s,
-    opacity 0.25s;
-}
-pre.astro-code.has-focused:hover .line:not(.focused) {
-  filter: none;
-  opacity: 1;
+/* focus notation dims the other lines on devices that can hover to reveal
+   them; keyboard focus inside the block reveals them too; touch and
+   reduced-motion readers see the whole block */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  pre.astro-code.has-focused .line:not(.focused) {
+    filter: blur(1.6px);
+    opacity: 0.55;
+    transition:
+      filter 0.25s,
+      opacity 0.25s;
+  }
+  pre.astro-code.has-focused:hover .line:not(.focused),
+  pre.astro-code.has-focused:focus-within .line:not(.focused) {
+    filter: none;
+    opacity: 1;
+  }
 }
 .highlighted-word {
   background: color-mix(in oklab, var(--color-accent) 16%, transparent);
@@ -482,8 +493,7 @@ pre.astro-code.has-focused:hover .line:not(.focused) {
 
 .pagination {
   display: grid;
-  /* With only one side present the other leaves no empty slot — otherwise it
-     looks like the next-card simply failed to render */
+  /* one card fills the row when only one direction exists */
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   gap: 16px;
   margin: 56px 0 0;
@@ -516,9 +526,6 @@ pre.astro-code.has-focused:hover .line:not(.focused) {
   color: var(--color-ink);
   font-size: 15px;
 }
-/* Both directions written out explicitly: with only a .next rule, .prev
-   becomes a class no rule matches, and a reader of the markup would assume
-   it is styled */
 .pagination .prev {
   text-align: left;
 }
@@ -601,8 +608,7 @@ section.footnotes p {
   margin: 0.35em 0;
 }
 
-/* GFM's footnote section title is screen-reader-only; without this rule the
-   hidden heading would render as visible text. Standard visually-hidden box. */
+/* visually hidden, available to assistive technology (GFM's footnote heading) */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -617,13 +623,11 @@ section.footnotes p {
 
 /* ----- tables (rehype-tbl-wrap gives each one its own scroll box) ----- */
 
-/* The double wrapper is deliberate, not redundant: the outer .tbl-wrap is the
-   CONTAINER-QUERY CONTAINER, the inner .tbl-scroll is the scroll box.
-   `@container` can only style a container's descendants, never the container
-   itself — if scrolling and the scroll shadows lived on .tbl-wrap there would
-   be no way to turn them off in card mode. And a table reflows based on how
-   wide a column it lands in, not on the viewport: the same table may sit in
-   an 820px reading column or be embedded somewhere far narrower. */
+/* Two wrappers with two jobs: .tbl-wrap is the container-query container,
+   .tbl-scroll the scroll box. `@container` styles a container's descendants
+   only, so the scrolling and its shadows live one level down where card
+   mode can switch them off. The query is on the container, not the
+   viewport: a table reflows by the width of the column it lands in. */
 .tbl-wrap {
   container-type: inline-size;
   container-name: tbl;
@@ -634,10 +638,8 @@ section.footnotes p {
 }
 .tbl-scroll {
   overflow-x: auto;
-  /* Edge shadows appear while the table can scroll and vanish at either end
-     (the classic `local` + `scroll` background-attachment pairing, no JS).
-     Without them a clipped table gives no hint at all that more columns
-     exist off to the right — a real usability failure on narrow screens. */
+  /* edge shadows while the table can scroll, gone at either end (`local` +
+     `scroll` background-attachment pairing, no JS) */
   background:
     linear-gradient(to right, var(--color-bg-card) 30%, transparent) left / 26px 100% no-repeat local,
     linear-gradient(to left, var(--color-bg-card) 30%, transparent) right / 26px 100% no-repeat local,
@@ -651,9 +653,8 @@ section.footnotes p {
 .tbl th {
   white-space: nowrap;
 }
-/* CJK in cells wraps only at punctuation (word-break: keep-all) so a compound
-   word is never split; an over-wide table is in a scroll box anyway — better
-   to scroll than to break words. The first column is a label column: no wrap. */
+/* CJK in cells wraps at punctuation only (keep-all): compound words stay
+   whole, an over-wide table scrolls. The first column is the row's label: no wrap. */
 .tbl td {
   word-break: keep-all;
   text-wrap: pretty;
@@ -675,8 +676,7 @@ table.tbl {
   border-bottom: 1px solid var(--color-line);
   vertical-align: top;
 }
-/* whole-row hover highlight (a reading aid; tokenized so it holds in both
-   themes, and a site may override it with something stronger) */
+/* whole-row hover highlight, a reading aid */
 .tbl tr:hover td {
   background: color-mix(in srgb, var(--color-bg-soft) 40%, var(--color-bg-card));
 }
@@ -694,8 +694,7 @@ table.tbl {
 .tbl code {
   white-space: nowrap;
 }
-/* a column of short codes should not be wrapped into a stack by a neighbour's
-   long prose — the wrapper scrolls instead */
+/* wide tables keep their natural width and scroll; columns are never squeezed */
 .tbl-wrap.wide table.tbl {
   min-width: max-content;
 }
@@ -709,32 +708,35 @@ table.tbl {
    run out of room. Applies only to .wide (≥6 columns) and .wide-narrow (4–5):
    two- and three-column tables fit anyway, and cards would just be noisier. */
 @container tbl (max-width: 560px) {
-  /* cards do not overflow horizontally: scrolling and the scroll shadows are
-     both switched off here (wide containers keep them) */
+  /* cards never overflow horizontally: no scroll box, no scroll shadows */
   .wide > .tbl-scroll,
   .wide-narrow > .tbl-scroll {
     overflow-x: visible;
     background: none;
   }
 
-  .wide table.tbl,
-  .wide-narrow table.tbl {
+  .tbl-wrap.wide table.tbl,
+  .tbl-wrap.wide-narrow table.tbl {
     display: block;
     min-width: 0;
   }
-  /* Column names move into each cell's ::before; keeping the header would
-     make screen readers announce every field name twice. The implicit table
-     roles that display:block erases are restored via role=* in the markup. */
+  /* the header row stays in the accessibility tree (the roles in the markup
+     keep the cell↔header relationship) and leaves the visual flow: column
+     names are printed per cell from data-label */
   .wide table.tbl thead,
   .wide-narrow table.tbl thead {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .wide table.tbl tbody,
   .wide-narrow table.tbl tbody {
     display: block;
   }
-  /* One row = one card. A tr's children are only cells (nothing but
-     whitespace between elements), so flex/grid creates no anonymous items. */
+  /* one row = one card (a tr's children are cells only, so flex creates no anonymous items) */
   .wide table.tbl tbody tr,
   .wide-narrow table.tbl tbody tr {
     display: flex;
@@ -748,9 +750,7 @@ table.tbl {
   .wide-narrow table.tbl tbody tr:last-child {
     border-bottom: none;
   }
-  /* Cells are display:block across the board — a prose cell may mix
-     <strong>/<code>/bare text, and grid/flex would split those into
-     unrelated items. */
+  /* cells are blocks: a prose cell mixes inline children that flex would split apart */
   .wide .tbl th,
   .wide .tbl td,
   .wide-narrow .tbl th,
@@ -792,9 +792,7 @@ table.tbl {
     color: var(--color-ink);
     padding-bottom: 3px;
   }
-  /* A cell now spans the whole row and a long path has no next column to
-     borrow; short hashes/identifiers still stay whole —
-     overflow-wrap:anywhere only breaks when nothing fits. */
+  /* a cell spans the card: long paths may break anywhere, short identifiers stay whole */
   .wide .tbl code,
   .wide-narrow .tbl code {
     white-space: normal;
@@ -812,11 +810,8 @@ table.tbl {
   font-family: var(--font-body);
   font-size: 16.5px;
 }
-/* Callouts appear both as authored HTML (`<div class="callout"><span
-   class="label">…`) and as pipeline output (.callout-title). Both class names
-   are recognized — content in the wild uses .label heavily, and recognizing
-   only .callout-title leaves every such title as bare inline text. The span
-   must be made block explicitly. */
+/* the title line: `.callout-title` (component / quote syntax) or `.label`
+   (authored HTML, where it is a span and must be made block here) */
 .callout-title,
 .callout .label {
   display: block;
@@ -859,9 +854,25 @@ table.tbl {
 .callout.abstract .label {
   color: var(--color-ink-soft);
 }
-/* bad: a wrong approach / an overturned implementation. Without this rule
-   such callouts silently degrade into neutral boxes and the "this is the
-   wrong way" signal is lost entirely */
+/* folded callouts (`> [!note]-`): the title is the disclosure summary */
+details.callout > summary.callout-title {
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 0;
+}
+details.callout > summary.callout-title::-webkit-details-marker {
+  display: none;
+}
+details.callout > summary.callout-title::before {
+  content: '▸ ';
+}
+details.callout[open] > summary.callout-title {
+  margin-bottom: 8px;
+}
+details.callout[open] > summary.callout-title::before {
+  content: '▾ ';
+}
+/* bad: a wrong approach or an overturned implementation */
 .callout.bad {
   border-left-color: var(--color-accent);
   background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg));
@@ -875,12 +886,8 @@ table.tbl {
 }
 
 /* ----- measured card (documented vs. measured) ----- */
-/* For claims-versus-measurements content a colored left border is not enough:
-   the reader must see at a glance which sentence is quoted documentation and
-   which is a real measurement, and every callout shares one silhouette — one
-   more would just read as another tip box. So this uses a different structure
-   entirely — a solid title bar + two-pane comparison — where the shape itself
-   is the signal. */
+/* documented-versus-measured: a solid title bar over two panes, a silhouette
+   distinct from every callout so the comparison reads at a glance */
 .measured {
   margin: 26px 0;
   border: 2px solid var(--color-accent2);
@@ -898,8 +905,7 @@ table.tbl {
   letter-spacing: 0.1em;
   padding: 7px 14px;
 }
-/* The diamond prefix keeps the title bar recognizable in thumbnails and dark
-   mode — color is never the sole carrier of the meaning */
+/* the diamond marks the bar without relying on color */
 .measured-head::before {
   content: '◆ ';
 }
@@ -910,9 +916,7 @@ table.tbl {
   background: var(--color-line); /* the gap IS the divider — saves a border */
 }
 .measured-pane {
-  /* A grid item's min-width defaults to auto, so one unbreakable run of code
-     can push the whole card out of the column; zeroing it lets long
-     identifiers break per-character and the card never outgrows the column */
+  /* min-width 0: an unbreakable run of code breaks per character instead of widening the card */
   min-width: 0;
   overflow-wrap: anywhere;
   background: var(--color-bg-card);
@@ -947,9 +951,7 @@ table.tbl {
 .measured.solo .measured-body {
   grid-template-columns: 1fr;
 }
-/* On narrow screens two panes side by side crush code and addresses into
-   wraps, so they stack. Below 620px the sidebar is long gone and the column
-   is roughly the viewport, so a viewport query suffices */
+/* narrow screens: the two panes stack (below 620px the column is the viewport) */
 @media (max-width: 620px) {
   .measured-body {
     grid-template-columns: 1fr;
@@ -989,7 +991,7 @@ table.tbl {
   border-color: transparent;
 }
 
-/* ----- grids / steps ----- */
+/* ----- grids ----- */
 .grid-plain,
 .grid-card,
 .grid-cmp {
@@ -1021,8 +1023,12 @@ table.tbl {
   }
 }
 
+/* ----- steps: a list on a vertical rail with dots (components/Steps.astro,
+   or a bare `<ol class="steps">`) ----- */
 .steps-wrap > ul,
-.steps-wrap > ol {
+.steps-wrap > ol,
+ul.steps,
+ol.steps {
   list-style: none;
   padding: 0;
   margin: 18px 0;
@@ -1031,13 +1037,15 @@ table.tbl {
   border-left: 2px solid var(--color-line);
 }
 .steps-wrap > ul > li,
-.steps-wrap > ol > li {
+.steps-wrap > ol > li,
+.steps > li {
   position: relative;
   padding: 6px 0 6px 22px;
   margin: 0;
 }
 .steps-wrap > ul > li::before,
-.steps-wrap > ol > li::before {
+.steps-wrap > ol > li::before,
+.steps > li::before {
   content: '';
   position: absolute;
   left: -6px;
@@ -1106,10 +1114,7 @@ table.tbl {
 .figure-grid .figure {
   margin: 0;
 }
-/* Plates are shot at whatever aspect suits the subject, so a grid of them is
-   otherwise ragged — a portrait display next to a wide aisle. Inside a grid
-   every cell gets one box and the picture is contained, never cropped: the
-   catalogue lines up and no shelf loses its top shelf to a crop. */
+/* in a grid every picture gets the same 4:3 box, contained, never cropped */
 .figure-grid .figure img {
   aspect-ratio: 4 / 3;
   object-fit: contain;
@@ -1128,13 +1133,8 @@ table.tbl {
   }
 }
 
-/* Figures may break the reading column when the picture is the point.
-   The cap cannot be computed from the viewport alone: the column already
-   starts after the sidebar + padding, so `100vw - 140px` at a 1440 viewport
-   yields 1080 and the figure runs past the right edge, giving the whole page
-   a horizontal scrollbar. Clamp against the shell's actual usable width
-   instead — shell max 1240, minus sidebar and right margin, caps the figure
-   at 936: still visibly wider than the column, but never off-screen. */
+/* a wide figure breaks out of the reading column; its cap is the shell's
+   usable width (shell minus sidebar and margin), so it never leaves the screen */
 .figure.wide,
 .figure-grid.wide {
   width: min(1080px, calc(min(100vw, var(--shell-w)) - var(--sidebar-w) - 24px));
@@ -1173,10 +1173,9 @@ dialog.lightbox .cap {
   padding: 8px 2px 0;
   text-align: center;
 }
-/* The dialog is position:absolute in the UA sheet, so it is already the
-   containing block for this — no `position` override here, which would break
-   the UA's auto-margin centring. The chip sits on the overlay, which is dark
-   in either theme, so it takes the overlay tokens rather than the theme's. */
+/* positioned against the dialog (position:absolute in the UA sheet, which
+   also centres it); colored by the overlay tokens — the overlay is dark in
+   either theme */
 dialog.lightbox .lb-close {
   position: absolute;
   top: 8px;
@@ -1334,7 +1333,7 @@ section:has(.hero) + h2 {
   margin-top: 10px;
 }
 .paper .diff::before {
-  content: 'vs prior →';
+  content: var(--diff-label, 'vs prior →');
   font-weight: 700;
   color: var(--color-accent2);
   margin-right: 8px;
@@ -1560,32 +1559,6 @@ section:has(.hero) + h2 {
 }
 
 
-/* =================== steps =================== */
-.steps {
-  list-style: none;
-  padding: 0;
-  margin: 18px 0;
-  font-family: var(--font-ui);
-  font-size: 14.5px;
-  border-left: 2px solid var(--color-line);
-}
-.steps > li {
-  position: relative;
-  padding: 6px 0 6px 22px;
-  margin: 0;
-}
-.steps > li::before {
-  content: '';
-  position: absolute;
-  left: -6px;
-  top: 14px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--color-accent);
-  border: 2px solid var(--color-bg);
-}
-
 /* ============ collection sub-page chrome (breadcrumb + part header) ===== */
 .crumb {
   font-family: var(--font-ui);
@@ -1675,8 +1648,7 @@ section:has(.hero) + h2 {
   gap: 18px;
   margin: 28px 0 48px;
 }
-/* the card is an <a>: written with the element so it outranks the column's
-   link rule (color / underline) at equal specificity */
+/* written as a.hub-card: same specificity as the column's link rule, later wins */
 a.hub-card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-line);
@@ -1792,8 +1764,7 @@ a.hub-card.soft {
 
 
 /* ---------------- [[wikilinks]] ---------------- */
-/* live link: accent underline, visually distinct from ordinary links —
-   this one leads to another note on this site */
+/* live link: leads to another note on this site */
 a.wikilink {
   color: var(--color-ink);
   text-decoration: none;
@@ -1804,8 +1775,7 @@ a.wikilink:hover {
   color: var(--color-accent);
   border-bottom-color: var(--color-accent);
 }
-/* dead link: muted dotted underline (Obsidian-style), hover names the
-   missing target */
+/* dead link: the target does not exist; hover names it */
 span.wikilink-dead {
   color: var(--color-ink-faint);
   border-bottom: 1.5px dotted var(--color-ink-faint);
@@ -1858,9 +1828,7 @@ span.wikilink-dead {
   .backlinks,
   .pagination,
   .demo-controls,
-  .cbt-strip,
-  .cbt-arrow,
-  .cbt-foot {
+  .wiki-comments {
     display: none !important;
   }
   .layout {
@@ -1879,7 +1847,8 @@ span.wikilink-dead {
   .stats,
   .demo,
   figure,
-  .paper-card {
+  .paper,
+  .hub-card {
     break-inside: avoid;
   }
   h2,
@@ -1887,8 +1856,8 @@ span.wikilink-dead {
     break-after: avoid;
   }
   /* wide tables scroll on screen; paper has no scrollbar — shrink to fit */
-  .table-wrap,
-  .tbl-wrap {
+  .tbl-wrap,
+  .tbl-scroll {
     overflow: visible !important;
   }
   table {

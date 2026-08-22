@@ -4,14 +4,10 @@
  * visually quieter than domain colors). Purely presentational: the site
  * resolves the def from its registry and passes it in.
  */
-export interface KindBadgeDef {
-  id: string;
-  label: string;
-  desc?: string | undefined;
-}
+import type { KindDisplay } from '../../lib/wiki-display.ts';
 
 interface Props {
-  def: KindBadgeDef;
+  def: KindDisplay;
 }
 const { def } = Astro.props;
 ---
@@ -21,10 +17,10 @@ const { def } = Astro.props;
 <style>
   .kind-badge {
     display: inline-block;
-    font: 600 10.5px/1 var(--wb-sans, sans-serif);
+    font: 600 10.5px/1 var(--font-ui);
     letter-spacing: 0.05em;
-    color: var(--wb-text-soft, #4a4137);
-    border: 1px solid var(--wb-rule, #b8a98a);
+    color: var(--color-ink-soft);
+    border: 1px solid color-mix(in srgb, var(--color-ink-faint) 70%, var(--color-line));
     border-radius: 3px;
     padding: 3px 6px;
     white-space: nowrap;

@@ -1,8 +1,8 @@
 ---
 /**
  * TaxonomyLine — one restrained meta strip at the top of a note page:
- * kind badge · domain chips · status dot · updated date. Renders nothing
- * when the note carries no taxonomy at all.
+ * kind badge · domain chips · status dot · updated date · reading time.
+ * Renders nothing when the note carries none of them.
  *
  * Purely presentational: the site resolves registry defs and URLs (e.g. with
  * the `createTaxonomy` helpers from `astro-inkstone/lib/taxonomy`) and passes
@@ -11,27 +11,23 @@
 import DomainChip from './DomainChip.astro';
 import KindBadge from './KindBadge.astro';
 import StatusDot from './StatusDot.astro';
+import type { DomainDisplay, KindDisplay, StatusDisplay } from '../../lib/wiki-display.ts';
 
 interface Props {
-  kind?: { id: string; label: string; desc?: string | undefined } | undefined;
-  domains?:
-    | {
-        id: string;
-        label: string;
-        desc?: string | undefined;
-        tone: { bg: string; fg: string };
-        href?: string | undefined;
-      }[]
-    | undefined;
-  status?: { id: string; label: string; desc?: string | undefined; dot: string } | undefined;
+  kind?: KindDisplay | undefined;
+  domains?: DomainDisplay[] | undefined;
+  status?: StatusDisplay | undefined;
   /** Pre-formatted display date (e.g. "2026.05"). */
   updated?: string | undefined;
+  /** Pre-formatted reading time (e.g. "6 min read"). */
+  reading?: string | undefined;
   /** Display strings; pass localized overrides. */
   labels?: { updated?: string | undefined } | undefined;
 }
-const { kind, domains = [], status, updated, labels = {} } = Astro.props;
+const { kind, domains = [], status, updated, reading, labels = {} } = Astro.props;
 const dateLabel = labels.updated ?? 'updated';
-const show = kind !== undefined || domains.length > 0 || status !== undefined;
+const show =
+  kind !== undefined || domains.length > 0 || status !== undefined || updated !== undefined || reading !== undefined;
 ---
 
 {
@@ -47,6 +43,7 @@ const show = kind !== undefined || domains.length > 0 || status !== undefined;
           {dateLabel} {updated}
         </span>
       )}
+      {reading && <span class="date">{reading}</span>}
     </div>
   )
 }
@@ -60,8 +57,8 @@ const show = kind !== undefined || domains.length > 0 || status !== undefined;
     margin: 0 0 1.1rem;
   }
   .date {
-    font: 500 11px/1 var(--font-ui, 'Inter', sans-serif);
-    color: var(--color-ink-faint, #8a8d97);
+    font: 500 11px/1 var(--font-ui);
+    color: var(--color-ink-faint);
     margin-left: 2px;
   }
 </style>

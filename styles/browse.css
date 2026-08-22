@@ -240,6 +240,11 @@
   border-color: var(--wb-text);
   color: var(--wb-bg);
 }
+.wb-root .wb-filters .wb-count {
+  font: 500 12px/1 var(--wb-sans);
+  color: var(--wb-text-muted);
+  margin-left: 6px;
+}
 .wb-root .wb-filters .f-clear {
   font: 500 12px/1 var(--wb-sans);
   color: var(--wb-wine);

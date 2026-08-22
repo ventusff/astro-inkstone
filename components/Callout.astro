@@ -1,16 +1,31 @@
 ---
 /**
- * Callout — five visual variants: note (default), intuition, warn, system,
- * and abstract (the catch-all for summaries, notation and TL;DR boxes).
+ * Callout — the same markup the `> [!tip]` quote syntax renders
+ * (lib/remark-callouts.ts): an <aside class="callout …"> with a title line.
+ * Five variants: note (default), intuition, warn, system, abstract. `title`
+ * replaces the variant's default label; `labels` supplies localized defaults
+ * (the same shape as siteMarkdown's `calloutLabels`).
  */
+type Variant = 'note' | 'intuition' | 'warn' | 'system' | 'abstract';
+
 interface Props {
-  variant?: 'note' | 'intuition' | 'warn' | 'system' | 'abstract' | undefined;
+  variant?: Variant | undefined;
   title?: string | undefined;
+  labels?: Partial<Record<Variant, string>> | undefined;
 }
-const { variant = 'note', title } = Astro.props;
+const { variant = 'note', title, labels = {} } = Astro.props;
+
+const DEFAULT_LABELS: Record<Variant, string> = {
+  note: 'Note',
+  intuition: 'Intuition',
+  warn: 'Warning',
+  system: 'Important',
+  abstract: 'Abstract',
+};
+const heading = title ?? labels[variant] ?? DEFAULT_LABELS[variant];
 ---
 
-<div class:list={['callout', variant !== 'note' && variant]}>
-  {title && <div class="callout-title">{title}</div>}
+<aside class:list={['callout', variant !== 'note' && variant]}>
+  <div class="callout-title">{heading}</div>
   <slot />
-</div>
+</aside>

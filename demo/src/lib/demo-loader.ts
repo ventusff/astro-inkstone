@@ -1,15 +1,16 @@
 /**
  * demo-loader.ts — the site side of the DemoMount contract.
  *
- * The package's DemoMount component renders only the mount markup
+ * The package's DemoMount component renders the mount markup only
  * (`section.demo[data-demo]` with optional canvases and slots); loading and
  * running the interactive module is the site's job, because the modules are
  * site content. This site keeps them under `src/demos/<id>.ts`; each module
- * default-exports `mount(ctx)` and returns a cleanup function.
+ * default-exports `mount(ctx)` and returns a cleanup function, which runs
+ * when the page is left.
  *
  * `import.meta.glob` gives Vite the full module list at build time, so each
- * demo becomes its own lazily-loaded chunk — pages without a demo load none
- * of this beyond the tiny loader itself.
+ * demo is its own lazily-loaded chunk — pages without a demo load none of
+ * this beyond the loader itself.
  */
 
 export interface DemoCtx {
@@ -25,8 +26,9 @@ type DemoModule = { default: (ctx: DemoCtx) => DemoCleanup };
 
 const modules = import.meta.glob<DemoModule>('../demos/**/*.ts');
 
-/** Mount every `[data-demo]` on the page. Call once per page load. */
+/** Mount every `[data-demo]` on the page; cleanups run on pagehide. */
 export function mountAllDemos(): void {
+  const cleanups: (() => void)[] = [];
   for (const el of document.querySelectorAll<HTMLElement>('section.demo[data-demo]')) {
     const id = el.dataset['demo'];
     const stage = el.querySelector<HTMLElement>('.demo-stage');
@@ -36,8 +38,16 @@ export function mountAllDemos(): void {
       console.warn(`[demo-loader] no module for demo id "${id}"`);
       continue;
     }
-    void load().then((mod) =>
-      mod.default({ stage, canvases: [...stage.querySelectorAll('canvas')] }),
-    );
+    load()
+      .then((mod) => {
+        const cleanup = mod.default({ stage, canvases: [...stage.querySelectorAll('canvas')] });
+        if (cleanup) cleanups.push(cleanup);
+      })
+      .catch((err: unknown) => {
+        console.error(`[demo-loader] demo "${id}" failed to load`, err);
+      });
   }
+  window.addEventListener('pagehide', () => {
+    for (const cleanup of cleanups) cleanup();
+  });
 }

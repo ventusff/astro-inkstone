@@ -4,16 +4,10 @@
  * no emoji). Purely presentational: the site resolves the def from its
  * registry and passes it in.
  */
-export interface StatusDotDef {
-  id: string;
-  label: string;
-  desc?: string | undefined;
-  /** Dot color, e.g. "#7d9c6a". */
-  dot: string;
-}
+import type { StatusDisplay } from '../../lib/wiki-display.ts';
 
 interface Props {
-  def: StatusDotDef;
+  def: StatusDisplay;
 }
 const { def } = Astro.props;
 ---
@@ -28,8 +22,8 @@ const { def } = Astro.props;
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    font: 500 11px/1 var(--wb-sans, sans-serif);
-    color: var(--wb-text-dim, #6e6453);
+    font: 500 11px/1 var(--font-ui);
+    color: var(--color-ink-faint);
     white-space: nowrap;
   }
   .dot {

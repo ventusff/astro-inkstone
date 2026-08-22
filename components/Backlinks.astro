@@ -5,27 +5,26 @@
  * (with the matched label highlighted). The site computes the items
  * (e.g. from a wikilink scan) and passes them in.
  */
-export interface BacklinkItem {
-  href: string;
-  title: string;
-  before: string;
-  label: string;
-  after: string;
-}
+import type { BacklinkItem } from '../lib/backlinks.ts';
+
+/** what one row renders: the index's item minus the source id */
+export type BacklinkRow = Pick<BacklinkItem, 'href' | 'title' | 'before' | 'label' | 'after'>;
 
 interface Props {
-  items: BacklinkItem[];
+  items: BacklinkRow[];
   /** Panel heading. Pass a localized string to override. */
   heading?: string | undefined;
   /** Optional secondary heading (e.g. an English subtitle on a localized page). */
   sub?: string | undefined;
+  /** element id, for a skip link or an in-page reference */
+  id?: string | undefined;
 }
-const { items, heading = 'Linked mentions', sub = '' } = Astro.props;
+const { items, heading = 'Linked mentions', sub = '', id } = Astro.props;
 ---
 
 {
   items.length > 0 && (
-    <aside class="backlinks" id="backlinks" aria-label={heading}>
+    <aside class="backlinks" id={id} aria-label={heading}>
       <h2 class="bl-title">
         {heading}
         {sub && <span class="bl-sub">{sub}</span>}
@@ -53,8 +52,8 @@ const { items, heading = 'Linked mentions', sub = '' } = Astro.props;
   .backlinks {
     margin-top: 3.2rem;
     padding: 18px 20px;
-    background: color-mix(in srgb, var(--color-bg-soft, #f3eee0) 70%, transparent);
-    border: 1px solid var(--color-line, #e5e0d3);
+    background: color-mix(in srgb, var(--color-bg-soft) 70%, transparent);
+    border: 1px solid var(--color-line);
     border-radius: 10px;
   }
   .bl-title {
@@ -64,19 +63,19 @@ const { items, heading = 'Linked mentions', sub = '' } = Astro.props;
     margin: 0 0 0.7em;
     font-size: 16.5px;
     font-weight: 650;
-    color: var(--color-ink, #1f2024);
+    color: var(--color-ink);
   }
   .bl-sub {
     font-style: italic;
     font-weight: 400;
     font-size: 12.5px;
-    color: var(--color-ink-faint, #8a8d97);
+    color: var(--color-ink-faint);
   }
   .bl-count {
     margin-left: auto;
-    font: 600 11.5px/1 var(--font-ui, 'Inter', sans-serif);
-    color: var(--color-ink-faint, #8a8d97);
-    border: 1px solid var(--color-line, #e5e0d3);
+    font: 600 11.5px/1 var(--font-ui);
+    color: var(--color-ink-faint);
+    border: 1px solid var(--color-line);
     border-radius: 999px;
     padding: 3px 8px;
   }
@@ -88,27 +87,27 @@ const { items, heading = 'Linked mentions', sub = '' } = Astro.props;
   .bl-item + .bl-item {
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px dotted var(--color-line, #e5e0d3);
+    border-top: 1px dotted var(--color-line);
   }
   .bl-source {
     font-weight: 600;
     font-size: 14px;
-    color: var(--color-ink, #1f2024);
+    color: var(--color-ink);
     text-decoration: none;
     border-bottom: 1px solid transparent;
   }
   .bl-source:hover {
-    color: var(--color-accent, #b6552e);
+    color: var(--color-accent);
     border-bottom-color: currentColor;
   }
   .bl-snippet {
     margin: 0.3em 0 0;
     font-size: 13px;
     line-height: 1.65;
-    color: var(--color-ink-soft, #4a4d57);
+    color: var(--color-ink-soft);
   }
   .bl-snippet .hit {
-    color: var(--color-accent-text, #8f3f1f);
+    color: var(--color-accent-text);
     font-weight: 600;
   }
 </style>

@@ -2,7 +2,7 @@
 /**
  * NoteCard — note card for browse pages: title / description / kind badge /
  * domain chips / status dot / source line / date / locale mirrors / chapter
- * count for collections.
+ * count for collections. Lives on the browse shelf (browse.css, `--wb-*`).
  *
  * Purely presentational: the site resolves registry defs and URLs (e.g. with
  * the `createTaxonomy` helpers from `astro-inkstone/lib/taxonomy`) and passes
@@ -11,6 +11,7 @@
 import DomainChip from './DomainChip.astro';
 import KindBadge from './KindBadge.astro';
 import StatusDot from './StatusDot.astro';
+import type { DomainDisplay, KindDisplay, StatusDisplay } from '../../lib/wiki-display.ts';
 
 export interface NoteCardData {
   /** Canonical note id — emitted on data-* attributes for styling/filter hooks. */
@@ -18,15 +19,9 @@ export interface NoteCardData {
   href: string;
   title: string;
   description?: string | undefined;
-  kind?: { id: string; label: string; desc?: string | undefined } | undefined;
-  domains: {
-    id: string;
-    label: string;
-    desc?: string | undefined;
-    tone: { bg: string; fg: string };
-    href?: string | undefined;
-  }[];
-  status?: { id: string; label: string; desc?: string | undefined; dot: string } | undefined;
+  kind?: KindDisplay | undefined;
+  domains: DomainDisplay[];
+  status?: StatusDisplay | undefined;
   /** Pre-formatted display date (e.g. "2026.05"). */
   updated?: string | undefined;
   /** Chapter count, for multi-chapter collection notes. */
@@ -58,7 +53,7 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
     {note.updated && <span class="date">{note.updated}</span>}
   </div>
   <a class="title" href={note.href}>{note.title}</a>
-  <p class="desc">{note.description}</p>
+  {note.description && <p class="desc">{note.description}</p>}
   <div class="meta">
     {note.domains.map((dom) => <DomainChip def={dom} href={dom.href} />)}
     {note.status && <StatusDot def={note.status} />}
@@ -74,14 +69,14 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
     display: flex;
     flex-direction: column;
     gap: 7px;
-    background: var(--wb-bg-card, #f6f0dc);
-    border: 1px solid var(--wb-border-soft, #e2d9c3);
-    border-radius: 8px;
+    background: var(--wb-bg-card);
+    border: 1px solid var(--wb-border-soft);
+    border-radius: var(--radius);
     padding: 16px 18px;
     transition: border-color 0.15s ease;
   }
   .note-card:hover {
-    border-color: var(--wb-rule, #b8a98a);
+    border-color: var(--wb-rule);
   }
 
   .head {
@@ -90,31 +85,31 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
     gap: 8px;
   }
   .chapters {
-    font: 500 11px/1 var(--wb-sans, sans-serif);
-    color: var(--wb-text-dim, #6e6453);
+    font: 500 11px/1 var(--wb-sans);
+    color: var(--wb-text-dim);
   }
   .date {
     margin-left: auto;
-    font: 500 11px/1 var(--wb-sans, sans-serif);
-    color: var(--wb-text-muted, #968b73);
+    font: 500 11px/1 var(--wb-sans);
+    color: var(--wb-text-muted);
   }
 
   .title {
     font-size: 17.5px;
     font-weight: 600;
     line-height: 1.4;
-    color: var(--wb-text, #2b2622);
+    color: var(--wb-text);
     text-decoration: none;
   }
   .title:hover {
-    color: var(--wb-wine, #7d3a3a);
+    color: var(--wb-wine);
   }
 
   .desc {
     margin: 0;
     font-size: 13.5px;
     line-height: 1.62;
-    color: var(--wb-text-soft, #4a4137);
+    color: var(--wb-text-soft);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -129,22 +124,22 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
     margin-top: 2px;
   }
   .mirror {
-    font: 600 10px/1 var(--wb-sans, sans-serif);
+    font: 600 10px/1 var(--wb-sans);
     letter-spacing: 0.06em;
-    color: var(--wb-text-dim, #6e6453);
-    border: 1px solid var(--wb-border, #d6cbb1);
+    color: var(--wb-text-dim);
+    border: 1px solid var(--wb-border);
     border-radius: 3px;
     padding: 3px 5px;
     text-decoration: none;
   }
   .mirror:hover {
-    color: var(--wb-wine, #7d3a3a);
+    color: var(--wb-wine);
     border-color: currentColor;
   }
 
   .source {
     margin: 0;
-    font: 400 11.5px/1.5 var(--wb-sans, sans-serif);
-    color: var(--wb-text-muted, #968b73);
+    font: 400 11.5px/1.5 var(--wb-sans);
+    color: var(--wb-text-muted);
   }
 </style>

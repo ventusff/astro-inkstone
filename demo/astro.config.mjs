@@ -4,17 +4,15 @@ import mdx from '@astrojs/mdx';
 import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
 
 // The demo consumes the package one directory up via `file:..`; the package's
-// own dependencies come from the REPO-ROOT npm install (Node/Vite resolve
-// from the package's real path — the repo root — and hit the root
-// node_modules; the engine is supplied through the root `workspaces` field).
-// WIKI=1 astro dev → editing mode (the astro-inkbrush CMS activates). The
-// static build never activates it: outside WIKI mode the engine's integration
-// code is not even imported (dynamic import), so the output carries zero CMS
-// bytes. The Markdown dialect and content guard, however, always come from
-// the engine via siteMarkdown — what the editor accepts and what the page
-// renders must be one grammar.
+// own dependencies resolve from the repo-root node_modules (the engine is
+// supplied through the root `workspaces` field). WIKI=1 astro dev is editing
+// mode: the astro-inkbrush integration is imported and mounted. A static
+// build never imports it, so the output carries zero CMS bytes; the Markdown
+// dialect and content guard come from the engine in both modes, through
+// siteMarkdown, so the editor and the page share one grammar.
 const WIKI_MODE = Boolean(process.env.WIKI);
 const { siteMarkdown } = await import('astro-inkstone/lib/markdown-preset');
+const { secureFsDeny } = await import('astro-inkstone/lib/vite-security');
 const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
 
 // Deploy target comes from env: on GitHub Pages the site lives under the
@@ -43,11 +41,11 @@ export default defineConfig({
   trailingSlash: 'ignore',
   integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
 
-  // The whole Markdown pipeline in one line: chapter numbering (hub chapters
+  // The whole Markdown pipeline in one call: chapter numbering (hub chapters
   // read frontmatter `part:` for their §k.n heading numbers), math, callouts,
-  // mermaid, code frames, wikilinks, and the build-failing content guard —
-  // whose autoNumberedHeadings switch rejects hand-typed heading numbers,
-  // because numbering belongs to the build.
+  // mermaid, code frames, :gemoji:, reading time, wikilinks, and the
+  // build-failing content guard, whose autoNumberedHeadings switch rejects
+  // hand-typed heading numbers (numbering belongs to the build).
   markdown: {
     ...siteMarkdown({
       numbering: 'chapters',
@@ -55,6 +53,8 @@ export default defineConfig({
       codeFrame: true,
       mermaid: true,
       callouts: true,
+      gemoji: true,
+      readingTime: true,
       wikiBlocks: WIKI_MODE,
       guard: { autoNumberedHeadings: true },
       wikilinks: {
@@ -66,9 +66,13 @@ export default defineConfig({
     }),
   },
 
+  // An editing host is a permanent dev server: Vite's /@fs route must never
+  // serve the CMS state, env files or key material. The deny list is the
+  // package's; a site adds its own sensitive paths via extraDeny.
   vite: {
     server: {
       allowedHosts: process.env.SITE_HOST ? [process.env.SITE_HOST] : [],
+      ...secureFsDeny(),
     },
   },
 });

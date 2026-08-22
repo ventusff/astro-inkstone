@@ -16,7 +16,7 @@ import Hero from 'astro-inkstone/components/Hero.astro';
 import Part from 'astro-inkstone/components/Part.astro';
 
 <Hero kicker="Reference · the token layer" title="Two-layer palette and themes" meta="one palette · two contexts · both themes hand-set · every text value measured for AA">
-  `styles/tokens.css` is the single source of truth for every color in the system. It is written in two tiers — a **raw palette** of paper-and-ink pigments, and **semantic tokens** built on it — and the semantic tier comes in two contexts, because a wiki has two kinds of page: the column you read, and the shelf you browse.
+  `styles/tokens.css` holds every color the stylesheets and components use — the one exception is a domain's tone pair, which a site's registry supplies as data. It is written in two tiers — a **raw palette** of paper-and-ink pigments, and **semantic tokens** built on it — and the semantic tier comes in two contexts, because a wiki has two kinds of page: the column you read, and the shelf you browse.
 </Hero>
 
 <Part title="The tiers" />
@@ -45,7 +45,7 @@ Tier 2 is what the component layer consumes, and it has two faces:
 | reading column | `--color-*` | 素 `#fbf9f4` | neutral `#1f2024` | 石 burnt orange | note pages, every content component, `base.css` |
 | browse shelf | `--wb-*` | 纸 `#faf6ec` | warm `#2b2622` | 朱 wine red | landing and facet pages, the wiki components, `browse.css` |
 
-The column is the quieter of the two — you read it for an hour. The shelf is warmer and set in a display serif — you glance at it and pick. A page enters the shelf context with one class, `wb-root`, on its body; inside it the chrome tokens (`--color-bg`, `--color-accent`, …) are re-mapped onto the shelf's, so a nav bar written once sits correctly on both grounds. **The component layer may consume only tier 2** — `base.css`, `browse.css` and every component; new rules must not contain a raw color value. That is the package's hard discipline.
+The column is the quieter of the two — you read it for an hour. The shelf is warmer and set in a display serif — you glance at it and pick. A page enters the shelf context with one class, `wb-root`, on its body; inside it the chrome tokens (`--color-bg`, `--color-accent`, …) are re-mapped onto the shelf's, so a nav bar written once sits correctly on both grounds — and so the taxonomy atoms (kind badge, status dot, domain chip), which are written against `--color-*`, read as part of the column on a note page and as part of the shelf on a browse page. **The component layer may consume only tier 2** — `base.css`, `browse.css` and every component; no rule contains a raw color value, and nothing falls back to one. That is the package's hard discipline.
 
 <Part title="Identity and discipline" />
 
@@ -65,7 +65,7 @@ Re-mapping tier 2 onto your own palette is equally supported when your design sy
 
 ## Contrast is audited
 
-Every text-tier value is vetted for WCAG AA on every surface it sits on: small text starts at 4.5:1; an accent used as small text gets an independently darkened **text step** (`--p-shi-text`, `--p-zhe-text`), because a 12px label in the accent color usually sits on the accent's own tint; the faint inks are set at the darkest shade that still reads as faint — `#6a6d74` on the reading ground is 4.9:1, and still 4.5:1 on the soft surface; the dark edition carries its own brightened set, measured against the night grounds. The package ships the measurement as a tool: `scripts/contrast_probe.mjs` walks the rendered demo in a real browser, both themes, and reports every text node under the bar ([[checks#the-contrast-probe]]). Before changing any value, know every surface it sits on.
+Every text-tier value is vetted for WCAG AA on every surface it sits on: small text starts at 4.5:1; an accent used as small text gets an independently darkened **text step** (`--p-shi-text`, `--p-zhe-text`), because a 12px label in the accent color usually sits on the accent's own tint; the faint inks are set at the darkest shade that still reads as faint — `#6a6d74` on the reading ground is 4.9:1, and still 4.5:1 on the soft surface; the code ground is a notch lighter than the paper so the syntax theme's faintest token (comments) clears 4.5:1; the dark edition carries its own brightened set, measured against the night grounds. The package ships the measurement as a tool: `scripts/contrast_probe.mjs` renders the demo in a real browser, both themes and two widths, samples the ground under every text run from pixels and reports every run under the bar ([[checks#the-contrast-probe]]). Before changing any value, know every surface it sits on.
 
 ## Light is the identity
 

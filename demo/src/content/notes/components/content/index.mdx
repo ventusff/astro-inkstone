@@ -20,7 +20,7 @@ import References from 'astro-inkstone/components/References.astro';
 
 ## Callout
 
-Five variants; `title` overrides the built-in label. The [[kitchen-sink]] shows the quote-syntax and raw-HTML spellings of the same visual.
+Five variants; `title` replaces the variant's default label (Note / Intuition / Warning / Important / Abstract — the same defaults the quote syntax uses, localizable through `labels`). The [[kitchen-sink]] shows the quote-syntax and raw-HTML spellings of the same markup.
 
 <Callout variant="intuition" title="When to reach for the component">
   In MDX, when the content is authored inline. The quote syntax covers plain-Markdown files; both render identical markup.
@@ -28,7 +28,7 @@ Five variants; `title` overrides the built-in label. The [[kitchen-sink]] shows 
 
 ## Chip
 
-Inline badges for status and categories: <Chip variant="teal">stable</Chip> <Chip variant="mustard">beta</Chip> <Chip variant="violet">research</Chip> <Chip variant="orange">new</Chip> — or a custom tone for topic palettes: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>custom tone</Chip>
+Inline badges for status and categories, in the four variants `PaperCard` tags and `HubCard` chips share: <Chip variant="teal">stable</Chip> <Chip variant="mustard">beta</Chip> <Chip variant="violet">research</Chip> <Chip variant="orange">new</Chip> — or a custom tone for topic palettes: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>custom tone</Chip>
 
 ## Grid
 
@@ -69,10 +69,10 @@ A markdown list on a vertical rail:
 
 <Stats
   items={[
-    { v: '2', k: 'token tiers' },
-    { v: '23', k: 'components' },
-    { v: '4', k: 'probe viewports' },
-    { v: '0', k: 'build steps' },
+    { value: '2', label: 'token tiers' },
+    { value: '24', label: 'components' },
+    { value: '4', label: 'probe viewports' },
+    { value: '0', label: 'build steps' },
   ]}
 />
 

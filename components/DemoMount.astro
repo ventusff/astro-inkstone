@@ -10,7 +10,9 @@
  *
  * - canvas-based demo: pass `canvas={{w,h}}` (logical pixels, same as the
  *   original <canvas width height>); `stages={n}` renders n side-by-side
- *   canvases for multi-canvas demos.
+ *   canvases for multi-canvas demos. Each canvas is named by the demo's
+ *   title (its fallback content too), so the stage has an accessible name;
+ *   the caption slot carries the description.
  * - DOM demo (no canvas): omit `canvas` — the module builds its own DOM
  *   inside `.demo-stage`.
  *
@@ -36,7 +38,15 @@ const canvases = canvas ? Array.from({ length: stages }) : [];
 <section class="demo" id={id} data-demo={demo}>
   <div class="demo-title">{title}</div>
   <div class:list={['demo-stage', stages > 1 && 'multi', !canvas && 'dom']}>
-    {canvases.map(() => canvas && <canvas width={canvas.w} height={canvas.h}></canvas>)}
+    {
+      canvases.map((_, i) =>
+        canvas && (
+          <canvas width={canvas.w} height={canvas.h} role="img" aria-label={stages > 1 ? `${title} (${i + 1}/${stages})` : title}>
+            {title}
+          </canvas>
+        ),
+      )
+    }
   </div>
   {
     Astro.slots.has('controls') && (

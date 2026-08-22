@@ -1,21 +1,21 @@
 /**
  * remark-heading-attrs — parse a trailing attribute block on markdown
- * headings. Because `{…}` is a JSX expression in MDX, the block is written
- * as trailing INLINE CODE (backticks), which MDX treats as literal text:
+ * headings. `{…}` is a JSX expression in MDX, so the block is written as
+ * trailing INLINE CODE (backticks), which MDX treats as literal text:
  *
  *   ## What is an inkstone? `{#inkstone toc="Inkstone"}`
  *   ### 术语与记号 `{notoc}`
  *
- * Supported attributes:
- *   #id          — explicit anchor id (keeps anchors stable when a heading
- *                  is reworded; CJK headings otherwise slug to CJK anchors)
+ * Attributes:
+ *   #id          — explicit anchor id (stable across rewording; CJK headings
+ *                  otherwise slug to CJK anchors)
  *   toc="…"      — short ToC label (may contain inline math `$…$`)
  *   notoc        — exclude this heading from the ToC
  *
- * The parsed values are stored as hProperties (`id`, `data-toc`,
- * `data-notoc`) so the rehype stage (rehype-chapters) can consume and then
- * strip them. Headings without an explicit id get a slug generated in
- * rehype-chapters.
+ * The block is removed only when it yields at least one attribute; any
+ * other trailing inline code is ordinary heading content. Values are stored
+ * as hProperties (`id`, `data-toc`, `data-notoc`); the numbering preset
+ * consumes and strips them (heading-core.takeHeadingAttrs).
  */
 import type { Heading, InlineCode, Root } from 'mdast';
 import { visit } from 'unist-util-visit';
@@ -46,6 +46,8 @@ export function remarkHeadingAttrs() {
           props[`data-${key}`] = value.replace(/\\"/g, '"');
         } else if (flag !== undefined) props[`data-${flag}`] = true;
       }
+
+      if (Object.keys(props).length === 0) return;
 
       node.children.pop();
       // drop trailing whitespace left on the preceding text node

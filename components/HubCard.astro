@@ -12,9 +12,11 @@
  *
  * `soft` gives the card the secondary surface (an appendix, a side track).
  */
+import type { ChipVariant } from './Chip.astro';
+
 export interface HubChip {
   label: string;
-  variant?: 'teal' | 'mustard' | 'orange' | 'violet' | undefined;
+  variant?: ChipVariant | undefined;
 }
 
 interface Props {

@@ -33,14 +33,14 @@ jobs:
       - name: Install package deps (repo root)
         # The demo consumes the package via `file:..`; the package's own
         # dependencies are provided by this repo-root install.
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
       - name: Install & build demo
         working-directory: demo
         env:
           DEMO_SITE: https://ventusff.github.io
           DEMO_BASE: /astro-inkstone/
         run: |
-          npm install
+          npm ci --no-audit --no-fund
           npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

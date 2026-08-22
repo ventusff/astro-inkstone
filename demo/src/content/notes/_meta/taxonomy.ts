@@ -70,4 +70,4 @@ export type StatusId = (typeof STATUSES)[number]['id'];
 export const STATUS_IDS = STATUSES.map((s) => s.id) as [StatusId, ...StatusId[]];
 
 /** First path segments reserved by browse routes — never valid note ids. */
-export const RESERVED_SLUGS = ['kind', 'domain', 'tag', 'all', 'zh'] as const;
+export const RESERVED_SLUGS = ['kind', 'domain', 'status', 'tag', 'all', 'zh'] as const;

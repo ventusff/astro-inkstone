@@ -1,19 +1,14 @@
 /**
- * The price of "a permanent dev server is the production editing form":
- * Vite's `/@fs` endpoint will serve any file in the workspace as a module,
- * including session secrets, databases and key material. On such a
- * deployment that is not a theoretical concern — leaking the CMS session
- * secret alone is enough to forge sessions and defeat every authorization
- * check built on top of them. So the editing host must deny-list everything
- * the frontend has no business importing.
- *
- * `deny` takes precedence over `allow`; nothing below is ever a legitimate
- * frontend import.
+ * Vite `server.fs` settings for a permanently running editing host. Vite's
+ * `/@fs` route serves any file of the workspace as a module; on a
+ * long-lived dev server that includes the CMS session secret, databases
+ * and key material, so everything the frontend never imports is denied.
+ * `deny` takes precedence over `allow`.
  *
  * Site wiring (inside astro.config, spread into vite.server):
  *   import { secureFsDeny } from 'astro-inkstone/lib/vite-security';
  *   vite: { server: { allowedHosts: [...], ...secureFsDeny() } }
- * Add site-specific sensitive paths via `extraDeny`; never trim the baseline.
+ * `extraDeny` adds site-specific paths; the baseline is never trimmed.
  */
 import type { AstroUserConfig } from 'astro';
 
@@ -28,8 +23,8 @@ export function secureFsDeny(extraDeny: string[] = []): Pick<ViteServerConfig, '
         '.env.*',
         '*.{crt,pem,key,p12,pfx}',
         '**/.git/**',
-        '**/.wiki/**', // CMS session secret and drafts
-        '**/.brain/**', // any co-located app's state directory
+        '**/.wiki/**', // CMS state: session secret, revisions, comments
+        '**/.brain/**', // a co-located app's state directory
         '**/.ssh/**',
         '**/*.db',
         '**/*.db-wal',

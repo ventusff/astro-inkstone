@@ -1,38 +1,47 @@
 /**
- * rehype-chapters — build-time auto numbering + ToC extraction.
+ * rehype-chapters — build-time chapter numbering + ToC extraction: the
+ * "chapters" numbering preset (parts, appendices, § cross-references).
  *
- * Runs BEFORE rehype-katex (so heading text still carries raw TeX in
- * `span.math-inline` nodes) and understands the MDX-flavored hast tree
- * (mdxJsxFlowElement nodes survive until JSX compilation).
+ * Runs before rehype-katex (heading text still carries raw TeX in
+ * `span.math-inline`) and walks the MDX-flavored hast tree (mdxJsxFlowElement
+ * nodes survive until JSX compilation).
  *
- * Responsibilities:
- *  1. `<Part title="Partitioning" zh="第三部" />` markers start a numbered
- *     part; the plugin injects a computed `num` attribute ("III") so the
- *     Part component renders "PART III · Partitioning". `<Part appendix …/>`
- *     switches to letter numbering (§A, §B, …).
- *  2. h2 headings get chapter numbers:
- *       - page without parts:          §1, §2, …
- *       - inside part k:               §k.1, §k.2, …
- *       - inside the appendix part:    §A, §B, …
- *       - a chapter page of a hub note, with frontmatter `part: k` (and no
- *         Part markers):               §k.1, §k.2, …
- *       - before the first part:       unnumbered
- *     The number is injected as `<span class="num">…</span>`; headings in
- *     the source MDX stay number-free (numbering is never hardcoded).
- *  3. Headings without an explicit id get a slug.
- *  4. In-page reference links with literal text `§` (or `§§`) get their text
- *     replaced by the target's computed number (or number + label).
- *  5. `<Hero tocLabel="…" />` contributes an unnumbered ToC row (id "intro").
- *  6. The full ToC tree is exposed via `remarkPluginFrontmatter.toc`.
+ *  1. `<Part title="Partitioning" />` starts a numbered part; the plugin
+ *     injects `num` ("PART III") for the Part component to render, and adds
+ *     a group row to the ToC. `<Part appendix />` switches to letters (§A,
+ *     §B, …; its banner is `title` or the `appendixLabel` option).
+ *  2. h2 headings get chapter numbers, injected as `<span class="num">`:
+ *       - page without parts:            §1, §2, …
+ *       - inside part k:                 §k.1, §k.2, …
+ *       - inside the appendix:           §A, §B, …
+ *       - a hub chapter page (frontmatter `part: k`, no Part markers):
+ *                                        §k.1, §k.2, …
+ *       - before the first part:         unnumbered
+ *     Frontmatter `chapters: false` switches numbering off for the page.
+ *  3. Every h2/h3 gets its id (heading-core.assignHeadingId) and a ToC row
+ *     unless marked `notoc`; `toc="…"` labels the row.
+ *  4. In-page links whose text is `§` (or `§§`) get the target's number (or
+ *     number + label).
+ *  5. `<Hero tocLabel="…" />` adds an unnumbered ToC row (id "intro").
+ *  6. The ToC tree is exposed as `remarkPluginFrontmatter.toc`.
  */
 import type { Element, Root } from 'hast';
 import type { VFile } from 'vfile';
 
-import type { TocData, TocItem } from './toc-types';
+import type { TocData, TocItem } from './toc-types.ts';
 
-import { type AnyNode, headingText, slugify } from './heading-core';
+import {
+  type AnyNode,
+  assignHeadingId,
+  headingText,
+  letter,
+  numberNode,
+  roman,
+  slugify,
+  takeHeadingAttrs,
+} from './heading-core.ts';
 
-export { slugify }; // compatibility re-export: this module has always been its import site
+export { roman, slugify };
 
 /* ------------------------------------------------------------------ */
 /* minimal structural types for MDX JSX nodes (avoid extra deps)      */
@@ -48,39 +57,6 @@ interface MdxJsxFlowElement {
   children: unknown[];
 }
 
-
-/* ------------------------------------------------------------------ */
-const ROMAN = [
-  '',
-  'I',
-  'II',
-  'III',
-  'IV',
-  'V',
-  'VI',
-  'VII',
-  'VIII',
-  'IX',
-  'X',
-  'XI',
-  'XII',
-  'XIII',
-  'XIV',
-  'XV',
-  'XVI',
-  'XVII',
-  'XVIII',
-  'XIX',
-  'XX',
-] as const;
-
-export function roman(n: number): string {
-  return ROMAN[n] ?? String(n);
-}
-
-function letter(n: number): string {
-  return String.fromCharCode(64 + n); // 1 → A
-}
 
 function jsxAttr(node: MdxJsxFlowElement, name: string): string | boolean | undefined {
   const attr = node.attributes.find(
@@ -161,23 +137,10 @@ export function rehypeChapters(options: ChaptersOptions = {}) {
           // neither a chapter nor a ToC row
           if (el.tagName === 'section' && el.properties?.['dataFootnotes'] !== undefined) continue;
           if (el.tagName === 'h2' || el.tagName === 'h3') {
-            el.properties ??= {};
-            const props = el.properties;
-            const label0 = props['dataToc'];
-            const notoc = props['dataNotoc'] !== undefined;
-            delete props['dataToc'];
-            delete props['dataNotoc'];
-
+            const props = (el.properties ??= {});
+            const { tocLabel, notoc } = takeHeadingAttrs(props);
             const text = headingText(el);
-            let id = typeof props['id'] === 'string' ? props['id'] : '';
-            if (id === '') {
-              const base = slugify(text);
-              id = base;
-              let i = 2;
-              while (usedIds.has(id)) id = `${base}-${i++}`;
-              props['id'] = id;
-            }
-            usedIds.add(id);
+            const id = assignHeadingId(props, text, usedIds, file.path ?? '(unknown file)');
 
             let num = '';
             if (el.tagName === 'h2' && numbering) {
@@ -190,21 +153,10 @@ export function rehypeChapters(options: ChaptersOptions = {}) {
             }
             if (num !== '') {
               numbers[id] = num;
-              el.children.unshift({
-                type: 'element',
-                tagName: 'span',
-                properties: { className: ['num'] },
-                children: [{ type: 'text', value: num }],
-              });
+              el.children.unshift(numberNode(num));
             }
             if (!notoc) {
-              items.push({
-                kind: 'entry',
-                depth: el.tagName === 'h2' ? 2 : 3,
-                id,
-                num,
-                label: typeof label0 === 'string' && label0 !== '' ? label0 : text,
-              });
+              items.push({ kind: 'entry', depth: el.tagName === 'h2' ? 2 : 3, id, num, label: tocLabel ?? text });
             }
             continue;
           }

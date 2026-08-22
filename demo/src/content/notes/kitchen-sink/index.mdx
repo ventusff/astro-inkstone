@@ -16,15 +16,15 @@ import Callout from 'astro-inkstone/components/Callout.astro';
 import Hero from 'astro-inkstone/components/Hero.astro';
 import Part from 'astro-inkstone/components/Part.astro';
 
-<Hero kicker="Reference · the Markdown pipeline, performed" title="Kitchen sink" tocLabel="Intro · why a sink" meta="4 parts · every siteMarkdown switch · the guard's rejections listed at the end">
-  Every element of the Markdown pipeline performs once on this page: inline marks, wikilinks, tables that turn into cards, callouts in three spellings, math, code frames, diagrams, GFM extras. That the page builds at all is the demonstration — the content guard rejects every malformed spelling listed at the end, so what you see is what the dialect accepts.
+<Hero kicker="Reference · the Markdown pipeline, performed" title="Kitchen sink" tocLabel="Intro · why a sink" meta="4 parts · every switch this site turns on · the guard's rejections listed at the end">
+  Every element of this site's Markdown pipeline performs once on this page: inline marks, wikilinks, tables that turn into cards, callouts in three spellings, math, code frames, diagrams, emoji shortcodes, GFM extras — and the reading time in the strip above is the pipeline's too. That the page builds at all is the demonstration: the content guard rejects every malformed spelling listed at the end, so what you see is what the dialect accepts. Two switches this site leaves off — the `sections` numbering preset and the `base` sub-path prefix — are described in [[getting-started#the-markdown-pipeline-one-line|the guide]].
 </Hero>
 
 <Part title="Text" />
 
 ## Inline marks
 
-Emphasis parsing is CJK-friendly: **bold closes even against Chinese punctuation** — `**报文。**同时` renders as **报文。**同时, not as literal asterisks. *Italic*, ~~strikethrough~~ and `inline code` work as usual. Characters inside inline code take part in no parsing, so backticks are the safe way to *show* syntax: `**`, `$…$` and `> [!note]` all appear literally. To show an asterisk in prose, escape it — \*like this\* stays plain.
+Emphasis parsing is CJK-friendly: **bold closes even against Chinese punctuation** — `**报文。**同时` renders as **报文。**同时, not as literal asterisks. *Italic*, ~~strikethrough~~ and `inline code` work as usual; with the `gemoji` switch a shortcode such as `:sparkles:` renders as :sparkles:. Characters inside inline code take part in no parsing, so backticks are the safe way to *show* syntax: `**`, `$…$` and `> [!note]` all appear literally. To show an asterisk in prose, escape it — \*like this\* stays plain.
 
 ## Wikilinks
 
@@ -52,9 +52,14 @@ Default titles are English; a site swaps the whole set through `siteMarkdown`'s 
 First, the Obsidian/GitHub quote syntax (available with `callouts: true`, works in plain Markdown files too):
 
 > [!tip] Why three spellings
-> The quote syntax serves plain Markdown and inbox-imported notes; the component serves MDX; raw HTML is the shared substrate beneath both — all three render the same CSS classes and are visually identical.
+> The quote syntax serves plain Markdown and inbox-imported notes; the component serves MDX; raw HTML is the shared substrate beneath both — all three render the same `<aside class="callout …">` markup.
 
-Second, the package component in MDX (`astro-inkstone/components/Callout.astro`, imported by path):
+Obsidian's fold marker is honoured — `> [!note]-` renders collapsed, `> [!note]+` open:
+
+> [!note]- A folded note
+> Click the title to open it. Folded callouts render as `<details>` with the title as their `<summary>`.
+
+Second, the package component in MDX (`astro-inkstone/components/Callout.astro`, imported by path). Without a `title` it shows the variant's default label, the same one the quote syntax uses:
 
 <Callout variant="warn" title="Component props do not render markdown">
   The title prop is a plain string — no asterisks or dollar signs in there. The content guard's renderedProps whitelist exists precisely to police this.

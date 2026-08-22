@@ -18,9 +18,9 @@
   <img alt="astro-inkstone 示范站(浅色 / 深色)" src=".github/assets/demo-preview.png" width="920">
 </p>
 
-**Inkstone(砚)**把文档站 / wiki 站的「观感」整体打包:设计 token、久经真实站点
-打磨的内容样式、一套组件、一行接入的 Markdown 管线。属于你自己的部分——品牌色、
-布局、路由——依然完全归你,其余的一切拿来即用。
+**Inkstone(砚)**把文档站 / wiki 站的「观感」整体打包:设计 token、内容样式表、
+一套组件、一行接入的 Markdown 管线。属于你自己的部分——品牌色、布局、路由——
+依然完全归你,其余的一切拿来即用。
 
 它与 [**astro-inkbrush**](https://github.com/ventusff/astro-inkbrush)(笔)配套:
 一个极小的、以 git 为底的 CMS,让你在页面上原地编辑同一份内容。两者合用,得到一个
@@ -31,17 +31,18 @@
 - 🎨 **两层设计 token、两套语境** —— 纸张与颜料盒的裸色板(`--p-*`:朱、石、
   赭、黛、紫)喂给两套语义语境:**阅读列**(`--color-*`,偏冷的纸、一种强调色,
   为一小时的阅读而设)与**导览书架**(`--wb-*`,暖纸、展示衬线、酒红字标,
-  给落地页与分类页)。覆盖任意一层即可整站换肤;每一种文字色都在它**实际渲染
-  的底**上实测 WCAG AA(`scripts/contrast_probe.mjs`,双主题)。
+  给落地页与分类页)。覆盖任意一层即可整站换肤;每一段渲染出来的文字都在它
+  **实际所在的像素**上实测 WCAG AA(`scripts/contrast_probe.mjs`,双主题)。
 - 🌗 **克制的主题机制** —— 浅色是身份;深色完整内置,但只经
   `[data-theme='dark']` 激活,切换权完全在你的开关手里(不读
   `prefers-color-scheme`,不会被系统抢答)。
-- 📖 **见过世面的内容样式表** —— 长文 wiki 的阅读列:衬线正文、章节横线、
-  代码框(标题栏 / 复制 / 折叠 / 行标注 / diff·focus·词高亮)、窄容器下自动折成
-  卡片的表格(纯 CSS 容器查询)、callout、图组、学术论文卡、hub 卡片与阅读路径、
-  文献列表,以及一键 Ctrl+P 出干净 PDF 的打印样式。另有 `browse.css`:书架——
-  版头、带横线的书架、卡片栅格、状态图例、即时过滤、标签云。
-- 🧩 **23 个 Astro 组件** —— `Hero`、`Part`、`PartHero`、`Callout`、`Steps`、
+- 📖 **两张样式表,一种观感** —— `base.css` 是长文 wiki 的阅读列:衬线正文、
+  章节横线、代码框(标题栏 / 复制 / 折叠 / 行标注 / diff·focus·词高亮)、窄容器下
+  自动折成卡片的表格(纯 CSS 容器查询)、callout(含折叠)、图组、学术论文卡、
+  hub 卡片与阅读路径、文献列表、减少动效的处理,以及一键 Ctrl+P 出干净 PDF 的
+  打印样式。`browse.css` 是书架——版头、带横线的书架、卡片栅格、状态图例、
+  即时过滤、标签云。
+- 🧩 **24 个 Astro 组件** —— `Hero`、`Part`、`PartHero`、`Callout`、`Steps`、
   `Grid`、`PaperCard`、`HubCard`、`Stats`、`LocalToc`、`Backlinks`、
   `LocalGraph`(侧栏里本篇的一跳链接邻域)、wiki 多维导览组件(`NoteCard`、
   `FacetNav`、`TaxonomyLine`……)等。纯展示、token 驱动:自动跟随你的色板。
@@ -57,9 +58,10 @@
   中西文混排的阅读时长统计、代码字体子集(Maple Mono CN)里汉字恰占两格。
 - 🔍 **搜索内置** —— 构建期索引端点工厂 + 零依赖的轻量客户端。
 - 🩺 **渲染层体检(两道)** —— `ui_probe` 用无头 Chrome 加载构建产物的每一页、
-  四种视口宽度,横向溢出 / 无样式类 / 死锚点 / 缺 alt / 标题跳级,任一命中即
-  CI 红灯;`contrast_probe` 对每段文字采样它实际渲染的底色、双主题逐一算
-  WCAG 对比度,低于 AA 即红灯。
+  四种视口宽度,横向溢出 / 无样式类 / 死锚点 / 缺 alt / 标题跳级 / 重复 id /
+  悬空的 aria-controls,任一命中即 CI 红灯;`contrast_probe` 从像素上采样每段
+  渲染文字(HTML、SVG、生成文字)所在的底色,双主题、两种宽度逐一算 WCAG
+  对比度,低于 AA 即红灯。库本身有单元测试(`npm test`)。
 - 🪶 **零构建** —— 纯 TypeScript 与 CSS 源码,由站点自己的 Vite 直接消费,
   像站点其余部分一样按 commit 锁定。
 
@@ -113,8 +115,8 @@ export default defineConfig({
 
 布局、导航、路由与部署归站点自己——示范站给出一套完整参考实现
 (暖纸落地书架与分类页、带章节栏的 hub 笔记、跟随阅读位置的侧栏目录与其下的
-本篇链接小图、⌘K 搜索、中文镜像路由,以及 `deploy/` 下的静态站 + 编辑机双形态
-部署骨架)。
+本篇链接小图、⌘K 搜索、中文镜像路由)。编辑机的部署形态随引擎一起写在
+[astro-inkbrush 的手册](https://github.com/ventusff/astro-inkbrush/blob/main/docs/manual.zh-CN.md)里。
 
 ## 三者分工
 

@@ -14,10 +14,15 @@
  *   </PaperCard>
  *
  * pain/diff are SLOTS (not props) so markdown & math keep working inside.
+ * alias / full / meta may contain inline `$…$` (e.g. "$\alpha$-Net"),
+ * rendered at build time; everything else is escaped.
  */
+import type { ChipVariant } from './Chip.astro';
+import { renderTocLabel } from '../lib/toc.ts';
+
 export interface PaperTag {
   label: string;
-  variant?: 'teal' | 'mustard' | 'violet' | undefined;
+  variant?: ChipVariant | undefined;
   /** custom category color (e.g. one tone per method family) */
   tone?: { bg: string; fg: string } | undefined;
 }
@@ -34,10 +39,6 @@ interface Props {
   id?: string | undefined;
 }
 const { alias, full, meta, tags = [], links = [], id } = Astro.props;
-
-// alias / full / meta may contain inline `$…$` (e.g. "$\alpha$-Net") — rendered
-// at build time; everything else is escaped.
-import { renderTocLabel } from '../lib/toc';
 ---
 
 <article class="paper" id={id}>

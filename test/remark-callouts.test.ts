@@ -1,0 +1,42 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+import { remarkCallouts } from '../lib/remark-callouts.ts';
+
+const quote = (first: string, more = '') => ({
+  type: 'root',
+  children: [{ type: 'blockquote', children: [{ type: 'paragraph', children: [{ type: 'text', value: first + more }] }] }],
+});
+type Node = { type: string; data?: { hName?: string; hProperties?: Record<string, unknown> }; children: Node[]; value?: string };
+
+test('the marker becomes an aside with a title line; the variant keyword maps to its class', () => {
+  const tree = quote('[!tip] Why\n', 'body');
+  remarkCallouts()(tree as never);
+  const bq = tree.children[0] as unknown as Node;
+  assert.equal(bq.data?.hName, 'aside');
+  assert.deepEqual(bq.data?.hProperties?.['className'], ['callout', 'intuition']);
+  assert.equal(bq.children[0]!.data?.hName, 'div');
+  assert.equal(bq.children[0]!.children[0]!.value, 'Why');
+  assert.equal(bq.children[1]!.children[0]!.value, 'body');
+});
+
+test('default and localized labels; unknown keywords are left alone', () => {
+  const tree = quote('[!warn]\n', 'careful');
+  remarkCallouts({ labels: { warn: '注意' } })(tree as never);
+  assert.equal((tree.children[0] as unknown as Node).children[0]!.children[0]!.value, '注意');
+  const other = quote('[!custom] x');
+  remarkCallouts()(other as never);
+  assert.equal((other.children[0] as unknown as Node).data, undefined);
+});
+
+test('the fold marker renders a details/summary, closed or open', () => {
+  const closed = quote('[!note]- Folded\n', 'hidden');
+  remarkCallouts()(closed as never);
+  const c = closed.children[0] as unknown as Node;
+  assert.equal(c.data?.hName, 'details');
+  assert.equal(c.data?.hProperties?.['open'], undefined);
+  assert.equal(c.children[0]!.data?.hName, 'summary');
+  const open = quote('[!note]+ Open\n', 'shown');
+  remarkCallouts()(open as never);
+  assert.equal((open.children[0] as unknown as Node).data?.hProperties?.['open'], true);
+});

@@ -1,30 +1,37 @@
 #!/usr/bin/env python3
-"""Build the CJK monospace font subset used for code blocks (fixed charset).
+"""Build the CJK monospace font subset used for code blocks.
 
-Box diagrams inside code blocks only align if a Hanzi is exactly two
-character cells wide and Latin and Hanzi come from the same font. Maple Mono
-CN satisfies both (Latin 600, Hanzi 1200, box drawing/arrows 600, in
-1/1000 em units), but the full font is tens of MB — this script cuts a
-self-hostable subset.
+Box diagrams inside code blocks align only when a Hanzi is exactly two
+character cells wide and Latin and Hanzi come from one font. Maple Mono CN
+satisfies both (Latin 600, Hanzi 1200, box drawing 600, in 1/1000 em units);
+the full font is tens of MB, this script cuts the self-hosted subset.
 
-The recipe is FIXED so one artifact serves every site:
-  1. the full printable ASCII range 0x20-0x7e;
-  2. a whitelist of box drawing / arrows / geometry / common symbols /
-     CJK punctuation (SYMBOL_WHITELIST below);
-  3. the 3500 most common Hanzi from the Table of General Standard Chinese
-     Characters, level 1 (checked-in file hanzi-3500.txt — no network needed);
-  4. the union of every character appearing in *.md / *.mdx files under the
-     directories listed in an optional local manifest (see CONTENT_DIRS) —
-     guarantees existing content has no missing glyphs.
+The recipe is fixed and lives entirely in the repository, so the artifact is
+reproducible from a checkout plus the pinned source font:
+  1. the printable ASCII range 0x20-0x7e;
+  2. SYMBOL_WHITELIST — box drawing, arrows, geometry, common symbols, CJK
+     punctuation;
+  3. the 3500 level-1 characters of the Table of General Standard Chinese
+     Characters (hanzi-3500.txt);
+  4. extra-chars.txt — every further character the subset carries, one
+     `U+XXXX` per line. `--scan <dir>…` extends it with the characters found
+     in *.md / *.mdx content (those the source font has; the rest are
+     reported), and that change is committed like any other.
 
-Font source: a locally installed Maple Mono CN Regular (the "Normal NL NF CN"
-build — no ligatures, with CJK — works well); set MAPLE_TTF to point at a
-specific file.
+The source is pinned by SHA-256 (SOURCE below). A different file is refused
+unless `--any-source` is given, which prints the file's hash for re-pinning.
+A recipe character the source lacks is an error, not a warning.
 
-Usage:   <venv>/bin/python fonts/build_font_subset.py   # venv with fonttools + brotli
-Output:  fonts/MapleMonoCN-subset.woff2 (committed to git)
+Usage:
+  <venv>/bin/python fonts/build_font_subset.py [--scan DIR ...] [--any-source]
+  MAPLE_TTF=/path/to/MapleMono...CN-Regular.ttf  overrides source discovery
+Needs: fonttools, brotli.   Output: fonts/MapleMonoCN-subset.woff2
 """
+from __future__ import annotations
+
+import argparse
 import glob
+import hashlib
 import os
 import pathlib
 import sys
@@ -35,108 +42,128 @@ from fontTools.ttLib import TTFont
 HERE = pathlib.Path(__file__).resolve().parent
 OUT = HERE / 'MapleMonoCN-subset.woff2'
 HANZI_FILE = HERE / 'hanzi-3500.txt'
+EXTRA_FILE = HERE / 'extra-chars.txt'
 
-# -- recipe item 4: content scan directories (local manifest, not tracked) --
-# Every *.md / *.mdx under each listed directory is scanned recursively
-# (node_modules skipped) and every character found joins the subset, so
-# existing content never falls back to a system font.
-# The manifest lives at fonts/content-dirs.local.txt (gitignored; one
-# absolute path per line, `#` starts a comment) — content-tree layouts differ
-# per machine and per user, so they do not belong in the repository.
-# If the manifest is missing or empty this recipe item is skipped (items 1-3
-# already cover ordinary CJK documents). A listed directory that does not
-# exist on this machine only warns, never aborts.
-DIRS_FILE = HERE / 'content-dirs.local.txt'
-CONTENT_DIRS = []
-if DIRS_FILE.exists():
-    for line in DIRS_FILE.read_text(encoding='utf-8').splitlines():
-        line = line.strip()
-        if line and not line.startswith('#'):
-            CONTENT_DIRS.append(line)
+# the pinned source: Maple Mono "Normal NL NF CN" Regular, upstream release 7.9
+SOURCE = {
+    'name': 'MapleMonoNormalNL-NF-CN-Regular.ttf',
+    'version': '7.900',
+    'sha256': '446ba8586f8c99fc044da4b64b114028799c774cd07112b5cb7027bb551192f0',
+}
 
-# -- recipe item 2: symbol whitelist -----------------------------------------
-# Light box drawing plus: heavy box drawing (┏┓┗┛┃━ family), diagonals ╱╲╳,
-# shade/half blocks ░▒▓█▀▄▌▐, double arrows ⇐⇒⇑⇓⇔, filled/hollow triangles
-# ▶◀▷◁△▽, stars ★☆, common typographic symbols •‣◦№§†‡‰¶©®™°±µ÷≈≠≤≥∞ and
-# fullwidth bracket extras 〔〕〖〗.
+# recipe item 2: light and heavy box drawing, diagonals, shade blocks, arrows
+# and triangles, geometry, common typographic symbols, fullwidth punctuation
 SYMBOL_WHITELIST = (
-    # -- light box drawing, geometry, CJK punctuation --
     '─│┌┐└┘├┤┬┴┼═║╔╗╚╝╠╣╦╩╬╭╮╯╰'
     '▼▲►◄→←↑↓↕↔■□●○◆◇×✓✗'
     '…—–·、。,;:?!「」『』()【】《》〈〉""' "''" '　'
-    # -- heavy box drawing and diagonals --
     '┏┓┗┛┃━┣┫┳┻╋╱╲╳'
-    # -- shade and half blocks (terminal captures / progress bars) --
     '░▒▓█▀▄▌▐'
-    # -- arrows and triangles --
     '⇐⇒⇑⇓⇔↖↗↘↙▶◀▷◁△▽'
-    # -- common symbols --
-    '•‣◦№§†‡‰¶©®™°±µ÷≈≠≤≥∞★☆〔〕〖〗'
+    '•‣◦№§†‡‰¶©®™°±µ÷≈≠≤≥∞〔〕〖〗'
 )
 
 
-def collect_chars() -> set[str]:
-    # 1. printable ASCII
-    chars = set(chr(i) for i in range(0x20, 0x7F))
-    # 2. symbol whitelist
+def base_chars() -> set[str]:
+    """recipe items 1-3"""
+    chars = {chr(i) for i in range(0x20, 0x7F)}
     chars.update(SYMBOL_WHITELIST)
-    # 3. the level-1 3500 common Hanzi (checked-in file; `#` starts a comment)
     if not HANZI_FILE.is_file():
-        sys.exit(f'missing {HANZI_FILE} — it ships with the repository; if it '
-                 'is really gone, re-download level-1.txt from the source '
-                 'repo named in its header comment.')
+        sys.exit(f'missing {HANZI_FILE} (it ships with the repository)')
     for line in HANZI_FILE.read_text(encoding='utf-8').splitlines():
         if not line.startswith('#'):
             chars.update(line.strip())
-    # 4. scan of existing content
-    n_files = n_skipped = 0
-    for d in CONTENT_DIRS:
+    return chars
+
+
+def read_extra() -> set[str]:
+    """recipe item 4"""
+    chars: set[str] = set()
+    if not EXTRA_FILE.is_file():
+        return chars
+    for n, line in enumerate(EXTRA_FILE.read_text(encoding='utf-8').splitlines(), 1):
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        token = line.split()[0]
+        if not token.startswith('U+'):
+            sys.exit(f'{EXTRA_FILE}:{n}: expected "U+XXXX", got {line!r}')
+        chars.add(chr(int(token[2:], 16)))
+    return chars
+
+
+def write_extra(chars: set[str]) -> None:
+    head = [
+        '# Recipe item 4 of fonts/build_font_subset.py: characters beyond ASCII, the',
+        '# symbol whitelist and the 3500 common Hanzi that the subset also carries.',
+        '# One character per line as U+XXXX plus the glyph; `#` starts a comment.',
+        '# Maintained by `build_font_subset.py --scan <dir>…`, which appends every',
+        '# character found in *.md / *.mdx content that the source font has.',
+    ]
+    lines = []
+    for c in sorted(chars):
+        cp = ord(c)
+        printable = not (0x300 <= cp <= 0x36F or cp in (0x200B, 0xFFFD))
+        lines.append(f'U+{cp:04X} {c}' if printable else f'U+{cp:04X}')
+    EXTRA_FILE.write_text('\n'.join(head + lines) + '\n', encoding='utf-8')
+
+
+def scan_content(dirs: list[str]) -> set[str]:
+    chars: set[str] = set()
+    for d in dirs:
         root = pathlib.Path(d)
         if not root.is_dir():
-            print(f'warning: directory missing, skipped {d}', file=sys.stderr)
-            continue
+            sys.exit(f'--scan: not a directory: {d}')
         for pattern in ('*.md', '*.mdx'):
             for f in root.rglob(pattern):
                 if 'node_modules' in f.parts:
                     continue
-                try:
-                    chars.update(f.read_text(encoding='utf-8'))
-                    n_files += 1
-                except OSError as e:
-                    n_skipped += 1
-                    print(f'warning: unreadable, skipped {f} ({e})', file=sys.stderr)
-                except UnicodeDecodeError:
-                    n_skipped += 1
-                    print(f'warning: not UTF-8, skipped {f}', file=sys.stderr)
-    print(f'content scan: {n_files} files, {n_skipped} skipped')
-    # control characters and whitespace stay out (except 0x20 space)
+                chars.update(f.read_text(encoding='utf-8'))
     return {c for c in chars if ord(c) >= 0x20 and c not in '\r\n\t'}
 
 
 def find_source_ttf() -> str:
     src = os.environ.get('MAPLE_TTF') or next(iter(
-        glob.glob(str(pathlib.Path.home()
-                      / '.local/share/fonts/**/MapleMono*CN-Regular.ttf'),
-                  recursive=True)
-        + glob.glob('/usr/share/fonts/**/MapleMono*CN-Regular.ttf',
-                    recursive=True)), None)
+        glob.glob(str(pathlib.Path.home() / '.local/share/fonts/**' / SOURCE['name']), recursive=True)
+        + glob.glob(f"/usr/share/fonts/**/{SOURCE['name']}", recursive=True)), None)
     if not src:
-        sys.exit('no Maple Mono CN Regular ttf found — set '
-                 'MAPLE_TTF=/path/to/MapleMono...CN-Regular.ttf')
+        sys.exit(f"source font not found — install {SOURCE['name']} (Maple Mono {SOURCE['version']}) "
+                 'or set MAPLE_TTF=/path/to/it')
     return src
 
 
 def main() -> None:
-    src = find_source_ttf()
-    chars = collect_chars()
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('--scan', nargs='+', metavar='DIR', help='extend extra-chars.txt with content characters')
+    ap.add_argument('--any-source', action='store_true', help='accept a source font other than the pinned one')
+    args = ap.parse_args()
 
+    src = find_source_ttf()
+    digest = hashlib.sha256(pathlib.Path(src).read_bytes()).hexdigest()
+    if digest != SOURCE['sha256']:
+        if not args.any_source:
+            sys.exit(f'{src}: sha256 {digest} is not the pinned source ({SOURCE["sha256"]}); '
+                     'pass --any-source to build from it anyway')
+        print(f'warning: building from an unpinned source (sha256 {digest})', file=sys.stderr)
     font = TTFont(src)
     cmap = font.getBestCmap()
-    have = [ord(c) for c in chars if ord(c) in cmap]
+
+    base = base_chars()
+    extra = read_extra()
+    if args.scan:
+        found = scan_content(args.scan) - base - extra
+        absent = sorted(c for c in found if ord(c) not in cmap)
+        added = {c for c in found if ord(c) in cmap}
+        extra |= added
+        write_extra(extra)
+        print(f'--scan: {len(added)} characters added to {EXTRA_FILE.name}'
+              + (f'; {len(absent)} not in the source font, left out: {"".join(absent)}' if absent else ''))
+
+    chars = base | extra
     missing = sorted(c for c in chars if ord(c) not in cmap)
     if missing:
-        print(f'characters absent from the source font ({len(missing)}, '
-              f'left out): {"".join(missing[:50])}', file=sys.stderr)
+        sys.exit(f'{len(missing)} recipe characters are absent from the source font: '
+                 f'{"".join(missing)}\nremove them from the recipe or pin a source that has them')
 
     opts = subset.Options()
     opts.flavor = 'woff2'
@@ -146,11 +173,11 @@ def main() -> None:
     opts.hinting = False
     opts.desubroutinize = True
     sub = subset.Subsetter(options=opts)
-    sub.populate(unicodes=have)
+    sub.populate(unicodes=[ord(c) for c in chars])
     sub.subset(font)
     font.flavor = 'woff2'
     font.save(OUT)
-    print(f'{OUT}: {len(have)} characters, {OUT.stat().st_size // 1024} KB (source {src})')
+    print(f'{OUT.name}: {len(chars)} characters, {OUT.stat().st_size // 1024} KB (source {src})')
 
 
 if __name__ == '__main__':

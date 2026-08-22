@@ -52,8 +52,10 @@ interface Props {
   tocDepth?: 2 | 3;
   hub?: HubNav | undefined;
   lang?: LangNav | undefined;
+  /** accessible names of the two landmarks, in the page's language */
+  labels: { contents: string; languages: string };
 }
-const { brand, brandHref, subtitle, toc, tocDepth = 2, hub, lang } = Astro.props;
+const { brand, brandHref, subtitle, toc, tocDepth = 2, hub, lang, labels } = Astro.props;
 
 const entries = toc.items.filter((i) => i.kind === 'entry');
 const subEntries = entries.filter((e) => e.depth === 2);
@@ -79,14 +81,14 @@ const subEntries = entries.filter((e) => e.depth === 2);
   </a>
   {
     lang && lang.langs.length > 1 && (
-      <div class="lang-toggle" role="group" aria-label="Language toggle">
+      <div class="lang-toggle" role="group" aria-label={labels.languages}>
         {lang.langs.map((l) =>
           l.current ? <span class="active">{l.label}</span> : <a href={l.href}>{l.label}</a>,
         )}
       </div>
     )
   }
-  <nav aria-label="Contents">
+  <nav aria-label={labels.contents}>
     {
       hub ? (
         <ul class="toc">

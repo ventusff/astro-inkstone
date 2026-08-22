@@ -1,13 +1,15 @@
 /**
  * Obsidian/GitHub-style callout blockquote syntax → the same markup the
- * <Callout> component renders:
+ * <Callout> component renders (`<aside class="callout …">` with a
+ * `.callout-title`), so plain Markdown — including `.md` notes imported from
+ * an inbox — gets the same visual as MDX:
  *
  *   > [!tip] Intuition
  *   > body…
  *
- * Shares one CSS surface with the JSX component (`.callout.intuition` etc.),
- * so plain Markdown — including `.md` notes imported from an inbox — gets the
- * same visual as MDX.
+ * Obsidian's fold marker is honoured: `> [!note]-` renders as a collapsed
+ * `<details class="callout">` whose `<summary>` is the title, `> [!note]+`
+ * as the same details open.
  *
  * Options: `{ labels }` overrides the default title shown when the callout
  * has no explicit title, per variant keyword:
@@ -58,7 +60,7 @@ export interface CalloutOptions {
   labels?: Partial<Record<string, string>>;
 }
 
-const MARK = /^\[!(\w+)\]([+-]?)\s*([^\n]*)\n?/;
+const MARK = /^\[!(\w+)\]([+-]?)[ \t]*([^\n]*)\n?/;
 
 export function remarkCallouts(options: CalloutOptions = {}) {
   const labels: Record<string, string> = { ...DEFAULT_LABELS };
@@ -76,6 +78,7 @@ export function remarkCallouts(options: CalloutOptions = {}) {
       const kind = (m[1] ?? '').toLowerCase();
       const cls = VARIANT_CLASS[kind];
       if (!cls) return;
+      const fold = m[2] === '-' ? 'closed' : m[2] === '+' ? 'open' : null;
 
       const title = (m[3] ?? '').trim() || labels[kind] || kind;
       firstText.value = firstText.value.slice(m[0].length);
@@ -88,7 +91,7 @@ export function remarkCallouts(options: CalloutOptions = {}) {
       const titleNode: Paragraph = {
         type: 'paragraph',
         data: {
-          hName: 'div',
+          hName: fold ? 'summary' : 'div',
           hProperties: { className: ['callout-title'] },
         },
         children: [{ type: 'text', value: title }],
@@ -96,9 +99,10 @@ export function remarkCallouts(options: CalloutOptions = {}) {
       node.children.unshift(titleNode);
       node.data = {
         ...node.data,
-        hName: 'aside',
+        hName: fold ? 'details' : 'aside',
         hProperties: {
           className: cls === 'note' ? ['callout'] : ['callout', cls],
+          ...(fold === 'open' ? { open: true } : {}),
         },
       };
     });

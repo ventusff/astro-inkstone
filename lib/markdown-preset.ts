@@ -32,16 +32,16 @@ import { rehypeWikiBlocks } from 'astro-inkbrush';
 import { type MarkdownProcessorOptions, markdownProcessor } from 'astro-inkbrush/markdown';
 import { buildWikilinkResolver, remarkWikilinks } from 'astro-inkbrush/wikilinks';
 
-import { normalizeBase } from './base';
-import { type CodeFrameLabels, transformerCodeFrame } from './code-frame';
-import { rehypeBaseLinks } from './rehype-base-links';
-import { rehypeChapters, slugify } from './rehype-chapters';
-import { rehypeMermaidClient } from './rehype-mermaid-client';
-import { rehypeSections } from './rehype-sections';
-import { rehypeTblWrap } from './rehype-tbl-wrap';
-import { remarkCallouts } from './remark-callouts';
-import { remarkHeadingAttrs } from './remark-heading-attrs';
-import { remarkReadingTime } from './remark-reading-time';
+import { normalizeBase } from './base.ts';
+import { type CodeFrameLabels, transformerCodeFrame } from './code-frame.ts';
+import { rehypeBaseLinks } from './rehype-base-links.ts';
+import { rehypeChapters, slugify } from './rehype-chapters.ts';
+import { rehypeMermaidClient } from './rehype-mermaid-client.ts';
+import { rehypeSections } from './rehype-sections.ts';
+import { rehypeTblWrap } from './rehype-tbl-wrap.ts';
+import { remarkCallouts } from './remark-callouts.ts';
+import { remarkHeadingAttrs } from './remark-heading-attrs.ts';
+import { remarkReadingTime } from './remark-reading-time.ts';
 
 type MarkdownConfig = NonNullable<AstroUserConfig['markdown']>;
 type RemarkPlugin = NonNullable<MarkdownProcessorOptions['remarkPlugins']>[number];
@@ -177,13 +177,10 @@ export function siteMarkdown(opts: SiteMarkdownOptions = {}): MarkdownConfig {
       remarkPlugins: remark,
       rehypePlugins: rehype,
     }),
-    // mermaid fences must be kept away from shiki: in the MDX pipeline,
-    // highlighting runs before site rehype plugins, so by the time
-    // rehypeMermaidClient looks, the fence is already an astro-code block and
-    // the placeholder conversion would miss.
+    // mermaid fences stay out of shiki: highlighting runs before the site's
+    // rehype plugins, and rehypeMermaidClient needs the raw fence
     ...(mermaid ? { syntaxHighlight: { type: 'shiki' as const, excludeLangs: ['math', 'mermaid'] } } : {}),
-    // shikiConfig stays a top-level markdown option (it reaches the processor
-    // via createRenderer(shared)).
+    // shikiConfig is a top-level markdown option
     // Dual themes: defaultColor:false emits both --shiki-light/--shiki-dark;
     // the stylesheet picks one in a single place — no !important tug-of-war.
     shikiConfig: {

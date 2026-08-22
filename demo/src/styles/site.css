@@ -19,9 +19,10 @@
 @import 'astro-inkstone/styles/base.css';
 @import 'astro-inkstone/styles/browse.css';
 
-/* the plain-language gloss label follows the page language */
+/* generated labels follow the page language */
 html[lang='zh-CN'] {
   --speak-label: '说人话 →';
+  --diff-label: '相比前作 →';
 }
 
 /* ============================================================ shell ==== */

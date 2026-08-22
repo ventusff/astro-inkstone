@@ -11,9 +11,9 @@
  * Labels go through renderTocLabel (inline $TeX$ preserved); the ToC is
  * generated at build time, never hand-written.
  */
-import { renderTocLabel } from '../lib/toc';
-import type { TocData as ChaptersToc } from '../lib/toc-types';
-import type { TocData as SectionsToc } from '../lib/rehype-sections';
+import { renderTocLabel } from '../lib/toc.ts';
+import type { TocData as ChaptersToc } from '../lib/toc-types.ts';
+import type { TocData as SectionsToc } from '../lib/rehype-sections.ts';
 
 interface Props {
   toc: ChaptersToc | SectionsToc;

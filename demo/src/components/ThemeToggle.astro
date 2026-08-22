@@ -4,9 +4,14 @@
  * Flipping the theme dispatches `themechange` on window so canvas demos and
  * diagrams that read the palette can re-render.
  */
+interface Props {
+  /** accessible name, in the page's language */
+  label: string;
+}
+const { label } = Astro.props;
 ---
 
-<button class="theme-toggle" type="button" aria-label="Toggle light / dark theme" title="Light / dark">
+<button class="theme-toggle" type="button" aria-label={label} title={label}>
   <svg class="icon-sun" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
     <circle cx="8" cy="8" r="3.4" fill="currentColor"></circle>
     <g stroke="currentColor" stroke-width="1.3" stroke-linecap="round">

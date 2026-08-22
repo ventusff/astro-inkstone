@@ -19,10 +19,9 @@
 </p>
 
 **Inkstone** (砚 — the stone an ink brush draws from) is the *look* of a documentation
-or wiki site, packaged: design tokens, a content stylesheet hardened by real
-production sites, a component set, and a one-line Markdown pipeline. You keep
-what makes a site *yours* — brand color, layout chrome, routing — and inherit
-everything else.
+or wiki site, packaged: design tokens, the content stylesheets, a component set,
+and a one-line Markdown pipeline. You keep what makes a site *yours* — brand
+color, layout chrome, routing — and inherit everything else.
 
 It pairs with [**astro-inkbrush**](https://github.com/ventusff/astro-inkbrush)
 (笔 — the brush), a tiny git-backed CMS that lets you edit the very same pages
@@ -37,20 +36,21 @@ alone for a static site that simply looks and reads beautifully.
   (`--color-*`, a cool paper and one accent for an hour of reading) and the
   *browse shelf* (`--wb-*`, warm paper, a display serif, a wine-red mark for
   landing and facet pages). Re-skin the whole site by overriding either
-  tier; every text color is **measured** for WCAG AA on the surface it
-  actually renders on (`scripts/contrast_probe.mjs`, both themes).
+  tier; every rendered text run is **measured** for WCAG AA against the
+  pixels it actually sits on (`scripts/contrast_probe.mjs`, both themes).
 - 🌗 **Deliberate theming** — light is the identity; dark ships complete and
   activates only via `[data-theme='dark']`, so your toggle owns the decision
   (no `prefers-color-scheme` surprises).
-- 📖 **A content stylesheet that has seen things** — the reading column of a
+- 📖 **Two stylesheets, one look** — `base.css` is the reading column of a
   long-form wiki: serif body, chapter rules, code frames (title bar, copy
   button, collapse, line annotations, diff/focus/word highlight), tables that
   reflow into cards on narrow containers with pure CSS container queries,
-  callouts, figure groups, academic paper cards, hub cards and reading
-  paths, reference lists, and a print stylesheet that turns any page into a
-  clean PDF. Plus `browse.css`: the shelf — masthead, ruled shelves, card
-  grid, status legend, instant filters, tag cloud.
-- 🧩 **23 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`,
+  callouts (folding included), figure groups, academic paper cards, hub cards
+  and reading paths, reference lists, reduced-motion handling, and a print
+  stylesheet that turns any page into a clean PDF. `browse.css` is the
+  shelf — masthead, ruled shelves, card grid, status legend, instant
+  filters, tag cloud.
+- 🧩 **24 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`,
   `Steps`, `Grid`, `PaperCard`, `HubCard`, `Stats`, `LocalToc`, `Backlinks`,
   `LocalGraph` (a note's one-hop link neighbourhood in the sidebar), a faceted
   wiki-browsing set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …), and more.
@@ -73,8 +73,10 @@ alone for a static site that simply looks and reads beautifully.
 - 🩺 **Render-layer probes** — two headless-Chrome checkers: `ui_probe`
   loads every built page at four viewport widths and fails CI on horizontal
   overflow, unstyled classes, dead anchors, missing alt text and skipped
-  headings; `contrast_probe` samples the ground every text run actually
-  renders on, in both themes, and fails on anything under WCAG AA.
+  headings, duplicate ids and dangling `aria-controls`; `contrast_probe`
+  samples from pixels the ground every rendered text run sits on — HTML,
+  SVG and generated text, both themes, two widths — and fails on anything
+  under WCAG AA. Unit tests cover the library (`npm test`).
 - 🪶 **Zero build step** — plain TypeScript and CSS, consumed as source by
   your site's own Vite. Pin it by commit like any other part of your site.
 
@@ -131,9 +133,9 @@ shows — without them the stacks fall back to system faces.
 Layout, navigation, routing and deployment stay yours — the demo ships a
 complete reference implementation (a warm-paper landing shelf with facet
 pages, hub notes with chapter rails, a sidebar table of contents that follows
-your reading position with a local link graph beneath it, ⌘K search, zh
-mirror routing, and a static + editing-machine deployment skeleton under
-`deploy/`).
+your reading position with a local link graph beneath it, ⌘K search and zh
+mirror routing). The editing-machine deployment shape is documented with the
+engine, in [astro-inkbrush's manual](https://github.com/ventusff/astro-inkbrush/blob/main/docs/manual.md).
 
 ## Who does what
 

@@ -1,10 +1,9 @@
 name: CI
 
-# Build the demo site and run the two render-layer probes against the output.
-# ui_probe loads every built page in headless Chrome at four viewport widths
-# and fails on horizontal overflow, unstyled classes, dead anchors, images
-# without alt text, and skipped heading levels; contrast_probe measures every
-# text run's WCAG contrast on its rendered ground, in both themes.
+# The package's gate: unit tests for the library, a type check and a build of
+# the demo (with the engine's dist check), then the two render-layer probes
+# over the output — ui_probe (layout and markup defects at four viewport
+# widths) and contrast_probe (WCAG contrast of rendered text, both themes).
 
 on:
   push:
@@ -27,11 +26,14 @@ jobs:
         with:
           node-version: '24'
       - name: Install package deps (repo root)
-        run: npm install --no-audit --no-fund
-      - name: Install & build demo
+        run: npm ci --no-audit --no-fund
+      - name: Unit tests
+        run: npm test
+      - name: Install, type-check and build the demo
         working-directory: demo
         run: |
-          npm install
+          npm ci --no-audit --no-fund
+          npx astro check
           npm run build
       - name: Render-layer probe
         env:

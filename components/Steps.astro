@@ -1,38 +1,10 @@
 ---
 /**
  * Steps / pipeline / static timeline container. Put a markdown list inside;
- * items render on a vertical rail with dots.
+ * items render on a vertical rail with dots (base.css `.steps-wrap`).
  */
 ---
 
 <div class="steps-wrap">
   <slot />
 </div>
-
-<style>
-  .steps-wrap :global(ul),
-  .steps-wrap :global(ol) {
-    list-style: none;
-    padding: 0;
-    margin: 18px 0;
-    font-family: var(--font-ui);
-    font-size: 14.5px;
-    border-left: 2px solid var(--color-line);
-  }
-  .steps-wrap :global(li) {
-    position: relative;
-    padding: 6px 0 6px 22px;
-    margin: 0;
-  }
-  .steps-wrap :global(li)::before {
-    content: '';
-    position: absolute;
-    left: -6px;
-    top: 14px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--color-accent);
-    border: 2px solid var(--color-bg);
-  }
-</style>

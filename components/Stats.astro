@@ -1,7 +1,7 @@
 ---
-/** Stat chips row (landing heroes): value + label pairs. */
+/** Stat row (landing heroes): a value and its label per tile. */
 interface Props {
-  items: { v: string; k: string }[];
+  items: { value: string; label: string }[];
 }
 const { items } = Astro.props;
 ---
@@ -10,8 +10,8 @@ const { items } = Astro.props;
   {
     items.map((s) => (
       <div class="stat">
-        <span class="v">{s.v}</span>
-        <span class="k">{s.k}</span>
+        <span class="v">{s.value}</span>
+        <span class="k">{s.label}</span>
       </div>
     ))
   }

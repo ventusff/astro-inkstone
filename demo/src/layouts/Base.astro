@@ -19,7 +19,7 @@ import '../styles/site.css';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import SearchPalette from '../components/SearchPalette.astro';
 import ThemeInit from '../components/ThemeInit.astro';
-import type { Locale } from '../lib/i18n';
+import { UI, type Locale } from '../lib/i18n';
 
 interface Crumb {
   label: string;
@@ -37,6 +37,8 @@ interface Props {
   translateRoute?: string | undefined;
   /** body class — browse pages pass `wb-root` to enter the browse context */
   bodyClass?: string | undefined;
+  /** the page has a sidebar drawer for the nav bar's menu button to open */
+  hasSidebar?: boolean;
   /**
    * Collection entry id, when this page is editable through the CMS. The
    * <meta name="inkbrush-note"> tags are editing metadata — emitted in WIKI
@@ -52,8 +54,10 @@ const {
   crumbs = [],
   translateRoute,
   bodyClass,
+  hasSidebar = false,
   noteId,
 } = Astro.props;
+const t = UI[locale];
 
 // The CMS resolves a note's URL from its id with this template; the id↔route
 // identity (route = `${base}${id}/`) is what makes the language-switch jump
@@ -64,12 +68,6 @@ const base = import.meta.env.BASE_URL.endsWith('/')
 const noteUrlTemplate = `${base}{id}/`;
 const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
 
-/** Accessible names for the shell's own widgets. */
-const A11Y: Record<Locale, { lightbox: string; close: string }> = {
-  zh: { lightbox: '图片查看器', close: '关闭' },
-  en: { lightbox: 'Image viewer', close: 'Close' },
-};
-const a11y = A11Y[locale];
 ---
 
 <!doctype html>
@@ -89,11 +87,11 @@ const a11y = A11Y[locale];
     <ThemeInit />
   </head>
   <body class={bodyClass}>
-    <Breadcrumb locale={locale} crumbs={crumbs} translateRoute={translateRoute} />
+    <Breadcrumb locale={locale} crumbs={crumbs} translateRoute={translateRoute} hasSidebar={hasSidebar} />
     <slot />
 
-    <dialog class="lightbox" aria-label={a11y.lightbox}>
-      <button class="lb-close" type="button" aria-label={a11y.close}>
+    <dialog class="lightbox" aria-label={t.lightbox}>
+      <button class="lb-close" type="button" aria-label={t.close}>
         <span aria-hidden="true">×</span>
       </button>
       <img alt="" />
@@ -158,11 +156,11 @@ const a11y = A11Y[locale];
             box.showModal();
           });
         }
-        // an explicit control, so the only ways out are not "click somewhere"
-        // and Esc — both invisible to anyone reading the dialog by name
+        // three ways out: the close control, Esc, and a click on the backdrop
+        // (the dialog element itself — a click on the picture keeps it open)
         box.querySelector<HTMLButtonElement>('.lb-close')?.addEventListener('click', () => box.close());
         box.addEventListener('click', (e) => {
-          if (!(e.target as HTMLElement).closest('.lb-close')) box.close();
+          if (e.target === box) box.close();
         });
       }
 

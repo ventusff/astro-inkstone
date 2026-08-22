@@ -40,6 +40,7 @@ const byId = new Map(notes.map((n) => [n.id, n]));
 
 const { Content, remarkPluginFrontmatter } = await render(entry);
 const toc = getToc(remarkPluginFrontmatter ?? {});
+const readingMinutes = remarkPluginFrontmatter?.['readingMinutes'];
 
 /* ---------- identity ---------- */
 const locale: Locale = localeOfId(entry.id);
@@ -49,7 +50,8 @@ const segments = baseId.split('/');
 const topic = segments[0] ?? baseId;
 const subPath = segments.slice(1).join('/');
 const langPrefix = zh ? 'zh/' : '';
-const routeTo = (id: string): string => href(`${langPrefix}${routeOfId(id)}`);
+/** route of a full entry id (locale prefix included) */
+const routeTo = (id: string): string => href(routeOfId(id));
 
 /* ---------- hub rail (multi-chapter collection notes) ---------- */
 const hubEntry =
@@ -82,9 +84,11 @@ if (hubEntry?.data.nav) {
         // point into a 404
         throw new Error(`[hub ${topic}] nav references missing page: ${childId}`);
       }
-      if (child.data.part !== undefined && child.data.part !== position) {
+      // the chapter's own number and the rail's position are one fact,
+      // declared twice; the build refuses to let them drift
+      if (child.data.part !== position) {
         throw new Error(
-          `[hub ${topic}] ${childId} frontmatter part:${child.data.part} != nav position ${position}`,
+          `[hub ${topic}] ${childId}: frontmatter part must be ${position} (its position in the hub's nav), found ${child.data.part ?? 'none'}`,
         );
       }
       const label = child.data.navLabel ?? child.data.title;
@@ -150,7 +154,11 @@ const crumbs =
       ];
 
 /* ---------- taxonomy strip (chapters and mirrors inherit at build time) --- */
-const taxonomy = stripOf(resolveTaxonomy(entry, byId), locale);
+const taxonomy = stripOf(
+  resolveTaxonomy(entry, byId),
+  locale,
+  typeof readingMinutes === 'number' ? readingMinutes : undefined,
+);
 
 /* ---------- backlinks + the sidebar's local graph (PROD builds once) ---------- */
 const index = backlinkBuilder.build(toDocs(notes));
@@ -160,7 +168,7 @@ const graph = index.localGraph(entry.id, (id) => byId.get(id)?.data.title ?? id)
 /* ---------- sidebar brand: the hub's for chapters, the note's own otherwise ---------- */
 const brandEntry = hubEntry ?? entry;
 const brand = brandEntry.data.brand ?? brandEntry.data.title;
-const brandHref = hub ? hub.hubHref : routeTo(baseId);
+const brandHref = hub ? hub.hubHref : routeTo(entry.id);
 ---
 
 <NoteLayout

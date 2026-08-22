@@ -13,8 +13,9 @@ scanning its own content.
 | File | What it is |
 | --- | --- |
 | `MapleMonoCN-subset.woff2` | the subset artifact, committed; sites reference it directly |
-| `build_font_subset.py` | the generator (fixed recipe, below) |
-| `hanzi-3500.txt` | the 3500 level-1 characters of the Table of General Standard Chinese Characters, kept in-repo so generation works offline |
+| `build_font_subset.py` | the generator (fixed recipe, below; the source font pinned by SHA-256) |
+| `hanzi-3500.txt` | the 3500 level-1 characters of the Table of General Standard Chinese Characters |
+| `extra-chars.txt` | recipe item 4: every further character the subset carries, one `U+XXXX` per line |
 | `OFL.txt` | the SIL Open Font License 1.1 for the Maple Mono upstream |
 
 ## The recipe (union of four parts)
@@ -22,35 +23,28 @@ scanning its own content.
 1. the full printable ASCII range 0x20–0x7e;
 2. a symbol whitelist: box drawing (light/heavy/double/rounded), arrows,
    geometry, shade blocks, common typographic symbols, fullwidth CJK
-   punctuation (see `SYMBOL_WHITELIST` in the script);
+   punctuation (`SYMBOL_WHITELIST` in the script);
 3. the 3500 level-1 characters of the Table of General Standard Chinese
    Characters (2013) — `hanzi-3500.txt`, source in that file's header;
-4. the union of every character used in `*.md` / `*.mdx` content under the
-   directories listed in an optional, untracked local manifest
-   (`content-dirs.local.txt` — one absolute path per line) — so existing
-   content has zero missing glyphs at generation time.
+4. `extra-chars.txt` — characters gathered from content (accents, Greek,
+   math operators, fullwidth forms, …), tracked so the recipe is complete in
+   the repository.
 
-When new content uses a rare character outside the subset, the browser falls
-back to a system font for that glyph (alignment may be loose there); re-run
-the script to fold it in.
+Source font: Maple Mono 7.9, the "Normal NL NF CN" Regular build (no
+ligatures, with CJK), pinned by SHA-256 in the script. A character in the
+recipe that the source lacks fails the build.
 
-## Regenerating
-
-System `python3` usually lacks fontTools; use a venv:
+When content uses a character outside the subset, the browser falls back to
+a system font for that glyph (alignment may be loose there). To fold it in:
 
 ```bash
-python3 -m venv /tmp/fontenv          # or: uv venv /tmp/fontenv
-/tmp/fontenv/bin/pip install fonttools brotli
-/tmp/fontenv/bin/python fonts/build_font_subset.py
+python3 -m venv /tmp/fontenv && /tmp/fontenv/bin/pip install fonttools brotli
+/tmp/fontenv/bin/python fonts/build_font_subset.py --scan path/to/content   # extends extra-chars.txt
 ```
 
-- The source ttf is auto-discovered under `~/.local/share/fonts/**/` and
-  `/usr/share/fonts/**/` (`MapleMono*CN-Regular.ttf`); or point at one with
-  `MAPLE_TTF=/path/to/xxx.ttf`. The "Normal NL NF CN" build (no ligatures,
-  with CJK) is a good source.
-- To widen the content union, list content directories in
-  `fonts/content-dirs.local.txt` (gitignored, machine-local) and re-run.
-- The output overwrites `fonts/MapleMonoCN-subset.woff2`; commit it.
+then commit `extra-chars.txt` and the regenerated `MapleMonoCN-subset.woff2`
+together. The source ttf is auto-discovered under `~/.local/share/fonts/**/`
+and `/usr/share/fonts/**/`, or pointed at with `MAPLE_TTF=/path/to/it`.
 
 ## License
 

@@ -38,4 +38,19 @@ The remaining components frame a note rather than fill it:
 - `SidebarMemory` keeps a scrolling sidebar where the reader left it across page loads, and centres the current item (`[aria-current="page"]` by default) whenever it would otherwise be out of view. Drop it inside the sidebar's scroll box, after the navigation markup; it runs before first paint, so the sidebar never flashes at the top. The demo's own sidebar carries it.
 - `LineageSvg` frames a hand-drawn SVG (a method lineage, a taxonomy tree) as a card.
 - `PageFooter` is the small print at a note's foot — the line under every note here.
+- `SidebarMemory` is a script, not a box: placed inside a scrolling sidebar it keeps the scroll position across page loads and brings the current row into view — this site's sidebar carries it.
 - The browse pieces live in [[components/wiki|the wiki chapter]]; the Markdown side of the gallery is the [[kitchen-sink]].
+
+## Furniture without a component
+
+A few pieces are plain classes in `base.css`, for sites that render them from their own layout or write them as HTML in prose:
+
+| Class | What it is |
+| --- | --- |
+| `.page-head` + `.kicker`, `.page-desc`, `.page-date` | a frontmatter-driven page head (kicker, h1, description, date) rendered by a layout instead of a `<Hero>` |
+| `.banner`, `.banner-fallback` | a one-line notice under the head; the fallback variant is the muted one |
+| `.page-foot` | a two-column small-print footer (left slot, right slot) |
+| `.speak` | the plain-language gloss under a deep-dive heading; its label is `--speak-label` |
+| `.path` + `.title`, `.route`, `.arrow` | a reading-path box on a hub |
+| `.ref-tag` | a small monospace tag in a reference list (a venue, a year) |
+| `.tag`, `.tag.teal / .mustard / .violet` | the paper-card badges, usable anywhere |

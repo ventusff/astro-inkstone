@@ -13,33 +13,24 @@ interface Props {
 }
 const { locale } = Astro.props;
 const t = UI[locale];
-/**
- * Accessible names for the combobox plumbing. Same zh/en shape as `UI` in
- * lib/i18n.ts; kept local because they name THIS widget's parts and have no
- * other consumer — a screen reader on an en page must not hear zh chrome.
- */
-const A11Y: Record<Locale, { dialog: string; input: string; results: string }> = {
-  zh: { dialog: '站内搜索', input: '搜索这份手册', results: '搜索结果' },
-  en: { dialog: 'Site search', input: 'Search the manual', results: 'Search results' },
-};
-const a11y = A11Y[locale];
 ---
 
 <dialog
   id="site-search"
   class="se-dialog"
-  aria-label={a11y.dialog}
+  aria-label={t.searchDialog}
   data-index={href('search-index.json')}
   data-locale={locale}
   data-empty={t.searchEmpty}
-  data-unit={locale === 'en' ? 'pages' : '篇'}
+  data-unavailable={t.searchUnavailable}
+  data-unit={t.searchUnit}
 >
   <div class="se-box">
     <input
       class="se-input"
       type="search"
       role="combobox"
-      aria-label={a11y.input}
+      aria-label={t.searchInput}
       aria-controls="se-results"
       aria-expanded="false"
       aria-autocomplete="list"
@@ -48,7 +39,7 @@ const a11y = A11Y[locale];
       spellcheck="false"
     />
     <div class="se-status" role="status" aria-live="polite" aria-atomic="true">{t.searchHint}</div>
-    <ol class="se-results" id="se-results" role="listbox" aria-label={a11y.results}></ol>
+    <ol class="se-results" id="se-results" role="listbox" aria-label={t.searchResults}></ol>
     <div class="se-foot">
       <span><kbd>↑↓</kbd> · <kbd>Enter</kbd> · <kbd>Esc</kbd></span>
       <span>astro-inkstone</span>
@@ -81,7 +72,9 @@ const a11y = A11Y[locale];
           docs = d;
         })
         .catch(() => {
-          status.textContent = 'search index unavailable';
+          // a failed fetch is retried on the next keystroke
+          loading = null;
+          status.textContent = dialog.dataset['unavailable'] ?? '';
         }));
 
     /**

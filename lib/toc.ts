@@ -3,7 +3,7 @@
  *  "sections" preset's ToC reader lives in ./rehype-sections.ts. */
 import katex from 'katex';
 
-import type { TocData } from './toc-types';
+import type { TocData } from './toc-types.ts';
 
 const escapeHtml = (s: string): string =>
   s

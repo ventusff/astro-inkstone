@@ -114,9 +114,8 @@ export function createBacklinks(options: BacklinksOptions) {
     };
   }
 
-  // Building the index costs one pass over every body; per-page rebuilds in a
-  // static build would be quadratic. In production the first build wins; dev
-  // rebuilds each time so edits show up.
+  // production builds index the corpus once per instance; dev rebuilds on
+  // every call so edits show up
   let prodCache: BacklinkIndex | null = null;
 
   function build(docs: BacklinkDoc[]): BacklinkIndex {

@@ -1,18 +1,13 @@
 ---
 /**
  * Domain chip — colored by the registry's tone pair. Purely presentational:
- * the site resolves the def from its registry and passes it in; pass `href`
- * to render it as a link (e.g. to the domain's browse page).
+ * the site resolves the def from its registry and passes it in; with `href`
+ * it renders as a link (e.g. to the domain's browse page).
  */
-export interface DomainChipDef {
-  id: string;
-  label: string;
-  desc?: string | undefined;
-  tone: { bg: string; fg: string };
-}
+import type { DomainDisplay } from '../../lib/wiki-display.ts';
 
 interface Props {
-  def: DomainChipDef;
+  def: DomainDisplay;
   href?: string | undefined;
 }
 const { def, href } = Astro.props;
@@ -34,7 +29,7 @@ const style = `--chip-bg:${def.tone.bg}; --chip-fg:${def.tone.fg};`;
 <style>
   .domain-chip {
     display: inline-block;
-    font: 500 10.5px/1 var(--wb-sans, sans-serif);
+    font: 500 10.5px/1 var(--font-ui);
     letter-spacing: 0.04em;
     color: var(--chip-fg);
     background: var(--chip-bg);
@@ -46,10 +41,10 @@ const style = `--chip-bg:${def.tone.bg}; --chip-fg:${def.tone.fg};`;
   a.domain-chip:hover {
     filter: saturate(1.4) brightness(0.96);
   }
-  /* Dark theme: registry tones are tuned for light backgrounds — derive a
-     night variant from the fg color so every host page stays consistent. */
+  /* registry tones are tuned for the light ground; on night the chip takes a
+     translucent wash of its tone and a lightened mix of it as text */
   :global(:root[data-theme='dark']) .domain-chip {
     background: color-mix(in srgb, var(--chip-fg) 20%, transparent);
-    color: color-mix(in srgb, var(--chip-fg) 45%, var(--wb-text, #e6e4dc));
+    color: color-mix(in srgb, var(--chip-fg) 45%, var(--color-ink));
   }
 </style>
