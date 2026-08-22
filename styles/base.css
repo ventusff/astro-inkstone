@@ -1,0 +1,1724 @@
+/* ============================================================
+   astro-inkstone · base.css — the content layer
+
+   Everything a page of prose, code, math, tables and figures needs,
+   in one stylesheet. Sections, in order: foundation (view transitions,
+   box model, root typography) · typography · code + code frames ·
+   mermaid · KaTeX · page furniture (heads, banners, jump lists,
+   pagination, footers) · tables (with container-query card reflow) ·
+   callouts · measured cards · chips · grids/steps · figures + lightbox ·
+   hero · part dividers · paper cards · tags · demo stages · stats ·
+   references · wikilinks · CMS comment area · print.
+
+   Discipline: this file consumes ONLY tier-2 semantic tokens from
+   tokens.css (--color-*, --font-*, --radius, …). New rules must not
+   introduce raw color values.
+   ============================================================ */
+
+
+/* ============ foundation (view transitions / box model / root type) ===== */
+/* ----- native cross-document view transitions (pure static) ----- */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.12s;
+}
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* nav bar height + breathing room, so an anchor never lands under the bar */
+  scroll-padding-top: 64px;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+
+/* ======================================================= typography ==== */
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-ui);
+  letter-spacing: -0.012em;
+}
+.col h1 {
+  font-size: 40px;
+  line-height: 1.1;
+  margin: 0 0 10px;
+  font-weight: 800;
+}
+.col h2 {
+  font-size: 27px;
+  line-height: 1.25;
+  margin: 60px 0 14px;
+  font-weight: 700;
+  border-top: 1px solid var(--color-line);
+  padding-top: 34px;
+  scroll-margin-top: 60px;
+}
+.col h3 {
+  font-size: 21px;
+  margin: 36px 0 8px;
+  font-weight: 700;
+  scroll-margin-top: 60px;
+}
+.col h4 {
+  font-size: 15px;
+  margin: 22px 0 6px;
+  font-weight: 700;
+  color: var(--color-ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+/* section numbers are injected by rehype-sections — never typed in MDX */
+.col h2 .num,
+.col h3 .num {
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  margin-right: 11px;
+  vertical-align: 3px;
+}
+.col h2 .num {
+  font-size: 17px;
+}
+.col h3 .num {
+  font-size: 14px;
+  vertical-align: 2px;
+}
+/* an h2 straight after the jump list needs no rule — the box already drew one */
+.col .local-toc + h2 {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 40px;
+}
+
+.col p {
+  margin: 0 0 14px;
+  /* In mixed CJK/Latin prose the last line often ends up a single Hanzi plus
+     a full stop; letting the engine balance line widths removes the orphan */
+  text-wrap: pretty;
+}
+.col li {
+  text-wrap: pretty;
+}
+.col a {
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-accent-soft);
+}
+.col a:hover {
+  border-bottom-color: var(--color-accent);
+}
+.col strong {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+.col em {
+  font-style: italic;
+  color: var(--color-ink-soft);
+}
+.col hr {
+  border: 0;
+  height: 1px;
+  background: var(--color-line);
+  margin: 36px 0;
+}
+.col ul,
+.col ol {
+  margin: 0 0 14px;
+  padding-left: 22px;
+}
+.col li {
+  margin: 4px 0;
+}
+.col li > ul,
+.col li > ol {
+  margin-top: 4px;
+}
+.col blockquote {
+  margin: 18px 0;
+  padding: 2px 0 2px 18px;
+  border-left: 3px solid var(--color-line);
+  color: var(--color-ink-soft);
+}
+.col blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* ----- code ----- */
+.col code {
+  font-family: var(--font-mono-cjk);
+  font-size: 0.9em;
+  background: var(--color-bg-soft);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--color-accent);
+  overflow-wrap: break-word;
+}
+.col pre.astro-code {
+  padding: 18px 22px;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  font-family: var(--font-mono-cjk);
+  font-size: 13.5px;
+  line-height: 1.55;
+  margin: 18px 0;
+  background: var(--color-code-bg) !important;
+  border: 1px solid var(--color-line);
+}
+.col pre.astro-code code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  /* never add `.line { display:block }` — <pre> already keeps the \n and a
+     block display doubles every line break */
+}
+/* Shiki dual theme: `defaultColor: false` emits both --shiki-light and
+   --shiki-dark on every token; the active one is picked here, so there is
+   exactly one place that decides and no !important tug-of-war. */
+.astro-code,
+.astro-code span {
+  color: var(--shiki-light);
+}
+:root[data-theme='dark'] .col pre.astro-code {
+  background: var(--color-code-bg) !important;
+  border-color: var(--color-line);
+}
+:root[data-theme='dark'] .astro-code,
+:root[data-theme='dark'] .astro-code span {
+  color: var(--shiki-dark);
+}
+/* GitHub's themes use the same comment color #6A737D in both variants: fine
+   on light (4.7:1) but only 3.36:1 on the dark code background. Shiki writes
+   colors as inline styles, so rewriting this one token by value is more
+   robust than swapping the whole theme. */
+:root[data-theme='dark'] .astro-code span[style*='--shiki-dark:#6A737D'] {
+  color: #9aa4ae;
+}
+
+
+/* ========== code frame (title bar / copy / collapse / line notation) ==== */
+.code-frame {
+  margin: 18px 0;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-code-bg);
+}
+.code-frame > pre.astro-code {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+}
+.code-frame-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-ink-faint);
+  background: color-mix(in oklab, var(--color-code-bg) 60%, var(--bg-soft));
+  border-bottom: 1px solid var(--color-line);
+}
+.code-frame .code-lang {
+  letter-spacing: 0.04em;
+}
+.code-copy {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--color-ink-faint);
+  background: transparent;
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.code-copy:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.code-copy .code-copy-done {
+  display: none;
+  color: var(--color-accent2);
+}
+.code-copy.is-done .code-copy-idle {
+  display: none;
+}
+.code-copy.is-done .code-copy-done {
+  display: inline;
+}
+details.code-frame > summary {
+  cursor: pointer;
+  list-style: none;
+}
+details.code-frame > summary::-webkit-details-marker {
+  display: none;
+}
+details.code-frame .code-fold-hint {
+  font-size: 11px;
+}
+details.code-frame[open] .code-fold-hint::after {
+  content: ' ▴';
+}
+
+/* shiki line notation (diff / highlight / focus) */
+pre.astro-code .line.highlighted,
+pre.astro-code .line.diff {
+  display: inline-block;
+  width: calc(100% + 44px);
+  margin: 0 -22px;
+  padding: 0 22px;
+}
+pre.astro-code .line.highlighted {
+  background: color-mix(in oklab, var(--accent) 10%, transparent);
+}
+pre.astro-code .line.diff.add {
+  background: color-mix(in oklab, var(--color-accent2) 14%, transparent);
+}
+pre.astro-code .line.diff.add::before {
+  content: '+';
+  color: var(--color-accent2);
+  margin-right: 8px;
+}
+pre.astro-code .line.diff.remove {
+  background: color-mix(in oklab, var(--seal) 12%, transparent);
+  opacity: 0.75;
+}
+pre.astro-code .line.diff.remove::before {
+  content: '-';
+  color: var(--seal);
+  margin-right: 8px;
+}
+pre.astro-code.has-focused .line:not(.focused) {
+  filter: blur(1.6px);
+  opacity: 0.55;
+  transition:
+    filter 0.25s,
+    opacity 0.25s;
+}
+pre.astro-code.has-focused:hover .line:not(.focused) {
+  filter: none;
+  opacity: 1;
+}
+.highlighted-word {
+  background: color-mix(in oklab, var(--accent) 16%, transparent);
+  border-radius: 3px;
+  padding: 1px 2px;
+}
+
+
+/* =================== mermaid =================== */
+.mermaid-block {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin: 22px 0;
+  overflow-x: auto;
+}
+.mermaid-block pre.mermaid {
+  margin: 0;
+  background: transparent;
+  border: none;
+  display: flex;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-ink-faint);
+}
+.mermaid-block svg {
+  max-width: 100%;
+  height: auto;
+}
+
+
+/* ----- KaTeX ----- */
+.katex {
+  font-size: 1.04em;
+}
+.katex-display {
+  background: var(--color-math-bg);
+  padding: 12px 18px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+
+/* ==================================================== page furniture === */
+
+.page-head {
+  margin: 0 0 26px;
+}
+.page-head .kicker {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  color: var(--color-accent);
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+.page-desc {
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+  margin: 10px 0 0;
+  max-width: 720px;
+}
+/* date line for pages whose frontmatter carries a date */
+.page-date {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-faint);
+  margin: 10px 0 0;
+}
+
+.banner {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+  background: var(--color-bg-soft);
+  border-left: 3px solid var(--color-accent3);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 9px 14px;
+  margin: 0 0 22px;
+}
+.banner-fallback {
+  border-left-color: var(--color-ink-faint);
+  color: var(--color-ink-faint);
+}
+
+.local-toc {
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin: 0 0 30px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+.local-toc .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-ink-faint);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.local-toc ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  columns: 2;
+  column-gap: 26px;
+}
+.local-toc li {
+  margin: 2px 0;
+  break-inside: avoid;
+}
+.local-toc a {
+  color: var(--color-ink-soft);
+  border-bottom: none;
+  text-decoration: none;
+}
+.local-toc a:hover {
+  color: var(--color-accent);
+}
+.local-toc .idx {
+  font-family: var(--font-mono);
+  color: var(--color-accent);
+  margin-right: 6px;
+  font-size: 12px;
+}
+@media (max-width: 720px) {
+  .local-toc ol {
+    columns: 1;
+  }
+}
+
+.pagination {
+  display: grid;
+  /* With only one side present the other leaves no empty slot — otherwise it
+     looks like the next-card simply failed to render */
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 16px;
+  margin: 56px 0 0;
+  padding-top: 28px;
+  border-top: 1px solid var(--color-line);
+}
+.pagination a {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.12s ease;
+}
+.pagination a:hover {
+  border-color: var(--color-accent);
+}
+.pagination .dir {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-ink-faint);
+  margin-bottom: 4px;
+}
+.pagination .title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  color: var(--color-ink);
+  font-size: 15px;
+}
+/* Both directions written out explicitly: with only a .next rule, .prev
+   becomes a class no rule matches, and a reader of the markup would assume
+   it is styled */
+.pagination .prev {
+  text-align: left;
+}
+.pagination .next {
+  text-align: right;
+}
+
+.page-foot {
+  margin-top: 44px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-line);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--color-ink-faint);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* links and code inside the page footer */
+.page-foot a {
+  color: var(--color-ink-soft);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--color-line);
+}
+.page-foot a:hover {
+  color: var(--color-accent);
+}
+.page-foot code {
+  font-family: var(--font-mono);
+}
+
+
+/* ======================================================== content ====== */
+
+/* ----- GFM extras: task lists and footnotes ----- */
+
+/* Task-list items carry their own checkbox; the list marker would double it. */
+.contains-task-list {
+  list-style: none;
+  padding-left: 0.5em;
+}
+.task-list-item > input[type='checkbox'] {
+  margin-right: 0.55em;
+  accent-color: var(--color-accent);
+  vertical-align: -0.12em;
+}
+
+/* Footnotes: quiet small print behind a hairline, clearly after the article. */
+section.footnotes {
+  margin-top: 2.8rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--color-line);
+  font-size: 0.86em;
+  color: var(--color-ink-soft);
+}
+section.footnotes p {
+  margin: 0.35em 0;
+}
+
+/* GFM's footnote section title is screen-reader-only; without this rule the
+   hidden heading would render as visible text. Standard visually-hidden box. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ----- tables (rehype-tbl-wrap gives each one its own scroll box) ----- */
+
+/* The double wrapper is deliberate, not redundant: the outer .tbl-wrap is the
+   CONTAINER-QUERY CONTAINER, the inner .tbl-scroll is the scroll box.
+   `@container` can only style a container's descendants, never the container
+   itself — if scrolling and the scroll shadows lived on .tbl-wrap there would
+   be no way to turn them off in card mode. And a table reflows based on how
+   wide a column it lands in, not on the viewport: the same table may sit in
+   an 820px reading column or be embedded somewhere far narrower. */
+.tbl-wrap {
+  container-type: inline-size;
+  container-name: tbl;
+  margin: 20px 0;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  overflow: hidden; /* the radius always clips the inner box, scrolling or not */
+}
+.tbl-scroll {
+  overflow-x: auto;
+  /* Edge shadows appear while the table can scroll and vanish at either end
+     (the classic `local` + `scroll` background-attachment pairing, no JS).
+     Without them a clipped table gives no hint at all that more columns
+     exist off to the right — a real usability failure on narrow screens. */
+  background:
+    linear-gradient(to right, var(--color-bg-card) 30%, transparent) left / 26px 100% no-repeat local,
+    linear-gradient(to left, var(--color-bg-card) 30%, transparent) right / 26px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--color-ink) 14%, transparent), transparent)
+      left / 13px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--color-ink) 14%, transparent), transparent)
+      right / 13px 100% no-repeat scroll;
+}
+/* identifiers, hashes and numbers must not be broken across lines in a cell */
+.tbl code,
+.tbl th {
+  white-space: nowrap;
+}
+/* CJK in cells wraps only at punctuation (word-break: keep-all) so a compound
+   word is never split; an over-wide table is in a scroll box anyway — better
+   to scroll than to break words. The first column is a label column: no wrap. */
+.tbl td {
+  word-break: keep-all;
+  text-wrap: pretty;
+}
+.tbl td:first-child {
+  white-space: nowrap;
+}
+table.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+}
+.tbl th,
+.tbl td {
+  text-align: left;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--color-line);
+  vertical-align: top;
+}
+/* whole-row hover highlight (a reading aid; tokenized so it holds in both
+   themes, and a site may override it with something stronger) */
+.tbl tr:hover td {
+  background: color-mix(in srgb, var(--color-bg-soft) 40%, var(--color-bg-card));
+}
+.tbl tr:last-child td {
+  border-bottom: none;
+}
+.tbl th {
+  background: var(--color-bg-soft);
+  font-weight: 700;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.tbl code {
+  white-space: nowrap;
+}
+/* a column of short codes should not be wrapped into a stack by a neighbour's
+   long prose — the wrapper scrolls instead */
+.tbl-wrap.wide table.tbl {
+  min-width: max-content;
+}
+
+/* ----- narrow container: one row, one card -----------------------------
+   The threshold is defined against the CONTAINER, not the viewport. With the
+   sidebar present the reading column is narrowest at a 1001px viewport
+   (1001 − 280 sidebar − 108 padding = 613px), so 560px guarantees the table
+   stays a table at every desktop width, while phones (viewport ≤600px →
+   column ≤560px) always get cards. 560px is also roughly where four columns
+   run out of room. Applies only to .wide (≥6 columns) and .wide-narrow (4–5):
+   two- and three-column tables fit anyway, and cards would just be noisier. */
+@container tbl (max-width: 560px) {
+  /* cards do not overflow horizontally: scrolling and the scroll shadows are
+     both switched off here (wide containers keep them) */
+  .wide > .tbl-scroll,
+  .wide-narrow > .tbl-scroll {
+    overflow-x: visible;
+    background: none;
+  }
+
+  .wide table.tbl,
+  .wide-narrow table.tbl {
+    display: block;
+    min-width: 0;
+  }
+  /* Column names move into each cell's ::before; keeping the header would
+     make screen readers announce every field name twice. The implicit table
+     roles that display:block erases are restored via role=* in the markup. */
+  .wide table.tbl thead,
+  .wide-narrow table.tbl thead {
+    display: none;
+  }
+  .wide table.tbl tbody,
+  .wide-narrow table.tbl tbody {
+    display: block;
+  }
+  /* One row = one card. A tr's children are only cells (nothing but
+     whitespace between elements), so flex/grid creates no anonymous items. */
+  .wide table.tbl tbody tr,
+  .wide-narrow table.tbl tbody tr {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 14px 16px;
+    background: var(--color-bg-card);
+    border-bottom: 1px solid var(--color-line);
+  }
+  .wide table.tbl tbody tr:last-child,
+  .wide-narrow table.tbl tbody tr:last-child {
+    border-bottom: none;
+  }
+  /* Cells are display:block across the board — a prose cell may mix
+     <strong>/<code>/bare text, and grid/flex would split those into
+     unrelated items. */
+  .wide .tbl th,
+  .wide .tbl td,
+  .wide-narrow .tbl th,
+  .wide-narrow .tbl td {
+    display: block;
+    padding: 0;
+    border-bottom: none;
+  }
+  .wide .tbl td:empty,
+  .wide-narrow .tbl td:empty {
+    display: none;
+  }
+  /* field names (written into data-label at build time — zero runtime JS) */
+  .wide .tbl [data-label]::before,
+  .wide-narrow .tbl [data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 1px;
+    font-family: var(--font-ui);
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-ink-faint);
+  }
+  /* the row-leading cell = the card title */
+  .wide .tbl [role='rowheader'],
+  .wide-narrow .tbl [role='rowheader'] {
+    background: none;
+    position: static;
+    font-family: var(--font-ui);
+    font-size: 15.5px;
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: normal;
+    color: var(--color-ink);
+    padding-bottom: 3px;
+  }
+  /* A cell now spans the whole row and a long path has no next column to
+     borrow; short hashes/identifiers still stay whole —
+     overflow-wrap:anywhere only breaks when nothing fits. */
+  .wide .tbl code,
+  .wide-narrow .tbl code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* ----- callouts ----- */
+.callout {
+  background: var(--color-math-bg);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin: 22px 0;
+  border-left: 4px solid var(--color-accent3);
+  font-family: var(--font-body);
+  font-size: 16.5px;
+}
+/* Callouts appear both as authored HTML (`<div class="callout"><span
+   class="label">…`) and as pipeline output (.callout-title). Both class names
+   are recognized — content in the wild uses .label heavily, and recognizing
+   only .callout-title leaves every such title as bare inline text. The span
+   must be made block explicitly. */
+.callout-title,
+.callout .label {
+  display: block;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-accent3-text);
+  margin-bottom: 8px;
+}
+.callout.intuition {
+  border-left-color: var(--color-accent2);
+}
+.callout.intuition .callout-title,
+.callout.intuition .label {
+  color: var(--color-accent2);
+}
+.callout.warn {
+  border-left-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg));
+}
+.callout.warn .callout-title,
+.callout.warn .label {
+  color: var(--color-accent-text);
+}
+.callout.system {
+  border-left-color: var(--color-accent4);
+  background: color-mix(in srgb, var(--color-accent4) 8%, var(--color-bg));
+}
+.callout.system .callout-title,
+.callout.system .label {
+  color: var(--color-accent4);
+}
+.callout.abstract {
+  border-left-color: var(--color-ink-faint);
+  background: var(--color-bg-soft);
+}
+.callout.abstract .callout-title,
+.callout.abstract .label {
+  color: var(--color-ink-soft);
+}
+/* bad: a wrong approach / an overturned implementation. Without this rule
+   such callouts silently degrade into neutral boxes and the "this is the
+   wrong way" signal is lost entirely */
+.callout.bad {
+  border-left-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg));
+}
+.callout.bad .callout-title,
+.callout.bad .label {
+  color: var(--color-accent-text);
+}
+.callout > :last-child {
+  margin-bottom: 0;
+}
+
+/* ----- measured card (documented vs. measured) ----- */
+/* For claims-versus-measurements content a colored left border is not enough:
+   the reader must see at a glance which sentence is quoted documentation and
+   which is a real measurement, and every callout shares one silhouette — one
+   more would just read as another tip box. So this uses a different structure
+   entirely — a solid title bar + two-pane comparison — where the shape itself
+   is the signal. */
+.measured {
+  margin: 26px 0;
+  border: 2px solid var(--color-accent2);
+  border-radius: var(--radius);
+  overflow: hidden; /* the radius clips the solid title bar */
+  background: var(--color-bg-card);
+  font-family: var(--font-body);
+}
+.measured-head {
+  background: var(--color-accent2);
+  color: var(--color-bg);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  padding: 7px 14px;
+}
+/* The diamond prefix keeps the title bar recognizable in thumbnails and dark
+   mode — color is never the sole carrier of the meaning */
+.measured-head::before {
+  content: '◆ ';
+}
+.measured-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--color-line); /* the gap IS the divider — saves a border */
+}
+.measured-pane {
+  /* A grid item's min-width defaults to auto, so one unbreakable run of code
+     can push the whole card out of the column; zeroing it lets long
+     identifiers break per-character and the card never outgrows the column */
+  min-width: 0;
+  overflow-wrap: anywhere;
+  background: var(--color-bg-card);
+  padding: 13px 16px;
+  font-size: 15.5px;
+}
+.measured-pane code {
+  white-space: normal;
+}
+.measured-pane.doc {
+  background: var(--color-bg-soft);
+  color: var(--color-ink-soft);
+}
+.measured-tag {
+  display: block;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: 0.09em;
+  margin-bottom: 5px;
+}
+.measured-pane.doc .measured-tag {
+  color: var(--color-ink-faint);
+}
+.measured-pane.real .measured-tag {
+  color: var(--color-accent2);
+}
+.measured-pane > :last-child {
+  margin-bottom: 0;
+}
+/* solo form: pure measurement with nothing documented to compare against */
+.measured.solo .measured-body {
+  grid-template-columns: 1fr;
+}
+/* On narrow screens two panes side by side crush code and addresses into
+   wraps, so they stack. Below 620px the sidebar is long gone and the column
+   is roughly the viewport, so a viewport query suffices */
+@media (max-width: 620px) {
+  .measured-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----- chips / tags ----- */
+.chip {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 9px;
+  background: var(--color-bg-soft);
+  color: var(--color-ink-soft);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  margin: 0 2px;
+  border: 1px solid var(--color-line);
+}
+.chip.orange {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  border-color: transparent;
+}
+.chip.teal {
+  background: color-mix(in srgb, var(--color-accent2) 18%, var(--color-bg));
+  color: var(--color-accent2);
+  border-color: transparent;
+}
+.chip.mustard {
+  background: color-mix(in srgb, var(--color-accent3) 22%, var(--color-bg));
+  color: var(--color-accent3);
+  border-color: transparent;
+}
+.chip.violet {
+  background: color-mix(in srgb, var(--color-accent4) 16%, var(--color-bg));
+  color: var(--color-accent4);
+  border-color: transparent;
+}
+
+/* ----- grids / steps ----- */
+.grid-plain,
+.grid-card,
+.grid-cmp {
+  display: grid;
+  gap: 14px;
+  margin: 18px 0;
+}
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.grid-card > *,
+.grid-cmp > * {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  font-size: 15px;
+}
+.grid-cmp > * {
+  background: var(--color-bg-soft);
+}
+@media (max-width: 720px) {
+  .grid-cols-2,
+  .grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.steps-wrap > ul,
+.steps-wrap > ol {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0;
+  font-family: var(--font-ui);
+  font-size: 14.5px;
+  border-left: 2px solid var(--color-line);
+}
+.steps-wrap > ul > li,
+.steps-wrap > ol > li {
+  position: relative;
+  padding: 6px 0 6px 22px;
+  margin: 0;
+}
+.steps-wrap > ul > li::before,
+.steps-wrap > ol > li::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg);
+}
+
+
+/* ========================================================= figures ===== */
+
+.figure {
+  margin: 26px 0;
+}
+.figure > button.zoom {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  line-height: 0;
+}
+.figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-bg-soft);
+}
+.figure figcaption {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-ink-faint);
+  margin-top: 8px;
+  padding-left: 2px;
+}
+.figure figcaption b,
+.figure figcaption strong {
+  color: var(--color-ink-soft);
+  font-weight: 600;
+}
+.figure.pad img {
+  padding: 10px;
+}
+
+.figure-grid {
+  display: grid;
+  gap: 16px;
+  margin: 26px 0;
+}
+.figure-grid.cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.figure-grid.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.figure-grid.cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.figure-grid .figure {
+  margin: 0;
+}
+/* Plates are shot at whatever aspect suits the subject, so a grid of them is
+   otherwise ragged — a portrait display next to a wide aisle. Inside a grid
+   every cell gets one box and the picture is contained, never cropped: the
+   catalogue lines up and no shelf loses its top shelf to a crop. */
+.figure-grid .figure img {
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  background: var(--color-bg-soft);
+}
+.figure-grid .figure figcaption {
+  min-height: 2.6em;
+}
+@media (max-width: 760px) {
+  .figure-grid.cols-3,
+  .figure-grid.cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .figure-grid.cols-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Figures may break the reading column when the picture is the point.
+   The cap cannot be computed from the viewport alone: the column already
+   starts after the sidebar + padding, so `100vw - 140px` at a 1440 viewport
+   yields 1080 and the figure runs past the right edge, giving the whole page
+   a horizontal scrollbar. Clamp against the shell's actual usable width
+   instead — shell max 1240, minus sidebar and right margin, caps the figure
+   at 936: still visibly wider than the column, but never off-screen. */
+.figure.wide,
+.figure-grid.wide {
+  width: min(1080px, calc(min(100vw, var(--shell-w)) - var(--sidebar-w) - 24px));
+}
+@media (max-width: 1100px) {
+  .figure.wide,
+  .figure-grid.wide {
+    width: 100%;
+  }
+}
+
+/* lightbox */
+dialog.lightbox {
+  border: none;
+  padding: 0;
+  background: none;
+  max-width: 96vw;
+  max-height: 96vh;
+}
+dialog.lightbox::backdrop {
+  background: rgba(12, 14, 18, 0.86);
+}
+dialog.lightbox img {
+  display: block;
+  max-width: 96vw;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  border-radius: 6px;
+  cursor: zoom-out;
+}
+dialog.lightbox .cap {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  color: #d8d4cd;
+  padding: 8px 2px 0;
+  text-align: center;
+}
+/* The dialog is position:absolute in the UA sheet, so it is already the
+   containing block for this — no `position` override here, which would break
+   the UA's auto-margin centring. Fixed dark chip: the lightbox always sits on
+   its own near-black backdrop, in either theme. */
+dialog.lightbox .lb-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 999px;
+  background: rgba(12, 14, 18, 0.62);
+  color: #f2efe9;
+  font: 400 19px/1 var(--font-ui);
+  cursor: pointer;
+}
+dialog.lightbox .lb-close:hover {
+  background: rgba(12, 14, 18, 0.88);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+dialog.lightbox .lb-close:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+
+/* =================== hero =================== */
+.hero {
+  margin: 0 0 48px;
+  padding: 18px 0 24px;
+}
+.hero .kicker {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  color: var(--color-accent);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.hero .lede,
+.hero p {
+  font-size: 21px;
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+  max-width: 720px;
+  margin: 18px 0 10px;
+}
+.hero p.meta {
+  font-family: var(--font-ui);
+  color: var(--color-ink-faint);
+  font-size: 13px;
+  margin-top: 18px;
+}
+/* the first h2 right after a hero section drops its chapter rule */
+section:has(.hero) + h2 {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 40px;
+}
+
+/* =================== part divider =================== */
+.part-divider {
+  margin: 72px 0 0;
+  padding: 10px 0 0;
+  border-top: 3px double var(--color-line);
+  font-family: var(--font-ui);
+}
+.part-divider .part-num {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 12px;
+  color: var(--color-accent);
+  font-weight: 700;
+}
+.part-divider .part-title {
+  font-size: 15px;
+  color: var(--color-ink-soft);
+  font-weight: 600;
+  margin-left: 10px;
+}
+.part-divider + h2 {
+  border-top: none;
+  margin-top: 28px;
+  padding-top: 0;
+}
+
+
+/* =================== paper card =================== */
+.paper {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 22px 26px;
+  margin: 22px 0 28px;
+  box-shadow: var(--shadow);
+}
+.paper-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-family: var(--font-ui);
+}
+.paper-head .alias {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.paper-head .full {
+  font-size: 14px;
+  color: var(--color-ink-soft);
+  font-weight: 400;
+}
+.paper-meta {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--color-ink-faint);
+  margin-bottom: 12px;
+}
+.paper-meta a {
+  color: var(--color-ink-soft);
+  border-bottom: none;
+  margin-right: 12px;
+}
+.paper-meta a:hover {
+  color: var(--color-accent);
+}
+.pain {
+  font-style: italic;
+  color: var(--color-ink-soft);
+  margin: 4px 0 12px;
+  padding-left: 12px;
+  border-left: 3px solid var(--color-accent-soft);
+}
+.paper .idea-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+  font-weight: 700;
+}
+.paper .diff {
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  color: var(--color-ink-soft);
+  background: var(--color-bg-soft);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 10px;
+}
+.paper .diff::before {
+  content: 'vs prior →';
+  font-weight: 700;
+  color: var(--color-accent2);
+  margin-right: 8px;
+}
+.paper .diff p {
+  display: inline;
+  margin: 0;
+}
+.paper .pain p {
+  margin: 0;
+}
+
+/* =================== .speak — plain-language gloss =================== */
+/* A one-line gloss placed under a deep-dive h3 so the reader grabs "what this
+   does" before the mechanism. The ::before label defaults to the Chinese
+   "说人话 →" (roughly "in plain words →"); sites can rebrand it via
+   --speak-label. */
+.speak {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+  background: color-mix(in srgb, var(--color-accent2) 6%, transparent);
+  border-left: 3px solid var(--color-accent2);
+  border-radius: 0 6px 6px 0;
+  padding: 8px 12px;
+  margin: 10px 0 16px;
+}
+.speak::before {
+  content: var(--speak-label, '说人话 →');
+  font-weight: 700;
+  color: var(--color-accent2);
+  margin-right: 8px;
+}
+
+
+/* =================== tags (paper-meta badges) =================== */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  margin-right: 6px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.tag.teal {
+  background: #d6e8e6;
+  color: var(--color-accent2);
+}
+.tag.mustard {
+  background: #f3e2bf;
+  color: #8a6512;
+}
+.tag.violet {
+  background: #e2dbf3;
+  color: var(--color-accent4);
+}
+
+
+/* =================== demo stages =================== */
+.demo {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin: 26px 0;
+  box-shadow: var(--shadow);
+}
+.demo-title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+  margin-bottom: 12px;
+}
+.demo-stage {
+  position: relative;
+  width: 100%;
+  background: #f8f6ef;
+  border-radius: 6px;
+  border: 1px solid var(--color-line);
+  overflow: hidden;
+}
+.demo-stage.multi {
+  display: flex;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  overflow: visible;
+}
+.demo-stage.multi > canvas {
+  flex: 1 1 0;
+  min-width: 0;
+  background: #f8f6ef;
+  border-radius: 6px;
+  border: 1px solid var(--color-line);
+}
+.demo canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  cursor: crosshair;
+}
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+  align-items: center;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  margin-top: 14px;
+}
+.demo-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--color-ink-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  min-width: 130px;
+}
+.demo-controls input[type='range'] {
+  width: 160px;
+  accent-color: var(--color-accent);
+}
+.demo-controls select {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  padding: 5px 8px;
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  background: var(--color-bg-card);
+  color: var(--color-ink);
+}
+.demo-controls button {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--color-ink);
+  color: var(--color-bg);
+  border: 0;
+  border-radius: 4px;
+  padding: 7px 14px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+.demo-controls button:hover {
+  background: var(--color-accent);
+}
+.demo-controls .toggle {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  text-transform: none;
+  font-size: 13px;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: var(--color-ink);
+}
+.demo-caption {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--color-ink-soft);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+.demo-caption p {
+  margin: 0;
+}
+.readout {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-accent2);
+  background: var(--color-bg-soft);
+  padding: 4px 8px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.readout.bad {
+  color: var(--color-accent);
+}
+
+
+/* =================== stats =================== */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+  margin: 24px 0 32px;
+}
+.stats .stat {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  text-align: center;
+}
+.stats .v {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  color: var(--color-accent);
+  font-weight: 700;
+  display: block;
+}
+.stats .k {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-ink-faint);
+  margin-top: 4px;
+  display: block;
+}
+
+
+/* =================== steps =================== */
+.steps {
+  list-style: none;
+  padding: 0;
+  margin: 18px 0;
+  font-family: var(--font-ui);
+  font-size: 14.5px;
+  border-left: 2px solid var(--color-line);
+}
+.steps > li {
+  position: relative;
+  padding: 6px 0 6px 22px;
+  margin: 0;
+}
+.steps > li::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg);
+}
+
+/* ============ collection sub-page chrome (breadcrumb + part header) ===== */
+.crumb {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  color: var(--color-ink-faint);
+  margin: 0 0 12px;
+  letter-spacing: 0.02em;
+}
+.crumb a {
+  color: var(--color-ink-soft);
+  border-bottom: 1px dotted var(--color-line);
+}
+.crumb a:hover {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+.crumb .sep {
+  margin: 0 8px;
+  color: var(--color-ink-faint);
+}
+
+.part-header {
+  border-bottom: 1px solid var(--color-line);
+  padding-bottom: 18px;
+  margin: 0 0 28px;
+}
+.part-header .kicker {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+  color: var(--color-accent);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.part-header h1 {
+  font-size: 38px;
+  margin: 0 0 6px;
+}
+.part-header .lede,
+.part-header p {
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+  margin: 8px 0 0;
+  max-width: 720px;
+}
+
+/* =================== references =================== */
+.references {
+  font-size: 14.5px;
+  font-family: var(--font-ui);
+}
+.references ol,
+.references ul {
+  padding-left: 26px;
+}
+.references li {
+  margin: 7px 0;
+  color: var(--color-ink-soft);
+}
+.ref-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-accent2);
+  background: var(--color-bg-soft);
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-right: 6px;
+}
+
+/* =================== lineage =================== */
+.lineage {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin: 26px 0;
+  font-family: var(--font-ui);
+  box-shadow: var(--shadow);
+}
+.lineage svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+
+/* ---------------- [[wikilinks]] ---------------- */
+/* live link: accent underline, visually distinct from ordinary links —
+   this one leads to another note on this site */
+a.wikilink {
+  color: var(--color-ink);
+  text-decoration: none;
+  border-bottom: 1.5px solid color-mix(in srgb, var(--color-accent) 55%, transparent);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+a.wikilink:hover {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+/* dead link: muted dotted underline (Obsidian-style), hover names the
+   missing target */
+span.wikilink-dead {
+  color: var(--color-ink-faint);
+  border-bottom: 1.5px dotted var(--color-ink-faint);
+  cursor: help;
+}
+
+
+/* ----- spacing for the CMS comment area (astro-inkbrush) ----- */
+.wiki-comments {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--color-line);
+}
+
+
+/* ----- print: Ctrl+P on any page yields a clean PDF -----
+   Without print styles, printing drags the sidebar ToC, breadcrumb,
+   theme/search buttons, backlinks and prev/next navigation onto paper — a
+   note can't be shared as a PDF. These rules do exactly three things: hide
+   interactive chrome, let the 820px reading column fill the page width, and
+   protect tables/cards from page breaks. Colors are untouched (the warm
+   paper ground is the identity; the browser's "background graphics" toggle
+   decides whether it prints). */
+@media print {
+  .site-nav,
+  .sidebar,
+  .theme-toggle,
+  .se-dialog,
+  .backlinks,
+  .pagination,
+  .demo-controls,
+  .cbt-strip,
+  .cbt-arrow,
+  .cbt-foot {
+    display: none !important;
+  }
+  .layout {
+    display: block;
+    max-width: none;
+  }
+  main.note-main {
+    padding: 0;
+  }
+  .col {
+    max-width: none;
+  }
+  /* page-break protection: rows, cards and captions never split mid-way */
+  tr,
+  .callout,
+  .stats,
+  .demo,
+  figure,
+  .paper-card {
+    break-inside: avoid;
+  }
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+  /* wide tables scroll on screen; paper has no scrollbar — shrink to fit */
+  .table-wrap,
+  .tbl-wrap {
+    overflow: visible !important;
+  }
+  table {
+    font-size: 10.5px;
+  }
+  a {
+    text-decoration: none;
+  }
+}

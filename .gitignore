@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.astro/
+
+# demo site runtime state (CMS data and per-machine config — never committed)
+demo/.wiki/
+demo/inkbrush.config.ts
+
+# intermediate artifacts of the font subset build
+fonts/*.ttf
+
+# machine-local content manifest for the font subset
+fonts/content-dirs.local.txt

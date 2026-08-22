@@ -1,0 +1,138 @@
+/* ============================================================
+   astro-inkstone · tokens.css — two-tier design tokens
+   (the single source of truth for every color in the system)
+
+   Tier 1: the raw palette (paper-and-ink pigment constants, theme-
+           independent, named --p-*).
+   Tier 2: semantic tokens (--color-*): light defaults on :root,
+           dark overrides under [data-theme='dark']. The component
+           layer (base.css and every component) may consume ONLY
+           this tier — never raw hex, never tier 1 directly.
+
+   Giving a site its own identity — two sanctioned paths:
+     a) override tier 1 wholesale (redefine the --p-* palette);
+        the semantic and component layers follow automatically;
+     b) re-map tier 2 onto your own palette (point --color-* at
+        your variables) when your site already has one.
+
+   Light is the identity: prefers-color-scheme is deliberately not
+   read — a page must not flip themes on its own as readers move
+   between sites. Dark mode exists only via [data-theme='dark']
+   (the site provides the toggle; see demo/ ThemeInit/ThemeToggle).
+
+   Contrast: every value here is audited for WCAG AA on every
+   background it sits on (small text starts at 4.5:1; accent-as-text
+   gets its own darkened tier). Before changing any value, check
+   every surface it is used against.
+   ============================================================ */
+
+/* Code font: a fixed-charset subset of Maple Mono CN (ASCII + box drawing +
+   3500 common Hanzi + content union). Latin is 0.6 em, Hanzi 1.2 em — a Hanzi
+   is exactly two character cells, so box diagrams stay aligned. Recipe and
+   regeneration: fonts/README.md; licensed under the OFL. */
+@font-face {
+  font-family: 'Maple Mono CN Sub';
+  src: url('../fonts/MapleMonoCN-subset.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ====== Tier 1: raw palette (paper-and-ink pigments, theme-invariant) === */
+  /* ---- paper ---- */
+  --p-paper: #fbf9f4; /* page ground */
+  --p-paper-soft: #f3efe5; /* secondary surface */
+  --p-card: #ffffff; /* card face */
+  --p-code: #f3f1ea; /* code background */
+  --p-math: #f6f1e3; /* math background */
+  /* ---- ink ---- */
+  --p-ink: #25313a; /* body text */
+  --p-ink-soft: #4b5560; /* secondary text */
+  --p-ink-faint: #646d76; /* small text (4.6:1 on the paper ground — no lighter) */
+  --p-line: #e5e0d3; /* hairlines */
+  /* ---- pigments ---- */
+  --p-vermilion: #c14b02; /* primary accent (darkened to AA, 4.7:1) */
+  --p-vermilion-soft: #f9dcc6;
+  --p-vermilion-text: #a03f02; /* accent at small-text sizes (5.5:1, for its own soft tint) */
+  --p-vermilion-raw: #fe5d01; /* raw accent (glyphs/graphics only — never body links) */
+  --p-teal: #2a6f6b; /* secondary content accent */
+  --p-mustard: #c08a2c; /* lines/borders */
+  --p-mustard-text: #8c5f0c; /* mustard at small-text sizes (the lighter tint fails AA as text) */
+  --p-violet: #6b4ec4; /* content semantic */
+  /* ---- night (dark-only constants) ---- */
+  --p-night: #12161b;
+  --p-night-soft: #1a2027;
+  --p-night-card: #1e252d;
+  --p-night-code: #1a2028;
+  --p-night-line: #2b333c;
+  --p-moon: #e8e6e1; /* dark-mode body text */
+  --p-moon-soft: #b1b6ba;
+  --p-moon-faint: #8b939b; /* 4.97:1 on the dark card face */
+  --p-vermilion-night: #f5854a; /* accent, brightened for dark (7.9:1) */
+  --p-vermilion-night-soft: #4a2f1d;
+  --p-teal-night: #5cb8b2;
+  --p-mustard-night: #d9a94f;
+  --p-violet-night: #a08fe0;
+
+  /* ====== Tier 2: semantic tokens (light defaults) ====== */
+  --color-bg: var(--p-paper);
+  --color-bg-soft: var(--p-paper-soft);
+  --color-bg-card: var(--p-card);
+  --color-ink: var(--p-ink);
+  --color-ink-soft: var(--p-ink-soft);
+  --color-ink-faint: var(--p-ink-faint);
+  --color-line: var(--p-line);
+  --color-accent: var(--p-vermilion);
+  --color-accent-soft: var(--p-vermilion-soft);
+  --color-accent-text: var(--p-vermilion-text);
+  --color-brand: var(--p-vermilion-raw);
+  --color-accent2: var(--p-teal);
+  --color-accent3: var(--p-mustard);
+  --color-accent3-text: var(--p-mustard-text);
+  --color-accent4: var(--p-violet);
+  --color-code-bg: var(--p-code);
+  --color-math-bg: var(--p-math);
+
+  /* ---- type ---- */
+  --font-body: 'Charter', 'Iowan Old Style', 'Source Serif 4', 'Source Serif Pro', 'Noto Serif SC',
+    'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', ui-serif, Georgia, serif;
+  --font-ui: 'Inter', 'Helvetica Neue', 'Noto Sans SC', 'Noto Sans CJK SC', 'PingFang SC',
+    ui-sans-serif, system-ui, sans-serif;
+  /* Monospace: the self-hosted subset comes first so everyone sees the same
+     glyphs and the same widths (a Hanzi is exactly two cells — box diagrams
+     depend on it); characters outside the subset fall back to a local full
+     Maple Mono, then JetBrains/system monospace. */
+  --font-mono: 'Maple Mono CN Sub', 'Maple Mono Normal NL NF CN', 'Maple Mono NL CN', 'Maple Mono CN',
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  --font-mono-cjk: var(--font-mono);
+
+  /* ---- metrics ---- */
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 6px 18px rgba(0, 0, 0, 0.04);
+  --radius: 8px;
+  --maxw: 820px; /* reading column */
+  --sidebar-w: 280px;
+  --nav-h: 42px; /* top bar height — the sticky sidebar tracks it */
+  --shell-w: 1240px;
+}
+
+:root[data-theme='dark'] {
+  --color-bg: var(--p-night);
+  --color-bg-soft: var(--p-night-soft);
+  --color-bg-card: var(--p-night-card);
+  --color-ink: var(--p-moon);
+  --color-ink-soft: var(--p-moon-soft);
+  --color-ink-faint: var(--p-moon-faint);
+  --color-line: var(--p-night-line);
+  --color-accent: var(--p-vermilion-night);
+  --color-accent-soft: var(--p-vermilion-night-soft);
+  --color-accent-text: var(--p-vermilion-night); /* the accent is already bright enough on dark */
+  --color-brand: var(--p-vermilion-raw);
+  --color-accent2: var(--p-teal-night);
+  --color-accent3: var(--p-mustard-night);
+  --color-accent3-text: var(--p-mustard-night);
+  --color-accent4: var(--p-violet-night);
+  --color-code-bg: var(--p-night-code);
+  --color-math-bg: var(--p-night-code);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.35);
+}

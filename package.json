@@ -1,0 +1,64 @@
+{
+  "name": "astro-inkstone",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Paper-and-ink design layer for Astro docs, wikis and digital gardens: two-tier design tokens, a production-grade content stylesheet, 20+ components, a one-line Markdown pipeline preset, CJK-first typography, and render-layer checks.",
+  "author": "Jianfei Guo",
+  "license": "MIT",
+  "homepage": "https://ventusff.github.io/astro-inkstone/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ventusff/astro-inkstone.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ventusff/astro-inkstone/issues"
+  },
+  "keywords": [
+    "astro",
+    "astro-theme",
+    "design-tokens",
+    "documentation",
+    "wiki",
+    "digital-garden",
+    "dark-mode",
+    "katex",
+    "mermaid",
+    "cjk",
+    "typography"
+  ],
+  "exports": {
+    ".": "./lib/index.ts",
+    "./markdown-preset": "./lib/markdown-preset.ts",
+    "./styles/tokens.css": "./styles/tokens.css",
+    "./styles/base.css": "./styles/base.css",
+    "./components/*": "./components/*",
+    "./lib/*": "./lib/*.ts",
+    "./fonts/*": "./fonts/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "probe": "node scripts/ui_probe.mjs demo/dist"
+  },
+  "dependencies": {
+    "@shikijs/transformers": "^3.0.0",
+    "@types/hast": "^3.0.4",
+    "@types/mdast": "^4.0.4",
+    "hastscript": "^9.0.0",
+    "katex": "^0.17.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gemoji": "^8.0.0",
+    "remark-math": "^6.0.0",
+    "unist-util-visit": "^5.0.0",
+    "vfile": "^6.0.3"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.0.0"
+  },
+  "peerDependencies": {
+    "astro": "^7.0.0"
+  },
+  "workspaces": [
+    "demo/vendor/astro-inkbrush"
+  ]
+}

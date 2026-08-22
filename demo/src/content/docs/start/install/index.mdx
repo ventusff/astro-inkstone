@@ -1,0 +1,84 @@
+---
+title: Install and wire up
+description: A pair of submodules in your site repo, and one line of siteMarkdown for the whole Markdown pipeline.
+---
+
+## A pair of submodules
+
+Neither the paper nor the engine is published to npm — both are zero-build and export raw TS/CSS source. A site vendors the two repos as git submodules and points `file:` dependencies at them:
+
+```bash title="site repo root"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (dependencies)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] This demo's layout differs slightly
+> The demo lives inside the package repo (`demo/`), so its `astro-inkstone` points at `file:..` and the engine hangs under `demo/vendor/`. A standalone site uses the `packages/` layout above — the two are equivalent.
+
+## Styles
+
+In your global stylesheet: tokens first, then the content layer, then only your own chrome:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+
+/* identity: override the tier-one palette; the semantic and component layers follow */
+:root {
+  --p-vermilion: #b03a48; /* your brand accent */
+}
+```
+
+Math sites add one line for KaTeX's stylesheet in the layout (without it, formula layout falls apart):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+## The Markdown pipeline, one line
+
+```js title="astro.config.mjs"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { siteMarkdown } from 'astro-inkstone/lib/markdown-preset';
+
+const WIKI_MODE = Boolean(process.env.WIKI);
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+
+export default defineConfig({
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'sections', // build-time heading numbers + ToC into frontmatter
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // code frames: title bar / copy / collapse / annotations
+    mermaid: true, // mermaid fences render client-side
+    callouts: true, // Obsidian-style > [!note] syntax
+    wikiBlocks: WIKI_MODE, // editing mode: block ↔ source-line mapping, always last
+    guard: { autoNumberedHeadings: true }, // content guard: reject hand-typed numbers
+  }),
+});
+```
+
+`siteMarkdown` sits on the engine's dialect (GFM, CJK-friendly emphasis, the content guard); the preset itself only assembles and orders the site-side plugins — **the pipeline order is the contract**, so your site never worries about who runs before whom. Every switch is demonstrated on the “Kitchen sink” page. Chinese-labelled callouts? Pass `calloutLabels` — the defaults are English.
+
+## Run it
+
+```bash
+npm install
+npm run dev        # the manual site
+npm run build      # static build + the engine's check-dist (postbuild)
+npm run wiki       # WIKI=1 astro dev — CMS editing mode
+```
+
+The static build carries zero editing machinery: outside WIKI mode the engine's integration code is never even imported (dynamic import), and the output is byte-identical to a site without the CMS.

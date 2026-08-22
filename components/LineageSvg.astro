@@ -1,0 +1,12 @@
+---
+/** Framed figure for hand-authored SVG diagrams (lineage trees, taxonomies). */
+interface Props {
+  title?: string | undefined;
+}
+const { title } = Astro.props;
+---
+
+<figure class="lineage">
+  {title && <div class="demo-title">{title}</div>}
+  <slot />
+</figure>

@@ -1,0 +1,38 @@
+name: CI
+
+# Build the demo site and run the render-layer probe against the output.
+# The probe loads every built page in headless Chrome at four viewport widths
+# and fails on horizontal overflow, unstyled classes, dead anchors, images
+# without alt text, and skipped heading levels.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install package deps (repo root)
+        run: npm install --no-audit --no-fund
+      - name: Install & build demo
+        working-directory: demo
+        run: |
+          npm install
+          npm run build
+      - name: Render-layer probe
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/ui_probe.mjs demo/dist

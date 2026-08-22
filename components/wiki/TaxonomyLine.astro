@@ -1,0 +1,67 @@
+---
+/**
+ * TaxonomyLine — one restrained meta strip at the top of a note page:
+ * kind badge · domain chips · status dot · updated date. Renders nothing
+ * when the note carries no taxonomy at all.
+ *
+ * Purely presentational: the site resolves registry defs and URLs (e.g. with
+ * the `createTaxonomy` helpers from `astro-inkstone/lib/taxonomy`) and passes
+ * display-ready values in.
+ */
+import DomainChip from './DomainChip.astro';
+import KindBadge from './KindBadge.astro';
+import StatusDot from './StatusDot.astro';
+
+interface Props {
+  kind?: { id: string; label: string; desc?: string | undefined } | undefined;
+  domains?:
+    | {
+        id: string;
+        label: string;
+        desc?: string | undefined;
+        tone: { bg: string; fg: string };
+        href?: string | undefined;
+      }[]
+    | undefined;
+  status?: { id: string; label: string; desc?: string | undefined; dot: string } | undefined;
+  /** Pre-formatted display date (e.g. "2026.05"). */
+  updated?: string | undefined;
+  /** Display strings; pass localized overrides. */
+  labels?: { updated?: string | undefined } | undefined;
+}
+const { kind, domains = [], status, updated, labels = {} } = Astro.props;
+const dateLabel = labels.updated ?? 'updated';
+const show = kind !== undefined || domains.length > 0 || status !== undefined;
+---
+
+{
+  show && (
+    <div class="taxo-line">
+      {kind && <KindBadge def={kind} />}
+      {domains.map((d) => (
+        <DomainChip def={d} href={d.href} />
+      ))}
+      {status && <StatusDot def={status} />}
+      {updated && (
+        <span class="date">
+          {dateLabel} {updated}
+        </span>
+      )}
+    </div>
+  )
+}
+
+<style>
+  .taxo-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 0 0 1.1rem;
+  }
+  .date {
+    font: 500 11px/1 var(--font-ui, 'Inter', sans-serif);
+    color: var(--color-ink-faint, #8a8d97);
+    margin-left: 2px;
+  }
+</style>

@@ -1,0 +1,195 @@
+---
+/**
+ * ⌘K search overlay. The index is fetched on first open (lazily, so it costs
+ * a reader who never searches nothing) from `search-index.json` — an endpoint
+ * both the dev server and the static build serve (built by the package's
+ * `buildSearchIndexEndpoint` factory, see src/pages/search-index.json.ts).
+ * The matching itself lives in the package: astro-inkstone/lib/search-client.
+ */
+import { href, UI, type Locale } from '../lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const t = UI[locale];
+/**
+ * Accessible names for the combobox plumbing. Same zh/en shape as `UI` in
+ * lib/i18n.ts; kept local because they name THIS widget's parts and have no
+ * other consumer — a screen reader on an en page must not hear zh chrome.
+ */
+const A11Y: Record<Locale, { dialog: string; input: string; results: string }> = {
+  zh: { dialog: '站内搜索', input: '搜索这份手册', results: '搜索结果' },
+  en: { dialog: 'Site search', input: 'Search the manual', results: 'Search results' },
+};
+const a11y = A11Y[locale];
+---
+
+<dialog
+  id="site-search"
+  class="se-dialog"
+  aria-label={a11y.dialog}
+  data-index={href('search-index.json')}
+  data-locale={locale}
+  data-empty={t.searchEmpty}
+  data-unit={locale === 'en' ? 'pages' : '篇'}
+>
+  <div class="se-box">
+    <input
+      class="se-input"
+      type="search"
+      role="combobox"
+      aria-label={a11y.input}
+      aria-controls="se-results"
+      aria-expanded="false"
+      aria-autocomplete="list"
+      placeholder={t.searchPlaceholder}
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <div class="se-status" role="status" aria-live="polite" aria-atomic="true">{t.searchHint}</div>
+    <ol class="se-results" id="se-results" role="listbox" aria-label={a11y.results}></ol>
+    <div class="se-foot">
+      <span><kbd>↑↓</kbd> · <kbd>Enter</kbd> · <kbd>Esc</kbd></span>
+      <span>astro-inkstone</span>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  import { search, type Hit, type SearchDoc } from 'astro-inkstone/lib/search-client';
+
+  // bound once so the closures below hold a non-null reference (narrowing an
+  // outer `let` does not survive into a nested function)
+  function mount(dialog: HTMLDialogElement): void {
+    const input = dialog.querySelector('.se-input') as HTMLInputElement;
+    const status = dialog.querySelector('.se-status') as HTMLElement;
+    const list = dialog.querySelector('.se-results') as HTMLOListElement;
+    const indexUrl = dialog.dataset['index'] ?? 'search-index.json';
+    const locale = (dialog.dataset['locale'] === 'en' ? 'en' : 'zh') as 'zh' | 'en';
+    const hint = status.textContent ?? '';
+
+    let docs: SearchDoc[] | null = null;
+    let loading: Promise<void> | null = null;
+    let hits: Hit[] = [];
+    let sel = 0;
+
+    const load = (): Promise<void> =>
+      (loading ??= fetch(indexUrl)
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((d: SearchDoc[]) => {
+          docs = d;
+        })
+        .catch(() => {
+          status.textContent = 'search index unavailable';
+        }));
+
+    /**
+     * Selection lives on the OPTIONS, not on a repaint of the list: the
+     * combobox keeps DOM focus in the input and points at the current row
+     * with `aria-activedescendant`, so that row has to be a stable element
+     * with a stable id between keystrokes.
+     */
+    function paint(): void {
+      const items = [...list.children] as HTMLElement[];
+      items.forEach((li, i) => {
+        const on = i === sel;
+        li.classList.toggle('sel', on);
+        li.firstElementChild?.setAttribute('aria-selected', String(on));
+      });
+      const activeId = items[sel]?.firstElementChild?.id;
+      if (activeId) input.setAttribute('aria-activedescendant', activeId);
+      else input.removeAttribute('aria-activedescendant');
+      input.setAttribute('aria-expanded', String(items.length > 0));
+    }
+
+    function render(): void {
+      list.replaceChildren();
+      hits.forEach((h, i) => {
+        // the li is only a layout box; the anchor is the listbox option, so
+        // the row keeps its href for click / Enter / open-in-new-tab
+        const li = document.createElement('li');
+        li.setAttribute('role', 'presentation');
+        const a = document.createElement('a');
+        a.id = `se-opt-${i}`;
+        a.setAttribute('role', 'option');
+        a.href = new URL(h.doc.route, new URL(indexUrl, location.href)).pathname;
+        const t = document.createElement('div');
+        t.className = 't';
+        t.textContent = h.doc.title;
+        if (h.doc.crumb) {
+          const c = document.createElement('span');
+          c.className = 'crumb';
+          c.textContent = h.doc.crumb;
+          t.append(c);
+        }
+        const s = document.createElement('div');
+        s.className = 's';
+        s.innerHTML = h.snippet; // built by search-client, all values escaped there
+        a.append(t, s);
+        li.append(a);
+        list.append(li);
+      });
+      paint();
+    }
+
+    async function run(): Promise<void> {
+      const q = input.value.trim();
+      if (!q) {
+        hits = [];
+        sel = 0;
+        status.textContent = hint;
+        render();
+        return;
+      }
+      await load();
+      if (!docs) return;
+      hits = search(docs, q, locale);
+      sel = 0;
+      status.textContent = hits.length
+        ? `${hits.length} ${dialog.dataset['unit'] ?? ''}`
+        : (dialog.dataset['empty'] ?? '');
+      render();
+    }
+
+    function open(): void {
+      if (!dialog.open) dialog.showModal();
+      input.focus();
+      input.select();
+      void load();
+    }
+
+    input.addEventListener('input', () => void run());
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    dialog.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (hits.length === 0) return;
+        sel = (sel + (e.key === 'ArrowDown' ? 1 : hits.length - 1)) % hits.length;
+        paint();
+        list.children[sel]?.scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter') {
+        const a = list.children[sel]?.querySelector('a');
+        if (a) {
+          e.preventDefault();
+          location.href = (a as HTMLAnchorElement).href;
+        }
+      }
+    });
+
+    for (const btn of document.querySelectorAll('.search-btn')) {
+      btn.addEventListener('click', open);
+    }
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        open();
+      }
+    });
+  }
+
+  const el = document.getElementById('site-search');
+  if (el instanceof HTMLDialogElement) mount(el);
+</script>

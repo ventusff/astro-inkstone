@@ -1,0 +1,83 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { READING_ORDER } from '../lib/book';
+import { routeOfId, type Locale } from '../lib/i18n';
+import { getToc } from '../lib/toc';
+
+/**
+ * Every page of both locales, materialized explicitly.
+ *
+ * The zh route of a page with no zh file resolves to the en entry and is
+ * marked `fallback` — materializing it here (instead of Astro's route-level
+ * i18n fallback) means the contract holds regardless of how dynamic routes
+ * are treated, and the layout can say so on the page.
+ */
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  const byId = new Map(docs.map((d) => [d.id, d]));
+  const paths = [];
+
+  for (const id of READING_ORDER) {
+    const enEntry = byId.get(id);
+    const zhEntry = byId.get(`zh/${id}`);
+    // A page listed in the book must exist in at least one language. Neither
+    // side is assumed present: a page can land in zh first and be translated
+    // later, and the route for the missing side still has to work.
+    if (!enEntry && !zhEntry) continue;
+    // narrowed for the props type below: past this line at least one exists
+    const en = (enEntry ?? zhEntry)!;
+    const zh = (zhEntry ?? enEntry)!;
+
+    paths.push({
+      params: { slug: routeOfId(id).replace(/\/$/, '') },
+      props: {
+        entry: en,
+        locale: 'en' as Locale,
+        pageId: id,
+        fallback: !enEntry,
+      },
+    });
+    paths.push({
+      params: { slug: `zh/${id}` },
+      props: {
+        entry: zh,
+        locale: 'zh' as Locale,
+        pageId: id,
+        fallback: !zhEntry,
+      },
+    });
+  }
+  return paths;
+}
+
+const { entry, locale, pageId, fallback } = Astro.props as {
+  entry: CollectionEntry<'docs'>;
+  locale: Locale;
+  pageId: string;
+  fallback: boolean;
+};
+// the ToC comes from rehype-sections (which also injects the numbers), not
+// from Astro's `headings` — those carry the injected number in their text
+const { Content, remarkPluginFrontmatter } = await render(entry);
+const route = locale === 'zh' ? `zh/${routeOfId(pageId)}` : routeOfId(pageId);
+// Editable only when this page is rendered from its own source file. On a
+// fallback the visible text belongs to the other locale, and editing it here
+// would rewrite that locale's file behind the reader's back.
+const noteId = fallback ? undefined : entry.id;
+---
+
+<Base
+  title={entry.data.title}
+  description={entry.data.description}
+  date={entry.data.date}
+  locale={locale}
+  route={route}
+  pageId={pageId}
+  fallback={fallback}
+  toc={getToc(remarkPluginFrontmatter ?? {})}
+  noteId={noteId}
+>
+  <Content />
+</Base>

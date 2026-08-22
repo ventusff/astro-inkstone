@@ -1,0 +1,476 @@
+/* ============================================================
+   site.css — this site's (the demo's) own styles: chrome only.
+   Content-layer styles (typography/code/tables/callouts/figures/KaTeX/
+   mermaid/print) all come from the package's base.css; palette and fonts
+   from the package's tokens.css. A site customizes identity by overriding
+   tier one of the tokens (--p-*); this demo deliberately overrides none —
+   what you see is the package's bare face.
+   ============================================================ */
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+
+/* ============================================================ shell ==== */
+
+.layout {
+  min-height: calc(100vh - var(--nav-h));
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  max-width: var(--shell-w);
+  margin: 0 auto;
+  /* The sidebar is a sticky 100vh box, so its own background can only ever be
+     one screen tall — which is why an older layout showed a hard colour seam
+     partway down every long page. Painting the tint and its edge on the grid
+     instead makes the column run the full height of the document. */
+  background: linear-gradient(
+    to right,
+    var(--color-bg-soft) 0 calc(var(--sidebar-w) - 1px),
+    var(--color-line) calc(var(--sidebar-w) - 1px) var(--sidebar-w),
+    transparent var(--sidebar-w)
+  );
+}
+
+.sidebar {
+  position: sticky;
+  top: var(--nav-h); /* sit below the nav bar, never slide under it */
+  align-self: start;
+  height: calc(100vh - var(--nav-h));
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding: 26px 20px 48px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+main.note-main {
+  padding: 48px 56px 120px 52px;
+  min-width: 0;
+}
+.col {
+  max-width: var(--maxw);
+}
+
+/* ---------------------------------------------------------- sidebar ---- */
+.sidebar .brand-link {
+  color: inherit;
+  border-bottom: none;
+  display: block;
+  text-decoration: none;
+}
+/* the brand is chrome, not the page's title — a plain div carrying every
+   property an h1 would have got from the UA (block, 18px, 700, no margin) */
+.sidebar .brand-title {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+}
+.sidebar .brand-title .glyph {
+  color: var(--color-brand);
+  margin-right: 7px;
+}
+.sidebar .brand-title em {
+  font-style: normal;
+  color: var(--color-accent);
+}
+.sidebar .subtitle {
+  color: var(--color-ink-faint);
+  font-size: 12px;
+  margin-bottom: 16px;
+  line-height: 1.45;
+}
+
+.toc {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+}
+.toc > li {
+  margin: 0;
+}
+.toc a {
+  /* number and title in two columns: a wrapped title aligns with its own first character, not the far left */
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 7px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  color: var(--color-ink-soft);
+  text-decoration: none;
+  line-height: 1.35;
+  text-wrap: pretty; /* no orphan word when the title wraps */
+}
+.toc a:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
+}
+.toc a.active {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.toc .group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 9px;
+  text-transform: uppercase;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  color: var(--color-ink-faint);
+  padding: 16px 8px 4px;
+  font-weight: 600;
+}
+.toc .group a {
+  display: inline;
+  padding: 0;
+  color: inherit;
+  letter-spacing: inherit;
+  white-space: nowrap; /* never break inside the chapter name; let the subtitle wrap instead */
+}
+.toc .group a:hover {
+  background: none;
+  color: var(--color-accent);
+}
+.toc .group .n {
+  font-family: var(--font-mono);
+  color: var(--color-accent);
+  letter-spacing: 0;
+}
+.toc .group .zh {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+.toc .here {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 7px;
+  margin-bottom: 7px;
+  padding: 5px 8px;
+  color: var(--color-ink);
+  font-weight: 600;
+}
+.toc ul.sub {
+  list-style: none;
+  margin: 0 0 6px;
+  padding-left: 14px;
+  font-size: 13px;
+  border-left: 1px solid var(--color-line);
+  margin-left: 10px;
+}
+.toc ul.sub a {
+  padding: 3px 8px;
+}
+.toc ul.sub .idx,
+.toc .num-col {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-accent);
+  margin-right: 6px;
+}
+
+/* ----- part structure: sidebar part heads / cover grouping ----- */
+.sidebar .part-head {
+  margin: 22px 0 6px;
+  padding: 0 0 4px;
+  border-bottom: 1px solid var(--color-line);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.sidebar .part-head[data-part='reference'] > span:first-child {
+  color: var(--color-accent2);
+}
+.sidebar .part-head[data-part='ops'] > span:first-child {
+  color: var(--color-accent4);
+}
+.sidebar .part-head .zh {
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+.part-block {
+  margin-top: 30px;
+}
+.part-title {
+  font-size: 17px;
+  margin-bottom: 10px;
+}
+.part-title .part-sub {
+  margin-left: 10px;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-ink-faint);
+  letter-spacing: 0.06em;
+}
+.part-block[data-part='reference'] .part-title {
+  color: var(--color-accent2);
+}
+.part-block[data-part='ops'] .part-title {
+  color: var(--color-accent4);
+}
+
+/* ==================================================== cover & index ==== */
+
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  grid-auto-rows: 1fr; /* equal-height cards — a plain grid leaves ragged gaps */
+  gap: 14px;
+  margin: 26px 0;
+}
+.chapter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-bg-card);
+  padding: 16px 18px 18px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow);
+  transition:
+    border-color 0.12s ease,
+    transform 0.12s ease;
+}
+.chapter-card:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+}
+.chapter-card .head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.chapter-card .num {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--color-accent);
+  line-height: 1;
+}
+.chapter-card .primary {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-ink);
+}
+.chapter-card .secondary {
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+  margin: 2px 0 6px;
+}
+.chapter-card .blurb {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+  /* card text is not a link — the whole card is; no underlines inside */
+  border-bottom: none;
+}
+
+/* =================================================== search palette ==== */
+
+dialog.se-dialog {
+  border: none;
+  padding: 0;
+  background: none;
+  max-width: 100vw;
+  max-height: 100vh;
+  width: 100%;
+  height: 100%;
+}
+dialog.se-dialog::backdrop {
+  background: rgba(18, 20, 24, 0.5);
+  backdrop-filter: blur(2px);
+}
+.se-box {
+  width: min(640px, calc(100vw - 32px));
+  margin: 12vh auto 0;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  font-family: var(--font-ui);
+}
+.se-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--color-line);
+  background: none;
+  color: var(--color-ink);
+  font: 400 16px/1.4 var(--font-ui);
+  padding: 15px 18px;
+  outline: none;
+}
+/* the UA ring was suppressed above and nothing replaced it, so a keyboard
+   reader had no focus indicator at all. Drawn INSIDE the field: `.se-box`
+   clips overflow, which would eat an outset ring. --color-accent is 4.7:1 on
+   the light card and 7.9:1 on the dark one, both past the 3:1 UI minimum. */
+.se-input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+.se-status {
+  font-size: 11.5px;
+  color: var(--color-ink-faint);
+  padding: 8px 18px;
+  border-bottom: 1px solid var(--color-line);
+}
+.se-results {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+}
+.se-results li {
+  margin: 0;
+}
+.se-results a {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+}
+.se-results li.sel a,
+.se-results a:hover {
+  background: var(--color-bg-soft);
+}
+.se-results .t {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.se-results .t .crumb {
+  font-weight: 400;
+  font-size: 11.5px;
+  color: var(--color-ink-faint);
+  margin-left: 8px;
+}
+.se-results .s {
+  font-size: 12.5px;
+  color: var(--color-ink-soft);
+  margin-top: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.se-results mark {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.se-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--color-ink-faint);
+  padding: 8px 18px;
+  border-top: 1px solid var(--color-line);
+}
+.se-foot kbd {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  border: 1px solid var(--color-line);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+/* ====================================================== responsive ===== */
+
+.nav-toggle {
+  display: none;
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: 1fr;
+    /* the sidebar is hidden here, so the gradient that paints its ground
+       must go too — otherwise a 280px cream band stands to the left of the
+       text, as if an invisible column were pinned underneath. */
+    background: none;
+  }
+  .sidebar {
+    display: none;
+    position: static;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--color-line);
+  }
+  body.nav-open .sidebar {
+    display: block;
+  }
+  .nav-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+  }
+  .nav-toggle:hover {
+    border-color: currentColor;
+  }
+  main.note-main {
+    padding: 32px 20px 90px;
+  }
+  .col h1 {
+    font-size: 30px;
+  }
+  .col h2 {
+    font-size: 23px;
+    margin-top: 44px;
+    padding-top: 26px;
+  }
+  .pagination {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ======================================================== inkbrush ===== */
+/* The CMS docks its chips into .site-nav slots; give them the bar's metrics
+   so they sit on the baseline instead of floating over the page. */
+.site-nav .wiki-chip {
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+.wiki-comments {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--color-line);
+}
+
+@media print {
+  .site-nav,
+  .sidebar,
+  .pagination,
+  .wiki-comments {
+    display: none;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  main.note-main {
+    padding: 0;
+  }
+}

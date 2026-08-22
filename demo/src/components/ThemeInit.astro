@@ -1,0 +1,21 @@
+---
+/**
+ * Sets data-theme before first paint, so a dark reader never sees a cream
+ * flash. Light is the identity (see the package's tokens.css); the OS
+ * preference is deliberately not consulted — a reader moving between pages
+ * must never watch the site flip on its own. Dark only ever comes from the
+ * explicit toggle, persisted under `inkstone-theme`.
+ */
+---
+
+<script is:inline>
+  (() => {
+    let t = 'light';
+    try {
+      if (localStorage.getItem('inkstone-theme') === 'dark') t = 'dark';
+    } catch {
+      /* private mode: theme still works, it just is not remembered */
+    }
+    document.documentElement.dataset.theme = t;
+  })();
+</script>

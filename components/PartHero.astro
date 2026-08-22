@@ -1,0 +1,22 @@
+---
+/**
+ * Sub-page header (.part-header) for chapters of a multi-part collection.
+ * The kicker ("Part II · Foundations") is NEVER hardcoded — pass it
+ * through from the injected Content props:
+ *
+ *   <PartHero kicker={props.partLabel} title="Chapter headline">
+ *     …lede (markdown)…
+ *   </PartHero>
+ */
+interface Props {
+  kicker?: string | undefined;
+  title: string;
+}
+const { kicker, title } = Astro.props;
+---
+
+<div class="part-header">
+  {kicker && <div class="kicker">{kicker}</div>}
+  <h1>{title}</h1>
+  <slot />
+</div>

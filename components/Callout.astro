@@ -1,0 +1,16 @@
+---
+/**
+ * Callout — five visual variants: note (default), intuition, warn, system,
+ * and abstract (the catch-all for summaries, notation and TL;DR boxes).
+ */
+interface Props {
+  variant?: 'note' | 'intuition' | 'warn' | 'system' | 'abstract' | undefined;
+  title?: string | undefined;
+}
+const { variant = 'note', title } = Astro.props;
+---
+
+<div class:list={['callout', variant !== 'note' && variant]}>
+  {title && <div class="callout-title">{title}</div>}
+  <slot />
+</div>

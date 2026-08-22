@@ -1,0 +1,15 @@
+---
+/**
+ * Layout grid — one grid, three skins.
+ *  kind='plain' : bare columns;  'card' : white cards;  'cmp' : soft compare panels.
+ */
+interface Props {
+  cols?: 2 | 3 | undefined;
+  kind?: 'plain' | 'card' | 'cmp' | undefined;
+}
+const { cols = 2, kind = 'plain' } = Astro.props;
+---
+
+<div class:list={[`grid-${kind}`, `grid-cols-${cols}`]}>
+  <slot />
+</div>

@@ -1,0 +1,58 @@
+---
+title: The checks
+description: check-content, check-dist, ui_probe — one gate each for source, build output and rendered pages, each catching a class of silent failure that ships under a green build.
+---
+
+## Three gates, three layers
+
+A green build does not mean the pages are fine. This toolchain places one check at each layer, each catching a class of "build green, page broken" silent failure:
+
+| Check | Ships with | Looks at | When to run |
+| --- | --- | --- | --- |
+| check-content | engine, `scripts/check-content.mjs` | every md/mdx source file | content-repo CI, or after writing |
+| check-dist | engine, `scripts/check-dist.mjs` | the `astro build` output | after every build (postbuild) |
+| ui_probe | this package, `scripts/ui_probe.mjs` | pages rendered in a real browser | after style/layout changes |
+
+## check-content: the source layer
+
+Compiles every md/mdx headed for a page with **the exact same dialect** as the site — syntax errors and silent deformations (emphasis markers that cannot pair, braces swallowed by MDX evaluation, list markers born from line wrapping, single-line `$$`, formulas KaTeX cannot render) all turn CI red.
+
+Why this script must come from the engine: a checker whose plugin set differs from the site's is **worse than no checker** — one missing the math plugin misreads formula braces as JSX expressions, one without GFM waves tables through. The dialect is written once in the engine; site rendering, CMS save validation and this script consume the same one, always.
+
+```bash title="content repo root"
+node <engine>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
+```
+
+Beyond compiling, it catches two frontmatter classes of silent loss: an unquoted `#` in a value (YAML reads it as a comment and silently truncates the rest) and CRLF line endings (the frontmatter regex only accepts LF, so titles silently fall back to slugs).
+
+## check-dist: the output layer
+
+In the built `dist/`, every internal reference a reader can click must actually exist. It catches the silent gaps beneath a green build:
+
+- internal links/assets pointing at files that don't exist (the kind that appears by the dozen after a route reshuffle);
+- in-page anchors pointing at ids that don't exist;
+- doubled locale segments in paths (`/en/en/` — the classic result of i18n fallbacks stacking a prefix onto already-prefixed routes);
+- `<a>` nested inside `<a>` (the HTML parser closes the outer one early and buttons fall out of their cards);
+- KaTeX error residue (the formula is red text on the page while the build stays green).
+
+This demo wires it into postbuild: a green `npm run build` means the output check passed too.
+
+```bash title="site root, after a build"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist
+```
+
+## ui_probe: the rendered layer
+
+Source and output can both be right while the page is still broken — the classic case being landing cards that no stylesheet rule matches, rendering as one crammed line of bare text: link and anchor checks stay green because they never look at a rendered page. `ui_probe` drives a real browser over every page in `dist` at four viewport widths (1440/1024/768/430) and measures: horizontal overflow, unstyled classes, dead anchors, skipped heading levels, images without alt. It reports only what a machine can prove — no aesthetic judgment.
+
+```bash title="needs a local Chrome/Chromium"
+npm run build
+node ../scripts/ui_probe.mjs dist   # serves dist itself; pass a baseUrl to probe a live server
+```
+
+Green means the report's last line reads `PAGES WITH FINDINGS: 0`.
+
+<div class="callout system">
+  <div class="callout-title">The style-change routine</div>
+  Any change to the package's <code>base.css</code> or components goes through this demo's build first, then ui_probe over the output — both green before committing. The demo doubles as the package's test bed.
+</div>

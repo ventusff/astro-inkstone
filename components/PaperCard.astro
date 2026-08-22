@@ -1,0 +1,84 @@
+---
+/**
+ * Paper card — the survey workhorse.
+ *
+ *   <PaperCard
+ *     alias="Transformer" full="Attention Is All You Need"
+ *     tags={[{ label: 'NeurIPS 2017' }]}
+ *     meta="Vaswani, Shazeer, Parmar … · Google Brain / Google Research"
+ *     links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+ *     id="transformer-card">
+ *     <Fragment slot="pain">What earlier methods struggled with… (markdown works)</Fragment>
+ *     **Key idea**: …body text (markdown works)
+ *     <Fragment slot="diff">Why this paper changed the follow-up landscape.</Fragment>
+ *   </PaperCard>
+ *
+ * pain/diff are SLOTS (not props) so markdown & math keep working inside.
+ */
+export interface PaperTag {
+  label: string;
+  variant?: 'teal' | 'mustard' | 'violet' | undefined;
+  /** custom category color (e.g. one tone per method family) */
+  tone?: { bg: string; fg: string } | undefined;
+}
+export interface PaperLink {
+  label: string;
+  href: string;
+}
+interface Props {
+  alias: string;
+  full?: string | undefined;
+  meta?: string | undefined;
+  tags?: PaperTag[] | undefined;
+  links?: PaperLink[] | undefined;
+  id?: string | undefined;
+}
+const { alias, full, meta, tags = [], links = [], id } = Astro.props;
+
+// alias / full / meta may contain inline `$…$` (e.g. "$\alpha$-Net") — rendered
+// at build time; everything else is escaped.
+import { renderTocLabel } from '../lib/toc';
+---
+
+<article class="paper" id={id}>
+  <div class="paper-head">
+    <span class="alias"><Fragment set:html={renderTocLabel(alias)} /></span>
+    {full && <span class="full">— <Fragment set:html={renderTocLabel(full)} /></span>}
+  </div>
+  {
+    (tags.length > 0 || meta !== undefined || links.length > 0) && (
+      <div class="paper-meta">
+        {tags.map((t) => (
+          <span
+            class:list={['tag', t.variant]}
+            style={t.tone ? `background:${t.tone.bg};color:${t.tone.fg};` : undefined}
+          >
+            {t.label}
+          </span>
+        ))}
+        {meta !== undefined && <Fragment set:html={renderTocLabel(meta)} />}
+        {links.map((l) => (
+          <>
+            {' · '}
+            <a href={l.href}>{l.label}</a>
+          </>
+        ))}
+      </div>
+    )
+  }
+  {
+    Astro.slots.has('pain') && (
+      <div class="pain">
+        <slot name="pain" />
+      </div>
+    )
+  }
+  <slot />
+  {
+    Astro.slots.has('diff') && (
+      <div class="diff">
+        <slot name="diff" />
+      </div>
+    )
+  }
+</article>

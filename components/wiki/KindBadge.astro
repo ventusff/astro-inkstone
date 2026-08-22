@@ -1,0 +1,32 @@
+---
+/**
+ * Kind badge — small monochrome square (the note's form factor stays
+ * visually quieter than domain colors). Purely presentational: the site
+ * resolves the def from its registry and passes it in.
+ */
+export interface KindBadgeDef {
+  id: string;
+  label: string;
+  desc?: string | undefined;
+}
+
+interface Props {
+  def: KindBadgeDef;
+}
+const { def } = Astro.props;
+---
+
+<span class="kind-badge" title={def.desc}>{def.label}</span>
+
+<style>
+  .kind-badge {
+    display: inline-block;
+    font: 600 10.5px/1 var(--wb-sans, sans-serif);
+    letter-spacing: 0.05em;
+    color: var(--wb-text-soft, #4a4137);
+    border: 1px solid var(--wb-rule, #b8a98a);
+    border-radius: 3px;
+    padding: 3px 6px;
+    white-space: nowrap;
+  }
+</style>

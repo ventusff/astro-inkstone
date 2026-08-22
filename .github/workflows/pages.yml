@@ -1,0 +1,58 @@
+name: Deploy demo to GitHub Pages
+
+# Builds the demo (the package's own manual, written with the package itself)
+# and publishes it to GitHub Pages. The engine submodule is a public repo, so
+# an anonymous checkout is all it takes.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Guard: only the canonical repo deploys Pages (forks/mirrors skip cleanly).
+    if: github.repository == 'ventusff/astro-inkstone'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install package deps (repo root)
+        # The demo consumes the package via `file:..`; the package's own
+        # dependencies are provided by this repo-root install.
+        run: npm install --no-audit --no-fund
+      - name: Install & build demo
+        working-directory: demo
+        env:
+          DEMO_SITE: https://ventusff.github.io
+          DEMO_BASE: /astro-inkstone/
+        run: |
+          npm install
+          npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: demo/dist
+
+  deploy:
+    if: github.repository == 'ventusff/astro-inkstone'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,148 @@
+---
+/**
+ * FacetNav — faceted browse index: three rows of value pills (with counts)
+ * for kind / domain / tag. Rendered on every browse page (the current facet
+ * value is highlighted via aria-current); pure static links, zero JS.
+ *
+ * Purely presentational: the site computes the rows (e.g. with the
+ * `createTaxonomy` helpers from `astro-inkstone/lib/taxonomy`, bound to its
+ * own registry) and passes them in. Tags are typically capped upstream
+ * (e.g. top 10), with the rest reachable via the "all" page.
+ */
+export interface FacetDef {
+  id: string;
+  label: string;
+  tone?: { bg: string; fg: string } | undefined;
+}
+
+interface Props {
+  kinds: { def: FacetDef; count: number }[];
+  domains: { def: FacetDef; count: number }[];
+  tags: { tag: string; count: number }[];
+  /** Mount prefix for browse routes, e.g. "/wiki" → "/wiki/kind/<id>/". */
+  base: string;
+  active?: { dim: 'kind' | 'domain' | 'tag' | 'all'; value?: string | undefined } | undefined;
+  /** Row labels; pass localized strings to override. */
+  labels?:
+    | {
+        kind?: string | undefined;
+        domain?: string | undefined;
+        tag?: string | undefined;
+        all?: string | undefined;
+        aria?: string | undefined;
+      }
+    | undefined;
+}
+const { kinds, domains, tags, base, active, labels = {} } = Astro.props;
+const label = {
+  kind: labels.kind ?? 'Type',
+  domain: labels.domain ?? 'Topics',
+  tag: labels.tag ?? 'Tags',
+  all: labels.all ?? 'All →',
+  aria: labels.aria ?? 'Browse index',
+};
+
+const isActive = (dim: string, value: string): boolean =>
+  active?.dim === dim && active.value === value;
+---
+
+<nav class="facet-nav" aria-label={label.aria}>
+  <div class="row">
+    <span class="dim">{label.kind}</span>
+    {kinds.map(({ def, count }) => (
+      <a
+        class="pill"
+        href={`${base}/kind/${def.id}/`}
+        aria-current={isActive('kind', def.id) ? 'page' : undefined}
+      >
+        {def.label} <b>{count}</b>
+      </a>
+    ))}
+  </div>
+  <div class="row">
+    <span class="dim">{label.domain}</span>
+    {domains.map(({ def, count }) => (
+      <a
+        class="pill"
+        href={`${base}/domain/${def.id}/`}
+        aria-current={isActive('domain', def.id) ? 'page' : undefined}
+        style={def.tone ? `--pill-fg:${def.tone.fg}` : undefined}
+      >
+        {def.label} <b>{count}</b>
+      </a>
+    ))}
+  </div>
+  <div class="row">
+    <span class="dim">{label.tag}</span>
+    {tags.map(({ tag, count }) => (
+      <a
+        class="pill"
+        href={`${base}/tag/${tag}/`}
+        aria-current={isActive('tag', tag) ? 'page' : undefined}
+      >
+        {tag} <b>{count}</b>
+      </a>
+    ))}
+    <a class="pill more" href={`${base}/all/`} aria-current={active?.dim === 'all' ? 'page' : undefined}>
+      {label.all}
+    </a>
+  </div>
+</nav>
+
+<style>
+  .facet-nav {
+    margin: 1.4rem 0 0;
+    padding: 14px 16px;
+    background: color-mix(in srgb, var(--wb-bg-card, #f6f0dc) 55%, transparent);
+    border: 1px solid var(--wb-border-soft, #e2d9c3);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .dim {
+    font: 600 11px/1 var(--wb-sans, sans-serif);
+    letter-spacing: 0.12em;
+    color: var(--wb-text-muted, #968b73);
+    width: 42px;
+    flex-shrink: 0;
+  }
+  .pill {
+    font: 500 12px/1 var(--wb-sans, sans-serif);
+    color: var(--pill-fg, var(--wb-text-soft, #4a4137));
+    border: 1px solid var(--wb-border, #d6cbb1);
+    border-radius: 999px;
+    padding: 4.5px 10px;
+    text-decoration: none;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
+  }
+  .pill b {
+    font-weight: 600;
+    color: var(--wb-text-muted, #968b73);
+    margin-left: 2px;
+  }
+  .pill:hover {
+    border-color: var(--wb-rule, #b8a98a);
+    background: color-mix(in srgb, var(--wb-bg, #faf6ec) 45%, transparent);
+  }
+  .pill[aria-current='page'] {
+    background: var(--wb-text, #2b2622);
+    border-color: var(--wb-text, #2b2622);
+    color: var(--wb-bg, #faf6ec);
+  }
+  .pill[aria-current='page'] b {
+    color: var(--wb-bg, #faf6ec);
+    opacity: 0.7;
+  }
+  .more {
+    color: var(--wb-wine, #7d3a3a);
+  }
+</style>

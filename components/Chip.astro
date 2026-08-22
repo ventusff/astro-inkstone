@@ -1,0 +1,14 @@
+---
+/**
+ * Inline chip/badge. For topic-specific category palettes (e.g. one color
+ * per method family in a survey) pass a custom `tone` instead of a variant.
+ */
+interface Props {
+  variant?: 'teal' | 'mustard' | 'orange' | 'violet' | undefined;
+  tone?: { bg: string; fg: string } | undefined;
+}
+const { variant, tone } = Astro.props;
+const style = tone ? `background:${tone.bg};color:${tone.fg};border-color:transparent;` : undefined;
+---
+
+<span class:list={['chip', variant]} style={style}><slot /></span>

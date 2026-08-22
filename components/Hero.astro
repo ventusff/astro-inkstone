@@ -1,0 +1,30 @@
+---
+/**
+ * Page hero. Lives in the MDX body so the lede goes through the full
+ * markdown pipeline (bold/math/links).
+ *
+ * `title` here is the DISPLAY headline (may be long); the frontmatter
+ * `title` is the canonical short title used for <title> and sidebars.
+ * `tocLabel` adds an unnumbered ToC row for this section (e.g. "Prologue");
+ * rehype-chapters picks it up at build time.
+ */
+interface Props {
+  kicker?: string | undefined;
+  title: string;
+  meta?: string | undefined;
+  tocLabel?: string | undefined;
+  id?: string | undefined;
+}
+const { kicker, title, meta, id = 'intro' } = Astro.props;
+---
+
+<section id={id}>
+  <div class="hero">
+    {kicker && <div class="kicker">{kicker}</div>}
+    <h1>{title}</h1>
+    <slot />
+    {meta && <p class="meta">{meta}</p>}
+    <slot name="meta" />
+  </div>
+  <slot name="after" />
+</section>

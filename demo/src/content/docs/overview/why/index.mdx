@@ -1,0 +1,36 @@
+---
+title: The three-way split
+description: The engine edits, the paper looks, the site is you — who owns what, and why the lines sit where they do.
+---
+
+## Three layers, three owners
+
+A docs/wiki site built with this toolkit is assembled from three parts, each owning exactly one layer:
+
+- **astro-inkbrush (the engine)**: a minimal CMS — in-place block editing in the browser, block-level revision history and revert, comments, AI Q&A / rewriting / translation, inbox import. It also owns one thing that looks like it shouldn't belong to a CMS: **the Markdown dialect and the content guard**. The reason is hard: the grammar the editor accepts and the grammar the page renders must be the same one, or "saves fine in the editor, renders wrong on the page" is only a matter of time. So the parser rules are written once, in the engine, and consumed in three places — site rendering, CMS save validation, CI checks.
+- **astro-inkstone (the paper — this package)**: the shared appearance and pipeline layer — two-tier design tokens, the content stylesheet `base.css`, the component library, the `siteMarkdown` pipeline preset, the Maple Mono CN code-font subset, and the render-layer probe. It does **not** do site identity: brand colors, layout chrome, routing and deployment are none of its business.
+- **The site (like the demo you are reading)**: overrides tier-one tokens for its identity color; owns its own Sidebar and nav chrome (this site's implementation is the reference answer); decides how content is organized, what routes look like, and where it deploys.
+
+One line to remember: **the engine edits, the paper looks, the site is you.**
+
+## Why the lines sit here
+
+Each cut is backed by a real constraint:
+
+**The dialect belongs to the engine**, because a checker whose plugin set differs from the site's is worse than no checker at all — a checker missing the math plugin misreads formula braces as JSX expressions, and one without GFM waves table pipes through. The grammar is written once and consumed in three places, so it can never drift.
+
+**Styles belong to the paper**, because when several sites each maintain their own content stylesheet, one contrast fix has to be applied once per site — miss one, and that site's small text falls below AA. In a shared layer, one fix lands everywhere.
+
+**Identity belongs to the site**, because the moment a shared layer absorbs one site's brand color, every other site has to fight it with overrides. Hence the two-tier tokens: a site overrides the tier-one raw palette (`--p-*`) and the semantic and component layers follow untouched — see “Two-layer palette and themes”.
+
+## What a site gets
+
+From the site's point of view, consuming this package plus the engine buys:
+
+- `astro-inkstone/styles/tokens.css` + `base.css`: tokens first, then the content layer — two `@import` lines for the whole content look;
+- `siteMarkdown(...)`: the entire Markdown pipeline in one line, switches described in “Install and wire up”;
+- components under `astro-inkstone/components/`, imported by path as needed;
+- in WIKI mode, the engine's full CMS (try it on this site with `npm run wiki`);
+- three checks: `check-content` and `check-dist` (shipped with the engine) and `ui_probe` (shipped here) — see “The checks”.
+
+Every rendering effect on every page of this site is the product of that split — the manual is the demo.

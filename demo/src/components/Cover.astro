@@ -1,0 +1,72 @@
+---
+import { BOOK, PARTS } from '../lib/book';
+import { ENGINE_URL, GITHUB_URL, href, localeRoute, type Locale } from '../lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const zh = locale === 'zh';
+---
+
+<h1>◈ astro-inkstone</h1>
+<p class="page-desc">
+  {
+    zh
+      ? '纸墨质感的 Astro 文档/wiki 站共享层——设计 token、组件层样式、markdown 管线预设、代码字体子集与渲染层体检,与最小 CMS 引擎 astro-inkbrush 配套。'
+      : 'Paper-and-ink shared layer for Astro docs/wiki sites — design tokens, component-layer styles, a markdown pipeline preset, a code-font subset and rendered-UI checks, paired with the minimal CMS engine astro-inkbrush.'
+  }
+</p>
+
+<p>
+  {
+    zh
+      ? '这个站就是本包的使用手册,也同时是它的示范站:你在页面上看到的每一种排版效果,都由手册正文里讲解它的那一页亲自演示——手册即示范,示范即手册。'
+      : 'This site is the package manual and its own demo at once: every rendering effect you see on these pages is demonstrated by the very page that explains it — the manual is the demo, the demo is the manual.'
+  }
+</p>
+<p>
+  {
+    zh
+      ? '源码在 GitHub 上公开:'
+      : 'The source is public on GitHub: '
+  }
+  <a href={GITHUB_URL}>ventusff/astro-inkstone</a>（{zh ? '本包' : 'this package'}）·
+  <a href={ENGINE_URL}>ventusff/astro-inkbrush</a>（{zh ? 'CMS 引擎' : 'the CMS engine'}）
+</p>
+
+{/* Class names here must match site.css's .chapter-grid/.chapter-card rules.
+    A card markup that no stylesheet rule matches renders as an unstyled text
+    run — exactly the failure ui_probe's "unstyled class" check exists to
+    catch. Change the classes here and the stylesheet together. */}
+{
+  PARTS.map((part) => (
+    <section class="part-block" data-part={part.key}>
+      <h2 class="part-title">
+        {zh ? part.zh : part.en}
+        <span class="part-sub">{zh ? part.en : part.zh}</span>
+      </h2>
+      <div class="chapter-grid">
+        {part.chapters.map((c) => (
+          <a class="chapter-card" href={href(localeRoute(c.sections[0]!.id, locale))}>
+            <span class="head">
+              <span class="num">{BOOK.indexOf(c) + 1}</span>
+              <span class="primary">{zh ? c.zh : c.en}</span>
+            </span>
+            <span class="secondary">{zh ? c.en : c.zh}</span>
+            <span class="blurb">{zh ? c.blurbZh : c.blurbEn}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  ))
+}
+
+<h2>{zh ? '这份手册怎么读' : 'How to read this'}</h2>
+<p>
+  {
+    zh
+      ? '「使用指南」讲清楚本包在三层分工(引擎/纸面/站点)里的位置,以及怎样把它接进你自己的站;「参考」逐层展开包里的东西——设计 token 的两层架构、markdown 管线的全要素演示、组件陈列室;「运维」讲随包与随引擎发放的三道检查怎么守住渲染质量。'
+      : 'The Guide places this package inside the three-layer split (engine / paper / site) and shows how to wire it into a site of your own; the Reference walks through what is inside — the two-layer design tokens, a kitchen-sink demonstration of the markdown pipeline, and the component gallery; Operations covers the three checks that keep the rendering honest.'
+  }
+</p>

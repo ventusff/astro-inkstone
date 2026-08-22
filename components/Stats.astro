@@ -1,0 +1,18 @@
+---
+/** Stat chips row (landing heroes): value + label pairs. */
+interface Props {
+  items: { v: string; k: string }[];
+}
+const { items } = Astro.props;
+---
+
+<div class="stats">
+  {
+    items.map((s) => (
+      <div class="stat">
+        <span class="v">{s.v}</span>
+        <span class="k">{s.k}</span>
+      </div>
+    ))
+  }
+</div>

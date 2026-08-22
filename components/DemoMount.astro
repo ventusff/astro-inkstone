@@ -1,0 +1,55 @@
+---
+/**
+ * Interactive demo mount point.
+ *
+ *   <DemoMount demo="waves/interference" title="Demo 1 · Wave interference playground"
+ *              canvas={{ w: 720, h: 360 }}>
+ *     <Fragment slot="controls">…buttons/sliders/readouts…</Fragment>
+ *     <Fragment slot="caption">…2–4 sentences…</Fragment>
+ *   </DemoMount>
+ *
+ * - canvas-based demo: pass `canvas={{w,h}}` (logical pixels, same as the
+ *   original <canvas width height>); `stages={n}` renders n side-by-side
+ *   canvases for multi-canvas demos.
+ * - DOM demo (no canvas): omit `canvas` — the module builds its own DOM
+ *   inside `.demo-stage`.
+ *
+ * Runtime contract (site-owned): this component only renders the mount
+ * markup — `.demo[data-demo]` plus the stage and slots. The site provides
+ * the loader and calls its `mountAllDemos()` once from its layout script;
+ * the loader finds every `[data-demo]`, resolves the demo id to a module
+ * (typically a dynamic import map over co-located `<id>.ts` files next to
+ * the content), and calls the module's default export `mount(ctx)`, which
+ * returns a cleanup function.
+ */
+interface Props {
+  demo: string;
+  title: string;
+  canvas?: { w: number; h: number } | undefined;
+  stages?: number | undefined;
+  id?: string | undefined;
+}
+const { demo, title, canvas, stages = 1, id } = Astro.props;
+const canvases = canvas ? Array.from({ length: stages }) : [];
+---
+
+<section class="demo" id={id} data-demo={demo}>
+  <div class="demo-title">{title}</div>
+  <div class:list={['demo-stage', stages > 1 && 'multi', !canvas && 'dom']}>
+    {canvases.map(() => canvas && <canvas width={canvas.w} height={canvas.h}></canvas>)}
+  </div>
+  {
+    Astro.slots.has('controls') && (
+      <div class="demo-controls">
+        <slot name="controls" />
+      </div>
+    )
+  }
+  {
+    Astro.slots.has('caption') && (
+      <div class="demo-caption">
+        <slot name="caption" />
+      </div>
+    )
+  }
+</section>

@@ -1,0 +1,40 @@
+---
+/**
+ * Status dot — 7px color dot + label (digital-garden maturity; restrained,
+ * no emoji). Purely presentational: the site resolves the def from its
+ * registry and passes it in.
+ */
+export interface StatusDotDef {
+  id: string;
+  label: string;
+  desc?: string | undefined;
+  /** Dot color, e.g. "#7d9c6a". */
+  dot: string;
+}
+
+interface Props {
+  def: StatusDotDef;
+}
+const { def } = Astro.props;
+---
+
+<span class="status-dot" title={def.desc}>
+  <span class="dot" style={`background:${def.dot}`} aria-hidden="true"></span>
+  {def.label}
+</span>
+
+<style>
+  .status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font: 500 11px/1 var(--wb-sans, sans-serif);
+    color: var(--wb-text-dim, #6e6453);
+    white-space: nowrap;
+  }
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+</style>

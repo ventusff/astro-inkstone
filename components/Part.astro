@@ -1,0 +1,22 @@
+---
+/**
+ * Part divider. `<Part title="Partitioning" />` renders "PART III ·
+ * Partitioning" — the numeral is computed at build time by rehype-chapters
+ * (injected as the `num` prop) and doubles as a ToC group marker.
+ * `<Part appendix title="Appendix" />` switches following chapters to §A, §B, …
+ */
+interface Props {
+  title: string;
+  appendix?: boolean | undefined;
+  /** injected by rehype-chapters — do not set by hand */
+  num?: string | undefined;
+}
+const { title, appendix = false, num = '' } = Astro.props;
+// the appendix banner IS its title (injected via num); parts show "PART k · title"
+const showTitle = appendix ? '' : title;
+---
+
+<div class="part-divider">
+  <span class="part-num">{num}</span>
+  {showTitle && <span class="part-title">{showTitle}</span>}
+</div>
