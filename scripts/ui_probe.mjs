@@ -74,7 +74,11 @@ const page = await browser.newPage();
 for (const r of routes(DIST)) {
   for (const w of WIDTHS) {
     await page.setViewport({ width: w, height: 1200 });
-    await page.goto(BASE + r, { waitUntil: 'networkidle0' });
+    // 'load' + a capped quiet-period wait: strict networkidle0 can hang
+    // forever on environments where some request never settles, and a probe
+    // must never be the flaky part of CI.
+    await page.goto(BASE + r, { waitUntil: 'load', timeout: 60_000 });
+    await page.waitForNetworkIdle({ idleTime: 400, timeout: 5_000 }).catch(() => {});
     const res = await page.evaluate(() => {
       const out = { hOverflow: null, wide: [], unstyled: [], lowContrast: [], headingJump: [], noAlt: [] };
       const de = document.documentElement;
