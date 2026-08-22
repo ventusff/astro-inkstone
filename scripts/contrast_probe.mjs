@@ -7,14 +7,19 @@
  * <text>), and every ::before / ::after pseudo-element that carries text.
  * The ground is sampled from pixels, not read from stylesheets (gradients,
  * color-mix(), translucent layers and images all defeat that): the page is
- * rendered with every glyph made transparent and screenshotted, and the
- * pixel under each run's first line box is its ground. The foreground is the
+ * rendered with every glyph made transparent and screenshotted by scrolling
+ * a constant-size viewport (so nothing viewport-anchored moves between
+ * collection and sampling), and the pixel under each of a run's line boxes
+ * is that line's ground. The foreground is the
  * computed `color` (SVG: `fill`), composited over that ground when
  * translucent. Rendering waits for fonts and for client-rendered diagrams.
  *
  * Translucency is part of the measurement: a run's foreground alpha is its
  * color's alpha times the accumulated `opacity` of the element and its
- * ancestors, composited over the sampled ground. Dialogs are probed too: on
+ * ancestors, composited over the sampled ground. (Exact when the translucent
+ * ancestors paint no background of their own — the common text-dimming case;
+ * a translucent group with its own background composites its glyphs a step
+ * earlier, which this model approximates.) Dialogs are probed too: on
  * one representative route per theme and width the probe opens every
  * `<dialog data-probe-open>` (typing a query into a search box it finds
  * there) and measures the text inside. The marker is the site's declaration
@@ -47,14 +52,14 @@
 import puppeteer from 'puppeteer-core';
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { extname, join, resolve } from 'node:path';
+import { extname, join, resolve, sep } from 'node:path';
 import { inflateSync } from 'node:zlib';
 
 const DIST = process.argv[2] || resolve('dist');
 const THEMES = (process.env.PROBE_THEMES || 'light,dark').split(',').map((s) => s.trim()).filter(Boolean);
 const WIDTHS = (process.env.PROBE_WIDTHS || '1440,430').split(',').map((s) => Number(s.trim())).filter(Boolean);
-const SLICE = 8000; // screenshot height per slice (well under Chrome's texture cap)
-const OVERLAP = 120; // sticky chrome at a slice's top is sampled from the previous slice
+const VIEW = 900; // the one viewport height: collection and screenshots share it
+const OVERLAP = 120; // sticky chrome at a shot's top is sampled from the previous shot
 
 /* ---------------------------------------------------------------- serve */
 let server = null;
@@ -66,12 +71,17 @@ if (!BASE) {
     '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp',
     '.avif': 'image/avif', '.ico': 'image/x-icon', '.woff2': 'font/woff2',
   };
+  // requests are confined to DIST: no traversal segments, and every resolved
+  // path must stay inside it
+  const root = resolve(DIST);
   server = createServer((req, res) => {
     let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
     if (p.endsWith('/')) p += 'index.html';
     for (const candidate of [p, `${p}/index.html`]) {
+      const abs = resolve(root, `.${candidate}`);
+      if (candidate.split('/').includes('..') || abs !== root && !abs.startsWith(root + sep)) break;
       try {
-        const buf = readFileSync(join(DIST, candidate));
+        const buf = readFileSync(abs);
         res.setHeader('content-type', MIME[extname(candidate)] ?? 'application/octet-stream');
         return res.end(buf);
       } catch { /* try next */ }
@@ -89,6 +99,7 @@ function routes(dir, prefix = '') {
     const p = join(dir, e);
     if (statSync(p).isDirectory()) out = out.concat(routes(p, `${prefix}/${e}`));
     else if (e === 'index.html') out.push(`${prefix}/`);
+    else if (e.endsWith('.html')) out.push(`${prefix}/${e}`); // flat pages, 404.html
   }
   return out;
 }
@@ -186,12 +197,14 @@ for (const r of routeList) {
       // opens the dialogs and measures the text inside them
       const scopes = r === routeList[0] ? ['document', 'dialogs'] : ['document'];
       for (const scope of scopes) {
-      await page.setViewport({ width, height: 900, deviceScaleFactor: 1 });
+      await page.setViewport({ width, height: VIEW, deviceScaleFactor: 1 });
       await page.goto(BASE + r, { waitUntil: 'load', timeout: 60000 });
       // theme by attribute, transitions off, every glyph transparent: what
       // remains in the screenshot is exactly the ground each text sits on
       await page.evaluate((t) => {
         document.documentElement.dataset.theme = t;
+        // theme-reactive renderers (canvas demos, mermaid) listen for this
+        window.dispatchEvent(new CustomEvent('themechange', { detail: t }));
         const st = document.createElement('style');
         st.id = '__probe';
         st.textContent = `*,*::before,*::after{transition:none!important;animation:none!important}`;
@@ -199,6 +212,7 @@ for (const r of routeList) {
       }, theme);
       await page.evaluate(() => document.fonts.ready);
       // client-rendered diagrams: every mermaid placeholder must have become an svg
+      await new Promise((res) => setTimeout(res, 150));
       await page.waitForFunction(
         () => [...document.querySelectorAll('pre.mermaid')].every((b) => b.querySelector('svg')),
         { timeout: 15000 },
@@ -222,7 +236,10 @@ for (const r of routeList) {
           return dialogs.length;
         });
         if (!opened) continue;
-        await new Promise((res) => setTimeout(res, 600));
+        // a search box fetches its index and renders rows; wait for the
+        // network to settle instead of guessing a delay
+        await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+        await new Promise((res) => setTimeout(res, 150));
       }
 
       // 1) collect text runs in document coordinates (scrollY = 0)
@@ -285,20 +302,22 @@ for (const r of routeList) {
           if (alpha === 0) continue;
           const range = document.createRange();
           range.selectNodeContents(n);
-          const rect = range.getClientRects()[0];
-          if (!rect || rect.width < 1 || rect.height < 1) continue;
-          out.push({
-            text: text.slice(0, 40),
-            selector: sel(el),
-            color: isSvgText(el) ? cs.fill : cs.color,
-            alpha,
-            fontSize: parseFloat(cs.fontSize),
-            fontWeight: +cs.fontWeight || 400,
-            ...(() => {
-              const [gx, gy] = groundPoint(el, rect.left + rect.width / 2, rect.top + rect.height / 2);
-              return { x: gx + window.scrollX, y: gy + window.scrollY };
-            })(),
-          });
+          // every line box is a sample: wrapped text can cross grounds
+          for (const rect of range.getClientRects()) {
+            if (rect.width < 1 || rect.height < 1) continue;
+            out.push({
+              text: text.slice(0, 40),
+              selector: sel(el),
+              color: isSvgText(el) ? cs.fill : cs.color,
+              alpha,
+              fontSize: parseFloat(cs.fontSize),
+              fontWeight: +cs.fontWeight || 400,
+              ...(() => {
+                const [gx, gy] = groundPoint(el, rect.left + rect.width / 2, rect.top + rect.height / 2);
+                return { x: gx + window.scrollX, y: gy + window.scrollY };
+              })(),
+            });
+          }
         }
         // ::before / ::after text: measured at the start / end of the owner's
         // box, where the generated text sits
@@ -344,19 +363,16 @@ for (const r of routeList) {
       // a modal dialog sits in the top layer at viewport coordinates: its
       // pass keeps the collection viewport so nothing moves between the run
       // collection and the screenshot
-      const docHeight = scope === 'dialogs' ? 900 : await page.evaluate(() => document.documentElement.scrollHeight);
+      const docHeight = scope === 'dialogs' ? VIEW : await page.evaluate(() => document.documentElement.scrollHeight);
       const shots = [];
-      for (let top = 0; top < docHeight; top += SLICE - OVERLAP) {
-        const h = Math.min(SLICE, docHeight - top);
-        await page.setViewport({ width, height: h, deviceScaleFactor: 1 });
+      for (let top = 0; top < docHeight; top += VIEW - OVERLAP) {
         await page.evaluate((y) => window.scrollTo(0, y), top);
         await new Promise((res) => setTimeout(res, 60));
         const actualTop = await page.evaluate(() => window.scrollY);
         const png = decodePng(await page.screenshot({ type: 'png' }));
-        shots.push({ top: actualTop, height: h, png });
-        if (actualTop + h >= docHeight) break;
+        shots.push({ top: actualTop, height: VIEW, png });
+        if (actualTop + VIEW >= docHeight) break;
       }
-      await page.setViewport({ width, height: 900, deviceScaleFactor: 1 });
 
       const sample = (x, y) => {
         // prefer the slice where the point is not in the sticky band at the top
@@ -365,10 +381,10 @@ for (const r of routeList) {
           const localY = y - s.top;
           if (localY < 0 || localY >= s.height) continue;
           if (i > 0 && localY < OVERLAP) continue;
-          return s.png.at(Math.round(x), Math.round(localY));
+          return s.png.at(Math.round(x), Math.min(Math.round(localY), s.height - 1));
         }
         const s = shots.find((s) => y >= s.top && y < s.top + s.height);
-        return s ? s.png.at(Math.round(x), Math.round(y - s.top)) : null;
+        return s ? s.png.at(Math.round(x), Math.min(Math.round(y - s.top), s.height - 1)) : null;
       };
 
       for (const run of runs) {

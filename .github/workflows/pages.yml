@@ -42,6 +42,13 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           npm run build
+      - name: Render-layer probes on the production-base artifact
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          node ../scripts/ui_probe.mjs dist
+          node ../scripts/contrast_probe.mjs dist
+        working-directory: demo
       - uses: actions/upload-pages-artifact@v3
         with:
           path: demo/dist

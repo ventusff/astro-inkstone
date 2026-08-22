@@ -82,19 +82,22 @@ import 'katex/dist/katex.min.css';
 
 ## The Markdown pipeline, one line
 
-This site's own configuration — chapter numbering, math, callouts, diagrams, and `[[wikilinks]]` resolved against the note collection:
+A minimal configuration in this site's shape — chapter numbering, math, callouts, diagrams, and `[[wikilinks]]` resolved against the note collection (the full version, with every hook this site wires, is `astro.config.mjs` in the repository):
 
-```js title="astro.config.mjs"
+```js title="astro.config.mjs (minimal)"
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
 import { siteMarkdown } from 'astro-inkstone/lib/markdown-preset';
 import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
 
-const WIKI_MODE = Boolean(process.env.WIKI);
+const WIKI_MODE = process.env.WIKI === '1';
 const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
-const BASE = process.env.DEMO_BASE || '/';
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs' and '/docs/' both work
 
 export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
   integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
   markdown: siteMarkdown({
     numbering: 'chapters', // part/chapter numbers + ToC via remarkPluginFrontmatter
@@ -107,7 +110,7 @@ export default defineConfig({
     wikilinks: {
       resolve: buildWikilinkResolver({
         notes: cachedScan('src/content/notes'),
-        urlFor: (id) => `${BASE}${id}/`,
+        urlFor: (id) => `${BASE}/${id}/`,
         locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
       }),
     },
@@ -118,6 +121,8 @@ export default defineConfig({
 `siteMarkdown` sits on the engine's dialect (GFM, CJK-friendly emphasis, the content guard); the preset itself only assembles and orders the site-side plugins — **the pipeline order is the contract**, so your site never worries about who runs before whom. Every switch is demonstrated on the [[kitchen-sink|kitchen sink]] page, and the reasoning behind the package split lives in [[boundaries]]. Chinese-labelled callouts? Pass `calloutLabels` — the defaults are English.
 
 ## Run it
+
+The scripts, as this demo's `package.json` defines them (`build` runs the engine's check-dist as postbuild; `wiki` is `WIKI=1 astro dev`):
 
 ```bash
 npm install

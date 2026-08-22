@@ -108,6 +108,7 @@ Declare them in your site's `package.json` — pnpm workspaces
 
 ```ts
 // astro.config.ts — the whole Markdown pipeline in one line
+import { defineConfig } from 'astro/config';
 import { siteMarkdown } from 'astro-inkstone/markdown-preset';
 
 export default defineConfig({

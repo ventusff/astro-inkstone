@@ -69,3 +69,16 @@ test('label overrides: a keyword entry wins over its class entry, both over the 
   remarkCallouts({ labels: { caution: '小心', warn: '注意' } })(byKeyword as never);
   assert.equal((byKeyword.children[0] as unknown as Node).children[0]!.children[0]!.value, '小心');
 });
+
+test('a non-folding callout aside is a named landmark: aria-label equals the resolved title', () => {
+  const explicit = quote('[!tip] Why\n', 'body');
+  remarkCallouts()(explicit as never);
+  assert.equal((explicit.children[0] as unknown as Node).data?.hProperties?.['ariaLabel'], 'Why');
+  const fallback = quote('[!warn]\n', 'body');
+  remarkCallouts({ labels: { warn: '注意' } })(fallback as never);
+  assert.equal((fallback.children[0] as unknown as Node).data?.hProperties?.['ariaLabel'], '注意');
+  // a folding callout is a details named by its summary — no aria-label
+  const folded = quote('[!note]- Folded\n', 'x');
+  remarkCallouts()(folded as never);
+  assert.equal((folded.children[0] as unknown as Node).data?.hProperties?.['ariaLabel'], undefined);
+});

@@ -18,6 +18,9 @@ const shelves = groupByPrimaryDomain(units);
 const recent = units.slice(0, 3);
 const kinds = groupByKind(units).map((g) => ({ def: g.def, count: g.notes.length }));
 const domains = groupByDomain(units).map((g) => ({ def: g.def, count: g.notes.length }));
+const statuses = STATUSES.map((s) => ({ def: s, count: units.filter((u) => u.status === s.id).length })).filter(
+  (s) => s.count > 0,
+);
 const tags = [...tagIndex(units).entries()].slice(0, 10).map(([tag, notes]) => ({ tag, count: notes.length }));
 const domainCount = new Set(units.flatMap((u) => u.domains)).size;
 ---
@@ -38,7 +41,7 @@ const domainCount = new Set(units.flatMap((u) => u.domains)).size;
     </p>
   </header>
 
-  <FacetNav base={facetBase} kinds={kinds} domains={domains} tags={tags} />
+  <FacetNav base={facetBase} kinds={kinds} domains={domains} statuses={statuses} tags={tags} />
 
   <section class="wb-shelf" aria-label="Recently updated">
     <div class="wb-shelf-head">
@@ -72,12 +75,21 @@ const domainCount = new Set(units.flatMap((u) => u.domains)).size;
 
   <footer class="wb-legend">
     {
-      STATUSES.map((s) => (
-        <span class="wb-legend-item">
-          <span class="dot" style={`background:${s.dot}`} aria-hidden="true" />
-          {s.label} — {s.desc}
-        </span>
-      ))
+      /* each status links to its /status/<id>/ browse page; a status no
+         note carries yet stays plain text (its route does not prerender) */
+      STATUSES.map((s) =>
+        units.some((u) => u.status === s.id) ? (
+          <a class="wb-legend-item" href={browseHref.status(s.id)}>
+            <span class="dot" style={`background:${s.dot}`} aria-hidden="true" />
+            {s.label} — {s.desc}
+          </a>
+        ) : (
+          <span class="wb-legend-item">
+            <span class="dot" style={`background:${s.dot}`} aria-hidden="true" />
+            {s.label} — {s.desc}
+          </span>
+        ),
+      )
     }
     <span class="wb-legend-links">
       <a href={browseHref.all()}>All notes →</a>

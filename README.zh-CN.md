@@ -92,6 +92,7 @@ git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-
 
 ```ts
 // astro.config.ts —— 全站 Markdown 管线,一行接入
+import { defineConfig } from 'astro/config';
 import { siteMarkdown } from 'astro-inkstone/markdown-preset';
 
 export default defineConfig({

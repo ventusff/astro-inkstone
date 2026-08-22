@@ -45,9 +45,7 @@
     "lib",
     "components",
     "styles/*.css",
-    "fonts/MapleMonoCN-subset.woff2",
-    "fonts/OFL.txt",
-    "fonts/README.md",
+    "fonts",
     "scripts",
     "README.zh-CN.md"
   ],
@@ -62,15 +60,14 @@
     "@types/mdast": "^4.0.4",
     "hastscript": "^9.0.0",
     "katex": "^0.17.0",
+    "puppeteer-core": "^24.0.0",
     "rehype-katex": "^7.0.1",
     "remark-gemoji": "^8.0.0",
     "remark-math": "^6.0.0",
     "unist-util-visit": "^5.0.0",
     "vfile": "^6.0.3"
   },
-  "devDependencies": {
-    "puppeteer-core": "^24.0.0"
-  },
+  "devDependencies": {},
   "peerDependencies": {
     "astro": "^7.0.0"
   },

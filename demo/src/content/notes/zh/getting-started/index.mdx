@@ -75,19 +75,22 @@ import 'katex/dist/katex.min.css';
 
 ## markdown 管线一行接入
 
-本站自己的配置——章节编号、数学、callout、图表,外加对着笔记集解析的 `[[双链]]`:
+照本站形状写的最小配置——章节编号、数学、callout、图表,外加对着笔记集解析的 `[[双链]]`(带全部钩子的完整版就是仓库里的 `astro.config.mjs`):
 
-```js title="astro.config.mjs"
+```js title="astro.config.mjs(最小版)"
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
 import { siteMarkdown } from 'astro-inkstone/lib/markdown-preset';
 import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
 
-const WIKI_MODE = Boolean(process.env.WIKI);
+const WIKI_MODE = process.env.WIKI === '1';
 const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
-const BASE = process.env.DEMO_BASE || '/';
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs' 和 '/docs/' 都行
 
 export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
   integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
   markdown: siteMarkdown({
     numbering: 'chapters', // Part/章节编号 + ToC 经 remarkPluginFrontmatter 取用
@@ -100,7 +103,7 @@ export default defineConfig({
     wikilinks: {
       resolve: buildWikilinkResolver({
         notes: cachedScan('src/content/notes'),
-        urlFor: (id) => `${BASE}${id}/`,
+        urlFor: (id) => `${BASE}/${id}/`,
         locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
       }),
     },
@@ -111,6 +114,8 @@ export default defineConfig({
 `siteMarkdown` 的底座是引擎的方言(GFM、对中文友好的强调解析、内容守门),预设只负责站点侧插件的装配与顺序——**管线顺序即契约**,站点不必再关心谁先谁后。每个开关的效果,[[kitchen-sink|全要素演示]]一页全部演过一遍;包的三分边界见 [[boundaries]]。想要中文的 callout 标签?传 `calloutLabels` 即可——默认是英文。
 
 ## 跑起来
+
+脚本就是本 demo `package.json` 里定义的那几个(`build` 的 postbuild 跑引擎 check-dist;`wiki` 即 `WIKI=1 astro dev`):
 
 ```bash
 npm install

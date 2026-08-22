@@ -58,3 +58,15 @@ test('units are top-level primary entries, newest first; grouping follows regist
   assert.deepEqual([...t.tagIndex(units).keys()], ['t', 'u']);
   assert.equal(fmtMonth(new Date('2026-03-01')), '2026.03');
 });
+
+test('aliases are entry-local: neither a chapter nor a mirror inherits them', () => {
+  const hub = note('guides', { nav: [{ group: 'g', pages: ['a'] }], aliases: ['the-guides'] });
+  const chapter = note('guides/a', {});
+  const en = note('tokens', { aliases: ['tok'] });
+  const zh = note('zh/tokens', {});
+  const { t, byId } = bind([hub, chapter, en, zh]);
+  assert.deepEqual(t.resolveTaxonomy(hub, byId).aliases, ['the-guides']);
+  assert.deepEqual(t.resolveTaxonomy(chapter, byId).aliases, []);
+  assert.deepEqual(t.resolveTaxonomy(en, byId).aliases, ['tok']);
+  assert.deepEqual(t.resolveTaxonomy(zh, byId).aliases, []);
+});

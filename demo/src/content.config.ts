@@ -30,8 +30,10 @@ const notes = defineCollection({
     brand: z.string().optional(),
     subtitle: z.string().optional(),
     /** classification (see _meta/taxonomy.ts). A chapter or mirror inherits
-     *  every field it leaves out; a field it sets — `[]` included — is its
-     *  own. Inheritable arrays are therefore optional, never defaulted. */
+     *  a field it leaves out; a field it sets — `[]` included — is its own.
+     *  Inheritable arrays are therefore optional, never defaulted. Aliases
+     *  are the exception: entry-local, never inherited (an alias identifies
+     *  exactly one note), so they may default to `[]`. */
     kind: z.enum(KIND_IDS).optional(),
     domains: z.array(z.enum(DOMAIN_IDS)).optional(),
     /** free tags; slug-safe so a tag is also its browse route segment */

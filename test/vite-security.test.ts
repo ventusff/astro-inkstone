@@ -1,12 +1,23 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { secureFsDeny } from '../lib/vite-security.ts';
+import { VITE_DEFAULT_DENY, secureFsDeny } from '../lib/vite-security.ts';
 
-test('the baseline denies env files, key material, VCS and state directories', () => {
+test('the baseline is a strict superset of the installed Vite fs.deny defaults', async () => {
   const { fs } = secureFsDeny();
   assert.equal(fs?.strict, true);
-  for (const entry of ['.env', '.env.*', '*.{crt,pem,key,p12,pfx}', '**/.git/**', '**/.wiki/**', '**/*.db']) {
+  // the authority is the installed Vite: resolve its actual defaults
+  const { resolveConfig } = await import('vite');
+  const resolved = await resolveConfig({ configFile: false, logLevel: 'silent' }, 'serve');
+  for (const entry of resolved.server.fs.deny) {
+    assert.ok(fs?.deny?.includes(entry), `Vite default missing from the baseline: ${entry}`);
+  }
+  assert.deepEqual(VITE_DEFAULT_DENY, resolved.server.fs.deny);
+});
+
+test('the baseline denies the editing machine state and key material', () => {
+  const { fs } = secureFsDeny();
+  for (const entry of ['**/.wiki/**', '**/.ssh/**', '**/*.db', '**/*.sqlite']) {
     assert.ok(fs?.deny?.includes(entry), `baseline misses ${entry}`);
   }
 });

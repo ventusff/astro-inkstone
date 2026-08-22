@@ -2,9 +2,10 @@
 /**
  * /all/ — every browse unit, newest first, with instant filters and the
  * full tag index. The filter pills are links to the facet pages (kind /
- * domain / status routes); the script below turns them into in-page filters
- * (one value per dimension, AND across dimensions) that announce their
- * result count — without it every pill still leads somewhere.
+ * domain / status routes); the script below swaps each one for a real
+ * toggle button (aria-pressed) filtering in place (one value per dimension,
+ * AND across dimensions) with an announced result count — without it every
+ * pill still leads somewhere.
  */
 import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
 import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
@@ -16,6 +17,9 @@ import { DOMAINS, KINDS, STATUSES } from '../../content/notes/_meta/taxonomy';
 const units = await getWikiUnits();
 const kinds = groupByKind(units).map((g) => ({ def: g.def, count: g.notes.length }));
 const domains = groupByDomain(units).map((g) => ({ def: g.def, count: g.notes.length }));
+const statuses = STATUSES.map((s) => ({ def: s, count: units.filter((u) => u.status === s.id).length })).filter(
+  (s) => s.count > 0,
+);
 const tags = [...tagIndex(units).entries()].slice(0, 10).map(([tag, list]) => ({ tag, count: list.length }));
 const allTags = [...tagIndex(units).keys()];
 const kindDefs = KINDS.filter((k) => units.some((u) => u.kind === k.id));
@@ -29,7 +33,7 @@ const statusDefs = STATUSES.filter((s) => units.some((u) => u.status === s.id));
     <h1 class="wb-title">All notes<span class="en">{units.length} entries</span></h1>
     <p class="wb-lede">Newest first. The pills below filter in place; without JavaScript they lead to the facet pages.</p>
   </header>
-  <FacetNav base={facetBase} kinds={kinds} domains={domains} tags={tags} active={{ dim: 'all' }} />
+  <FacetNav base={facetBase} kinds={kinds} domains={domains} statuses={statuses} tags={tags} active={{ dim: 'all' }} />
 
   <div class="wb-filters" data-filters>
     <span class="f-dim">Kind</span>
@@ -60,9 +64,12 @@ const statusDefs = STATUSES.filter((s) => units.some((u) => u.status === s.id));
 </BrowseLayout>
 
 <script>
-  // Progressive enhancement: pills become instant filters. Card attributes
-  // come from NoteCard's data-* (kind / domains / status). An active pill is
-  // marked aria-current; the live region announces the count.
+  // Progressive enhancement: the anchors serve the no-JS path (each leads
+  // to its facet page). Once this script owns the interaction the pills act
+  // as in-place toggles, not navigation — so each anchor is swapped for a
+  // real button that announces its state via aria-pressed. Card attributes
+  // come from NoteCard's data-* (kind / domains / status); the live region
+  // announces the count.
   const root = document.querySelector('[data-filters]');
   const cards = [...document.querySelectorAll<HTMLElement>('[data-cards] > li')];
   const empty = document.querySelector<HTMLElement>('[data-empty]');
@@ -70,7 +77,16 @@ const statusDefs = STATUSES.filter((s) => units.some((u) => u.status === s.id));
   const count = document.querySelector<HTMLElement>('[data-count]');
   if (root && cards.length > 0 && empty && clearBtn && count) {
     const active = new Map<string, string>(); // dimension → value (one per dimension)
-    const pills = [...root.querySelectorAll<HTMLAnchorElement>('.f-pill')];
+    const pills = [...root.querySelectorAll<HTMLAnchorElement>('a.f-pill')].map((a) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = a.className;
+      b.textContent = a.textContent;
+      for (const [k, v] of Object.entries(a.dataset)) if (v !== undefined) b.dataset[k] = v;
+      b.setAttribute('aria-pressed', 'false');
+      a.replaceWith(b);
+      return b;
+    });
 
     const apply = (): void => {
       let shown = 0;
@@ -88,14 +104,12 @@ const statusDefs = STATUSES.filter((s) => units.some((u) => u.status === s.id));
       for (const p of pills) {
         const on = active.get(p.dataset['filter'] ?? '') === p.dataset['value'];
         p.toggleAttribute('data-on', on);
-        if (on) p.setAttribute('aria-current', 'true');
-        else p.removeAttribute('aria-current');
+        p.setAttribute('aria-pressed', String(on));
       }
     };
 
     for (const p of pills) {
-      p.addEventListener('click', (e) => {
-        e.preventDefault();
+      p.addEventListener('click', () => {
         const dim = p.dataset['filter'] ?? '';
         const value = p.dataset['value'] ?? '';
         if (active.get(dim) === value) active.delete(dim);

@@ -1,8 +1,10 @@
 ---
 /**
- * FacetNav — faceted browse index: three rows of value pills (with counts)
- * for kind / domain / tag. Rendered on every browse page (the current facet
- * value is highlighted via aria-current); pure static links, zero JS.
+ * FacetNav — faceted browse index: rows of value pills (with counts) for
+ * kind / domain / status / tag (the status row renders only when the site
+ * passes it, i.e. when it routes /status/…). Rendered on every browse page
+ * (the current facet value is highlighted via aria-current); pure static
+ * links, zero JS.
  *
  * Purely presentational: the site computes the rows (e.g. with the
  * `createTaxonomy` helpers from `astro-inkstone/lib/taxonomy`, bound to its
@@ -20,23 +22,26 @@ export interface FacetDef extends KindDisplay {
 interface Props {
   kinds: { def: FacetDef; count: number }[];
   domains: { def: FacetDef; count: number }[];
+  /** maturity statuses, for sites that route /status/<id>/; omitted = no row */
+  statuses?: { def: FacetDef; count: number }[] | undefined;
   tags: { tag: string; count: number }[];
   /** Mount prefix for browse routes, e.g. "/wiki" → "/wiki/kind/<id>/";
    *  any spelling ('/wiki', 'wiki/', …) — it is normalized here. */
   base: string;
-  active?: { dim: 'kind' | 'domain' | 'tag' | 'all'; value?: string | undefined } | undefined;
+  active?: { dim: 'kind' | 'domain' | 'status' | 'tag' | 'all'; value?: string | undefined } | undefined;
   /** Row labels; pass localized strings to override. */
   labels?:
     | {
         kind?: string | undefined;
         domain?: string | undefined;
+        status?: string | undefined;
         tag?: string | undefined;
         all?: string | undefined;
         aria?: string | undefined;
       }
     | undefined;
 }
-const { kinds, domains, tags, base, active, labels = {} } = Astro.props;
+const { kinds, domains, statuses = [], tags, base, active, labels = {} } = Astro.props;
 const root = normalizeBase(base);
 /** browse route for one facet value; the value is data, so it is URL-encoded */
 const facetHref = (dim: string, value: string): string =>
@@ -44,6 +49,7 @@ const facetHref = (dim: string, value: string): string =>
 const label = {
   kind: labels.kind ?? 'Kind',
   domain: labels.domain ?? 'Domain',
+  status: labels.status ?? 'Status',
   tag: labels.tag ?? 'Tags',
   all: labels.all ?? 'All →',
   aria: labels.aria ?? 'Browse index',
@@ -79,6 +85,22 @@ const isActive = (dim: string, value: string): boolean =>
       </a>
     ))}
   </div>
+  {
+    statuses.length > 0 && (
+      <div class="row">
+        <span class="dim">{label.status}</span>
+        {statuses.map(({ def, count }) => (
+          <a
+            class="pill"
+            href={facetHref('status', def.id)}
+            aria-current={isActive('status', def.id) ? 'page' : undefined}
+          >
+            {def.label} <b>{count}</b>
+          </a>
+        ))}
+      </div>
+    )
+  }
   <div class="row">
     <span class="dim">{label.tag}</span>
     {tags.map(({ tag, count }) => (

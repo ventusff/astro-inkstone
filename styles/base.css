@@ -1759,6 +1759,16 @@ a.hub-card.soft {
   font-family: var(--font-ui);
   box-shadow: var(--shadow);
 }
+/* the caption carries the same small-caps label treatment as .demo-title */
+.lineage-title {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+  margin-bottom: 12px;
+}
 .lineage svg {
   width: 100%;
   height: auto;

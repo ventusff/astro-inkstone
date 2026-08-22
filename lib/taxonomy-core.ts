@@ -10,7 +10,8 @@
  *    field: a field the chapter leaves undefined comes from the hub; a field
  *    it sets — an empty array included — is its own (arrays never merge).
  *    A site schema must therefore keep inheritable arrays optional, not
- *    default them to `[]`.
+ *    default them to `[]`. `aliases` are the one exception: entry-local,
+ *    never inherited (see resolveTaxonomy), so a schema may default them.
  *  - Locale mirrors (`en/<id>`, …) inherit from the primary-language entry
  *    (the prefix is stripped to find the canonical id).
  *  - Browse units = primary-language top-level entries. A hub counts as one
@@ -161,6 +162,9 @@ export function createTaxonomyCore<
       created,
       updated: pick(chain, (d) => d.updated) ?? created,
       sources: pick(chain, (d) => d.sources) ?? [],
+      // aliases are entry-local by contract, never inherited: an alias
+      // identifies exactly one note, and a chapter or mirror inheriting
+      // its hub's aliases would make `[[alias]]` links ambiguous
       aliases: entry.data.aliases ?? [],
       locales: present,
     };

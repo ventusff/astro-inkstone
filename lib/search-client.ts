@@ -61,11 +61,15 @@ function countOf(haystack: string, term: string): number {
 const escapeHtml = (s: string): string =>
   s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
+/** An ellipsis marks each side of the snippet only where text is cut. */
 function makeSnippet(text: string, term: string): string {
   const at = norm(text).indexOf(term);
-  if (at === -1) return escapeHtml(text.slice(0, 120));
+  if (at === -1) {
+    return escapeHtml(text.slice(0, 120)) + (text.length > 120 ? '…' : '');
+  }
   const from = Math.max(0, at - 44);
-  const raw = text.slice(from, from + 168);
+  const to = Math.min(text.length, from + 168);
+  const raw = text.slice(from, to);
   const rel = at - from;
   return (
     (from > 0 ? '…' : '') +
@@ -74,11 +78,15 @@ function makeSnippet(text: string, term: string): string {
     escapeHtml(raw.slice(rel, rel + term.length)) +
     '</mark>' +
     escapeHtml(raw.slice(rel + term.length)) +
-    '…'
+    (to < text.length ? '…' : '')
   );
 }
 
+/** `limit` caps the returned hits and must be a positive integer. */
 export function search(docs: SearchDoc[], query: string, locale: string, limit = 20): Hit[] {
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new Error(`search: limit must be a positive integer, got ${String(limit)}`);
+  }
   const { words, phrase } = termsOf(query);
   if (words.length === 0) return [];
 

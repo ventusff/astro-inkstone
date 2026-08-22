@@ -1,7 +1,8 @@
 /**
  * heading-core — what the two numbering presets (rehype-chapters /
  * rehype-sections) share: the anchor slug, the visible heading text, the
- * heading-attribute contract and the id assignment rule.
+ * heading-attribute contract, the id assignment rule and the `<Hero>` id
+ * reservation.
  *
  * `slugify` is the single source of truth for anchor ids: both presets, the
  * wikilink anchor rule and any site-side anchor derivation use this one
@@ -84,6 +85,56 @@ export function assignHeadingId(props: Properties, text: string, used: Set<strin
   while (used.has(id)) id = `${base}-${n++}`;
   props['id'] = id;
   used.add(id);
+  return id;
+}
+
+/* ------------------------------------------------------------------ */
+/* MDX JSX access shared by both presets                               */
+
+export interface MdxJsxAttribute {
+  type: 'mdxJsxAttribute';
+  name: string;
+  /** a string literal, a bare flag (null/undefined), or an expression node */
+  value?: string | null | { type: string; value?: string };
+}
+
+export interface MdxJsxFlowElement {
+  type: 'mdxJsxFlowElement';
+  name: string | null;
+  attributes: MdxJsxAttribute[];
+  children: unknown[];
+}
+
+/** Read a consumed attribute: a string literal or a bare flag (`true`).
+ *  An expression value is an error — the presets run at build time and
+ *  cannot evaluate JSX, so consumed metadata must be static. */
+export function jsxAttr(node: MdxJsxFlowElement, name: string, where: string): string | boolean | undefined {
+  const attr = node.attributes.find(
+    (a) => a.type === 'mdxJsxAttribute' && a.name === name,
+  );
+  if (!attr) return undefined;
+  if (attr.value === null || attr.value === undefined) return true; // bare flag
+  if (typeof attr.value === 'string') return attr.value;
+  throw new Error(
+    `${where}: <${node.name}> attribute ${name}={…} is a JSX expression — build-time metadata must be a static string`,
+  );
+}
+
+/**
+ * Reserve a `<Hero>`'s effective id — its static `id` attribute, or the
+ * component default `intro` — in the page's used-id set, and write the id
+ * back onto the element. The Hero id is a page anchor like any heading id:
+ * it goes through the same set, so a generated heading slug deduplicates
+ * around it and an explicit duplicate is an error. Both presets call this
+ * for every Hero, ToC-labelled or not.
+ */
+export function reserveHeroId(jsx: MdxJsxFlowElement, used: Set<string>, where: string): string {
+  const explicit = jsxAttr(jsx, 'id', where);
+  const id = typeof explicit === 'string' && explicit !== '' ? explicit : 'intro';
+  assignHeadingId({ id }, id, used, where);
+  const idAttr = jsx.attributes.find((a) => a.type === 'mdxJsxAttribute' && a.name === 'id');
+  if (idAttr) idAttr.value = id;
+  else jsx.attributes.push({ type: 'mdxJsxAttribute', name: 'id', value: id });
   return id;
 }
 

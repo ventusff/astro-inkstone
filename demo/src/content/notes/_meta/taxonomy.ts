@@ -69,5 +69,6 @@ export const STATUSES = [
 export type StatusId = (typeof STATUSES)[number]['id'];
 export const STATUS_IDS = STATUSES.map((s) => s.id) as [StatusId, ...StatusId[]];
 
-/** First path segments reserved by browse routes — never valid note ids. */
+/** First path segments reserved by browse routes — never valid note ids.
+ *  The note route's getStaticPaths rejects a clashing note at build time. */
 export const RESERVED_SLUGS = ['kind', 'domain', 'status', 'tag', 'all', 'zh'] as const;

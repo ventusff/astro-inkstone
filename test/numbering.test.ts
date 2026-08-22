@@ -152,3 +152,65 @@ test('chapters: the Hero id shares the heading id space', () => {
   } as unknown as Root;
   assert.throws(() => rehypeChapters()(t3, file()), /duplicate heading id "#intro"/);
 });
+
+test('chapters: a Hero without tocLabel still reserves its effective id', () => {
+  // the untitled Hero's default id "intro" is taken: the heading dedupes around it
+  const t1 = { type: 'root', children: [hero([]), h('h2', 'Intro')] } as unknown as Root;
+  const f1 = file();
+  rehypeChapters()(t1, f1);
+  const heroNode = t1.children[0] as unknown as { attributes: { name: string; value: unknown }[] };
+  assert.equal(heroNode.attributes.find((a) => a.name === 'id')?.value, 'intro');
+  const toc = tocOf(f1) as { items: { id?: string }[] };
+  assert.deepEqual(toc.items.map((i) => i.id), ['intro-2']); // no ToC row for the Hero itself
+  // two Heroes, neither ToC-labelled: their default ids still collide
+  const t2 = { type: 'root', children: [hero([]), hero([])] } as unknown as Root;
+  assert.throws(() => rehypeChapters()(t2, file()), /duplicate heading id "#intro"/);
+});
+
+test('sections: Hero ids share the heading id space, multiple Heroes included', () => {
+  const t1 = { type: 'root', children: [hero([]), h('h2', 'Intro')] } as unknown as Root;
+  const f1 = file();
+  rehypeSections()(t1, f1);
+  const heroNode = t1.children[0] as unknown as { attributes: { name: string; value: unknown }[] };
+  assert.equal(heroNode.attributes.find((a) => a.name === 'id')?.value, 'intro');
+  const toc = tocOf(f1) as { entries: { id: string }[] };
+  assert.deepEqual(toc.entries.map((e) => e.id), ['intro-2']);
+  // an explicit Hero id duplicating an explicit heading id is an error
+  const t2 = {
+    type: 'root',
+    children: [hero([{ name: 'id', value: 'setup' }]), h('h2', { id: 'setup' }, 'Setup')],
+  } as unknown as Root;
+  assert.throws(() => rehypeSections()(t2, file()), /duplicate heading id "#setup"/);
+  // two Heroes both defaulting to "intro" collide
+  const t3 = { type: 'root', children: [hero([]), hero([])] } as unknown as Root;
+  assert.throws(() => rehypeSections()(t3, file()), /duplicate heading id "#intro"/);
+});
+
+test('chapters: frontmatter part must be a positive integer', () => {
+  for (const bad of [1.5, 0, -2, Number.NaN, 'three']) {
+    const tree = { type: 'root', children: [h('h2', 'One')] } as unknown as Root;
+    const f = { data: { astro: { frontmatter: { part: bad } } }, path: 'x.mdx' } as never;
+    assert.throws(() => rehypeChapters()(tree, f), /x\.mdx: frontmatter part must be a positive integer/);
+  }
+});
+
+test('chapters: a second appendix Part continues the letter sequence', () => {
+  const tree = {
+    type: 'root',
+    children: [
+      part('Main'),
+      h('h2', 'Body'),
+      part('Glossary', true),
+      h('h2', 'Terms'),
+      part('References', true),
+      h('h2', 'Sources'),
+    ],
+  } as unknown as Root;
+  const f = file();
+  rehypeChapters()(tree, f);
+  const toc = tocOf(f) as { items: { kind: string; num: string }[] };
+  assert.deepEqual(
+    toc.items.filter((i) => i.kind === 'entry').map((i) => i.num),
+    ['§1.1', '§A', '§B'],
+  );
+});

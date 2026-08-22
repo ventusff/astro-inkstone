@@ -11,7 +11,8 @@
  * - canvas-based demo: pass `canvas={{w,h}}` (logical pixels, same as the
  *   original <canvas width height>); `stages={n}` renders n side-by-side
  *   canvases for multi-canvas demos. Each canvas is named by the demo's
- *   title (its fallback content too), so the stage has an accessible name;
+ *   title (its fallback content too), so the stage has an accessible name,
+ *   and the section landmark carries the same title as its aria-label;
  *   the caption slot carries the description.
  * - DOM demo (no canvas): omit `canvas` — the module builds its own DOM
  *   inside `.demo-stage`.
@@ -35,7 +36,7 @@ const { demo, title, canvas, stages = 1, id } = Astro.props;
 const canvases = canvas ? Array.from({ length: stages }) : [];
 ---
 
-<section class="demo" id={id} data-demo={demo}>
+<section class="demo" id={id} data-demo={demo} aria-label={title}>
   <div class="demo-title">{title}</div>
   <div class:list={['demo-stage', stages > 1 && 'multi', !canvas && 'dom']}>
     {

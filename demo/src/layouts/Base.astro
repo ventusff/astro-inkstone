@@ -11,8 +11,9 @@
  *   [data-inkbrush-slot]
  *   main.note-main > .col      NoteLayout — the comment section mounts there
  *
- * Everything else is plain Astro against the package's public exports; the
- * shell carries no demo-private coupling.
+ * Everything else is the demo site's own chrome — its styles, i18n table,
+ * search palette, theme controls and demo-module loader — written against
+ * the package's public exports.
  */
 import 'katex/dist/katex.min.css';
 import '../styles/site.css';
@@ -106,8 +107,10 @@ const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
       import 'katex/dist/contrib/copy-tex.mjs';
 
       // ---- sidebar scroll-spy ----------------------------------------------
-      // The section under the reading line is the highlighted ToC row, and
-      // that row is kept in view inside the (independently scrolling) sidebar.
+      // The section under the reading line is the highlighted ToC row — the
+      // .active class for the visual, aria-current="location" for assistive
+      // technology — and that row is kept in view inside the (independently
+      // scrolling) sidebar.
       const sidebar = document.querySelector<HTMLElement>('.sidebar');
       const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc a[href^="#"]')];
       // href attribute, not `.hash`: `.hash` comes back percent-encoded, and
@@ -118,7 +121,9 @@ const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
         const setActive = (link: HTMLAnchorElement | undefined): void => {
           if (!link || link === activeLink) return;
           activeLink?.classList.remove('active');
+          activeLink?.removeAttribute('aria-current');
           link.classList.add('active');
+          link.setAttribute('aria-current', 'location');
           activeLink = link;
           if (!sidebar) return;
           const lr = link.getBoundingClientRect();

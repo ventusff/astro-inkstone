@@ -2,8 +2,11 @@
  * Vite `server.fs` settings for a permanently running editing host. Vite's
  * `/@fs` route serves any file of the workspace as a module; on a
  * long-lived dev server that includes the CMS session secret, databases
- * and key material, so everything the frontend never imports is denied.
- * `deny` takes precedence over `allow`.
+ * and key material. Supplying `fs.deny` REPLACES Vite's default list, so
+ * the baseline here is a strict superset of it (VITE_DEFAULT_DENY, asserted
+ * by the unit test against the installed Vite) plus the state and key
+ * patterns an editing machine carries. `deny` takes precedence over
+ * `allow`.
  *
  * Site wiring (inside astro.config, spread into vite.server):
  *   import { secureFsDeny } from 'astro-inkstone/lib/vite-security';
@@ -14,21 +17,30 @@ import type { AstroUserConfig } from 'astro';
 
 type ViteServerConfig = NonNullable<NonNullable<AstroUserConfig['vite']>['server']>;
 
+/** Vite's own `server.fs.deny` defaults — kept, never replaced */
+export const VITE_DEFAULT_DENY = [
+  '.env',
+  '.env.*',
+  '*.{crt,pem,key,p12,pfx,cer,der}',
+  '.npmrc',
+  '.yarnrc.yml',
+  '**/.git/**',
+];
+
 export function secureFsDeny(extraDeny: string[] = []): Pick<ViteServerConfig, 'fs'> {
   return {
     fs: {
       strict: true,
       deny: [
-        '.env',
-        '.env.*',
-        '*.{crt,pem,key,p12,pfx}',
-        '**/.git/**',
+        ...VITE_DEFAULT_DENY,
         '**/.wiki/**', // CMS state: session secret, revisions, comments
         '**/.brain/**', // a co-located app's state directory
         '**/.ssh/**',
         '**/*.db',
         '**/*.db-wal',
         '**/*.db-shm',
+        '**/*.sqlite',
+        '**/*.sqlite3',
         ...extraDeny,
       ],
     },

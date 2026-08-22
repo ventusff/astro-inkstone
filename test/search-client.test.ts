@@ -45,3 +45,24 @@ test('locale is an open code: any registry code filters, "any" always matches', 
   assert.deepEqual(search(docs, 'texte', 'fr').map((h) => h.doc.id).sort(), ['fr', 'shared']);
   assert.deepEqual(search(docs, 'texte', 'de').map((h) => h.doc.id), ['shared']);
 });
+
+test('snippet ellipses mark only the sides where text is actually cut', () => {
+  const short = doc('s', 'x', 'match at the start of a short body');
+  assert.equal(search([short], 'match', 'en')[0]!.snippet, '<mark>match</mark> at the start of a short body');
+  const long = doc('l', 'x', 'x'.repeat(200) + ' match ' + 'y'.repeat(200));
+  assert.match(search([long], 'match', 'en')[0]!.snippet, /^…x+ <mark>match<\/mark> y+…$/);
+});
+
+test('an unmatched body snippet gets a trailing ellipsis only when truncated', () => {
+  const shortDoc = doc('a', 'Needle title', 'short body without the term');
+  assert.equal(search([shortDoc], 'needle', 'en')[0]!.snippet, 'short body without the term');
+  const longDoc = doc('b', 'Needle title', 'z'.repeat(300));
+  assert.equal(search([longDoc], 'needle', 'en')[0]!.snippet, 'z'.repeat(120) + '…');
+});
+
+test('limit must be a positive integer', () => {
+  const docs = [doc('a', 'x', 'body')];
+  assert.throws(() => search(docs, 'body', 'en', 0), /search: limit must be a positive integer, got 0/);
+  assert.throws(() => search(docs, 'body', 'en', 2.5), /limit must be a positive integer/);
+  assert.throws(() => search(docs, 'body', 'en', -1), /limit must be a positive integer/);
+});

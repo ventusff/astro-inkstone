@@ -41,7 +41,7 @@ interface Props {
 const { alias, full, meta, tags = [], links = [], id } = Astro.props;
 ---
 
-<article class="paper" id={id}>
+<article class="paper" id={id} aria-label={alias}>
   <div class="paper-head">
     <span class="alias"><Fragment set:html={renderTocLabel(alias)} /></span>
     {full && <span class="full">— <Fragment set:html={renderTocLabel(full)} /></span>}

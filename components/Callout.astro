@@ -19,7 +19,9 @@ const { variant = 'note', title, labels = {} } = Astro.props;
 const heading = title ?? labels[variant] ?? CALLOUT_LABELS[variant];
 ---
 
-<aside class:list={['callout', variant !== 'note' && variant]}>
+{/* the aria-label names the complementary landmark after its title, so
+    repeated callouts are distinguishable in a landmark list */}
+<aside class:list={['callout', variant !== 'note' && variant]} aria-label={heading}>
   <div class="callout-title">{heading}</div>
   <slot />
 </aside>

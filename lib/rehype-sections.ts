@@ -10,7 +10,9 @@
  * and a ToC row. Source headings stay number-free. An h3 before the first h2
  * has no parent number: it keeps its id and its ToC row and is left
  * unnumbered. The heading attributes of remark-heading-attrs are honoured:
- * `toc="…"` labels the row, `notoc` drops it.
+ * `toc="…"` labels the row, `notoc` drops it. A `<Hero>`'s effective id
+ * (its `id` attribute, default "intro") is reserved in the same id space,
+ * so headings never collide with the Hero anchor.
  *
  * The ToC is written to `remarkPluginFrontmatter.toc`; the sidebar and the
  * in-page jump list read that. Astro's own `headings` array carries the
@@ -21,7 +23,16 @@
 import type { Element, Root } from 'hast';
 import type { VFile } from 'vfile';
 
-import { type AnyNode, assignHeadingId, headingText, numberNode, slugify, takeHeadingAttrs } from './heading-core.ts';
+import {
+  type AnyNode,
+  assignHeadingId,
+  headingText,
+  type MdxJsxFlowElement,
+  numberNode,
+  reserveHeroId,
+  slugify,
+  takeHeadingAttrs,
+} from './heading-core.ts';
 
 export { slugify };
 
@@ -53,6 +64,13 @@ export function rehypeSections() {
 
     const walk = (nodes: AnyNode[]): void => {
       for (const node of nodes) {
+        if (node.type === 'mdxJsxFlowElement') {
+          const jsx = node as unknown as MdxJsxFlowElement;
+          // a `<Hero>`'s effective id (its `id` attribute, default "intro")
+          // is a page anchor: it is reserved in the same used-id set the
+          // headings draw from, so no heading can share it
+          if (jsx.name === 'Hero') reserveHeroId(jsx, used, where);
+        }
         if (node.type === 'element') {
           const el = node as unknown as Element;
           // GFM's footnote section carries a screen-reader-only heading

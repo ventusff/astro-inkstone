@@ -190,6 +190,14 @@
   align-items: center;
   gap: 6px;
 }
+/* a legend item that links to its /status/<id>/ page keeps the legend's ink */
+.wb-root a.wb-legend-item {
+  color: inherit;
+  text-decoration: none;
+}
+.wb-root a.wb-legend-item:hover {
+  color: var(--wb-text);
+}
 .wb-root .wb-legend .dot {
   width: 7px;
   height: 7px;
@@ -207,8 +215,9 @@
 }
 
 /* ---- instant filters (all-notes page) ----
-   Plain links to the facet pages; a few lines of site script turn them into
-   in-page filters (data-on marks the active pill). */
+   Plain links to the facet pages; a few lines of site script swap them for
+   in-place toggle buttons (data-on marks the active pill), so the rule
+   covers both elements. */
 .wb-root .wb-filters {
   display: flex;
   align-items: center;
@@ -228,6 +237,7 @@
 .wb-root .wb-filters .f-pill {
   font: 500 12px/1 var(--wb-sans);
   color: var(--wb-text-soft);
+  background: none;
   border: 1px solid var(--wb-border);
   border-radius: 999px;
   padding: 4.5px 10px;

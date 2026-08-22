@@ -25,7 +25,9 @@
  *     unless marked `notoc`; `toc="…"` labels the row.
  *  4. In-page links whose text is `§` (or `§§`) get the target's number (or
  *     number + label).
- *  5. `<Hero tocLabel="…" />` adds an unnumbered ToC row (id "intro").
+ *  5. Every `<Hero>`'s effective id (its `id` attribute, default "intro")
+ *     is reserved in the page's id space; `tocLabel="…"` additionally adds
+ *     an unnumbered ToC row.
  *  6. The ToC tree is exposed as `remarkPluginFrontmatter.toc`.
  */
 import type { Element, Root } from 'hast';
@@ -37,44 +39,17 @@ import {
   type AnyNode,
   assignHeadingId,
   headingText,
+  jsxAttr,
   letter,
+  type MdxJsxFlowElement,
   numberNode,
+  reserveHeroId,
   roman,
   slugify,
   takeHeadingAttrs,
 } from './heading-core.ts';
 
 export { roman, slugify };
-
-/* ------------------------------------------------------------------ */
-/* structural types for the MDX JSX nodes the transform reads          */
-interface MdxJsxAttribute {
-  type: 'mdxJsxAttribute';
-  name: string;
-  /** a string literal, a bare flag (null/undefined), or an expression node */
-  value?: string | null | { type: string; value?: string };
-}
-interface MdxJsxFlowElement {
-  type: 'mdxJsxFlowElement';
-  name: string | null;
-  attributes: MdxJsxAttribute[];
-  children: unknown[];
-}
-
-/** Read a consumed attribute: a string literal or a bare flag (`true`).
- *  An expression value is an error — the plugin runs at build time and
- *  cannot evaluate JSX, so consumed metadata must be static. */
-function jsxAttr(node: MdxJsxFlowElement, name: string, where: string): string | boolean | undefined {
-  const attr = node.attributes.find(
-    (a) => a.type === 'mdxJsxAttribute' && a.name === name,
-  );
-  if (!attr) return undefined;
-  if (attr.value === null || attr.value === undefined) return true; // bare flag
-  if (typeof attr.value === 'string') return attr.value;
-  throw new Error(
-    `${where}: <${node.name}> attribute ${name}={…} is a JSX expression — build-time metadata must be a static string`,
-  );
-}
 
 interface AstroVFileData {
   astro?: { frontmatter?: Record<string, unknown> };
@@ -91,7 +66,18 @@ export function rehypeChapters(options: ChaptersOptions = {}) {
   return function transform(tree: Root, file: VFile): void {
     const where = file.path ?? '(unknown file)';
     const fm = ((file.data as AstroVFileData).astro ??= {}).frontmatter ?? {};
-    const fmPart = typeof fm['part'] === 'number' ? (fm['part'] as number) : null;
+    // `part` prints into every chapter number of the page, so a value that
+    // is not a positive integer is a frontmatter error, not data
+    const fmPartRaw = fm['part'];
+    let fmPart: number | null = null;
+    if (fmPartRaw !== undefined) {
+      if (typeof fmPartRaw !== 'number' || !Number.isInteger(fmPartRaw) || fmPartRaw < 1) {
+        throw new Error(
+          `${where}: frontmatter part must be a positive integer (the chapter's 1-based position in its hub), got ${String(fmPartRaw)}`,
+        );
+      }
+      fmPart = fmPartRaw;
+    }
     const numbering = fm['chapters'] !== false;
 
     const items: TocItem[] = [];
@@ -113,7 +99,13 @@ export function rehypeChapters(options: ChaptersOptions = {}) {
             const isAppendix = jsxAttr(jsx, 'appendix', where) === true;
             const title = String(jsxAttr(jsx, 'title', where) ?? '');
             if (isAppendix) {
-              inAppendix = true;
+              // the switch to letters resets the counter once: a further
+              // appendix Part continues the letter sequence (§C after §B),
+              // it does not restart at §A
+              if (!inAppendix) {
+                inAppendix = true;
+                chapterIdx = 0;
+              }
             } else {
               if (inAppendix) {
                 throw new Error(
@@ -121,8 +113,8 @@ export function rehypeChapters(options: ChaptersOptions = {}) {
                 );
               }
               partIdx += 1;
+              chapterIdx = 0;
             }
-            chapterIdx = 0;
             // appendix banner text = its title (or appendixLabel); parts get PART <roman>
             const num = isAppendix ? title || appendixLabel : `PART ${roman(partIdx)}`;
             jsx.attributes.push({ type: 'mdxJsxAttribute', name: 'num', value: num });
@@ -130,16 +122,12 @@ export function rehypeChapters(options: ChaptersOptions = {}) {
             continue;
           }
           if (jsx.name === 'Hero') {
+            // every Hero's effective id — the component default `intro`
+            // included — is reserved, ToC-labelled or not, so no heading
+            // can end up sharing the Hero's anchor
+            const id = reserveHeroId(jsx, usedIds, where);
             const tocLabel = jsxAttr(jsx, 'tocLabel', where);
             if (typeof tocLabel === 'string' && tocLabel !== '') {
-              const explicit = jsxAttr(jsx, 'id', where);
-              const id = typeof explicit === 'string' && explicit !== '' ? explicit : 'intro';
-              // the Hero id is a page anchor like any heading id: it goes
-              // through the same used-id set, so a duplicate is an error
-              assignHeadingId({ id }, tocLabel, usedIds, where);
-              const idAttr = jsx.attributes.find((a) => a.type === 'mdxJsxAttribute' && a.name === 'id');
-              if (idAttr) idAttr.value = id;
-              else jsx.attributes.push({ type: 'mdxJsxAttribute', name: 'id', value: id });
               items.push({ kind: 'entry', depth: 2, id, num: '', label: tocLabel });
             }
           }

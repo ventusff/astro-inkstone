@@ -59,7 +59,8 @@ export interface BacklinkIndex {
   broken: { sourceId: string; target: string }[];
   /**
    * One-hop neighbourhood of `id`: inbound sources first, then resolved
-   * outbound targets, de-duplicated, capped at `cap` (default 12). Shape is
+   * outbound targets, de-duplicated, capped at `cap` (a positive integer;
+   * default 12). Shape is
    * what components/LocalGraph.astro takes; add a `color` per neighbour
    * (e.g. by collection) before passing it on.
    */
@@ -79,7 +80,8 @@ export interface BacklinksOptions {
   urlFor: (id: string) => string;
   /** locale registry for mirror-aware resolution; defaults to the engine's */
   locales?: { code: string; prefix: string }[] | undefined;
-  /** characters of context kept on each side of a mention. Default 90. */
+  /** characters of context kept on each side of a mention — a positive
+   *  integer. Default 90. */
   snippetSpan?: number | undefined;
 }
 
@@ -95,6 +97,9 @@ function plainish(s: string): string {
 
 export function createBacklinks(options: BacklinksOptions) {
   const { urlFor, locales, snippetSpan = 90 } = options;
+  if (!Number.isInteger(snippetSpan) || snippetSpan < 1) {
+    throw new Error(`createBacklinks: snippetSpan must be a positive integer, got ${String(options.snippetSpan)}`);
+  }
 
   /** Slice a snippet around `offset`, widened to whitespace boundaries. */
   function snippetAround(
@@ -168,6 +173,9 @@ export function createBacklinks(options: BacklinksOptions) {
     }
 
     const localGraph = (id: string, titleOf: (id: string) => string, cap = 12): GraphNeighbor[] => {
+      if (!Number.isInteger(cap) || cap < 1) {
+        throw new Error(`localGraph: cap must be a positive integer, got ${String(cap)}`);
+      }
       const seen = new Set<string>([id]);
       const out: GraphNeighbor[] = [];
       for (const item of inbound.get(id) ?? []) {

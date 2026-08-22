@@ -35,6 +35,9 @@ jobs:
           npm ci --no-audit --no-fund
           npx astro check
           npm run build
+      - name: Content check (dialect + guard + math)
+        working-directory: demo
+        run: node vendor/astro-inkbrush/scripts/check-content.mjs src/content/notes --math
       - name: Wikilink check (strict)
         working-directory: demo
         run: node vendor/astro-inkbrush/scripts/check-wikilinks.mjs src/content/notes --locale-prefix zh/ --strict

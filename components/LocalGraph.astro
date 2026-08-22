@@ -40,6 +40,14 @@ const placed = neighbors.map((n, i) => {
   return { ...n, x, y, above: y < CY, color: n.color ?? 'var(--color-accent)' };
 });
 
+/* A label centred on an ellipse-edge node would run past the SVG and clip:
+   its centre is clamped so the estimated text box stays inside the canvas. */
+const labelX = (x: number, text: string): number => {
+  const cells = [...text].reduce((n, ch) => n + cellsOf(ch), 0);
+  const half = cells * 2.7 + 3;
+  return Math.min(Math.max(x, half), W - half);
+};
+
 /* A label gets about 14 Latin cells of room on the ellipse; a Hanzi takes two.
    Clipping counts cells, so "三维高斯泼溅重建" and "Gaussian splatting" are
    cut at the same visual width. */
@@ -82,7 +90,7 @@ const short = (s: string): string => {
           <a href={n.href} tabindex="-1">
             <circle cx={n.x.toFixed(1)} cy={n.y.toFixed(1)} r="3.6" fill={n.color} />
             <text
-              x={n.x.toFixed(1)}
+              x={labelX(n.x, short(n.title)).toFixed(1)}
               y={(n.above ? n.y - 8 : n.y + 14).toFixed(1)}
               text-anchor="middle"
               class="lg-label"

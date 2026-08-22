@@ -12,11 +12,13 @@
  *
  * `soft` gives the card the secondary surface (an appendix, a side track).
  */
-import type { ChipVariant } from './Chip.astro';
+import Chip, { type ChipVariant } from './Chip.astro';
 
 export interface HubChip {
   label: string;
   variant?: ChipVariant | undefined;
+  /** custom category color — the same { bg, fg } pair Chip and PaperCard take */
+  tone?: { bg: string; fg: string } | undefined;
 }
 
 interface Props {
@@ -38,7 +40,7 @@ const { href, num, title, chips = [], count, soft = false } = Astro.props;
     chips.length > 0 && (
       <div class="topics">
         {chips.map((c) => (
-          <span class:list={['chip', c.variant]}>{c.label}</span>
+          <Chip variant={c.variant} tone={c.tone}>{c.label}</Chip>
         ))}
       </div>
     )

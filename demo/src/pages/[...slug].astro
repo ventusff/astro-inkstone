@@ -23,9 +23,25 @@ import { backlinks as backlinkBuilder, toDocs } from '../lib/backlinks';
 import { stripOf } from '../lib/display';
 import { baseIdOf, counterpartId, href, localeOfId, LOCALES, routeOfId, type Locale } from '../lib/i18n';
 import { resolveTaxonomy } from '../lib/taxonomy';
+import { RESERVED_SLUGS } from '../content/notes/_meta/taxonomy';
 
 export async function getStaticPaths() {
   const notes = await getCollection('notes');
+  // The id IS the route, so a note must not open a namespace the browse
+  // routes own. Mirrors are checked on the canonical id behind their locale
+  // prefix; a bare locale id would claim the mirror root itself.
+  const reserved = new Set<string>(RESERVED_SLUGS);
+  for (const entry of notes) {
+    const canonical = baseIdOf(entry.id);
+    const first = canonical === '' ? entry.id : (canonical.split('/')[0] ?? canonical);
+    if (reserved.has(first)) {
+      throw new Error(
+        `notes/${entry.id}: its leading path segment "${first}" is reserved (${
+          first === 'zh' ? 'the zh mirror namespace' : `the /${first}/ browse route`
+        }) — rename the note`,
+      );
+    }
+  }
   return notes.map((entry) => ({
     params: { slug: entry.id },
     props: { entry },

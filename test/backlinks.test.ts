@@ -53,3 +53,17 @@ test('the index is memoized per docs array: same array, same index; new corpus, 
   // the first corpus' index is untouched
   assert.deepEqual((first.inbound.get('alpha') ?? []).map((i) => i.sourceId), ['gamma']);
 });
+
+test('snippetSpan and cap must be positive integers', () => {
+  assert.throws(
+    () => createBacklinks({ urlFor: (id) => `/n/${id}/`, snippetSpan: 0 }),
+    /createBacklinks: snippetSpan must be a positive integer, got 0/,
+  );
+  assert.throws(
+    () => createBacklinks({ urlFor: (id) => `/n/${id}/`, snippetSpan: 4.5 }),
+    /snippetSpan must be a positive integer/,
+  );
+  const index = backlinks.build(corpus());
+  assert.throws(() => index.localGraph('alpha', (id) => id, 0), /localGraph: cap must be a positive integer, got 0/);
+  assert.throws(() => index.localGraph('alpha', (id) => id, 2.5), /cap must be a positive integer/);
+});

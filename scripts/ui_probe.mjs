@@ -1,8 +1,11 @@
 /**
- * ui_probe — a render-layer probe. Loads every page of a built site at four
- * viewport widths in headless Chrome and reports what a machine can verify
- * about the rendered result, over the whole document — chrome, sidebar and
- * dialogs included: horizontal overflow of the page, elements wider than
+ * ui_probe — a render-layer probe. Loads every page of a built site (nested
+ * index.html routes and flat pages, 404.html included) at four viewport
+ * widths in headless Chrome and reports what a machine can verify about the
+ * rendered result, over the whole document — chrome, sidebar and dialogs
+ * included (static dialog markup is part of every pass; on one
+ * representative route each `<dialog data-probe-open>` is also opened and
+ * its layout checked): horizontal overflow of the page, elements wider than
  * their container with no scroll box to live in, classes no stylesheet rule
  * styles, skipped heading levels, duplicate ids, images without an alt
  * attribute, in-page anchors and aria-controls pointing at ids that do not
@@ -23,7 +26,7 @@
 import puppeteer from 'puppeteer-core';
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { extname, join, resolve } from 'node:path';
+import { extname, join, resolve, sep } from 'node:path';
 
 const DIST = process.argv[2] || resolve('dist');
 const WIDTHS = [1440, 1024, 768, 430];
@@ -38,12 +41,17 @@ if (!BASE) {
     '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp',
     '.avif': 'image/avif', '.ico': 'image/x-icon', '.woff2': 'font/woff2',
   };
+  // requests are confined to DIST: no traversal segments, and every resolved
+  // path must stay inside it
+  const root = resolve(DIST);
   server = createServer((req, res) => {
     let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
     if (p.endsWith('/')) p += 'index.html';
     for (const candidate of [p, `${p}/index.html`]) {
+      const abs = resolve(root, `.${candidate}`);
+      if (candidate.split('/').includes('..') || abs !== root && !abs.startsWith(root + sep)) break;
       try {
-        const buf = readFileSync(join(DIST, candidate));
+        const buf = readFileSync(abs);
         res.setHeader('content-type', MIME[extname(candidate)] ?? 'application/octet-stream');
         return res.end(buf);
       } catch { /* try next */ }
@@ -61,6 +69,7 @@ function routes(dir, prefix = '') {
     const p = join(dir, e);
     if (statSync(p).isDirectory()) out = out.concat(routes(p, `${prefix}${e}/`));
     else if (e === 'index.html') out.push(`/${prefix}`);
+    else if (e.endsWith('.html')) out.push(`/${prefix}${e}`); // flat pages, 404.html
   }
   return out.sort();
 }
@@ -73,7 +82,8 @@ const findings = [];
 try {
 const page = await browser.newPage();
 
-for (const r of routes(DIST)) {
+const routeList = routes(DIST);
+for (const r of routeList) {
   for (const w of WIDTHS) {
     await page.setViewport({ width: w, height: 1200 });
     // 'load' + a capped quiet-period wait: strict networkidle0 can hang
@@ -139,8 +149,10 @@ for (const r of routes(DIST)) {
           // back-reference marker.
           if (el.matches('pre.astro-code')) continue;
           const GENERATED = new Set(['line', 'has-diff', 'is-collapsible', 'code-frame-body', 'data-footnote-backref']);
-          // generated/stateful families: KaTeX internals, mermaid, shiki,
-          // the CMS client's classes, copy-button states
+          // vendor-generated class families (Astro scoped-style hashes, KaTeX
+          // internals, mermaid, shiki, the CMS client, copy-button states):
+          // site-authored classes never start with these, so the exemption
+          // cannot mask a site typo
           const GEN_PREFIX = ['astro-', 'wiki-', 'katex', 'shiki', 'code-copy', 'mermaid'];
           if (seenCls.has(cls) || GEN_PREFIX.some((p) => cls.startsWith(p)) || GENERATED.has(cls)) continue;
           if (el.closest && el.closest('.katex, .mermaid-block')) { seenCls.add(cls); continue; }
@@ -193,6 +205,59 @@ for (const r of routes(DIST)) {
       res.hOverflow || res.wide.length || res.unstyled.length || res.headingJump.length ||
       res.noAlt.length || res.dupId.length || res.deadAnchor.length || res.deadControl.length;
     if (hit) findings.push({ route: r, width: w, ...res });
+
+    // marked dialogs get their geometry checked open, on one representative
+    // route (their static markup — ids, anchors, classes — is already part
+    // of the normal pass; only layout needs them open)
+    if (r === routeList[0]) {
+      const dlg = await page.evaluate(() => {
+        const dialogs = [...document.querySelectorAll('dialog[data-probe-open]:not([open])')];
+        for (const d of dialogs) {
+          try { d.showModal(); } catch { d.setAttribute('open', ''); }
+          const input = d.querySelector('input[type="search"], input[type="text"], input:not([type])');
+          if (input) {
+            input.value = 'the';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }
+        return dialogs.length;
+      });
+      if (dlg > 0) {
+        await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+        const res2 = await page.evaluate(() => {
+          const out = { wide: [] };
+          const sel = (el) => {
+            const cls = (el.className && typeof el.className === 'string') ? '.' + el.className.trim().split(/\s+/).join('.') : '';
+            return el.tagName.toLowerCase() + cls;
+          };
+          const hasScrollAncestor = (el) => {
+            for (let n = el.parentElement; n && n.tagName !== 'BODY'; n = n.parentElement) {
+              const cs = getComputedStyle(n);
+              if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') return true;
+              if (cs.overflow === 'hidden' && n.clientWidth <= 1 && n.clientHeight <= 1) return true;
+            }
+            return false;
+          };
+          for (const el of document.querySelectorAll('dialog[open], dialog[open] *')) {
+            const p = el.parentElement;
+            if (!p || el.tagName === 'DIALOG') continue;
+            if (el.closest('.katex-mathml, math, .katex')) continue;
+            const a = el.getBoundingClientRect(), b = p.getBoundingClientRect();
+            if (a.width > b.width + 2 && !el.classList.contains('wide') && !hasScrollAncestor(el))
+              out.wide.push({ el: sel(el), w: Math.round(a.width), parent: sel(p), pw: Math.round(b.width) });
+          }
+          const de = document.documentElement;
+          out.hOverflow = de.scrollWidth > de.clientWidth + 1 ? { doc: de.scrollWidth, view: de.clientWidth } : null;
+          return out;
+        });
+        if (res2.hOverflow || res2.wide.length) {
+          findings.push({
+            route: `${r} (dialogs open)`, width: w, hOverflow: res2.hOverflow, wide: res2.wide,
+            unstyled: [], headingJump: [], noAlt: [], dupId: [], deadAnchor: [], deadControl: [],
+          });
+        }
+      }
+    }
   }
 }
 } finally {

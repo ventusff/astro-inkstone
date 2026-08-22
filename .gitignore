@@ -19,5 +19,9 @@ ui-probe.txt
 contrast-probe.txt
 *.log
 
-# Python bytecode from the font subset script
+# Python bytecode and tool state
 __pycache__/
+.venv/
+.pytest_cache/
+coverage/
+.DS_Store

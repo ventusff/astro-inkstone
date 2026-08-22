@@ -99,6 +99,10 @@ export function remarkCallouts(options: CalloutOptions = {}) {
         hProperties: {
           className: cls === 'note' ? ['callout'] : ['callout', cls],
           ...(fold === 'open' ? { open: true } : {}),
+          // the aside is a complementary landmark: its aria-label is the
+          // resolved title, the same name <Callout> renders (a folding
+          // details is named by its summary and needs none)
+          ...(fold ? {} : { ariaLabel: title }),
         },
       };
     });

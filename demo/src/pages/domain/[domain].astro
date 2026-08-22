@@ -5,7 +5,7 @@ import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
 import BrowseLayout from '../../layouts/BrowseLayout.astro';
 import { cardOf, facetBase } from '../../lib/display';
 import { getWikiUnits, groupByKind, groupByDomain, tagIndex, type ResolvedNote } from '../../lib/taxonomy';
-import type { DomainDef } from '../../content/notes/_meta/taxonomy';
+import { STATUSES, type DomainDef } from '../../content/notes/_meta/taxonomy';
 
 export async function getStaticPaths() {
   const units = await getWikiUnits();
@@ -24,6 +24,9 @@ const { def, notes } = Astro.props;
 const units = await getWikiUnits();
 const kinds = groupByKind(units).map((g) => ({ def: g.def, count: g.notes.length }));
 const domains = groupByDomain(units).map((g) => ({ def: g.def, count: g.notes.length }));
+const statuses = STATUSES.map((s) => ({ def: s, count: units.filter((u) => u.status === s.id).length })).filter(
+  (s) => s.count > 0,
+);
 const tags = [...tagIndex(units).entries()].slice(0, 10).map(([tag, list]) => ({ tag, count: list.length }));
 ---
 
@@ -33,7 +36,7 @@ const tags = [...tagIndex(units).entries()].slice(0, 10).map(([tag, list]) => ({
     <h1 class="wb-title">{def.label}<span class="en">{def.zh}</span></h1>
     <p class="wb-lede">{def.desc} — <strong>{notes.length}</strong> notes, primary or secondary.</p>
   </header>
-  <FacetNav base={facetBase} kinds={kinds} domains={domains} tags={tags} active={{ dim: 'domain', value: def.id }} />
+  <FacetNav base={facetBase} kinds={kinds} domains={domains} statuses={statuses} tags={tags} active={{ dim: 'domain', value: def.id }} />
   <ul class="wb-grid">
     {notes.map((note) => <NoteCard note={cardOf(note)} />)}
   </ul>

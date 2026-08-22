@@ -37,14 +37,14 @@ Why this script must come from the engine: a checker whose plugin set differs fr
 node <engine>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
 ```
 
-Beyond compiling, it catches two frontmatter classes of silent loss: an unquoted `#` in a value (YAML reads it as a comment and silently truncates the rest) and CRLF line endings (the frontmatter regex only accepts LF, so titles silently fall back to slugs).
+Beyond compiling, it catches two frontmatter classes of silent loss: an unquoted `#` in a value (YAML reads it as a comment and silently truncates the rest) and YAML that does not parse at all, reported with its line.
 
 ## check-wikilinks: the link graph
 
-Dead `[[wikilinks]]` deliberately do not fail the build — a garden must be allowed to link to notes it hasn't grown yet. But link rot still belongs in CI, so the engine ships a lint that resolves every wikilink with **the library's own regex and resolution rules** (alias, brand, title, locale mirrors — zero drift by construction) and reports the missing, the ambiguous, and the dubious anchors:
+Dead `[[wikilinks]]` deliberately do not fail the build — a garden must be allowed to link to notes it hasn't grown yet. But link rot still belongs in CI, so the engine ships a lint that resolves every wikilink with **the library's own parser and resolution rules** (alias, brand, title, locale mirrors) and reports the missing, the ambiguous, and the dubious anchors. `--strict` turns dead links into a failing exit — that is how this repository's CI runs it:
 
-```bash title="this garden's link check"
-node vendor/astro-inkbrush/scripts/check-wikilinks.mjs src/content/notes --locale-prefix zh/
+```bash title="this garden's link check, as CI runs it"
+node vendor/astro-inkbrush/scripts/check-wikilinks.mjs src/content/notes --locale-prefix zh/ --strict
 ```
 
 ## check-dist: the output layer
@@ -59,8 +59,8 @@ In the built `dist/`, every internal reference a reader can click must actually 
 
 This demo wires it into postbuild: a green `npm run build` means the output check passed too.
 
-```bash title="site root, after a build"
-node vendor/astro-inkbrush/scripts/check-dist.mjs dist
+```bash title="site root, after a build (pass --base when the site deploys under a subpath)"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
 ```
 
 ## The render-layer probe

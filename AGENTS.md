@@ -57,8 +57,10 @@ whose content is the package's own manual.
 - The font subset is a fixed recipe that lives in the repository
   (`fonts/build_font_subset.py` + `hanzi-3500.txt` + `extra-chars.txt`), cut
   from a source font pinned by SHA-256. Content needing glyphs beyond it:
-  `build_font_subset.py --scan <dir>`, then commit `extra-chars.txt` and the
-  regenerated woff2 together. The display serif and UI sans are not shipped:
+  `build_font_subset.py --scan <dir>`, then commit `extra-chars.txt`, the
+  regenerated woff2 and `coverage.txt` together (the sidecar the
+  font-coverage test reads; the build is deterministic under the pinned
+  toolchain). The display serif and UI sans are not shipped:
   `--font-display` / `--font-ui` name the `@fontsource` families the demo
   self-hosts, and fall back to system faces.
 - The engine dependency is deliberately **not** a peerDependency: the engine
@@ -83,7 +85,10 @@ whose content is the package's own manual.
   attribute contract and the numeral helpers.
 - Taxonomy inheritance is field-wise: a chapter or mirror inherits a field
   it leaves `undefined` and owns a field it sets, `[]` included — so a site
-  schema keeps inheritable arrays `.optional()`, never `.default([])`.
+  schema keeps inheritable arrays `.optional()`, never `.default([])`. The
+  one exception is `aliases`: entry-local, never inherited (an alias must
+  identify exactly one note — an inherited hub alias would make
+  `[[alias]]` ambiguous), so a schema may default it to `[]`.
 - Relative imports inside `lib/` carry the `.ts` extension: the library is
   consumed as source by Vite and run as source by `node --test`.
 - `components/LocalToc.astro` accepts both ToC shapes (`entries`/`items`).
@@ -109,6 +114,7 @@ cd demo && npm ci
 npx astro check                      # types (a build alone does not check them)
 npm run build                        # build + engine check-dist (postbuild)
 npm run dev                          # the manual site
+npm run check                            # engine CLIs: content + wikilinks (strict)
 node ../scripts/ui_probe.mjs dist        # render-layer probe (needs Chrome)
 node ../scripts/contrast_probe.mjs dist  # WCAG contrast of rendered text, both themes
 ```

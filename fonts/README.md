@@ -13,6 +13,7 @@ scanning its own content.
 | File | What it is |
 | --- | --- |
 | `MapleMonoCN-subset.woff2` | the subset artifact, committed; sites reference it directly |
+| `coverage.txt` | the subset's actual cmap, written by the generator; `test/font-coverage.test.ts` holds it against the recipe and the demo content |
 | `build_font_subset.py` | the generator (fixed recipe, below; the source font pinned by SHA-256) |
 | `hanzi-3500.txt` | the 3500 level-1 characters of the Table of General Standard Chinese Characters |
 | `extra-chars.txt` | recipe item 4: every further character the subset carries, one `U+XXXX` per line |
@@ -38,12 +39,14 @@ When content uses a character outside the subset, the browser falls back to
 a system font for that glyph (alignment may be loose there). To fold it in:
 
 ```bash
-python3 -m venv /tmp/fontenv && /tmp/fontenv/bin/pip install fonttools brotli
+python3 -m venv /tmp/fontenv && /tmp/fontenv/bin/pip install 'fonttools==4.63.*' 'brotli==1.1.*'
 /tmp/fontenv/bin/python fonts/build_font_subset.py --scan path/to/content   # extends extra-chars.txt
 ```
 
-then commit `extra-chars.txt` and the regenerated `MapleMonoCN-subset.woff2`
-together. The source ttf is auto-discovered under `~/.local/share/fonts/**/`
+then commit `extra-chars.txt`, the regenerated `MapleMonoCN-subset.woff2`
+and `coverage.txt` together. The build is deterministic (a fixed
+`SOURCE_DATE_EPOCH`): the same source, recipe and pinned toolchain
+reproduce the artifact byte for byte. The source ttf is auto-discovered under `~/.local/share/fonts/**/`
 and `/usr/share/fonts/**/`, or pointed at with `MAPLE_TTF=/path/to/it`.
 
 ## License

@@ -53,17 +53,80 @@ export interface SearchIndexOptions {
 }
 
 /**
- * MDX source → searchable prose. Removes frontmatter, import/export lines,
- * JSX tags, link targets and image syntax; keeps link text and inline-code
- * words; drops fenced code blocks entirely (code is found through the prose
- * that explains it, not by token).
+ * Mask the non-prose regions of an MDX source, replacing their lines with
+ * blank ones so nothing in them can read as prose or as a heading:
+ *
+ *  - frontmatter (LF or CRLF line endings);
+ *  - fenced code opened by three or more backticks or tildes, closed by a
+ *    bare fence of at least as many of the same character (an unclosed
+ *    fence masks to the end of the file);
+ *  - module-level import/export statements, multiline ones included.
+ *
+ * The import/export scan is a pragmatic bracket/quote balance: it tracks
+ * (), [], {} nesting and string/template quotes, and ends the statement at
+ * the first line end that is back in balance. It does not parse comments,
+ * regex literals or template interpolations, and a statement continued
+ * without an open bracket or quote (e.g. a line-broken binary expression)
+ * is cut at the first balanced line end.
  */
-function plainText(body: string, maxChars: number): string {
-  return body
-    .replace(/^---\n[\s\S]*?\n---\n/, '')
-    .replace(/^import\s.+$/gm, '')
-    .replace(/^export\s.+$/gm, '')
-    .replace(/```[\s\S]*?```/g, ' ')
+function maskNonProse(body: string): string {
+  const src = body.replace(/^---\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n/, '');
+  const out: string[] = [];
+  let fence: { ch: string; len: number } | null = null;
+  let stmt: { depth: number; quote: string | null } | null = null;
+
+  const scan = (line: string, st: { depth: number; quote: string | null }): void => {
+    for (let i = 0; i < line.length; i += 1) {
+      const c = line[i]!;
+      if (st.quote !== null) {
+        if (c === '\\') i += 1;
+        else if (c === st.quote) st.quote = null;
+      } else if (c === "'" || c === '"' || c === '`') st.quote = c;
+      else if (c === '(' || c === '[' || c === '{') st.depth += 1;
+      else if (c === ')' || c === ']' || c === '}') st.depth -= 1;
+    }
+  };
+
+  for (const raw of src.split('\n')) {
+    const line = raw.endsWith('\r') ? raw.slice(0, -1) : raw;
+    if (fence !== null) {
+      out.push('');
+      const close = /^ {0,3}(`{3,}|~{3,})[ \t]*$/.exec(line);
+      if (close && close[1]![0] === fence.ch && close[1]!.length >= fence.len) fence = null;
+      continue;
+    }
+    if (stmt !== null) {
+      out.push('');
+      scan(line, stmt);
+      if (stmt.depth <= 0 && stmt.quote === null) stmt = null;
+      continue;
+    }
+    const open = /^ {0,3}(`{3,}|~{3,})/.exec(line);
+    if (open) {
+      fence = { ch: open[1]![0]!, len: open[1]!.length };
+      out.push('');
+      continue;
+    }
+    if (/^(?:import|export)\s/.test(line)) {
+      out.push('');
+      const st = { depth: 0, quote: null as string | null };
+      scan(line, st);
+      if (st.depth > 0 || st.quote !== null) stmt = st;
+      continue;
+    }
+    out.push(line);
+  }
+  return out.join('\n');
+}
+
+/**
+ * Masked MDX source (maskNonProse) → searchable prose. Removes JSX tags,
+ * link targets and image syntax; keeps link text and inline-code words
+ * (code blocks are already masked — code is found through the prose that
+ * explains it, not by token).
+ */
+function plainText(masked: string, maxChars: number): string {
+  return masked
     .replace(/<\/?[A-Za-z][^>]*>/g, ' ')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
@@ -74,10 +137,9 @@ function plainText(body: string, maxChars: number): string {
     .slice(0, maxChars);
 }
 
-/** h2/h3 lines outside frontmatter and fenced code, without markers and
+/** h2/h3 lines of the masked source (maskNonProse), without markers and
  *  without a trailing `{#id …}` attribute block */
-function headingsOf(body: string): string[] {
-  const masked = body.replace(/^---\n[\s\S]*?\n---\n/, '').replace(/```[\s\S]*?```/g, ' ');
+function headingsOf(masked: string): string[] {
   return [...masked.matchAll(/^#{2,3}\s+(.+?)\s*$/gm)].map((m) =>
     m[1]!.replace(/\s*`\{[^{}]*\}`\s*$/, '').replace(/[`*_]/g, ''),
   );
@@ -90,15 +152,18 @@ export function buildSearchIndexEndpoint(opts: SearchIndexOptions): APIRoute {
   }
   return async () => {
     const sources = await opts.loadDocs();
-    const out: SearchDoc[] = sources.map((s) => ({
-      id: s.id,
-      route: s.route,
-      locale: s.locale,
-      title: s.title,
-      crumb: s.crumb,
-      headings: headingsOf(s.body),
-      text: plainText(s.body, maxChars),
-    }));
+    const out: SearchDoc[] = sources.map((s) => {
+      const masked = maskNonProse(s.body);
+      return {
+        id: s.id,
+        route: s.route,
+        locale: s.locale,
+        title: s.title,
+        crumb: s.crumb,
+        headings: headingsOf(masked),
+        text: plainText(masked, maxChars),
+      };
+    });
 
     return new Response(JSON.stringify(out), {
       headers: { 'content-type': 'application/json; charset=utf-8' },
