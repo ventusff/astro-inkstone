@@ -12,13 +12,13 @@
  */
 import { readFileSync } from 'node:fs';
 
-const DOCS_DIR = new URL('../content/docs/', import.meta.url);
+const NOTES_DIR = new URL('../content/notes/', import.meta.url);
 
-/** "1-N" spanning the frontmatter of `src/content/docs/<id>/index.mdx`; undefined when the file has none */
+/** "1-N" spanning the frontmatter of `src/content/notes/<id>/index.mdx`; undefined when the file has none */
 export function frontmatterRange(noteId: string): string | undefined {
   let source: string;
   try {
-    source = readFileSync(new URL(`${noteId}/index.mdx`, DOCS_DIR), 'utf8');
+    source = readFileSync(new URL(`${noteId}/index.mdx`, NOTES_DIR), 'utf8');
   } catch {
     return undefined;
   }

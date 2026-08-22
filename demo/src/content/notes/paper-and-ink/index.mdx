@@ -1,0 +1,24 @@
+---
+title: Paper and ink, on purpose
+description: Why this design system commits to a warm paper ground, real serifs and a hand-set dark theme — a note on the stance behind the tokens.
+kind: pattern
+domains: [design]
+tags: [philosophy, typography]
+status: growing
+created: 2026-08-10
+updated: 2026-08-22
+---
+
+## The stance
+
+Most documentation themes reach for the same defaults: white `#fff`, a grotesque sans, gray-800 text, system dark mode. They read fine and look like nothing. This system starts from a different premise — **a long technical document is a thing you read for an hour**, and an hour of reading wants what print figured out centuries ago: a warm ground that doesn't glare, a text face with real contrast between strokes, and a layout rhythm measured in ems of body text rather than pixels of chrome.
+
+Hence the vocabulary the [[design-tokens|token layer]] is written in: papers (plain, silk, page, slip, note) instead of gray-50 through gray-200; inks and pigments (vermilion, indigo, ochre) instead of primary/secondary/accent. The names are not decoration — they keep every new color decision anchored to the same physical metaphor, which is why five different surfaces still read as one sheet of paper.
+
+## Dark is a second edition, not an inversion
+
+Algorithmic dark modes invert lightness and call it done; text becomes chalk on slate and every tinted surface turns to mud. Here the dark theme is a **second hand-set edition**: night grounds and moon-white inks chosen on their own, accent pigments re-brightened just enough to hold their AA contrast on the darker papers. It costs a second set of decisions — that is the point. The switch honors the reader's explicit choice only ([[design-tokens#light-is-the-identity|never the OS preference]]), because a page that flips its own theme mid-read is a page that startles.
+
+## CJK is load-bearing
+
+Mixed Chinese/Latin text is where most themes quietly fall apart: emphasis that refuses to close against a full-width period, code diagrams that shear because a Hanzi is 1.7 cells wide. Both are treated here as correctness bugs, not typographic taste — the [[kitchen-sink#inline-marks|dialect parses CJK emphasis correctly]], and the code font subset pins a Hanzi to exactly two cells so box-drawing survives translation. A theme that only works in English is half a theme.

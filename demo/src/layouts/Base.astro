@@ -1,14 +1,13 @@
 ---
 /**
- * Page shell: nav bar + sidebar + reading column.
+ * Page shell: nav bar, search palette, lightbox and the site-wide scripts.
+ * NoteLayout and BrowseLayout wrap their own column structure around this.
  *
- * The DOM shape is astro-inkbrush's contract, not a styling choice:
+ * Parts of the DOM here are astro-inkbrush's contract, not a styling choice:
  *
- *   main.note-main > .col   comments.ts mounts the discussion section into
- *                           this selector and returns silently when it is
- *                           absent.
- *   .site-nav + the two     see components/Breadcrumb.astro
+ *   .site-nav + the two        see components/Breadcrumb.astro
  *   [data-inkbrush-slot]
+ *   main.note-main > .col      NoteLayout — the comment section mounts there
  *
  * A consuming site can copy this shell wholesale as a starting point — it is
  * deliberately ordinary Astro.
@@ -16,47 +15,38 @@
 import 'katex/dist/katex.min.css';
 import '../styles/site.css';
 import Breadcrumb from '../components/Breadcrumb.astro';
-import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import SearchPalette from '../components/SearchPalette.astro';
-import Sidebar from '../components/Sidebar.astro';
 import ThemeInit from '../components/ThemeInit.astro';
-import { href, localeRoute, LOCALES, UI, type Locale } from '../lib/i18n';
-import { BOOK, chapterOf, READING_ORDER } from '../lib/book';
-import { frontmatterRange } from '../lib/note-source';
-import { EMPTY_TOC, type TocData } from '../lib/toc';
+import { UI, type Locale } from '../lib/i18n';
+
+interface Crumb {
+  label: string;
+  route?: string | undefined;
+}
 
 interface Props {
   title: string;
   description?: string | undefined;
-  locale: Locale;
-  /** root-relative route of this page ('' = cover) */
-  route: string;
-  /** locale-free page id — drives prev/next, breadcrumbs and the language jump */
-  pageId?: string | undefined;
-  /** served in the other language because this one has no translation yet */
-  fallback?: boolean;
-  toc?: TocData | undefined;
-  date?: string | undefined;
-  /** the cover supplies its own hero; skip the article chrome */
-  cover?: boolean;
+  /** UI-chrome language (note pages follow the note's locale) */
+  locale?: Locale;
+  htmlLang?: string;
+  crumbs?: Crumb[];
+  /** counterpart route in the other locale; omitted on pages with no twin */
+  translateRoute?: string | undefined;
   /**
-   * Collection entry id, when this page is editable through the CMS. Set for
-   * a page rendered from its OWN source file; deliberately unset on a
-   * fallback rendering, where the file on screen belongs to the other locale
-   * and an edit here would silently rewrite that one.
+   * Collection entry id, when this page is editable through the CMS. The
+   * <meta name="inkbrush-note"> tags are editing metadata — emitted in WIKI
+   * mode only, so the published bundle never carries them.
    */
   noteId?: string | undefined;
 }
 const {
   title,
   description,
-  locale,
-  route,
-  pageId,
-  fallback = false,
-  toc = EMPTY_TOC,
-  date,
-  cover = false,
+  locale = 'en',
+  htmlLang = locale === 'zh' ? 'zh-CN' : 'en',
+  crumbs = [],
+  translateRoute,
   noteId,
 } = Astro.props;
 
@@ -67,61 +57,16 @@ const base = import.meta.env.BASE_URL.endsWith('/')
   ? import.meta.env.BASE_URL
   : `${import.meta.env.BASE_URL}/`;
 const noteUrlTemplate = `${base}{id}/`;
-// The note meta is editing metadata; the published bundle has no business
-// carrying it. Gated on the same flag as the integration itself.
 const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
-// The page head shows frontmatter (title, description), which no rehype pass
-// stamps as an editable block. Stamp it here with the frontmatter's own line
-// range so the CMS's ✎ handle works on the title like on any paragraph.
-// Editing mode only, and never on a fallback rendering (noteId is unset there
-// — the visible text belongs to the other locale's file).
-const headSrc = wikiMode && noteId ? frontmatterRange(noteId) : undefined;
 
 const t = UI[locale];
-const zh = locale === 'zh';
-const other: Locale = zh ? 'en' : 'zh';
-const htmlLang = fallback
-  ? (LOCALES.find((l) => l.code === other)?.htmlLang ?? 'en')
-  : (LOCALES.find((l) => l.code === locale)?.htmlLang ?? 'zh-CN');
 
-const translateRoute = pageId ? localeRoute(pageId, other) : other === 'zh' ? 'zh/' : '';
-
-const chapter = pageId ? chapterOf(pageId) : undefined;
-const ci = pageId ? BOOK.findIndex((c) => c.sections.some((s) => s.id === pageId)) : -1;
-const si = ci >= 0 ? BOOK[ci]!.sections.findIndex((s) => s.id === pageId) : -1;
-const number = ci >= 0 ? `${ci + 1}.${si + 1}` : '';
-const chapterName = chapter ? (zh ? chapter.zh : chapter.en) : undefined;
-
-const i = pageId ? READING_ORDER.indexOf(pageId) : -1;
-const at = (id: string) => {
-  const c = BOOK.findIndex((x) => x.sections.some((s) => s.id === id));
-  const s = c >= 0 ? BOOK[c]!.sections.findIndex((x) => x.id === id) : -1;
-  const sec = c >= 0 ? BOOK[c]!.sections[s]! : undefined;
-  return { route: localeRoute(id, locale), label: `${c + 1}.${s + 1} ${zh ? sec?.zh : sec?.en}` };
-};
-const prev = i > 0 ? at(READING_ORDER[i - 1]!) : null;
-const next = i >= 0 && i < READING_ORDER.length - 1 ? at(READING_ORDER[i + 1]!) : null;
-
-/**
- * Accessible names for the layout's own widgets. Same zh/en shape as `UI` in
- * lib/i18n.ts; local because they name parts of this shell and nothing else
- * consumes them. Typed with `Record<Locale, …>` rather than `as const`: an
- * `as const` ANYWHERE in this frontmatter makes the Astro language server
- * lose the `Props` interface, after which `Astro.props` is `any` and every
- * `UI[locale]` in the file becomes a ts(7053) error.
- */
+/** Accessible names for the shell's own widgets. */
 const A11Y: Record<Locale, { lightbox: string; close: string }> = {
   zh: { lightbox: '图片查看器', close: '关闭' },
   en: { lightbox: 'Image viewer', close: 'Close' },
 };
 const a11y = A11Y[locale];
-
-const crumbs = chapter
-  ? [
-      { label: `${ci + 1} ${chapterName}`, route: localeRoute(chapter.sections[0]!.id, locale) },
-      { label: title },
-    ]
-  : [];
 ---
 
 <!doctype html>
@@ -142,54 +87,7 @@ const crumbs = chapter
   </head>
   <body>
     <Breadcrumb locale={locale} crumbs={crumbs} translateRoute={translateRoute} />
-    <div class="layout">
-      <Sidebar currentRoute={route} locale={locale} toc={toc} />
-      <main class="note-main">
-        <div class="col">
-          {fallback && <p class="banner banner-fallback">{t.fallbackNotice}</p>}
-          {
-            !cover && (
-              <header class="page-head" {...(headSrc ? { 'data-wiki-src': headSrc } : {})}>
-                {number && (
-                  <p class="kicker">
-                    {number} · {chapterName}
-                  </p>
-                )}
-                <h1>{title}</h1>
-                {description && <p class="page-desc">{description}</p>}
-                {date && <p class="page-date">{date}</p>}
-              </header>
-            )
-          }
-          {!cover && <LocalToc toc={toc} label={t.tocLabel} min={5} />}
-          <slot />
-
-          {
-            (prev || next) && (
-              <nav class="pagination" aria-label="Chapter pagination">
-                {prev ? (
-                  <a class="prev" href={href(prev.route)}>
-                    <div class="dir">← prev</div>
-                    <div class="title">{prev.label}</div>
-                  </a>
-                ) : null}
-                {next ? (
-                  <a class="next" href={href(next.route)}>
-                    <div class="dir">next →</div>
-                    <div class="title">{next.label}</div>
-                  </a>
-                ) : null}
-              </nav>
-            )
-          }
-
-          <footer class="page-foot">
-            <span></span>
-            <span>{t.footer}</span>
-          </footer>
-        </div>
-      </main>
-    </div>
+    <slot />
 
     <dialog class="lightbox" aria-label={a11y.lightbox}>
       <button class="lb-close" type="button" aria-label={a11y.close}>
@@ -202,23 +100,19 @@ const crumbs = chapter
 
     <script>
       // ---- keep the sidebar in step with the page ------------------------
-      // The sidebar is its own scroll box. Two things make it feel "attached"
-      // to the page: on load it scrolls itself so the current page sits in view
-      // (not chapter 1 while you read chapter 5), and while reading, the section
-      // you are in is the highlighted one — decided by the reading line at 30%
-      // of the viewport, the last heading above that line wins — and that link
-      // is kept visible inside the sidebar.
+      // On load the sidebar scrolls itself so the current row sits in view;
+      // while reading, the section under the reading line (30% viewport) is
+      // the highlighted one, and that link is kept visible in the sidebar.
       const sidebar = document.querySelector<HTMLElement>('.sidebar');
       const here = document.querySelector<HTMLElement>('.toc .here');
       if (sidebar && here) {
         const sb = sidebar.getBoundingClientRect();
         const hr = here.getBoundingClientRect();
-        // put the current page about a third of the way down the sidebar box
         sidebar.scrollTop += hr.top - sb.top - sidebar.clientHeight * 0.33;
       }
       const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc ul.sub a[href^="#"]')];
       // href attribute, not `.hash`: `.hash` comes back percent-encoded, and
-      // heading ids on this site are Chinese — getElementById would find nothing
+      // heading ids may be Chinese — getElementById would find nothing
       const byId = new Map(links.map((a) => [(a.getAttribute('href') ?? '').slice(1), a]));
       if (byId.size > 0 && sidebar) {
         let active: HTMLAnchorElement | null = null;
@@ -232,14 +126,12 @@ const crumbs = chapter
             if (el.getBoundingClientRect().top <= line) cur = el;
             else break;
           }
-          // above the first heading: the first section is what you are reading
           if (!cur && targets.length) cur = targets[0]!;
           const link = cur ? byId.get(cur.id) : undefined;
           if (!link || link === active) return;
           active?.classList.remove('active');
           link.classList.add('active');
           active = link;
-          // keep the highlighted entry inside the sidebar's own scroll box
           const lr = link.getBoundingClientRect();
           const sr = sidebar.getBoundingClientRect();
           if (lr.top < sr.top + 24 || lr.bottom > sr.bottom - 24) {

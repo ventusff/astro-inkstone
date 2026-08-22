@@ -10,22 +10,23 @@
 import { getCollection } from 'astro:content';
 import { buildSearchIndexEndpoint } from 'astro-inkstone/lib/search-index';
 
-import { BOOK, chapterOf } from '../lib/book';
-import { baseIdOf, localeOfId, routeOfId } from '../lib/i18n';
+import { localeOfId, routeOfId } from '../lib/i18n';
+import { getWikiUnits, kindDef } from '../lib/taxonomy';
 
 export const GET = buildSearchIndexEndpoint({
-  loadDocs: async () =>
-    (await getCollection('docs')).map((entry) => {
-      const locale = localeOfId(entry.id);
-      const chapter = chapterOf(baseIdOf(entry.id));
-      const n = chapter ? BOOK.indexOf(chapter) + 1 : 0;
+  loadDocs: async () => {
+    const units = await getWikiUnits();
+    const kindOf = new Map(units.map((u) => [u.id, u.kind]));
+    return (await getCollection('notes')).map((entry) => {
+      const kind = kindOf.get(entry.id.replace(/^zh\//, ''));
       return {
         id: entry.id,
         route: routeOfId(entry.id),
-        locale,
+        locale: localeOfId(entry.id),
         title: entry.data.title,
-        crumb: chapter ? `${n} ${locale === 'en' ? chapter.en : chapter.zh}` : '',
+        crumb: kind ? kindDef(kind).label : '',
         body: entry.body ?? '',
       };
-    }),
+    });
+  },
 });

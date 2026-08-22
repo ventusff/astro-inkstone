@@ -43,7 +43,8 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
   </a>
   <span class="rule" aria-hidden="true"></span>
   <ol class="trail">
-    <li><a class="root" href={href(locale === 'zh' ? 'zh/' : '')}>inkstone</a></li>
+    {/* one landing page for both locales — zh exists as per-note mirrors */}
+    <li><a class="root" href={href('')}>inkstone</a></li>
     {
       crumbs.map((c) => (
         <li>{c.route !== undefined ? <a href={href(c.route)}>{c.label}</a> : <span class="here" aria-current="page">{c.label}</span>}</li>

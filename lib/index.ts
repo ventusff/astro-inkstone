@@ -16,4 +16,11 @@ export { remarkCallouts, type CalloutOptions } from './remark-callouts';
 export { remarkReadingTime } from './remark-reading-time';
 export { transformerCodeFrame, type CodeFrameLabels } from './code-frame';
 export { buildSearchIndexEndpoint, type SearchIndexOptions, type SearchIndexSource } from './search-index';
+export {
+  createBacklinks,
+  type BacklinkDoc,
+  type BacklinkIndex,
+  type BacklinkItem,
+  type BacklinksOptions,
+} from './backlinks';
 export { secureFsDeny } from './vite-security';

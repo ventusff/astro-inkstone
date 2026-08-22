@@ -1,12 +1,13 @@
 /**
  * i18n.ts — locale model shared by routes, layout and sidebar.
  *
- * en is the default locale: en page ids carry NO prefix and are served at
- * root paths; zh ids carry `zh/` and are served under /zh/... . The id↔route
- * identity (route = `/${id}/`) is load-bearing: it is what makes the single
- * inkbrush-note-url template `${base}{id}/` work for the language-switch
- * jump in astro-inkbrush (whose locale registry likewise treats the default
- * locale as unprefixed).
+ * en is the primary locale: en note ids carry NO prefix and are served at
+ * root paths; zh mirror ids carry `zh/` and are served under /zh/... . The
+ * id↔route identity (route = `/${id}/`) is load-bearing: it is what makes
+ * the single inkbrush-note-url template `${base}{id}/` work for the
+ * language-switch jump in astro-inkbrush (whose locale registry likewise
+ * treats the default locale as unprefixed). Mirrors are materialized only
+ * where a zh file exists — there is no fallback route tree.
  */
 
 export type Locale = 'en' | 'zh';
@@ -56,25 +57,23 @@ export const UI = {
   en: {
     brandSub: 'paper & ink for Astro docs',
     tocLabel: 'On this page',
-    searchPlaceholder: 'Search the manual… (Esc to close)',
+    searchPlaceholder: 'Search the garden… (Esc to close)',
     searchHint: 'Titles, sections and body text — English and Chinese both.',
-    searchEmpty: 'No page matches.',
-    fallbackNotice: 'This page has no English translation yet — showing the Chinese original.',
+    searchEmpty: 'No note matches.',
     langSwitch: '中文',
-    home: 'Cover',
-    footer: 'astro-inkstone demo · the manual is the demo (en canonical, zh mirror)',
-    menu: 'Contents',
+    home: 'Garden',
+    footer: 'astro-inkstone demo · the notes are the manual, the manual is the demo',
+    menu: 'Menu',
   },
   zh: {
     brandSub: 'paper & ink for Astro docs',
     tocLabel: '本页目录',
-    searchPlaceholder: '搜索这份手册…（Esc 关闭）',
+    searchPlaceholder: '搜索这座园地…（Esc 关闭）',
     searchHint: '标题、小节与正文全文,中英文都能搜。',
-    searchEmpty: '没有匹配的页面。',
-    fallbackNotice: '本页尚无中文译文,以下为英文原文。',
+    searchEmpty: '没有匹配的笔记。',
     langSwitch: 'English',
-    home: '封面',
-    footer: 'astro-inkstone 示范站 · 内容即手册（en 为准,zh 为镜像）',
-    menu: '目录',
+    home: '园地',
+    footer: 'astro-inkstone 示范站 · 笔记即手册,手册即示范',
+    menu: '菜单',
   },
 } as const;

@@ -1,0 +1,154 @@
+---
+/**
+ * Note page: Base shell + sidebar + reading column.
+ *
+ * `main.note-main > .col` is astro-inkbrush's mount contract for the comment
+ * section — keep the pair intact.
+ */
+import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+import type { BacklinkItem } from 'astro-inkstone/lib/backlinks';
+import type { TocData } from 'astro-inkstone/lib/toc-types';
+import Base from './Base.astro';
+import Sidebar, { type HubNav, type LangNav } from '../components/Sidebar.astro';
+import { UI, type Locale } from '../lib/i18n';
+
+interface Crumb {
+  label: string;
+  route?: string | undefined;
+}
+
+/** auto-generated chrome for hub chapter pages */
+export interface HubPageChrome {
+  /** "Part Ⅱ · Wiki & browse" — shown in the in-column crumb */
+  crumbLabel: string;
+  hubHref: string;
+  prev?: { href: string; label: string } | undefined;
+  next?: { href: string; label: string } | undefined;
+}
+
+/** display-ready taxonomy strip data (assembled by the route) */
+export interface TaxonomyStrip {
+  kind?: { id: string; label: string; desc?: string | undefined } | undefined;
+  domains: {
+    id: string;
+    label: string;
+    desc?: string | undefined;
+    tone: { bg: string; fg: string };
+    href?: string | undefined;
+  }[];
+  status?: { id: string; label: string; desc?: string | undefined; dot: string } | undefined;
+  updated?: string | undefined;
+}
+
+interface Props {
+  title: string;
+  description?: string | undefined;
+  locale: Locale;
+  crumbs: Crumb[];
+  noteId?: string | undefined;
+  /** "1-N" frontmatter line range, for the CMS ✎ handle on the page head */
+  headSrc?: string | undefined;
+  translateRoute?: string | undefined;
+  toc: TocData;
+  tocDepth?: 2 | 3;
+  taxonomy?: TaxonomyStrip | undefined;
+  hub?: HubNav | undefined;
+  hubPage?: HubPageChrome | undefined;
+  lang?: LangNav | undefined;
+  backlinks?: BacklinkItem[] | undefined;
+}
+const {
+  title,
+  description,
+  locale,
+  crumbs,
+  noteId,
+  headSrc,
+  translateRoute,
+  toc,
+  tocDepth = 2,
+  taxonomy,
+  hub,
+  hubPage,
+  lang,
+  backlinks = [],
+} = Astro.props;
+const t = UI[locale];
+const zh = locale === 'zh';
+---
+
+<Base
+  title={title}
+  description={description}
+  locale={locale}
+  crumbs={crumbs}
+  translateRoute={translateRoute}
+  noteId={noteId}
+>
+  <div class="layout">
+    <Sidebar locale={locale} title={title} toc={toc} tocDepth={tocDepth} hub={hub} lang={lang} />
+    <main class="note-main">
+      <div class="col">
+        <header class="page-head" {...(headSrc ? { 'data-wiki-src': headSrc } : {})}>
+          {
+            hubPage && (
+              <p class="kicker">
+                <a href={hubPage.hubHref}>Hub</a> › {hubPage.crumbLabel}
+              </p>
+            )
+          }
+          <h1>{title}</h1>
+          {description && <p class="page-desc">{description}</p>}
+        </header>
+        {
+          taxonomy && (
+            <TaxonomyLine
+              kind={taxonomy.kind}
+              domains={taxonomy.domains}
+              status={taxonomy.status}
+              updated={taxonomy.updated}
+              labels={{ updated: zh ? '更新' : 'updated' }}
+            />
+          )
+        }
+        <slot />
+        {
+          backlinks.length > 0 && (
+            <Backlinks
+              items={backlinks}
+              heading={zh ? '反向链接' : 'Linked mentions'}
+              sub={zh ? 'Linked mentions' : ''}
+            />
+          )
+        }
+        {
+          hubPage && (hubPage.prev || hubPage.next) && (
+            <nav class="pagination" aria-label="Chapter pagination">
+              {hubPage.prev ? (
+                <a class="prev" href={hubPage.prev.href}>
+                  <div class="dir">← prev</div>
+                  <div class="title">{hubPage.prev.label}</div>
+                </a>
+              ) : (
+                <span />
+              )}
+              {hubPage.next ? (
+                <a class="next" href={hubPage.next.href}>
+                  <div class="dir">next →</div>
+                  <div class="title">{hubPage.next.label}</div>
+                </a>
+              ) : (
+                <span />
+              )}
+            </nav>
+          )
+        }
+        <footer class="page-foot">
+          <span></span>
+          <span>{t.footer}</span>
+        </footer>
+      </div>
+    </main>
+  </div>
+</Base>

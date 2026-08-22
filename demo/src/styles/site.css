@@ -1,5 +1,6 @@
 /* ============================================================
-   site.css — this site's (the demo's) own styles: chrome only.
+   site.css — this site's (the demo's) own styles: chrome only
+   (nav bar, sidebar, browse shelves, search palette).
    Content-layer styles (typography/code/tables/callouts/figures/KaTeX/
    mermaid/print) all come from the package's base.css; palette and fonts
    from the package's tokens.css. A site customizes identity by overriding
@@ -8,6 +9,24 @@
    ============================================================ */
 @import 'astro-inkstone/styles/tokens.css';
 @import 'astro-inkstone/styles/base.css';
+
+/* ============================== wiki-component token bridge ============ */
+/* The package's wiki components (NoteCard, FacetNav, …) theme themselves
+   through `--wb-*` variables with self-contained fallbacks. Mapping them onto
+   the semantic tokens here keeps them in step with both themes for free. */
+:root {
+  --wb-bg: var(--color-bg);
+  --wb-bg-card: var(--color-bg-card);
+  --wb-border: var(--color-line);
+  --wb-border-soft: var(--color-line);
+  --wb-rule: var(--color-ink-faint);
+  --wb-sans: var(--font-ui);
+  --wb-text: var(--color-ink);
+  --wb-text-dim: var(--color-ink-faint);
+  --wb-text-muted: var(--color-ink-faint);
+  --wb-text-soft: var(--color-ink-soft);
+  --wb-wine: var(--color-accent);
+}
 
 /* ============================================================ shell ==== */
 
@@ -216,67 +235,142 @@ main.note-main {
   color: var(--color-accent4);
 }
 
-/* ==================================================== cover & index ==== */
+/* ================================================== browse chrome ===== */
 
-.chapter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  grid-auto-rows: 1fr; /* equal-height cards — a plain grid leaves ragged gaps */
-  gap: 14px;
-  margin: 26px 0;
+main.browse {
+  padding: 44px 24px 110px;
 }
-.chapter-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius);
-  background: var(--color-bg-card);
-  padding: 16px 18px 18px;
-  text-decoration: none;
-  color: inherit;
-  box-shadow: var(--shadow);
-  transition:
-    border-color 0.12s ease,
-    transform 0.12s ease;
+.browse-col {
+  max-width: 62rem;
+  margin: 0 auto;
 }
-.chapter-card:hover {
-  border-color: var(--color-accent);
-  transform: translateY(-2px);
+
+.wb-hero {
+  margin-bottom: 20px;
 }
-.chapter-card .head {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-}
-.chapter-card .num {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 20px;
-  color: var(--color-accent);
-  line-height: 1;
-}
-.chapter-card .primary {
-  font-family: var(--font-ui);
-  font-weight: 700;
-  font-size: 16px;
-  color: var(--color-ink);
-}
-.chapter-card .secondary {
-  font-family: var(--font-ui);
-  font-size: 11.5px;
-  letter-spacing: 0.06em;
+.wb-kicker {
+  font: 600 11.5px/1 var(--font-ui);
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-ink-faint);
+  margin: 0 0 10px;
+}
+.wb-kicker .sep {
+  margin: 0 0.4em;
+  opacity: 0.6;
+}
+.wb-title {
+  font-size: 34px;
+  letter-spacing: -0.01em;
+  margin: 0 0 10px;
+}
+.wb-title .en {
+  display: block;
+  font: 400 13px/1.4 var(--font-ui);
+  letter-spacing: 0.05em;
+  color: var(--color-ink-faint);
+  margin-top: 6px;
+}
+.wb-lede {
+  font-size: 15.5px;
+  line-height: 1.75;
+  color: var(--color-ink-soft);
+  max-width: 46rem;
+  margin: 0;
+}
+
+.wb-shelf {
+  margin-top: 40px;
+}
+.wb-shelf-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-line);
+  padding-bottom: 6px;
+}
+.wb-shelf-title {
+  font-size: 19px;
+  margin: 0;
+  /* shelves tint their own heading via --shelf-fg (set inline per domain) */
+}
+.wb-shelf-count {
+  margin-left: auto;
+  font: 500 12px/1 var(--font-ui);
+  color: var(--color-ink-faint);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.wb-shelf-count:hover {
+  color: var(--color-accent);
+}
+.wb-shelf-desc {
+  font: 400 12.5px/1.5 var(--font-ui);
+  color: var(--color-ink-faint);
+  margin: 8px 0 0;
+}
+.wb-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: 14px;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+.legend {
+  margin-top: 3.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font: 400 12px/1.6 var(--font-ui);
+  color: var(--color-ink-faint);
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.legend-links {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 16px;
+}
+.legend-links a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+/* --------- sidebar extras for the garden: language chips --------------- */
+.lang-row {
+  display: flex;
+  gap: 6px;
   margin: 2px 0 6px;
 }
-.chapter-card .blurb {
-  font-family: var(--font-ui);
-  font-size: 13px;
-  line-height: 1.55;
+.lang-chip {
+  font: 500 11px/1 var(--font-ui);
+  padding: 4px 9px;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
   color: var(--color-ink-soft);
-  /* card text is not a link — the whole card is; no underlines inside */
-  border-bottom: none;
+  text-decoration: none;
+}
+.lang-chip:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.lang-chip.current {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-bg);
 }
 
 /* =================================================== search palette ==== */

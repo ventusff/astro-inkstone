@@ -1,93 +1,160 @@
 ---
 /**
- * Sidebar — brand and the manual's ToC. The CURRENT page expands into a
- * `ul.sub` of its own section anchors, which the scroll-spy in Base.astro
- * highlights.
+ * Note-page sidebar — brand, the language switch, a hub's chapter rail
+ * (when the note belongs to one), and the current page's section anchors,
+ * which the scroll-spy in Base.astro highlights (`.toc ul.sub a`).
  *
- * Chapter and section numbers come from POSITION in book.ts — never typed
- * anywhere, so inserting a page renumbers everything at once.
+ * Chapter numbers come from POSITION in the hub's nav — never typed
+ * anywhere, so inserting a chapter renumbers the rail at once.
  */
-import { BOOK, PARTS } from '../lib/book';
-import { href, localeRoute, UI, type Locale } from '../lib/i18n';
-import type { TocData } from '../lib/toc';
+import { renderTocLabel } from 'astro-inkstone/lib/toc';
+import type { TocData } from 'astro-inkstone/lib/toc-types';
+import { href, UI, type Locale } from '../lib/i18n';
+
+export interface HubRow {
+  href: string;
+  /** rail row label, e.g. "Ⅱ. Wiki & browse" */
+  label: string;
+  here: boolean;
+}
+export interface HubNav {
+  hubHref: string;
+  hubLabel: string;
+  hubHere: boolean;
+  groups: { label: string; rows: HubRow[] }[];
+}
+export interface LangNav {
+  langs: { code: string; label: string; href: string; current: boolean }[];
+}
 
 interface Props {
-  currentRoute: string; // root-relative, e.g. 'design/tokens/' or 'en/design/tokens/'
   locale: Locale;
-  /** sections of the page being rendered (expanded under its own row) */
+  /** the current note's title (the `.here` row when there is no hub rail) */
+  title: string;
   toc: TocData;
+  tocDepth?: 2 | 3;
+  hub?: HubNav | undefined;
+  lang?: LangNav | undefined;
 }
-const { currentRoute, locale, toc } = Astro.props;
-const zh = locale === 'zh';
+const { locale, title, toc, tocDepth = 2, hub, lang } = Astro.props;
 const t = UI[locale];
-const sections = toc.entries.filter((e) => e.depth === 2);
+
+interface Anchor {
+  id: string;
+  num: string;
+  label: string;
+}
+const anchors: Anchor[] = toc.items
+  .filter((i) => i.kind === 'entry' && i.depth <= tocDepth)
+  .map((i) => ({ id: (i as { id: string }).id, num: (i as { num: string }).num, label: i.label }));
 ---
 
 <aside class="sidebar" id="site-sidebar">
   {/* the brand is chrome, not the document's title: the ONE h1 on every page
-      is the article heading in Base.astro, so this stays a plain div */}
-  <a class="brand-link" href={href(zh ? 'zh/' : '')}>
+      is the article heading, so this stays a plain div */}
+  <a class="brand-link" href={href('')}>
     <div class="brand-title"><span class="glyph" aria-hidden="true">◈</span>astro-<em>inkstone</em></div>
     <div class="subtitle">{t.brandSub}</div>
   </a>
 
+  {
+    lang && (
+      <div class="lang-row" aria-label="Languages">
+        {lang.langs.map((l) =>
+          l.current ? (
+            <span class="lang-chip current" aria-current="page">
+              {l.label}
+            </span>
+          ) : (
+            <a class="lang-chip" href={l.href}>
+              {l.label}
+            </a>
+          ),
+        )}
+      </div>
+    )
+  }
+
   <nav aria-label="Contents">
     <ul class="toc">
       {
-        PARTS.map((part) => (
-          <>
-            <li class="part-head" data-part={part.key}>
-              <span>{zh ? part.zh : part.en}</span>
-              <span class="zh">{zh ? part.en : part.zh}</span>
-            </li>
-            {part.chapters.map((c) => {
-              const ci = BOOK.indexOf(c);
-              return (
-                <>
-                  <li class="group">
-                    <span class="n">{ci + 1}</span>
-                    <a href={href(localeRoute(c.sections[0]!.id, locale))}>{zh ? c.zh : c.en}</a>
-                    <span class="zh">{zh ? c.en : c.zh}</span>
-                  </li>
-                  {c.sections.map((s, si) => {
-                    const route = localeRoute(s.id, locale);
-                    const num = `${ci + 1}.${si + 1}`;
-                    const label = zh ? s.zh : s.en;
-                    return route === currentRoute ? (
+        hub &&
+          hub.groups.map((group) => (
+            <>
+              <li class="part-head">
+                <span>{group.label}</span>
+              </li>
+              <li>
+                {hub.hubHere ? (
+                  <span class="here" aria-current="page">
+                    <span class="num-col">·</span>
+                    {hub.hubLabel}
+                  </span>
+                ) : (
+                  <a href={hub.hubHref}>
+                    <span class="num-col">·</span>
+                    {hub.hubLabel}
+                  </a>
+                )}
+                {hub.hubHere && anchors.length > 0 && (
+                  <ul class="sub">
+                    {anchors.map((e) => (
                       <li>
-                        {/* visual state alone is not enough for the current
-                            page — screen readers rely on aria-current */}
-                        <span class="here" aria-current="page">
-                          <span class="num-col">{num}</span>
-                          {label}
-                        </span>
-                        {sections.length > 0 && (
-                          <ul class="sub">
-                            {sections.map((e) => (
-                              <li>
-                                <a href={`#${e.id}`}>
-                                  <span class="idx">{e.num}</span>
-                                  {e.label}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </li>
-                    ) : (
-                      <li>
-                        <a href={href(route)}>
-                          <span class="num-col">{num}</span>
-                          {label}
+                        <a href={`#${e.id}`}>
+                          <span class="idx">{e.num}</span>
+                          <Fragment set:html={renderTocLabel(e.label)} />
                         </a>
                       </li>
-                    );
-                  })}
-                </>
-              );
-            })}
-          </>
-        ))
+                    ))}
+                  </ul>
+                )}
+              </li>
+              {group.rows.map((row) => (
+                <li>
+                  {row.here ? (
+                    <span class="here" aria-current="page">
+                      {row.label}
+                    </span>
+                  ) : (
+                    <a href={row.href}>{row.label}</a>
+                  )}
+                  {row.here && anchors.length > 0 && (
+                    <ul class="sub">
+                      {anchors.map((e) => (
+                        <li>
+                          <a href={`#${e.id}`}>
+                            <span class="idx">{e.num}</span>
+                            <Fragment set:html={renderTocLabel(e.label)} />
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </>
+          ))
+      }
+      {
+        !hub && (
+          <li>
+            <span class="here" aria-current="page">
+              {title}
+            </span>
+            {anchors.length > 0 && (
+              <ul class="sub">
+                {anchors.map((e) => (
+                  <li>
+                    <a href={`#${e.id}`}>
+                      <span class="idx">{e.num}</span>
+                      <Fragment set:html={renderTocLabel(e.label)} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        )
       }
     </ul>
   </nav>

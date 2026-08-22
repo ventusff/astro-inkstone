@@ -1,0 +1,31 @@
+---
+title: Interactive
+description: DemoMount and the site-owned loader contract, plus the page furniture — heroes, local ToCs and footers.
+part: 3
+navLabel: Interactive & furniture
+---
+
+import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+
+## DemoMount — live
+
+The division of labor is the package's usual one: the **mount markup** (stage, controls slot, caption slot) ships in the package; the **demo module and its loader** belong to the site. This site keeps its loader in `src/lib/demo-loader.ts` and calls `mountAllDemos()` once from the layout — pages without a mount load nothing.
+
+This one draws two-source wave interference with the page's own ink token, so it follows the theme:
+
+<DemoMount demo="waves/interference" title="Demo · Two-source wave interference" canvas={{ w: 640, h: 300 }}>
+  <Fragment slot="caption">
+    Two point sources emit circular waves; where crests meet crests the ink pools, where crests meet troughs the paper shows through. Toggle the theme — the demo re-inks itself from the live tokens.
+  </Fragment>
+</DemoMount>
+
+The module contract is one default export, `mount(ctx)`, returning a cleanup function; the loader resolves module ids like `waves/interference` however the site pleases (`import.meta.glob` here).
+
+## Page furniture
+
+The remaining components are the quiet ones:
+
+- `LocalToc` renders an in-page jump list; it accepts both ToC shapes the two numbering presets produce, and hides itself under a configurable minimum.
+- `Hero` and `PartHero` are page and part headers for sites whose notes open with a full-width banner; this garden's note heads are assembled by its own layout instead — which is exactly the intended split ([[three-way-split]]).
+- `PageFooter` is the small print at a note's foot.
+- The browse pieces live in [[components/wiki|the wiki chapter]]; the Markdown-side of the gallery is the [[kitchen-sink]].

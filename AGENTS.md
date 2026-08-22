@@ -62,7 +62,11 @@ whose content is the package's own manual.
 - `components/LocalToc.astro` accepts both ToC shapes (`entries`/`items`).
 - Wiki components are presentational: sites bind data with
   `createTaxonomy()` from `lib/taxonomy.ts` and pass props (including label
-  strings — defaults are English).
+  strings — defaults are English). `lib/backlinks.ts` ships the matching
+  backlink-index builder (`createBacklinks`) on the engine's own resolver.
+- The demo is the wiki-shape reference implementation: a taxonomy garden
+  (registry in `demo/src/content/notes/_meta/`, browse routes under
+  `demo/src/pages/`) whose notes are the package manual.
 - `components/DemoMount.astro` renders mount markup only; the demo-module
   loader is site-owned (call your `mountAllDemos()` from the site layout).
 

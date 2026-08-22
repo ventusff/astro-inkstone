@@ -1,0 +1,33 @@
+---
+title: The component set
+description: A three-chapter tour of every shipped component — and, at the same time, a live demonstration of how a hub note with chapters works.
+brand: Components
+kind: reference
+domains: [components]
+tags: [gallery]
+status: evergreen
+created: 2026-08-05
+updated: 2026-08-22
+nav:
+  - group: Gallery
+    pages: [content, wiki, interactive]
+---
+
+Everything in the gallery is imported from `astro-inkstone/components/` by path and rendered with the package's default tokens. Components are presentational: they take data and label strings as props (English defaults), so a site in any language passes its own.
+
+## A hub, live
+
+This note is itself the demonstration of a **hub**: a top-level note whose frontmatter declares `nav` — an ordered chapter list. The machinery you are looking at:
+
+- the sidebar shows the numbered chapter rail (Ⅰ/Ⅱ/Ⅲ), with prev/next pagination at each chapter's foot;
+- chapters inherit the hub's taxonomy — none of the three gallery chapters declares its own kind, domain or status, yet each shows this note's; a chapter that sets its own values overrides wholesale ([[three-way-split|the same explicit-wins rule as everywhere else]]);
+- on browse pages the hub is **one unit**: one card, with a chapter count — chapters never clutter a shelf;
+- each chapter's `part:` number must match its position in `nav`, or the build fails — the rail and the frontmatter cannot drift apart.
+
+## The chapters
+
+1. **Content & typography** — Callout, Chip, Grid, Steps, Stats, PaperCard, References: the pieces prose is built from.
+2. **Wiki & browse** — the taxonomy set (NoteCard, FacetNav, KindBadge, StatusDot, DomainChip, TaxonomyLine) and Backlinks: the pieces this garden's shelves are built from.
+3. **Interactive** — DemoMount and the site-owned loader contract, plus the page-furniture components.
+
+Start with chapter Ⅰ in the sidebar, or jump straight to the [[kitchen-sink]] for the Markdown-pipeline side of the same story.

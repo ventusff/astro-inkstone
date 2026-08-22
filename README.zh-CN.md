@@ -40,6 +40,9 @@
 - 🧩 **20+ Astro 组件** —— `Callout`、`Steps`、`Grid`、`Hero`、`PaperCard`、
   `References`、`Stats`、`LocalToc`、`Backlinks`、wiki 多维导览组件等。
   纯展示、token 驱动:自动跟随你的色板。
+- 🌱 **数字花园机械** —— taxonomy 工厂(形式/方向/标签/状态、带编号章节的
+  hub 笔记、语言镜像)与带上下文摘录的反链索引构建器,三行站点代码绑定到
+  你自己的词表。示范园地整个跑在它们上面。
 - ⚙️ **一行接入的 Markdown 管线** —— `siteMarkdown()` 装配 GFM、CJK 友好的
   强调解析、KaTeX(双主题)、Mermaid、Obsidian 风格 callout、`[[双链]]`、
   阅读时长、标题自动编号与 ToC 提取、子路径链接改写,以及一道构建期
@@ -97,8 +100,8 @@ export default defineConfig({
 ```
 
 布局、导航、路由与部署归站点自己——示范站给出一套完整参考实现
-(跟随阅读位置的侧栏、⌘K 搜索、双语路由,以及 `deploy/` 下的
-静态站 + 编辑机双形态部署骨架)。
+(多维导览页、hub 章节栏、跟随阅读位置的侧栏、⌘K 搜索、中文镜像路由,
+以及 `deploy/` 下的静态站 + 编辑机双形态部署骨架)。
 
 ## 三者分工
 
@@ -114,9 +117,10 @@ Markdown 预设建立在 inkbrush 的方言之上(编辑器接受的和页面渲
 
 ## 文档
 
-[示范站](https://ventusff.github.io/astro-inkstone/)即手册:安装接入、token
-架构、跑遍全部管线特性的全要素页、组件陈列室、检查工具。站上的每一页都由本包
-构建,所以每一页同时也是一条活的测试。
+[示范站](https://ventusff.github.io/astro-inkstone/)是一座多笔记 taxonomy
+园地,笔记本身就是手册:按形式/方向/标签导览,带编号章节的 hub 笔记,互相
+双链、带反链面板的笔记,以及安装接入、token 架构、全要素页与检查工具各篇。
+站上的每一页都由本包构建,所以每一页同时也是一条活的测试。
 
 ## 常见问题
 

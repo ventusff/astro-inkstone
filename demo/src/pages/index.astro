@@ -1,14 +1,87 @@
 ---
-import Base from '../layouts/Base.astro';
-import Cover from '../components/Cover.astro';
+/**
+ * The garden's landing page — taxonomy-driven: hero with counts → facet
+ * index → recently updated → one shelf per primary domain → status legend.
+ * Everything on it comes from the note collection; adding a note changes
+ * this page without touching it.
+ */
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import BrowseLayout from '../layouts/BrowseLayout.astro';
+import { browseHref, cardOf, facetBase } from '../lib/display';
+import { ENGINE_URL, GITHUB_URL } from '../lib/i18n';
+import { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, tagIndex } from '../lib/taxonomy';
+import { STATUSES } from '../content/notes/_meta/taxonomy';
+
+const units = await getWikiUnits();
+const shelves = groupByPrimaryDomain(units);
+const recent = units.slice(0, 4);
+const kinds = groupByKind(units).map((g) => ({ def: g.def, count: g.notes.length }));
+const domains = groupByDomain(units).map((g) => ({ def: g.def, count: g.notes.length }));
+const tags = [...tagIndex(units).entries()].slice(0, 10).map(([tag, notes]) => ({ tag, count: notes.length }));
+const domainCount = new Set(units.flatMap((u) => u.domains)).size;
 ---
 
-<Base
-  title="astro-inkstone"
-  description="Paper-and-ink design layer for Astro docs and wikis — this site is its own manual and demo."
-  locale="en"
-  route=""
-  cover
+<BrowseLayout
+  title="A paper-and-ink garden"
+  description="The astro-inkstone demo — a multi-note taxonomy garden whose notes are the package's own manual."
 >
-  <Cover locale="en" />
-</Base>
+  <header class="wb-hero">
+    <p class="wb-kicker">astro-inkstone <span class="sep">·</span> demo garden</p>
+    <h1 class="wb-title">Paper &amp; ink<span class="en">a growing garden of working notes</span></h1>
+    <p class="wb-lede">
+      This site is the package's manual grown as a garden — <strong>{units.length}</strong> notes
+      across <strong>{domainCount}</strong> domains, browsable by kind, domain and tag. Every
+      rendering effect you see is the package at work: the notes are the manual, the manual is the
+      demo. Source: <a href={GITHUB_URL}>astro-inkstone</a> (this package) ·
+      <a href={ENGINE_URL}>astro-inkbrush</a> (the CMS engine — run <code>npm run wiki</code> to
+      edit these very pages).
+    </p>
+  </header>
+
+  <FacetNav base={facetBase} kinds={kinds} domains={domains} tags={tags} />
+
+  <section class="wb-shelf" aria-label="Recently updated">
+    <div class="wb-shelf-head">
+      <h2 class="wb-shelf-title">Recently updated</h2>
+    </div>
+    <ul class="wb-grid">
+      {recent.map((note) => <NoteCard note={cardOf(note)} />)}
+    </ul>
+  </section>
+
+  {
+    shelves.map(({ def, notes }) => (
+      <section class="wb-shelf" style={`--shelf-fg:${def.tone.fg}`}>
+        <div class="wb-shelf-head">
+          <h2 class="wb-shelf-title" style="color: var(--shelf-fg)">
+            {def.label}
+          </h2>
+          <a class="wb-shelf-count" href={browseHref.domain(def.id)}>
+            {notes.length} primary · all →
+          </a>
+        </div>
+        <p class="wb-shelf-desc">{def.desc}</p>
+        <ul class="wb-grid">
+          {notes.map((note) => (
+            <NoteCard note={cardOf(note)} />
+          ))}
+        </ul>
+      </section>
+    ))
+  }
+
+  <footer class="legend">
+    {
+      STATUSES.map((s) => (
+        <span class="legend-item">
+          <span class="dot" style={`background:${s.dot}`} aria-hidden="true" />
+          {s.label} — {s.desc}
+        </span>
+      ))
+    }
+    <span class="legend-links">
+      <a href={browseHref.all()}>All notes →</a>
+    </span>
+  </footer>
+</BrowseLayout>

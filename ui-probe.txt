@@ -1,0 +1,10 @@
+/paper-and-ink/ @1440
+    unstyled classes: .bl-item(mentioned but no selector matches (e.g. a > child combinator blocked by <p>))
+/paper-and-ink/ @1024
+    unstyled classes: .bl-item(mentioned but no selector matches (e.g. a > child combinator blocked by <p>))
+/paper-and-ink/ @768
+    unstyled classes: .bl-item(mentioned but no selector matches (e.g. a > child combinator blocked by <p>))
+/paper-and-ink/ @430
+    unstyled classes: .bl-item(mentioned but no selector matches (e.g. a > child combinator blocked by <p>))
+
+PAGES WITH FINDINGS: 4

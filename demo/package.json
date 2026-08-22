@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.1.0",
   "private": true,
-  "description": "The astro-inkstone manual — a demo site consuming the package itself",
+  "description": "The astro-inkstone demo garden — a multi-note taxonomy site whose notes are the package manual",
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",

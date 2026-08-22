@@ -47,6 +47,10 @@ alone for a static site that simply looks and reads beautifully.
   `PaperCard`, `References`, `Stats`, `LocalToc`, `Backlinks`, a faceted
   wiki-browsing set, and more. Presentational and token-driven: they follow
   your palette automatically.
+- 🌱 **Digital-garden machinery** — a taxonomy factory (kinds / domains /
+  tags / status, hub notes with numbered chapters, locale mirrors) and a
+  backlink-index builder with context snippets, both bound to your own
+  vocabulary in a three-line site module. The demo garden runs on them.
 - ⚙️ **One-line Markdown pipeline** — `siteMarkdown()` assembles GFM,
   CJK-friendly emphasis, KaTeX (dual-theme), Mermaid, Obsidian-style
   callouts, `[[wikilinks]]`, reading time, auto-numbered headings with ToC
@@ -109,9 +113,9 @@ export default defineConfig({
 ```
 
 Layout, navigation, routing and deployment stay yours — the demo ships a
-complete reference implementation (sidebar that follows your reading
-position, ⌘K search, bilingual routing, and a static + editing-machine
-deployment skeleton under `deploy/`).
+complete reference implementation (faceted browse pages, hub chapter rails,
+a sidebar that follows your reading position, ⌘K search, zh mirror routing,
+and a static + editing-machine deployment skeleton under `deploy/`).
 
 ## Who does what
 
@@ -130,9 +134,11 @@ does. The token/style/component layer has no engine dependency.
 
 ## Documentation
 
-The [demo site](https://ventusff.github.io/astro-inkstone/) is the manual:
-installation, the token architecture, a kitchen-sink page exercising every
-pipeline feature, the component gallery, and the check tooling. Everything on
+The [demo site](https://ventusff.github.io/astro-inkstone/) is a multi-note
+taxonomy garden whose notes are the manual: browse by kind, domain and tag;
+a hub note with numbered chapters; wikilinked notes with linked-mentions
+panels; and pages covering installation, the token architecture, a
+kitchen-sink of every pipeline feature and the check tooling. Everything on
 it is built with the package, so every page is also a living test.
 
 ## FAQ

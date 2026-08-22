@@ -1,0 +1,95 @@
+---
+title: 快速上手
+description: 一对 submodule 装进站点仓,siteMarkdown 一行接通整条 markdown 管线——一座园地就此立起。
+---
+
+## 一对 submodule
+
+纸面与引擎都不发 npm、零构建、直指 TS/CSS 源码。站点以 git submodule 的方式把两个仓装进来,再用 `file:` 依赖指过去:
+
+```bash title="站点仓根目录"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json(依赖部分)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] 本示范站的布局略有不同
+> 示范站长在包仓内部(`demo/`),所以它的 `astro-inkstone` 指向 `file:..`、引擎挂在 `demo/vendor/` 下。独立站点用上面的 `packages/` 布局即可,两者等价。
+
+## 样式接入
+
+站点全局样式表里,先 token 后组件层,之后只写你自己的 chrome:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+
+/* 身份定制:只覆盖第 1 层色板,语义层与组件层跟着走 */
+:root {
+  --p-vermilion: #b03a48; /* 换成你的品牌强调色 */
+}
+```
+
+KaTeX 的样式在布局组件里补一行(数学站点必需,否则公式排版是散的):
+
+```ts title="src/layouts/Base.astro(frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+## markdown 管线一行接入
+
+本站自己的配置——章节编号、数学、callout、图表,外加对着笔记集解析的 `[[双链]]`:
+
+```js title="astro.config.mjs"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { siteMarkdown } from 'astro-inkstone/lib/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = Boolean(process.env.WIKI);
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = process.env.DEMO_BASE || '/';
+
+export default defineConfig({
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // Part/章节编号 + ToC 经 remarkPluginFrontmatter 取用
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // 代码框:标题栏/复制/折叠/行标注
+    mermaid: true, // mermaid 代码块转客户端渲染
+    callouts: true, // Obsidian 风格 > [!note] 语法
+    wikiBlocks: WIKI_MODE, // 编辑模式:块↔源码行号映射,恒排管线最后
+    guard: { autoNumberedHeadings: true }, // 内容守门:拦手写编号
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown` 的底座是引擎的方言(GFM、对中文友好的强调解析、内容守门),预设只负责站点侧插件的装配与顺序——**管线顺序即契约**,站点不必再关心谁先谁后。每个开关的效果,[[kitchen-sink|全要素演示]]一页全部演过一遍;包的三分边界见 [[boundaries]]。想要中文的 callout 标签?传 `calloutLabels` 即可——默认是英文。
+
+## 跑起来
+
+```bash
+npm install
+npm run dev        # 园地本体
+npm run build      # 静态构建 + 引擎 check-dist 产物检查(postbuild)
+npm run wiki       # WIKI=1 astro dev,CMS 编辑模式
+```
+
+静态构建对编辑功能零污染:非 WIKI 模式下,引擎的集成代码连 import 都不会发生,产物与不装 CMS 的站字节相同。

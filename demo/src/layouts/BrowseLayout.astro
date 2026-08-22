@@ -1,0 +1,34 @@
+---
+/**
+ * Browse page: Base shell + a single wide column (landing, kind/domain/tag
+ * indexes). No sidebar — browse pages are their own navigation.
+ */
+import Base from './Base.astro';
+import { UI, type Locale } from '../lib/i18n';
+
+interface Crumb {
+  label: string;
+  route?: string | undefined;
+}
+
+interface Props {
+  title: string;
+  description?: string | undefined;
+  locale?: Locale;
+  crumbs?: Crumb[];
+}
+const { title, description, locale = 'en', crumbs = [] } = Astro.props;
+const t = UI[locale];
+---
+
+<Base title={title} description={description} locale={locale} crumbs={crumbs}>
+  <main class="browse">
+    <div class="browse-col">
+      <slot />
+      <footer class="page-foot">
+        <span></span>
+        <span>{t.footer}</span>
+      </footer>
+    </div>
+  </main>
+</Base>
