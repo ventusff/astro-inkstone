@@ -51,13 +51,15 @@ The column is the quieter of the two — you read it for an hour. The shelf is w
 
 ## How a site customizes identity
 
-Override tier 1. Swap the pigments for your own and both contexts and the whole component layer follow — light and dark at once:
+Override tier 1. Swap the pigments for your own and both contexts and the whole component layer follow. Each pigment is a **day/night pair**: the light theme reads `--p-shi` and `--p-zhu`, the dark theme reads their night twins `--p-shi-n` and `--p-zhu-n` — an identity override sets both members, or dark keeps the default pigments:
 
 ```css title="your site.css"
 :root {
   --p-shi: #b03a48; /* your reading accent */
   --p-shi-text: #93303c; /* its small-text step is darkened separately, see below */
   --p-zhu: #3b4a7a; /* your shelf accent and mark */
+  --p-shi-n: #e0919b; /* the night twins, brightened for the dusk grounds */
+  --p-zhu-n: #9fb0e4;
 }
 ```
 

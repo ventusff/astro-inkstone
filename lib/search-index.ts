@@ -16,7 +16,7 @@
  *       (await getCollection('docs')).map((entry) => ({
  *         id: entry.id,
  *         route: `/docs/${entry.id}/`, // the site's own routing rule
- *         locale: 'any',               // or the site's locale ('zh' | 'en' | 'any')
+ *         locale: 'any',               // or the entry's locale code
  *         title: entry.data.title,
  *         crumb: '',                   // label next to the title in results
  *         body: entry.body ?? '',
@@ -74,9 +74,11 @@ function plainText(body: string, maxChars: number): string {
     .slice(0, maxChars);
 }
 
-/** h2/h3 lines, without markers and without a trailing `{#id …}` attribute block */
+/** h2/h3 lines outside frontmatter and fenced code, without markers and
+ *  without a trailing `{#id …}` attribute block */
 function headingsOf(body: string): string[] {
-  return [...body.matchAll(/^#{2,3}\s+(.+?)\s*$/gm)].map((m) =>
+  const masked = body.replace(/^---\n[\s\S]*?\n---\n/, '').replace(/```[\s\S]*?```/g, ' ');
+  return [...masked.matchAll(/^#{2,3}\s+(.+?)\s*$/gm)].map((m) =>
     m[1]!.replace(/\s*`\{[^{}]*\}`\s*$/, '').replace(/[`*_]/g, ''),
   );
 }

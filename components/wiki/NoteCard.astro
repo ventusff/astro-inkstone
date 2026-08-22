@@ -43,6 +43,7 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
 
 <li
   class="note-card"
+  data-id={note.id}
   data-kind={note.kind?.id}
   data-domains={note.domains.map((d) => d.id).join(' ')}
   data-status={note.status?.id}

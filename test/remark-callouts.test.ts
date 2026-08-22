@@ -40,3 +40,32 @@ test('the fold marker renders a details/summary, closed or open', () => {
   remarkCallouts()(open as never);
   assert.equal((open.children[0] as unknown as Node).data?.hProperties?.['open'], true);
 });
+
+test('one label table for both spellings: the shared defaults per visual class', async () => {
+  const { CALLOUT_LABELS } = await import('../lib/remark-callouts.ts');
+  assert.deepEqual(CALLOUT_LABELS, {
+    note: 'Note',
+    intuition: 'Intuition',
+    warn: 'Warning',
+    system: 'Important',
+    abstract: 'Abstract',
+  });
+  const sys = quote('[!system]\n', 'body');
+  remarkCallouts()(sys as never);
+  assert.equal((sys.children[0] as unknown as Node).children[0]!.children[0]!.value, 'Important');
+  const imp = quote('[!important]\n', 'body');
+  remarkCallouts()(imp as never);
+  assert.equal((imp.children[0] as unknown as Node).children[0]!.children[0]!.value, 'Important');
+  const info = quote('[!info]\n', 'body');
+  remarkCallouts()(info as never);
+  assert.equal((info.children[0] as unknown as Node).children[0]!.children[0]!.value, 'Note');
+});
+
+test('label overrides: a keyword entry wins over its class entry, both over the defaults', () => {
+  const byClass = quote('[!caution]\n', 'body');
+  remarkCallouts({ labels: { warn: '注意' } })(byClass as never);
+  assert.equal((byClass.children[0] as unknown as Node).children[0]!.children[0]!.value, '注意');
+  const byKeyword = quote('[!caution]\n', 'body');
+  remarkCallouts({ labels: { caution: '小心', warn: '注意' } })(byKeyword as never);
+  assert.equal((byKeyword.children[0] as unknown as Node).children[0]!.children[0]!.value, '小心');
+});

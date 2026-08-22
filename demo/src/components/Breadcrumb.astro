@@ -1,10 +1,10 @@
 ---
 /**
  * Site nav bar — the full-width chrome strip above every page: the mark at
- * the left (back to the garden), the breadcrumb trail, and at the right the
- * search, language and theme controls. Colors are the --color-* chrome
- * tokens, which browse.css re-maps inside the browse context — one bar,
- * both grounds.
+ * the left (back to the garden), the breadcrumb trail (the bar's one nav
+ * landmark), and at the right the search, language and theme controls.
+ * Colors are the --color-* chrome tokens, which browse.css re-maps inside
+ * the browse context — one bar, both grounds.
  *
  * Three of its parts are an INTERFACE, not decoration. astro-inkbrush's
  * client looks for them by name and silently does nothing when they are
@@ -42,7 +42,7 @@ const t = UI[locale];
 const otherLocale = locale === 'zh' ? 'en' : 'zh';
 ---
 
-<nav class="site-nav" aria-label={t.breadcrumb}>
+<header class="site-nav">
   {
     hasSidebar && (
       <button class="nav-toggle" type="button" aria-label={t.menu} aria-controls="site-sidebar" aria-expanded="false">
@@ -57,15 +57,19 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
     </svg>
   </a>
   <span class="rule" aria-hidden="true"></span>
-  <ol class="trail">
-    {/* one landing page for both locales — zh exists as per-note mirrors */}
-    <li><a class="gw" href={href('')}>{t.home}</a></li>
-    {
-      crumbs.map((c) => (
-        <li>{c.route !== undefined ? <a href={href(c.route)}>{c.label}</a> : <span class="here" aria-current="page">{c.label}</span>}</li>
-      ))
-    }
-  </ol>
+  {/* the breadcrumb landmark holds only the ordered trail — the surrounding
+      controls are the bar's, not the breadcrumb's */}
+  <nav class="trail-nav" aria-label={t.breadcrumb}>
+    <ol class="trail">
+      {/* one landing page for both locales — zh exists as per-note mirrors */}
+      <li><a class="gw" href={href('')}>{t.home}</a></li>
+      {
+        crumbs.map((c) => (
+          <li>{c.route !== undefined ? <a href={href(c.route)}>{c.label}</a> : <span class="here" aria-current="page">{c.label}</span>}</li>
+        ))
+      }
+    </ol>
+  </nav>
   <span class="spacer" aria-hidden="true"></span>
 
   <button class="search-btn" type="button" title={t.searchButton} aria-label={t.searchButton}>
@@ -84,7 +88,7 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
   <span class="cms-slot" data-inkbrush-slot="share"></span>
   <span class="cms-slot" data-inkbrush-slot="account"></span>
   <ThemeToggle label={t.theme} />
-</nav>
+</header>
 
 <script>
   // Mobile drawer
@@ -150,6 +154,12 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
   }
 
   /* ---- trail ---- */
+  /* the landmark is transparent to the flex layout: it shrinks like the
+     bare list used to, and the list handles its own overflow */
+  .trail-nav {
+    display: flex;
+    min-width: 0;
+  }
   .trail {
     display: flex;
     align-items: center;
@@ -171,8 +181,8 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
   .trail li + li::before {
     content: '›';
     margin: 0 9px;
+    /* faint ink at full opacity — the separator is text and must hold AA */
     color: var(--color-ink-faint);
-    opacity: 0.7;
   }
   .trail a {
     color: var(--color-ink-soft);

@@ -57,6 +57,8 @@ In your global stylesheet: tokens first, then the content layer, then — for a 
 :root {
   --p-shi: #b03a48; /* your reading accent */
   --p-zhu: #3b4a7a; /* your shelf accent and mark */
+  --p-shi-n: #e0919b; /* the night twins: the dark theme reads --p-*-n */
+  --p-zhu-n: #9fb0e4;
 }
 ```
 
@@ -124,4 +126,4 @@ npm run build      # static build + the engine's check-dist (postbuild)
 npm run wiki       # WIKI=1 astro dev — CMS editing mode
 ```
 
-The static build carries zero editing machinery: outside WIKI mode the engine's integration code is never even imported (dynamic import), and the output is byte-identical to a site without the CMS.
+The static build carries zero engine bytes: outside WIKI mode the engine's integration code is never even imported (dynamic import), and no editing metadata is emitted. What remains CMS-shaped in the output is the site's own inert docking markup — the empty `data-inkbrush-slot` spans in the nav bar and their CSS — which does nothing until the CMS docks into it.

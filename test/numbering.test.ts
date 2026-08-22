@@ -96,3 +96,59 @@ test('heading attrs: a trailing `{…}` inline code is parsed and removed; other
   assert.equal(b!.children.length, 2);
   assert.equal(c!.children.length, 2);
 });
+
+const hero = (attrs: { name: string; value: unknown }[]) => ({
+  type: 'mdxJsxFlowElement',
+  name: 'Hero',
+  attributes: attrs.map((a) => ({ type: 'mdxJsxAttribute', ...a })),
+  children: [],
+});
+
+test('chapters: a consumed JSX attribute with an expression value is an error', () => {
+  const exprPart = {
+    type: 'mdxJsxFlowElement',
+    name: 'Part',
+    attributes: [
+      { type: 'mdxJsxAttribute', name: 'title', value: { type: 'mdxJsxAttributeValueExpression', value: 'expr' } },
+    ],
+    children: [],
+  };
+  assert.throws(
+    () => rehypeChapters()({ type: 'root', children: [exprPart] } as unknown as Root, file()),
+    /note\.mdx: <Part> attribute title=\{…\} is a JSX expression/,
+  );
+  const exprHero = hero([
+    { name: 'tocLabel', value: 'Intro' },
+    { name: 'id', value: { type: 'mdxJsxAttributeValueExpression', value: 'x' } },
+  ]);
+  assert.throws(
+    () => rehypeChapters()({ type: 'root', children: [exprHero] } as unknown as Root, file()),
+    /note\.mdx: <Hero> attribute id=\{…\} is a JSX expression/,
+  );
+});
+
+test('chapters: appendices are terminal — a numbered part after one is an error', () => {
+  const tree = { type: 'root', children: [part('A'), part('', true), part('B')] } as unknown as Root;
+  assert.throws(() => rehypeChapters()(tree, file()), /note\.mdx: a numbered <Part> follows an appendix/);
+});
+
+test('chapters: the Hero id shares the heading id space', () => {
+  // the default id "intro" is taken: a generated heading slug dedupes around it
+  const t1 = { type: 'root', children: [hero([{ name: 'tocLabel', value: 'Overview' }]), h('h2', 'Intro')] } as unknown as Root;
+  const f1 = file();
+  rehypeChapters()(t1, f1);
+  const toc = tocOf(f1) as { items: { id?: string }[] };
+  assert.deepEqual(toc.items.map((i) => i.id), ['intro', 'intro-2']);
+  // an explicit duplicate — Hero id vs heading id — is an error
+  const t2 = {
+    type: 'root',
+    children: [hero([{ name: 'tocLabel', value: 'Overview' }, { name: 'id', value: 'setup' }]), h('h2', { id: 'setup' }, 'Setup')],
+  } as unknown as Root;
+  assert.throws(() => rehypeChapters()(t2, file()), /duplicate heading id "#setup"/);
+  // two Heroes both defaulting to "intro" collide
+  const t3 = {
+    type: 'root',
+    children: [hero([{ name: 'tocLabel', value: 'One' }]), hero([{ name: 'tocLabel', value: 'Two' }])],
+  } as unknown as Root;
+  assert.throws(() => rehypeChapters()(t3, file()), /duplicate heading id "#intro"/);
+});

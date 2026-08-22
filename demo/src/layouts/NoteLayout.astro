@@ -27,7 +27,7 @@ interface Crumb {
 
 /** auto-generated chrome for hub chapter pages */
 export interface HubPageChrome {
-  /** "Part Ⅱ · Wiki & browse" — shown in the in-column crumb */
+  /** "Part II · Wiki & browse" — shown in the in-column crumb */
   crumbLabel: string;
   hubHref: string;
   prev?: { href: string; label: string } | undefined;
@@ -132,21 +132,19 @@ const zh = locale === 'zh';
         {
           hubPage && (hubPage.prev || hubPage.next) && (
             <nav class="pagination" aria-label={t.chapterNav}>
-              {hubPage.prev ? (
+              {/* only the cards that exist are rendered — the grid's auto-fit
+                  lets a lone card fill the whole row */}
+              {hubPage.prev && (
                 <a class="prev" href={hubPage.prev.href} rel="prev">
                   <div class="dir">{t.prev}</div>
                   <div class="title">{hubPage.prev.label}</div>
                 </a>
-              ) : (
-                <span />
               )}
-              {hubPage.next ? (
+              {hubPage.next && (
                 <a class="next" href={hubPage.next.href} rel="next">
                   <div class="dir">{t.next}</div>
                   <div class="title">{hubPage.next.label}</div>
                 </a>
-              ) : (
-                <span />
               )}
             </nav>
           )

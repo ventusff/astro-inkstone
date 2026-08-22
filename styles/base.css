@@ -272,7 +272,7 @@ h4 {
   cursor: pointer;
 }
 .code-copy:hover {
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   border-color: var(--color-accent);
 }
 .code-copy .code-copy-done {
@@ -326,30 +326,28 @@ pre.astro-code .line.diff.add::before {
   color: var(--color-accent2);
   margin-right: 8px;
 }
+/* removed lines are marked by the tinted ground and the minus sign alone —
+   the glyph colors stay at full strength so every Shiki token keeps AA */
 pre.astro-code .line.diff.remove {
   background: color-mix(in oklab, var(--color-accent) 12%, transparent);
-  opacity: 0.75;
 }
 pre.astro-code .line.diff.remove::before {
   content: '-';
   color: var(--color-accent-text);
   margin-right: 8px;
 }
-/* focus notation dims the other lines on devices that can hover to reveal
+/* focus notation blurs the other lines on devices that can hover to reveal
    them; keyboard focus inside the block reveals them too; touch and
-   reduced-motion readers see the whole block */
+   reduced-motion readers see the whole block. The de-emphasis is blur only —
+   never opacity, which would drop the glyph colors below AA */
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   pre.astro-code.has-focused .line:not(.focused) {
     filter: blur(1.6px);
-    opacity: 0.55;
-    transition:
-      filter 0.25s,
-      opacity 0.25s;
+    transition: filter 0.25s;
   }
   pre.astro-code.has-focused:hover .line:not(.focused),
   pre.astro-code.has-focused:focus-within .line:not(.focused) {
     filter: none;
-    opacity: 1;
   }
 }
 .highlighted-word {
@@ -481,7 +479,7 @@ pre.astro-code .line.diff.remove::before {
 }
 .local-toc .idx {
   font-family: var(--font-mono);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   margin-right: 6px;
   font-size: 12px;
 }
@@ -680,7 +678,8 @@ table.tbl {
 .tbl tr:hover td {
   background: color-mix(in srgb, var(--color-bg-soft) 40%, var(--color-bg-card));
 }
-.tbl tr:last-child td {
+.tbl tr:last-child td,
+.tbl tr:last-child th {
   border-bottom: none;
 }
 .tbl th {
@@ -913,7 +912,7 @@ details.callout[open] > summary.callout-title::before {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1px;
-  background: var(--color-line); /* the gap IS the divider — saves a border */
+  background: var(--color-line); /* the 1px grid gap exposes this ground as the pane divider */
 }
 .measured-pane {
   /* min-width 0: an unbreakable run of code breaks per character instead of widening the card */
@@ -1523,7 +1522,7 @@ section:has(.hero) + h2 {
   display: inline-block;
 }
 .readout.bad {
-  color: var(--color-accent);
+  color: var(--color-accent-text);
 }
 
 
@@ -1540,6 +1539,9 @@ section:has(.hero) + h2 {
   border-radius: var(--radius);
   padding: 14px 16px;
   text-align: center;
+  /* markup order is dt (label) then dd (value); the value renders on top */
+  display: flex;
+  flex-direction: column-reverse;
 }
 .stats .v {
   font-family: var(--font-mono);
@@ -1547,6 +1549,7 @@ section:has(.hero) + h2 {
   color: var(--color-accent);
   font-weight: 700;
   display: block;
+  margin: 0;
 }
 .stats .k {
   font-family: var(--font-ui);

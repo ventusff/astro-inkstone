@@ -4,8 +4,11 @@
  * mention. Resolution uses the engine's own resolver, so alias / brand /
  * locale-mirror rules match page rendering exactly.
  *
- * Bind it once in a site module and reuse the instance everywhere (the
- * instance memoizes the index across pages in production builds):
+ * Bind it once in a site module and reuse the instance everywhere. The
+ * index is memoized per corpus: the docs ARRAY is the cache key, so passing
+ * the same array returns the same index, and a freshly built array (a new
+ * corpus, a dev rebuild) is indexed anew — build the array once in the site
+ * module to share one index across pages:
  *
  *   // src/lib/backlinks.ts
  *   import { createBacklinks } from 'astro-inkstone/lib/backlinks';
@@ -14,11 +17,8 @@
  *     locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
  *   });
  *
- *   // a note page
- *   const index = backlinks.build(notes.map((e) => ({
- *     id: e.id, title: e.data.title, brand: e.data.brand,
- *     aliases: e.data.aliases, body: e.body,
- *   })));
+ *   // a note page (docs built once and reused — see above)
+ *   const index = backlinks.build(docs);
  *   const items = index.inbound.get(entry.id) ?? [];   // → <Backlinks items={items} />
  *
  * Corpora beyond one collection are the site's business: map extra
@@ -114,12 +114,14 @@ export function createBacklinks(options: BacklinksOptions) {
     };
   }
 
-  // production builds index the corpus once per instance; dev rebuilds on
-  // every call so edits show up
-  let prodCache: BacklinkIndex | null = null;
+  // one index per corpus, keyed by the docs array itself: the same array
+  // returns the same index, a different array is indexed anew. A caller that
+  // mutates a corpus in place must pass a new array.
+  const cache = new WeakMap<BacklinkDoc[], BacklinkIndex>();
 
   function build(docs: BacklinkDoc[]): BacklinkIndex {
-    if (import.meta.env.PROD && prodCache) return prodCache;
+    const cached = cache.get(docs);
+    if (cached) return cached;
 
     const infos = docs.map(({ id, title, brand, aliases }) => ({ id, title, brand, aliases }));
     const resolve = buildWikilinkResolver({
@@ -182,7 +184,7 @@ export function createBacklinks(options: BacklinksOptions) {
     };
 
     const index: BacklinkIndex = { inbound, outbound, broken, localGraph };
-    if (import.meta.env.PROD) prodCache = index;
+    cache.set(docs, index);
     return index;
   }
 

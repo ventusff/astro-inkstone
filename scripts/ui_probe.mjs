@@ -1,9 +1,10 @@
 /**
  * ui_probe — a render-layer probe. Loads every page of a built site at four
  * viewport widths in headless Chrome and reports what a machine can verify
- * about the rendered result: horizontal overflow of the page, elements wider
- * than their container with no scroll box to live in, classes no stylesheet
- * rule styles, skipped heading levels, duplicate ids, images without an alt
+ * about the rendered result, over the whole document — chrome, sidebar and
+ * dialogs included: horizontal overflow of the page, elements wider than
+ * their container with no scroll box to live in, classes no stylesheet rule
+ * styles, skipped heading levels, duplicate ids, images without an alt
  * attribute, in-page anchors and aria-controls pointing at ids that do not
  * exist. It makes no aesthetic judgement.
  *
@@ -15,7 +16,9 @@
  *     outFile  report file, default ui-probe.txt
  *   Environment:
  *     CHROME_PATH  Chrome/Chromium executable, default /usr/bin/google-chrome
- * Green means the last line reads PAGES WITH FINDINGS: 0.
+ * Green means the last line reads SAMPLES WITH FINDINGS: 0. A sample is one
+ * route at one width; the line also names how many distinct pages the
+ * findings touch.
  */
 import puppeteer from 'puppeteer-core';
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
@@ -67,6 +70,7 @@ const browser = await puppeteer.launch({
   args: ['--no-sandbox', '--hide-scrollbars'],
 });
 const findings = [];
+try {
 const page = await browser.newPage();
 
 for (const r of routes(DIST)) {
@@ -93,7 +97,7 @@ for (const r of routes(DIST)) {
       //    lost content. KaTeX's hidden MathML is screen-reader-only markup,
       //    excluded from visual judgement.
       const hasScrollAncestor = (el) => {
-        for (let n = el.parentElement; n && n.tagName !== 'MAIN'; n = n.parentElement) {
+        for (let n = el.parentElement; n && n.tagName !== 'BODY'; n = n.parentElement) {
           const cs = getComputedStyle(n);
           if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') return true;
           // the visually-hidden idiom (a 1px clipped box for assistive technology)
@@ -101,7 +105,7 @@ for (const r of routes(DIST)) {
         }
         return false;
       };
-      for (const el of document.querySelectorAll('main *')) {
+      for (const el of document.querySelectorAll('body *')) {
         const p = el.parentElement;
         if (!p) continue;
         if (el.closest('.katex-mathml, math, .katex')) continue;
@@ -127,7 +131,7 @@ for (const r of routes(DIST)) {
       }
       const mentions = (cls) => selectors.filter((s) => new RegExp('\\.' + cls.replace(/[-[\]{}()*+?.,\\^$|#]/g, '\\$&') + '(?![\\w-])').test(s));
       const seenCls = new Set();
-      for (const el of document.querySelectorAll('main [class]')) {
+      for (const el of document.querySelectorAll('body [class]')) {
         for (const cls of el.classList) {
           // Classes that carry no rule by contract: Shiki's theme markers on
           // <pre> and its `.line`; the code-frame transformer's structural
@@ -152,7 +156,7 @@ for (const r of routes(DIST)) {
           });
           // a selector the browser cannot parse matches nothing
           const matched = cands.some((s) => {
-            try { return el.matches(s) || document.querySelector('main ' + s) || anchorsElsewhere(s); } catch { return false; }
+            try { return el.matches(s) || document.querySelector(s) || anchorsElsewhere(s); } catch { return false; }
           });
           if (!matched) { seenCls.add(cls); out.unstyled.push({ el: '.' + cls, why: 'mentioned but no selector matches (e.g. a > child combinator blocked by <p>)' }); }
         }
@@ -191,8 +195,10 @@ for (const r of routes(DIST)) {
     if (hit) findings.push({ route: r, width: w, ...res });
   }
 }
-await browser.close();
-server?.close();
+} finally {
+  await browser.close();
+  server?.close();
+}
 
 const brief = findings.map((f) => {
   const bits = [];
@@ -206,7 +212,9 @@ const brief = findings.map((f) => {
   if (f.deadControl.length) bits.push('aria-controls without target: ' + f.deadControl.map((x) => `${x.el}→#${x.id}`).join(', '));
   return `${f.route} @${f.width}\n    ${bits.join('\n    ')}`;
 });
-writeFileSync(process.argv[4] || 'ui-probe.txt', brief.join('\n') + `\n\nPAGES WITH FINDINGS: ${findings.length}\n`);
+const pages = new Set(findings.map((f) => f.route)).size;
+const tally = `SAMPLES WITH FINDINGS: ${findings.length} (${pages} pages)`;
+writeFileSync(process.argv[4] || 'ui-probe.txt', brief.join('\n') + `\n\n${tally}\n`);
 console.log(brief.slice(0, 40).join('\n'));
-console.log(`\nPAGES WITH FINDINGS: ${findings.length}`);
+console.log(`\n${tally}`);
 process.exitCode = findings.length ? 1 : 0;

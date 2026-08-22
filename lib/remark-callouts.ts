@@ -12,15 +12,31 @@
  * as the same details open.
  *
  * Options: `{ labels }` overrides the default title shown when the callout
- * has no explicit title, per variant keyword:
+ * has no explicit title, keyed by variant keyword or by visual class (a
+ * keyword entry wins over its class entry):
  *
  *   [remarkCallouts, { labels: { tip: '直觉 · Intuition', warn: '注意 · Warning' } }]
  */
 import type { Blockquote, Paragraph, Root, Text } from 'mdast';
 import { visit } from 'unist-util-visit';
 
+/**
+ * Visual class (variant) → default title. The single source of the default
+ * labels: the `<Callout>` component reads this same table, so the quote
+ * syntax and the component always share one set of defaults.
+ */
+export const CALLOUT_LABELS = {
+  note: 'Note',
+  intuition: 'Intuition',
+  warn: 'Warning',
+  system: 'Important',
+  abstract: 'Abstract',
+} as const;
+
+export type CalloutVariant = keyof typeof CALLOUT_LABELS;
+
 /** variant keyword → visual class */
-const VARIANT_CLASS: Record<string, string> = {
+const VARIANT_CLASS: Record<string, CalloutVariant> = {
   note: 'note',
   info: 'note',
   tip: 'intuition',
@@ -37,36 +53,16 @@ const VARIANT_CLASS: Record<string, string> = {
   quote: 'abstract',
 };
 
-/** variant keyword → default title (used when the callout has none) */
-const DEFAULT_LABELS: Record<string, string> = {
-  note: 'Note',
-  info: 'Info',
-  tip: 'Intuition',
-  intuition: 'Intuition',
-  hint: 'Hint',
-  warn: 'Warning',
-  warning: 'Warning',
-  caution: 'Caution',
-  danger: 'Danger',
-  important: 'Important',
-  system: 'System',
-  abstract: 'Abstract',
-  summary: 'Summary',
-  quote: 'Quote',
-};
-
 export interface CalloutOptions {
-  /** per-variant default titles, merged over the built-in English ones */
+  /** default titles, keyed by variant keyword or visual class; a keyword
+   *  entry wins over its class entry, both win over CALLOUT_LABELS */
   labels?: Partial<Record<string, string>>;
 }
 
 const MARK = /^\[!(\w+)\]([+-]?)[ \t]*([^\n]*)\n?/;
 
 export function remarkCallouts(options: CalloutOptions = {}) {
-  const labels: Record<string, string> = { ...DEFAULT_LABELS };
-  for (const [kind, label] of Object.entries(options.labels ?? {})) {
-    if (label !== undefined) labels[kind] = label;
-  }
+  const overrides = options.labels ?? {};
   return (tree: Root): void => {
     visit(tree, 'blockquote', (node: Blockquote) => {
       const first = node.children[0];
@@ -80,7 +76,7 @@ export function remarkCallouts(options: CalloutOptions = {}) {
       if (!cls) return;
       const fold = m[2] === '-' ? 'closed' : m[2] === '+' ? 'open' : null;
 
-      const title = (m[3] ?? '').trim() || labels[kind] || kind;
+      const title = (m[3] ?? '').trim() || overrides[kind] || overrides[cls] || CALLOUT_LABELS[cls];
       firstText.value = firstText.value.slice(m[0].length);
       if (firstText.value === '' && first.children.length === 1) {
         node.children.shift();

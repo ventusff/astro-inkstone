@@ -2,7 +2,8 @@
 /**
  * Light/dark toggle in the nav bar. Same key as ThemeInit ('inkstone-theme').
  * Flipping the theme dispatches `themechange` on window so canvas demos and
- * diagrams that read the palette can re-render.
+ * diagrams that read the palette can re-render. `aria-pressed` tracks the
+ * state: pressed while the dark theme is active.
  */
 interface Props {
   /** accessible name, in the page's language */
@@ -11,7 +12,7 @@ interface Props {
 const { label } = Astro.props;
 ---
 
-<button class="theme-toggle" type="button" aria-label={label} title={label}>
+<button class="theme-toggle" type="button" aria-label={label} title={label} aria-pressed="false">
   <svg class="icon-sun" viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
     <circle cx="8" cy="8" r="3.4" fill="currentColor"></circle>
     <g stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
@@ -25,7 +26,15 @@ const { label } = Astro.props;
 </button>
 
 <script>
-  for (const btn of document.querySelectorAll<HTMLButtonElement>('.theme-toggle')) {
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('.theme-toggle')];
+  // every toggle on the page reflects the one document state
+  const syncPressed = (): void => {
+    const dark = document.documentElement.dataset['theme'] === 'dark';
+    for (const btn of buttons) btn.setAttribute('aria-pressed', String(dark));
+  };
+  syncPressed();
+  window.addEventListener('themechange', syncPressed);
+  for (const btn of buttons) {
     btn.addEventListener('click', () => {
       const next = document.documentElement.dataset['theme'] === 'dark' ? 'light' : 'dark';
       document.documentElement.dataset['theme'] = next;
@@ -61,6 +70,9 @@ const { label } = Astro.props;
     border-color: currentColor;
   }
   /* light shows the moon (press to go dark), dark shows the sun */
+  .icon-moon {
+    display: block;
+  }
   .icon-sun {
     display: none;
   }

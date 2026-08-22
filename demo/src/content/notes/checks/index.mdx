@@ -72,11 +72,13 @@ npm run build
 node ../scripts/ui_probe.mjs dist   # serves dist itself; pass a baseUrl to probe a live server
 ```
 
-Green means the report's last line reads `PAGES WITH FINDINGS: 0`.
+It inspects the whole document — chrome, sidebar and dialogs included.
+Green means the report's last line reads `SAMPLES WITH FINDINGS: 0` (a
+sample is one route at one width).
 
 ## The contrast probe
 
-The tokens claim AA, so the claim is measured rather than asserted. `contrast_probe` loads every page of `dist` in a real browser — light and dark theme, desktop and phone width — and measures every rendered text run: HTML text, SVG text and the generated text of `::before` / `::after`. The ground is not read from a stylesheet; the page is rendered with every glyph made transparent, screenshotted, and the pixel under each run is its ground, so gradients, `color-mix()` tints, translucent layers and the night palette are all measured as they render. Small text is held to 4.5:1, large text (24px, or 18.66px bold) to 3:1; a run whose color cannot be parsed or whose ground cannot be sampled counts as a finding. The report names the page, theme, width, selector, the two colors and the ratio of every run under the bar:
+The tokens claim AA, so the claim is measured rather than asserted. `contrast_probe` loads every page of `dist` in a real browser — light and dark theme, desktop and phone width — and measures every text run rendered in the default state: HTML text, SVG text and the generated text of `::before` / `::after`, with every `<dialog data-probe-open>` overlay probed open (and a query typed into a search box found there) on a representative page — the marker is the site's declaration that the dialog is complete as authored. The ground is not read from a stylesheet; the page is rendered with every glyph made transparent, screenshotted, and the pixel under each run is its ground, so gradients, `color-mix()` tints, translucent layers and the night palette are all measured as they render. A run's foreground carries the accumulated `opacity` of its element and ancestors, so dimmed text is measured at the strength a reader actually sees. Hover and focus states are reviewed, not probed. Small text is held to 4.5:1, large text (24px, or 18.66px bold) to 3:1; a run whose color cannot be parsed or whose ground cannot be sampled counts as a finding. The report names the page, theme, width, selector, the two colors and the ratio of every run under the bar:
 
 ```bash title="after a build, both themes"
 node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS narrow the matrix

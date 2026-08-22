@@ -33,13 +33,24 @@ export default function mount({ canvases }: DemoCtx): DemoCleanup {
     return d;
   });
 
-  // ink color from the live tokens (re-read when the theme flips)
+  // Ink color from the live tokens (re-read when the theme flips). The token
+  // may hold any CSS color — hex, rgb(), oklch(), color-mix(), a keyword — so
+  // the browser resolves it: the value is painted onto a 1×1 scratch canvas
+  // and the pixel read back as sRGB. An unresolvable value keeps black.
+  const scratch = document.createElement('canvas');
+  scratch.width = 1;
+  scratch.height = 1;
+  const sctx = scratch.getContext('2d', { willReadFrequently: true });
   let ink: [number, number, number] = [0, 0, 0];
   const readInk = (): void => {
-    const c = getComputedStyle(document.documentElement).getPropertyValue('--color-ink');
-    const m = /^#?([0-9a-f]{6})$/i.exec(c.trim().replace('#', ''));
-    const n = m ? parseInt(m[1]!, 16) : 0;
-    ink = [(n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
+    if (!sctx) return;
+    const c = getComputedStyle(document.documentElement).getPropertyValue('--color-ink').trim();
+    sctx.fillStyle = '#000'; // deterministic ground: an invalid value leaves this in place
+    sctx.fillStyle = c;
+    sctx.clearRect(0, 0, 1, 1);
+    sctx.fillRect(0, 0, 1, 1);
+    const d = sctx.getImageData(0, 0, 1, 1).data;
+    ink = [d[0]!, d[1]!, d[2]!];
   };
   readInk();
 

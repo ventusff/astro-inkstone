@@ -11,8 +11,8 @@
  *   [data-inkbrush-slot]
  *   main.note-main > .col      NoteLayout — the comment section mounts there
  *
- * A consuming site can copy this shell wholesale as a starting point — it is
- * deliberately ordinary Astro.
+ * Everything else is plain Astro against the package's public exports; the
+ * shell carries no demo-private coupling.
  */
 import 'katex/dist/katex.min.css';
 import '../styles/site.css';
@@ -98,6 +98,8 @@ const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
       <div class="cap"></div>
     </dialog>
     <SearchPalette locale={locale} />
+    {/* polite live region: copy-button outcomes for assistive technology */}
+    <div class="sr-only" role="status" data-copy-status data-done={t.copied} data-fail={t.copyFailed}></div>
 
     <script>
       // copy-tex: copying a formula yields its TeX source
@@ -165,16 +167,33 @@ const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
       }
 
       // ---- code frame: copy button (markup from the package's code-frame
-      // transformer; the click handler is the site's — event delegation) -----
+      // transformer; the click handler is the site's — event delegation).
+      // The outcome reaches everyone: the label swap for sighted readers,
+      // the polite status line for assistive technology — failure included. --
+      const copyStatus = document.querySelector<HTMLElement>('[data-copy-status]');
+      const announce = (msg: string): void => {
+        if (!copyStatus) return;
+        // clear first, so an identical message is re-announced
+        copyStatus.textContent = '';
+        setTimeout(() => {
+          copyStatus.textContent = msg;
+        }, 30);
+      };
       document.addEventListener('click', (ev) => {
         const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>('.code-copy');
         if (!btn) return;
         const pre = btn.closest('.code-frame')?.querySelector('pre');
         if (!pre) return;
-        void navigator.clipboard.writeText(pre.innerText).then(() => {
+        const copyFailed = (): void => announce(copyStatus?.dataset['fail'] ?? '');
+        if (!navigator.clipboard) {
+          copyFailed(); // insecure context: no clipboard API at all
+          return;
+        }
+        navigator.clipboard.writeText(pre.innerText).then(() => {
           btn.classList.add('is-done');
+          announce(copyStatus?.dataset['done'] ?? '');
           setTimeout(() => btn.classList.remove('is-done'), 1600);
-        });
+        }, copyFailed);
       });
 
       // ---- mermaid: only pages that carry a .mermaid block pay for the
@@ -221,8 +240,8 @@ const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
 
     <script>
       // Interactive demos: the package's DemoMount renders the markup; the
-      // site owns the loader (src/lib/demo-loader.ts). Pages without a
-      // [data-demo] mount load nothing beyond this call.
+      // site owns the loader (src/lib/demo-loader.ts). The call runs on every
+      // page, but a demo module chunk is fetched only for a [data-demo] mount.
       import { mountAllDemos } from '../lib/demo-loader';
       mountAllDemos();
     </script>

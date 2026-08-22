@@ -13,7 +13,9 @@
 export interface SearchDoc {
   id: string;
   route: string;
-  locale: 'zh' | 'en' | 'any';
+  /** the site's own locale code; 'any' is reserved — such a document
+   *  matches queries in every locale */
+  locale: string;
   title: string;
   crumb: string;
   headings: string[];
@@ -76,7 +78,7 @@ function makeSnippet(text: string, term: string): string {
   );
 }
 
-export function search(docs: SearchDoc[], query: string, locale: 'zh' | 'en', limit = 20): Hit[] {
+export function search(docs: SearchDoc[], query: string, locale: string, limit = 20): Hit[] {
   const { words, phrase } = termsOf(query);
   if (words.length === 0) return [];
 

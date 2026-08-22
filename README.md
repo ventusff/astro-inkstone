@@ -36,8 +36,9 @@ alone for a static site that simply looks and reads beautifully.
   (`--color-*`, a cool paper and one accent for an hour of reading) and the
   *browse shelf* (`--wb-*`, warm paper, a display serif, a wine-red mark for
   landing and facet pages). Re-skin the whole site by overriding either
-  tier; every rendered text run is **measured** for WCAG AA against the
-  pixels it actually sits on (`scripts/contrast_probe.mjs`, both themes).
+  tier; every text run rendered in the default state is **measured** for
+  WCAG AA against the pixels it actually sits on, at its rendered opacity
+  (`scripts/contrast_probe.mjs`, both themes, dialogs probed open).
 - 🌗 **Deliberate theming** — light is the identity; dark ships complete and
   activates only via `[data-theme='dark']`, so your toggle owns the decision
   (no `prefers-color-scheme` surprises).
@@ -120,9 +121,16 @@ export default defineConfig({
 @import 'astro-inkstone/styles/base.css';
 @import 'astro-inkstone/styles/browse.css'; /* landing / facet pages, on body.wb-root */
 
-/* identity: override the raw pigments… */
-:root { --p-shi: #8a4baf; --p-zhu: #3b4a7a; }
+/* identity: override the raw pigments — the day pigment and its night twin… */
+:root { --p-shi: #8a4baf; --p-shi-n: #b98fd6; --p-zhu: #3b4a7a; --p-zhu-n: #93a3cf; }
 /* …or re-map the semantic tokens (--color-* / --wb-*) onto your own palette — both paths are supported */
+```
+
+```html
+<!-- the reading column: base.css styles prose inside a .col column -->
+<main class="note-main"><div class="col">
+  <!-- your rendered Markdown -->
+</div></main>
 ```
 
 The shelf's display serif (`--font-display`: Source Serif 4 + Noto Serif SC)

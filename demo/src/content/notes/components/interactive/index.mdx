@@ -6,6 +6,8 @@ navLabel: Interactive & furniture
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
 <PartHero kicker={props.partLabel} title="Interactive & furniture">
@@ -14,7 +16,7 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
 
 ## DemoMount — live
 
-The division of labor is the package's usual one: the **mount markup** (stage, controls slot, caption slot) ships in the package; the **demo module and its loader** belong to the site. This site keeps its loader in `src/lib/demo-loader.ts` and calls `mountAllDemos()` once from the layout — pages without a mount load nothing.
+The division of labor is the package's usual one: the **mount markup** (stage, controls slot, caption slot) ships in the package; the **demo module and its loader** belong to the site. This site keeps its loader in `src/lib/demo-loader.ts` and calls `mountAllDemos()` once from the layout; the call runs on every page, but a demo module chunk is fetched only for a page that carries a `[data-demo]` mount.
 
 This one draws two-source wave interference with the page's own ink token, so it follows the theme:
 
@@ -31,15 +33,45 @@ The module contract is one default export, `mount(ctx)`, returning a cleanup fun
 The remaining components frame a note rather than fill it:
 
 - `Hero` opens a note: kicker, display title, a lede that goes through the full Markdown pipeline, a meta line, and optional `tocLabel` that adds an unnumbered "intro" row to the sidebar. The note's frontmatter `title` stays the short canonical one for `<title>` and cards; the hero's may be long.
-- `PartHero` opens a chapter of a hub — this page's own head. Its kicker is never typed: the route passes the chapter's "Part Ⅲ · …" label in as `props.partLabel`.
-- `Part` divides a long single-page note into parts; the numbering preset turns it into the "PART Ⅱ · Foundations" group rows of the sidebar. The [[kitchen-sink]] is cut that way.
+- `PartHero` opens a chapter of a hub — this page's own head. Its kicker is never typed: the route passes the chapter's "Part III · …" label in as `props.partLabel`.
+- `Part` divides a long single-page note into parts; the numbering preset turns it into the "PART II · Foundations" group rows of the sidebar. The [[kitchen-sink]] is cut that way.
 - `HubCard` and `.hub-grid` are a hub's landing cards; `.path` is its reading-path box — both on [[components|the overview of this gallery]].
-- `LocalToc` renders an in-page jump list; it accepts both ToC shapes the two numbering presets produce, and hides itself under a configurable minimum.
+- `LocalToc` renders an in-page jump list; it accepts both ToC shapes the two numbering presets produce, and hides itself under a configurable minimum. Below, live, on this chapter's own ToC.
 - `SidebarMemory` keeps a scrolling sidebar where the reader left it across page loads, and centres the current item (`[aria-current="page"]` by default) whenever it would otherwise be out of view. Drop it inside the sidebar's scroll box, after the navigation markup; it runs before first paint, so the sidebar never flashes at the top. The demo's own sidebar carries it.
-- `LineageSvg` frames a hand-drawn SVG (a method lineage, a taxonomy tree) as a card.
+- `LineageSvg` frames a hand-drawn SVG (a method lineage, a taxonomy tree) as a card — one below.
 - `PageFooter` is the small print at a note's foot — the line under every note here.
-- `SidebarMemory` is a script, not a box: placed inside a scrolling sidebar it keeps the scroll position across page loads and brings the current row into view — this site's sidebar carries it.
 - The browse pieces live in [[components/wiki|the wiki chapter]]; the Markdown side of the gallery is the [[kitchen-sink]].
+
+## LocalToc and LineageSvg, live
+
+`LocalToc` fed this page's own build-time ToC — the same data the sidebar consumes, handed to the note as `props.toc`:
+
+<LocalToc toc={props.toc} label="In this chapter" />
+
+And `LineageSvg` around a hand-authored diagram, inked entirely in semantic tokens so it sits on both themes:
+
+<LineageSvg title="Fig. — where the appearance layer sits">
+  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css feeds base.css and browse.css, which feed every component" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
+    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
+      <rect x="20" y="55" width="150" height="40" rx="6" />
+      <rect x="245" y="15" width="150" height="40" rx="6" />
+      <rect x="245" y="95" width="150" height="40" rx="6" />
+      <rect x="470" y="55" width="150" height="40" rx="6" />
+    </g>
+    <g fill="none" stroke="var(--color-ink-faint)">
+      <path d="M170 68 C 210 60, 210 42, 245 37" />
+      <path d="M170 82 C 210 90, 210 108, 245 113" />
+      <path d="M395 37 C 430 42, 430 60, 470 68" />
+      <path d="M395 113 C 430 108, 430 90, 470 82" />
+    </g>
+    <g fill="var(--color-ink)" text-anchor="middle">
+      <text x="95" y="80">tokens.css</text>
+      <text x="320" y="40">base.css</text>
+      <text x="320" y="120">browse.css</text>
+      <text x="545" y="80">components</text>
+    </g>
+  </svg>
+</LineageSvg>
 
 ## Furniture without a component
 
@@ -54,3 +86,5 @@ A few pieces are plain classes in `base.css`, for sites that render them from th
 | `.path` + `.title`, `.route`, `.arrow` | a reading-path box on a hub |
 | `.ref-tag` | a small monospace tag in a reference list (a venue, a year) |
 | `.tag`, `.tag.teal / .mustard / .violet` | the paper-card badges, usable anywhere |
+| `.measured` + `.measured-head`, `.measured-body`, `.measured-pane` (`.doc`), `.measured-tag` | the documented-versus-measured comparison card: a solid teal title bar over two panes, the `.doc` pane carrying the claim and the other the measurement — a silhouette distinct from every callout |
+| `.paper .idea-label` | the small uppercase key-idea label inside a `PaperCard` body, e.g. `<span class="idea-label">Key idea</span>` |

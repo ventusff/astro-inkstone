@@ -13,6 +13,7 @@ import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
 const WIKI_MODE = Boolean(process.env.WIKI);
 const { siteMarkdown } = await import('astro-inkstone/lib/markdown-preset');
 const { secureFsDeny } = await import('astro-inkstone/lib/vite-security');
+const { normalizeBase } = await import('astro-inkstone/lib/base');
 const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
 
 // Deploy target comes from env: on GitHub Pages the site lives under the
@@ -21,6 +22,9 @@ const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
 // codebase.
 const SITE = process.env.DEMO_SITE || 'https://example.com';
 const BASE = process.env.DEMO_BASE || '/';
+// DEMO_BASE accepts any spelling ('/docs', 'docs/'); links are built from
+// the normalized prefix — '' at the root, '/docs' under a subpath
+const BASE_PREFIX = normalizeBase(BASE);
 
 // [[wikilinks]] resolve against the note collection with the engine's own
 // resolver — the same alias/brand/locale rules the CMS preview and the
@@ -28,7 +32,7 @@ const BASE = process.env.DEMO_BASE || '/';
 // locale (unprefixed ids); zh mirrors live under zh/.
 const resolve = buildWikilinkResolver({
   notes: cachedScan('src/content/notes'),
-  urlFor: (id) => `${BASE}${id}/`.replace(/\/{2,}/g, '/'),
+  urlFor: (id) => `${BASE_PREFIX}/${id}/`,
   locales: [
     { code: 'en', prefix: '' },
     { code: 'zh', prefix: 'zh/' },

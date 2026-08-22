@@ -167,6 +167,7 @@ U+5B70 孰
 U+5B95 宕
 U+5BF0 寰
 U+5CD9 峙
+U+5E1B 帛
 U+5E27 帧
 U+5E42 幂
 U+5F08 弈
@@ -232,6 +233,7 @@ U+77A5 瞥
 U+77B0 瞰
 U+784C 硌
 U+7A79 穹
+U+7B3A 笺
 U+7CB6 粶
 U+7E82 纂
 U+7EEF 绯
@@ -252,6 +254,7 @@ U+8BDF 诟
 U+8BF6 诶
 U+8C15 谕
 U+8C50 豐
+U+8D6D 赭
 U+8E1D 踝
 U+8E1E 踞
 U+8E35 踵
@@ -286,6 +289,7 @@ U+9ABC 骼
 U+9ACB 髋
 U+9B03 鬃
 U+9ECF 黏
+U+9EDB 黛
 U+FF01 ！
 U+FF08 （
 U+FF09 ）

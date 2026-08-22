@@ -31,8 +31,9 @@
 - 🎨 **两层设计 token、两套语境** —— 纸张与颜料盒的裸色板(`--p-*`:朱、石、
   赭、黛、紫)喂给两套语义语境:**阅读列**(`--color-*`,偏冷的纸、一种强调色,
   为一小时的阅读而设)与**导览书架**(`--wb-*`,暖纸、展示衬线、酒红字标,
-  给落地页与分类页)。覆盖任意一层即可整站换肤;每一段渲染出来的文字都在它
-  **实际所在的像素**上实测 WCAG AA(`scripts/contrast_probe.mjs`,双主题)。
+  给落地页与分类页)。覆盖任意一层即可整站换肤;默认状态下渲染出来的每一段文字,
+  都在它**实际所在的像素**上、按它实际渲染的透明度实测 WCAG AA
+  (`scripts/contrast_probe.mjs`,双主题,弹窗也会打开来测)。
 - 🌗 **克制的主题机制** —— 浅色是身份;深色完整内置,但只经
   `[data-theme='dark']` 激活,切换权完全在你的开关手里(不读
   `prefers-color-scheme`,不会被系统抢答)。
@@ -104,9 +105,16 @@ export default defineConfig({
 @import 'astro-inkstone/styles/base.css';
 @import 'astro-inkstone/styles/browse.css'; /* 落地页 / 分类页,挂在 body.wb-root 上 */
 
-/* 身份定制:覆盖裸颜料…… */
-:root { --p-shi: #8a4baf; --p-zhu: #3b4a7a; }
+/* 身份定制:覆盖裸颜料——白天颜料和它的夜间搭子成对改…… */
+:root { --p-shi: #8a4baf; --p-shi-n: #b98fd6; --p-zhu: #3b4a7a; --p-zhu-n: #93a3cf; }
 /* ……或把语义 token(--color-* / --wb-*)映射到你自己的色板——两条路都是正路 */
+```
+
+```html
+<!-- 阅读列:base.css 只给 .col 栏里的正文上样式 -->
+<main class="note-main"><div class="col">
+  <!-- 渲染出的 Markdown -->
+</div></main>
 ```
 
 书架的展示衬线(`--font-display`:Source Serif 4 + 思源宋体)与界面无衬线

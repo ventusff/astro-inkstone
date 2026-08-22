@@ -9,6 +9,7 @@
  * own registry) and passes them in. Tags are typically capped upstream
  * (e.g. top 10), with the rest reachable via the "all" page.
  */
+import { normalizeBase } from '../../lib/base.ts';
 import type { KindDisplay, Tone } from '../../lib/wiki-display.ts';
 
 /** a facet value: a kind, or a domain with its tone */
@@ -20,7 +21,8 @@ interface Props {
   kinds: { def: FacetDef; count: number }[];
   domains: { def: FacetDef; count: number }[];
   tags: { tag: string; count: number }[];
-  /** Mount prefix for browse routes, e.g. "/wiki" → "/wiki/kind/<id>/". */
+  /** Mount prefix for browse routes, e.g. "/wiki" → "/wiki/kind/<id>/";
+   *  any spelling ('/wiki', 'wiki/', …) — it is normalized here. */
   base: string;
   active?: { dim: 'kind' | 'domain' | 'tag' | 'all'; value?: string | undefined } | undefined;
   /** Row labels; pass localized strings to override. */
@@ -35,6 +37,10 @@ interface Props {
     | undefined;
 }
 const { kinds, domains, tags, base, active, labels = {} } = Astro.props;
+const root = normalizeBase(base);
+/** browse route for one facet value; the value is data, so it is URL-encoded */
+const facetHref = (dim: string, value: string): string =>
+  `${root}/${dim}/${encodeURIComponent(value)}/`;
 const label = {
   kind: labels.kind ?? 'Kind',
   domain: labels.domain ?? 'Domain',
@@ -53,7 +59,7 @@ const isActive = (dim: string, value: string): boolean =>
     {kinds.map(({ def, count }) => (
       <a
         class="pill"
-        href={`${base}/kind/${def.id}/`}
+        href={facetHref('kind', def.id)}
         aria-current={isActive('kind', def.id) ? 'page' : undefined}
       >
         {def.label} <b>{count}</b>
@@ -65,7 +71,7 @@ const isActive = (dim: string, value: string): boolean =>
     {domains.map(({ def, count }) => (
       <a
         class="pill"
-        href={`${base}/domain/${def.id}/`}
+        href={facetHref('domain', def.id)}
         aria-current={isActive('domain', def.id) ? 'page' : undefined}
         style={def.tone ? `--pill-fg:${def.tone.fg}` : undefined}
       >
@@ -78,13 +84,13 @@ const isActive = (dim: string, value: string): boolean =>
     {tags.map(({ tag, count }) => (
       <a
         class="pill"
-        href={`${base}/tag/${tag}/`}
+        href={facetHref('tag', tag)}
         aria-current={isActive('tag', tag) ? 'page' : undefined}
       >
         {tag} <b>{count}</b>
       </a>
     ))}
-    <a class="pill more" href={`${base}/all/`} aria-current={active?.dim === 'all' ? 'page' : undefined}>
+    <a class="pill more" href={`${root}/all/`} aria-current={active?.dim === 'all' ? 'page' : undefined}>
       {label.all}
     </a>
   </div>
@@ -140,8 +146,7 @@ const isActive = (dim: string, value: string): boolean =>
     color: var(--wb-bg);
   }
   .pill[aria-current='page'] b {
-    color: var(--wb-bg);
-    opacity: 0.7;
+    color: color-mix(in srgb, var(--wb-bg) 78%, var(--wb-text));
   }
   .more {
     color: var(--wb-wine);

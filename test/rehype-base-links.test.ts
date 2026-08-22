@@ -43,3 +43,9 @@ test('MDX JSX attributes on native tags are rewritten, component props are not',
   assert.equal(a!.attributes[0]!.value, '/docs/x/');
   assert.equal(card!.attributes[0]!.value, '/x/');
 });
+
+test('base and exempt entries are normalized; an empty exempt entry exempts nothing', () => {
+  const tree = { type: 'root', children: [h('a', { href: '/guide/' }), h('a', { href: '/api/x' })] } as Root;
+  rehypeBaseLinks({ base: 'docs/', exempt: ['api/', '', '/'] })(tree);
+  assert.deepEqual(hrefs(tree), ['/docs/guide/', '/api/x']);
+});

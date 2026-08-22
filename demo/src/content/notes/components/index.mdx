@@ -42,17 +42,17 @@ export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 Each card is one chapter of the rail in the sidebar; the chips name what it shows.
 
 <div class="hub-grid">
-  <HubCard href={`${base}/components/content/`} num="PART Ⅰ" title="Content & typography" count="7 components"
+  <HubCard href={`${base}/components/content/`} num="PART I" title="Content & typography" count="7 components"
     chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
     The pieces prose is built from — callouts, chips, grids, step rails, stat rows, paper cards and reference lists.
   </HubCard>
 
-  <HubCard href={`${base}/components/wiki/`} num="PART Ⅱ" title="Wiki & browse" count="8 components"
+  <HubCard href={`${base}/components/wiki/`} num="PART II" title="Wiki & browse" count="8 components"
     chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
     The taxonomy set this garden's shelves are built from, and the two link-graph panels — linked mentions and the sidebar's local graph.
   </HubCard>
 
-  <HubCard href={`${base}/components/interactive/`} num="PART Ⅲ" title="Interactive & furniture" count="9 components"
+  <HubCard href={`${base}/components/interactive/`} num="PART III" title="Interactive & furniture" count="9 components"
     chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
     A live canvas demo and the site-owned loader contract, plus the page furniture — heroes, hub cards, jump lists, footers.
   </HubCard>
@@ -62,7 +62,7 @@ Each card is one chapter of the rail in the sidebar; the chips name what it show
 
 This note is itself the demonstration of a **hub**: a top-level note whose frontmatter declares `nav` — an ordered chapter list. The machinery you are looking at:
 
-- the sidebar shows the chapter rail (Ⅰ/Ⅱ/Ⅲ) under the hub's brand, with prev/next pagination at each chapter's foot;
+- the sidebar shows the chapter rail (I/II/III) under the hub's brand, with prev/next pagination at each chapter's foot;
 - chapters inherit the hub's taxonomy — none of the three gallery chapters declares its own kind, domain or status, yet each shows this note's; a chapter that sets its own values overrides wholesale ([[three-way-split|the same explicit-wins rule as everywhere else]]);
 - on browse pages the hub is **one unit**: one card, with a chapter count — chapters never clutter a shelf;
 - each chapter's `part:` number must match its position in `nav`, or the build fails — the rail and the frontmatter cannot drift apart;
@@ -71,6 +71,6 @@ This note is itself the demonstration of a **hub**: a top-level note whose front
 <div class="path">
   <div class="title">Where to start</div>
   <div class="route">
-    New to the package → <a href={`${base}/components/content/`}>Part Ⅰ</a><span class="arrow">→</span><a href={`${base}/components/wiki/`}>Part Ⅱ</a>; building a browse site → straight to <a href={`${base}/components/wiki/`}>Part Ⅱ</a><span class="arrow">→</span>the <a href={`${base}/getting-started/`}>getting-started guide</a>; the Markdown side of the same story → the <a href={`${base}/kitchen-sink/`}>kitchen sink</a>.
+    New to the package → <a href={`${base}/components/content/`}>Part I</a><span class="arrow">→</span><a href={`${base}/components/wiki/`}>Part II</a>; building a browse site → straight to <a href={`${base}/components/wiki/`}>Part II</a><span class="arrow">→</span>the <a href={`${base}/getting-started/`}>getting-started guide</a>; the Markdown side of the same story → the <a href={`${base}/kitchen-sink/`}>kitchen sink</a>.
   </div>
 </div>

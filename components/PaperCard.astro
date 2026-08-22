@@ -58,9 +58,10 @@ const { alias, full, meta, tags = [], links = [], id } = Astro.props;
           </span>
         ))}
         {meta !== undefined && <Fragment set:html={renderTocLabel(meta)} />}
-        {links.map((l) => (
+        {links.map((l, i) => (
           <>
-            {' · '}
+            {/* a link takes a separator only when something precedes it */}
+            {(i > 0 || meta !== undefined || tags.length > 0) && ' · '}
             <a href={l.href}>{l.label}</a>
           </>
         ))}

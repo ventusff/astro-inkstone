@@ -18,6 +18,7 @@ export interface LocalGraphNeighbor {
 }
 
 interface Props {
+  /** Title of the note at the centre — names the graph for assistive technology. */
   centerTitle: string;
   neighbors: LocalGraphNeighbor[];
   /** Panel heading; pass a localized string to override. */
@@ -59,7 +60,7 @@ const short = (s: string): string => {
 
 {
   neighbors.length > 0 && (
-    <nav class="lg-wrap" aria-label={label}>
+    <nav class="lg-wrap" aria-label={`${label}: ${centerTitle}`}>
       <p class="lg-title" aria-hidden="true">{label}</p>
       {/* the drawing is decoration for sighted readers; the list below it is
           the navigation — one link per neighbour, the same targets */}

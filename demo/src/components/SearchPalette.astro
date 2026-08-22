@@ -16,6 +16,7 @@ const t = UI[locale];
 ---
 
 <dialog
+  data-probe-open
   id="site-search"
   class="se-dialog"
   aria-label={t.searchDialog}
@@ -78,10 +79,11 @@ const t = UI[locale];
         }));
 
     /**
-     * Selection lives on the OPTIONS, not on a repaint of the list: the
-     * combobox keeps DOM focus in the input and points at the current row
-     * with `aria-activedescendant`, so that row has to be a stable element
-     * with a stable id between keystrokes.
+     * The combobox keeps DOM focus in the input and points at the current
+     * row with `aria-activedescendant`. render() rebuilds the rows whenever
+     * the query changes; moving the selection goes through paint() alone,
+     * which re-marks the existing rows — so between arrow presses the
+     * active option stays a live element with a live id.
      */
     function paint(): void {
       const items = [...list.children] as HTMLElement[];

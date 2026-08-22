@@ -36,3 +36,12 @@ test('locale filtering and the snippet highlight', () => {
   assert.deepEqual(search(docs, '中文', 'en'), []);
   assert.match(search(docs, 'body', 'en')[0]!.snippet, /<mark>body<\/mark>/);
 });
+
+test('locale is an open code: any registry code filters, "any" always matches', () => {
+  const docs = [
+    { ...doc('fr', 'x', 'le corps du texte'), locale: 'fr' },
+    { ...doc('shared', 'x', 'texte partagé'), locale: 'any' },
+  ];
+  assert.deepEqual(search(docs, 'texte', 'fr').map((h) => h.doc.id).sort(), ['fr', 'shared']);
+  assert.deepEqual(search(docs, 'texte', 'de').map((h) => h.doc.id), ['shared']);
+});

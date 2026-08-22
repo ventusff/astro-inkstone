@@ -35,6 +35,9 @@ jobs:
           npm ci --no-audit --no-fund
           npx astro check
           npm run build
+      - name: Wikilink check (strict)
+        working-directory: demo
+        run: node vendor/astro-inkbrush/scripts/check-wikilinks.mjs src/content/notes --locale-prefix zh/ --strict
       - name: Render-layer probe
         env:
           CHROME_PATH: /usr/bin/google-chrome

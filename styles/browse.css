@@ -87,7 +87,9 @@
 }
 .wb-root .wb-kicker .sep {
   margin: 0 0.4em;
-  opacity: 0.6;
+  /* the separator recedes by color, not opacity — muted ink holds AA on the
+     shelf grounds where a faded kicker tone would not */
+  color: var(--wb-text-muted);
 }
 .wb-root .wb-title {
   font-family: var(--wb-serif);

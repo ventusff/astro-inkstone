@@ -50,6 +50,8 @@ git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-
 :root {
   --p-shi: #b03a48; /* 换成你的阅读列强调色 */
   --p-zhu: #3b4a7a; /* 换成你的书架强调色与字标色 */
+  --p-shi-n: #e0919b; /* 夜间对应色:深色主题读的是 --p-*-n */
+  --p-zhu-n: #9fb0e4;
 }
 ```
 
@@ -117,4 +119,4 @@ npm run build      # 静态构建 + 引擎 check-dist 产物检查(postbuild)
 npm run wiki       # WIKI=1 astro dev,CMS 编辑模式
 ```
 
-静态构建对编辑功能零污染:非 WIKI 模式下,引擎的集成代码连 import 都不会发生,产物与不装 CMS 的站字节相同。
+静态构建里没有一个字节来自引擎:非 WIKI 模式下,引擎的集成代码连 import 都不会发生,编辑元数据也不输出。产物里唯一与 CMS 有关的,是站点自己的停靠位——导航栏里那几个空的 `data-inkbrush-slot` span 和对应的 CSS——CMS 不在时它们什么也不做。

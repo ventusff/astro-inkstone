@@ -7,8 +7,10 @@
  *   notes/zh/<topic>/index.mdx       → /zh/<topic>/
  *
  * Mirrors are materialized only where a zh file exists — no fallback tree.
- * All sidebar data (ToC, hub rail, language switch) is assembled here at
- * build time; nothing is hardcoded in frontmatter beyond the hub's nav.
+ * Everything the sidebar shows — the ToC, the hub rail, the language
+ * switch, backlinks and the local link graph — is assembled here at build
+ * time from the collection; frontmatter contributes the hub's `nav` order
+ * and display strings (title, brand, subtitle, navLabel), nothing more.
  */
 import { getCollection, render } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';

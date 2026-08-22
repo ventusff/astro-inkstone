@@ -9,7 +9,10 @@
  *  1. `<Part title="Partitioning" />` starts a numbered part; the plugin
  *     injects `num` ("PART III") for the Part component to render, and adds
  *     a group row to the ToC. `<Part appendix />` switches to letters (§A,
- *     §B, …; its banner is `title` or the `appendixLabel` option).
+ *     §B, …; its banner is `title` or the `appendixLabel` option) and is
+ *     terminal: a numbered part after an appendix is an error. Attributes
+ *     the plugin consumes (Part `title`/`appendix`, Hero `tocLabel`/`id`)
+ *     must be static — a JSX expression value is an error.
  *  2. h2 headings get chapter numbers, injected as `<span class="num">`:
  *       - page without parts:            §1, §2, …
  *       - inside part k:                 §k.1, §k.2, …
@@ -44,10 +47,11 @@ import {
 export { roman, slugify };
 
 /* ------------------------------------------------------------------ */
-/* minimal structural types for MDX JSX nodes (avoid extra deps)      */
+/* structural types for the MDX JSX nodes the transform reads          */
 interface MdxJsxAttribute {
   type: 'mdxJsxAttribute';
   name: string;
+  /** a string literal, a bare flag (null/undefined), or an expression node */
   value?: string | null | { type: string; value?: string };
 }
 interface MdxJsxFlowElement {
@@ -57,15 +61,19 @@ interface MdxJsxFlowElement {
   children: unknown[];
 }
 
-
-function jsxAttr(node: MdxJsxFlowElement, name: string): string | boolean | undefined {
+/** Read a consumed attribute: a string literal or a bare flag (`true`).
+ *  An expression value is an error — the plugin runs at build time and
+ *  cannot evaluate JSX, so consumed metadata must be static. */
+function jsxAttr(node: MdxJsxFlowElement, name: string, where: string): string | boolean | undefined {
   const attr = node.attributes.find(
     (a) => a.type === 'mdxJsxAttribute' && a.name === name,
   );
   if (!attr) return undefined;
   if (attr.value === null || attr.value === undefined) return true; // bare flag
   if (typeof attr.value === 'string') return attr.value;
-  return attr.value.value;
+  throw new Error(
+    `${where}: <${node.name}> attribute ${name}={…} is a JSX expression — build-time metadata must be a static string`,
+  );
 }
 
 interface AstroVFileData {
@@ -81,6 +89,7 @@ export interface ChaptersOptions {
 export function rehypeChapters(options: ChaptersOptions = {}) {
   const appendixLabel = options.appendixLabel ?? 'Appendix';
   return function transform(tree: Root, file: VFile): void {
+    const where = file.path ?? '(unknown file)';
     const fm = ((file.data as AstroVFileData).astro ??= {}).frontmatter ?? {};
     const fmPart = typeof fm['part'] === 'number' ? (fm['part'] as number) : null;
     const numbering = fm['chapters'] !== false;
@@ -101,11 +110,16 @@ export function rehypeChapters(options: ChaptersOptions = {}) {
           const jsx = node as unknown as MdxJsxFlowElement;
           if (jsx.name === 'Part') {
             sawPart = true;
-            const isAppendix = jsxAttr(jsx, 'appendix') === true;
-            const title = String(jsxAttr(jsx, 'title') ?? '');
+            const isAppendix = jsxAttr(jsx, 'appendix', where) === true;
+            const title = String(jsxAttr(jsx, 'title', where) ?? '');
             if (isAppendix) {
               inAppendix = true;
             } else {
+              if (inAppendix) {
+                throw new Error(
+                  `${where}: a numbered <Part> follows an appendix — appendix parts must come last on the page`,
+                );
+              }
               partIdx += 1;
             }
             chapterIdx = 0;
@@ -116,14 +130,17 @@ export function rehypeChapters(options: ChaptersOptions = {}) {
             continue;
           }
           if (jsx.name === 'Hero') {
-            const tocLabel = jsxAttr(jsx, 'tocLabel');
+            const tocLabel = jsxAttr(jsx, 'tocLabel', where);
             if (typeof tocLabel === 'string' && tocLabel !== '') {
-              const id = String(jsxAttr(jsx, 'id') ?? 'intro');
-              if (!jsxAttr(jsx, 'id')) {
-                jsx.attributes.push({ type: 'mdxJsxAttribute', name: 'id', value: id });
-              }
+              const explicit = jsxAttr(jsx, 'id', where);
+              const id = typeof explicit === 'string' && explicit !== '' ? explicit : 'intro';
+              // the Hero id is a page anchor like any heading id: it goes
+              // through the same used-id set, so a duplicate is an error
+              assignHeadingId({ id }, tocLabel, usedIds, where);
+              const idAttr = jsx.attributes.find((a) => a.type === 'mdxJsxAttribute' && a.name === 'id');
+              if (idAttr) idAttr.value = id;
+              else jsx.attributes.push({ type: 'mdxJsxAttribute', name: 'id', value: id });
               items.push({ kind: 'entry', depth: 2, id, num: '', label: tocLabel });
-              usedIds.add(id);
             }
           }
           // descend into JSX children (e.g. headings inside <Grid>)
@@ -140,7 +157,7 @@ export function rehypeChapters(options: ChaptersOptions = {}) {
             const props = (el.properties ??= {});
             const { tocLabel, notoc } = takeHeadingAttrs(props);
             const text = headingText(el);
-            const id = assignHeadingId(props, text, usedIds, file.path ?? '(unknown file)');
+            const id = assignHeadingId(props, text, usedIds, where);
 
             let num = '';
             if (el.tagName === 'h2' && numbering) {
@@ -184,8 +201,7 @@ export function rehypeChapters(options: ChaptersOptions = {}) {
               const num = numbers[target];
               if (num === undefined) {
                 throw new Error(
-                  `[rehype-chapters] ${file.path ?? ''}: reference link [${only.value}](#${target}) ` +
-                    `points to an anchor with no computed number`,
+                  `${where}: reference link [${only.value}](#${target}) points to an anchor with no computed number`,
                 );
               }
               if (only.value === '§') only.value = num;

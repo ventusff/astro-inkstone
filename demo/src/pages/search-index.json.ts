@@ -11,14 +11,16 @@ import { getCollection } from 'astro:content';
 import { buildSearchIndexEndpoint } from 'astro-inkstone/lib/search-index';
 
 import { localeOfId, routeOfId } from '../lib/i18n';
-import { getWikiUnits, kindDef } from '../lib/taxonomy';
+import { kindDef, resolveTaxonomy } from '../lib/taxonomy';
 
 export const GET = buildSearchIndexEndpoint({
   loadDocs: async () => {
-    const units = await getWikiUnits();
-    const kindOf = new Map(units.map((u) => [u.id, u.kind]));
-    return (await getCollection('notes')).map((entry) => {
-      const kind = kindOf.get(entry.id.replace(/^zh\//, ''));
+    const notes = await getCollection('notes');
+    const byId = new Map(notes.map((n) => [n.id, n]));
+    return notes.map((entry) => {
+      // full taxonomy resolution: a chapter inherits its kind from the hub
+      // and a mirror from the primary entry, so every page gets its crumb
+      const { kind } = resolveTaxonomy(entry, byId);
       return {
         id: entry.id,
         route: routeOfId(entry.id),

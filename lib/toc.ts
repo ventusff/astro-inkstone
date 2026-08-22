@@ -3,7 +3,8 @@
  *  "sections" preset's ToC reader lives in ./rehype-sections.ts. */
 import katex from 'katex';
 
-import type { TocData } from './toc-types.ts';
+import type { TocData, TocEntry } from './toc-types.ts';
+import type { TocData as SectionsTocData } from './rehype-sections.ts';
 
 const escapeHtml = (s: string): string =>
   s
@@ -30,4 +31,25 @@ export function getToc(remarkPluginFrontmatter: Record<string, unknown>): TocDat
   const toc = remarkPluginFrontmatter['toc'];
   if (toc && typeof toc === 'object' && 'items' in toc) return toc as TocData;
   return { items: [], numbers: {} };
+}
+
+/** One row of the in-page jump list (components/LocalToc.astro). */
+export interface LocalTocRow {
+  id: string;
+  /** printed number; '' for an unnumbered heading */
+  num: string;
+  label: string;
+}
+
+/**
+ * The in-page jump list of either ToC shape: every depth-two entry,
+ * numbered or not (an unnumbered chapter page still gets its jump list).
+ * Group rows and depth-three entries belong to the sidebar, not here.
+ */
+export function localTocRows(toc: TocData | SectionsTocData): LocalTocRow[] {
+  return 'entries' in toc
+    ? toc.entries.filter((e) => e.depth === 2).map(({ id, num, label }) => ({ id, num, label }))
+    : toc.items
+        .filter((i): i is TocEntry => i.kind === 'entry' && i.depth === 2)
+        .map(({ id, num, label }) => ({ id, num, label }));
 }

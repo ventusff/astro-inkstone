@@ -21,8 +21,11 @@ export function remarkReadingTime() {
       .split(/\s+/)
       .filter((w) => w.length > 0).length;
     const minutes = Math.max(1, Math.round(cjkChars / 400 + latinWords / 200));
-    const fm = (file.data as { astro?: { frontmatter?: Record<string, unknown> } }).astro
-      ?.frontmatter;
-    if (fm) fm['readingMinutes'] = minutes;
+    // the astro frontmatter containers are created when absent, so the value
+    // lands even when this plugin runs first
+    const data = file.data as { astro?: { frontmatter?: Record<string, unknown> } };
+    const astro = (data.astro ??= {});
+    const fm = (astro.frontmatter ??= {});
+    fm['readingMinutes'] = minutes;
   };
 }

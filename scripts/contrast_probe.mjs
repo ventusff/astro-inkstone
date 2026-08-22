@@ -12,10 +12,22 @@
  * computed `color` (SVG: `fill`), composited over that ground when
  * translucent. Rendering waits for fonts and for client-rendered diagrams.
  *
- * What is not measured, by design: text in aria-hidden subtrees and
- * visually-hidden helper text (.sr-only), closed dialogs and closed
- * <details>, and hover/focus states. A run whose color cannot be parsed or
- * whose ground cannot be sampled is a finding, never a skip.
+ * Translucency is part of the measurement: a run's foreground alpha is its
+ * color's alpha times the accumulated `opacity` of the element and its
+ * ancestors, composited over the sampled ground. Dialogs are probed too: on
+ * one representative route per theme and width the probe opens every
+ * `<dialog data-probe-open>` (typing a query into a search box it finds
+ * there) and measures the text inside. The marker is the site's declaration
+ * that the dialog is complete as authored; a dialog whose real state the
+ * probe cannot construct (a lightbox that only ever opens holding an image)
+ * carries no marker and is reviewed by eye.
+ *
+ * What is not measured, by design: visually-hidden helper text (.sr-only,
+ * .visually-hidden), closed <details>, and hover/focus states — those are
+ * reviewed, not probed. aria-hidden text IS measured when it renders:
+ * hiding from the accessibility tree does not hide from sighted readers. A
+ * run whose color cannot be parsed or whose ground cannot be sampled is a
+ * finding, never a skip.
  *
  * Thresholds are WCAG 2.2 AA: 4.5:1 for text, 3:1 for large text (24px, or
  * 18.66px at weight 700).
@@ -166,9 +178,14 @@ const page = await browser.newPage();
 
 const findings = [];
 let measured = 0;
-for (const r of routes(DIST)) {
+const routeList = routes(DIST);
+for (const r of routeList) {
   for (const theme of THEMES) {
     for (const width of WIDTHS) {
+      // every page in its default state; on the first route a second pass
+      // opens the dialogs and measures the text inside them
+      const scopes = r === routeList[0] ? ['document', 'dialogs'] : ['document'];
+      for (const scope of scopes) {
       await page.setViewport({ width, height: 900, deviceScaleFactor: 1 });
       await page.goto(BASE + r, { waitUntil: 'load', timeout: 60000 });
       // theme by attribute, transitions off, every glyph transparent: what
@@ -189,12 +206,42 @@ for (const r of routes(DIST)) {
         findings.push({ route: r, theme, width, text: '(mermaid diagram)', selector: 'pre.mermaid', color: '', fontSize: 0, fontWeight: 0, x: 0, y: 0, fg: 'diagram not rendered within 15s', bg: '-', ratio: 0, min: 4.5 });
       });
       await new Promise((res) => setTimeout(res, 120));
+      if (scope === 'dialogs') {
+        // open every marked dialog; a search box inside gets a query so
+        // result rows render and are measured too
+        const opened = await page.evaluate(() => {
+          const dialogs = [...document.querySelectorAll('dialog[data-probe-open]:not([open])')];
+          for (const d of dialogs) {
+            try { d.showModal(); } catch { d.setAttribute('open', ''); }
+            const input = d.querySelector('input[type="search"], input[type="text"], input:not([type])');
+            if (input) {
+              input.value = 'the';
+              input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+          }
+          return dialogs.length;
+        });
+        if (!opened) continue;
+        await new Promise((res) => setTimeout(res, 600));
+      }
 
       // 1) collect text runs in document coordinates (scrollY = 0)
-      const runs = await page.evaluate(() => {
+      const runs = await page.evaluate((scope) => {
         const out = [];
         const skipTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'TITLE', 'OPTION', 'TEXTAREA']);
-        const hiddenScope = '[aria-hidden="true"], .sr-only, dialog:not([open])';
+        const hiddenScope = scope === 'dialogs' ? '.sr-only, .visually-hidden' : '.sr-only, .visually-hidden, dialog:not([open])';
+        const inScope = (el) => (scope === 'dialogs' ? Boolean(el.closest('dialog[open]')) : true);
+        // effective opacity: the product over the element and its ancestors
+        const alphaCache = new Map();
+        const effAlpha = (el) => {
+          if (!el || el === document.documentElement) return 1;
+          let a = alphaCache.get(el);
+          if (a === undefined) {
+            a = (+getComputedStyle(el).opacity || 0) * effAlpha(el.parentElement);
+            alphaCache.set(el, a);
+          }
+          return a;
+        };
         const sel = (el) => {
           const parts = [];
           let e = el;
@@ -207,19 +254,22 @@ for (const r of routes(DIST)) {
           return parts.join(' > ');
         };
         const visible = (cs) => cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity !== 0;
-        // A run scrolled out of view inside a horizontal scroll box (a long
-        // code line on a phone) has that box's ground: its sample point is
-        // the box's visible interior at the run's own line.
-        const groundX = (el, x) => {
-          if (x >= 1 && x <= window.innerWidth - 1) return x;
+        // A run scrolled out of view inside a scroll box (a long code line on
+        // a phone, a result row below a palette's list) has that box's
+        // ground: its sample point is clamped into the box's visible
+        // interior, on each scrolling axis.
+        const groundPoint = (el, x, y) => {
           for (let n = el.parentElement; n; n = n.parentElement) {
-            const o = getComputedStyle(n).overflowX;
-            if (o === 'auto' || o === 'scroll') {
-              const b = n.getBoundingClientRect();
-              return Math.min(Math.max(b.left + b.width / 2, 1), window.innerWidth - 2);
+            const cs = getComputedStyle(n);
+            const b = n.getBoundingClientRect();
+            if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && (x < b.left + 1 || x > b.right - 1)) {
+              x = Math.min(Math.max(b.left + b.width / 2, 1), window.innerWidth - 2);
+            }
+            if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && (y < b.top + 1 || y > b.bottom - 1)) {
+              y = Math.min(Math.max(y, b.top + 8), b.bottom - 8);
             }
           }
-          return x;
+          return [x, y];
         };
         const isSvgText = (el) => el.namespaceURI === 'http://www.w3.org/2000/svg';
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -228,9 +278,11 @@ for (const r of routes(DIST)) {
           if (!text) continue;
           const el = n.parentElement;
           if (!el || skipTags.has(el.tagName)) continue;
-          if (el.closest(hiddenScope)) continue;
+          if (el.closest(hiddenScope) || !inScope(el)) continue;
           const cs = getComputedStyle(el);
           if (!visible(cs)) continue;
+          const alpha = effAlpha(el);
+          if (alpha === 0) continue;
           const range = document.createRange();
           range.selectNodeContents(n);
           const rect = range.getClientRects()[0];
@@ -239,22 +291,27 @@ for (const r of routes(DIST)) {
             text: text.slice(0, 40),
             selector: sel(el),
             color: isSvgText(el) ? cs.fill : cs.color,
+            alpha,
             fontSize: parseFloat(cs.fontSize),
             fontWeight: +cs.fontWeight || 400,
-            x: groundX(el, rect.left + rect.width / 2) + window.scrollX,
-            y: rect.top + rect.height / 2 + window.scrollY,
+            ...(() => {
+              const [gx, gy] = groundPoint(el, rect.left + rect.width / 2, rect.top + rect.height / 2);
+              return { x: gx + window.scrollX, y: gy + window.scrollY };
+            })(),
           });
         }
         // ::before / ::after text: measured at the start / end of the owner's
         // box, where the generated text sits
         for (const el of document.body.querySelectorAll('*')) {
-          if (skipTags.has(el.tagName) || el.closest(hiddenScope)) continue;
+          if (skipTags.has(el.tagName) || el.closest(hiddenScope) || !inScope(el)) continue;
           for (const pseudo of ['::before', '::after']) {
             const cs = getComputedStyle(el, pseudo);
             const content = cs.content;
             if (!content || content === 'none' || content === 'normal' || !/^["']/.test(content)) continue;
             const text = content.slice(1, -1).replace(/\\(["'])/g, '$1').trim();
             if (!text || !visible(cs)) continue;
+            const alpha = (+cs.opacity || 0) * effAlpha(el);
+            if (alpha === 0) continue;
             const box = el.getBoundingClientRect();
             if (box.width < 1 || box.height < 1) continue;
             const inset = Math.min(parseFloat(cs.fontSize) * 0.6, box.width / 2);
@@ -262,22 +319,32 @@ for (const r of routes(DIST)) {
               text: text.slice(0, 40),
               selector: sel(el) + pseudo,
               color: cs.color,
+              alpha,
               fontSize: parseFloat(cs.fontSize),
               fontWeight: +cs.fontWeight || 400,
-              x: (pseudo === '::before' ? box.left + inset : box.right - inset) + window.scrollX,
-              y: box.top + Math.min(box.height / 2, parseFloat(cs.lineHeight) / 2 || box.height / 2) + window.scrollY,
+              ...(() => {
+                const [gx, gy] = groundPoint(
+                  el,
+                  pseudo === '::before' ? box.left + inset : box.right - inset,
+                  box.top + Math.min(box.height / 2, parseFloat(cs.lineHeight) / 2 || box.height / 2),
+                );
+                return { x: gx + window.scrollX, y: gy + window.scrollY };
+              })(),
             });
           }
         }
         return out;
-      });
+      }, scope);
 
       // 2) hide every glyph and screenshot the document in slices
       await page.evaluate(() => {
         const st = document.getElementById('__probe');
         st.textContent += `*{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important}svg text{fill:transparent!important}`;
       });
-      const docHeight = await page.evaluate(() => document.documentElement.scrollHeight);
+      // a modal dialog sits in the top layer at viewport coordinates: its
+      // pass keeps the collection viewport so nothing moves between the run
+      // collection and the screenshot
+      const docHeight = scope === 'dialogs' ? 900 : await page.evaluate(() => document.documentElement.scrollHeight);
       const shots = [];
       for (let top = 0; top < docHeight; top += SLICE - OVERLAP) {
         const h = Math.min(SLICE, docHeight - top);
@@ -314,11 +381,13 @@ for (const r of routes(DIST)) {
           findings.push({ route: r, theme, width, ...run, fg: fg ? hex(fg) : `unparsed: ${run.color}`, bg: bg ? hex(bg) : 'unsampled', ratio: 0, min });
           continue;
         }
-        const fgOn = fg[3] < 1 ? over(fg, bg) : fg.slice(0, 3);
+        const a = fg[3] * (run.alpha ?? 1);
+        const fgOn = a < 1 ? over([fg[0], fg[1], fg[2], a], bg) : fg.slice(0, 3);
         const c = ratio(fgOn, bg);
         if (c < min - 0.005) {
           findings.push({ route: r, theme, width, ...run, fg: hex(fgOn), bg: hex(bg), ratio: c, min });
         }
+      }
       }
     }
   }

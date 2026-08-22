@@ -30,33 +30,63 @@ const { current = '[aria-current="page"]', key = import.meta.env.BASE_URL } = As
 <script is:inline data-current={current} data-key={key}>
   (() => {
     const script = document.currentScript;
-    const box = script.parentElement;
-    const key = `inkstone:sidebar:${script.dataset.key}`;
+    const box = script && script.parentElement;
+    if (!box) return;
+    const key = `inkstone:sidebar:${script.dataset.key || ''}`;
+
+    // Every storage access is guarded: sessionStorage itself, getItem and
+    // setItem can all throw (storage blocked, quota exceeded); a failed
+    // read behaves as "nothing stored", a failed write keeps nothing.
     let store = null;
     try {
       store = window.sessionStorage;
     } catch {
       store = null;
     }
+    const read = () => {
+      if (!store) return null;
+      try {
+        return store.getItem(key);
+      } catch {
+        return null;
+      }
+    };
+    const save = () => {
+      if (!store) return;
+      try {
+        store.setItem(key, String(box.scrollTop));
+      } catch {
+        /* the position is just not kept */
+      }
+    };
 
     // Restore and reveal happen instantly: a smooth-scrolling sidebar would
-    // otherwise animate on every page load.
+    // otherwise animate on every page load. The inline behaviour is restored
+    // whatever happens in between.
     const behaviour = box.style.scrollBehavior;
     box.style.scrollBehavior = 'auto';
+    try {
+      const saved = read();
+      const offset = saved === null ? NaN : Number(saved);
+      // no stored value (or a garbled one) → no restore
+      if (Number.isFinite(offset)) box.scrollTop = offset;
 
-    const saved = store && store.getItem(key);
-    if (saved !== null) box.scrollTop = Number(saved);
-
-    const item = box.querySelector(script.dataset.current);
-    if (item) {
-      const top = item.getBoundingClientRect().top - box.getBoundingClientRect().top;
-      const visible = top >= 0 && top + item.offsetHeight <= box.clientHeight;
-      if (!visible) box.scrollTop += top - (box.clientHeight - item.offsetHeight) / 2;
+      let item = null;
+      try {
+        item = script.dataset.current ? box.querySelector(script.dataset.current) : null;
+      } catch {
+        item = null; // an invalid selector disables the reveal, nothing else
+      }
+      if (item) {
+        const top = item.getBoundingClientRect().top - box.getBoundingClientRect().top;
+        const visible = top >= 0 && top + item.offsetHeight <= box.clientHeight;
+        if (!visible) box.scrollTop += top - (box.clientHeight - item.offsetHeight) / 2;
+      }
+    } finally {
+      box.style.scrollBehavior = behaviour;
     }
-    box.style.scrollBehavior = behaviour;
 
     if (!store) return;
-    const save = () => store.setItem(key, String(box.scrollTop));
     let timer;
     box.addEventListener(
       'scroll',

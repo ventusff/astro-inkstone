@@ -30,8 +30,11 @@ whose content is the package's own manual.
   no component contains a raw color value, not even as a `var()` fallback
   (`tokens.css` is required). Identity customization happens in tier one
   (`--p-*`, the pigments) or by re-mapping tier two — both are supported
-  paths. The one color carried as data is a domain's tone pair, supplied by
-  the site's registry.
+  paths. The one kind of color carried as data is tone data
+  supplied by the site's registry — a domain's `{ bg, fg }` tone pair, a
+  status dot, a per-category chip tone, a per-collection graph color. Tone
+  data used as text must clear AA where it renders; the contrast probe
+  measures it like any other run.
 - **Two contexts, one palette**: note pages are the reading column
   (`--color-*`: cool paper, 石 burnt orange accent); landing and facet pages
   are the browse shelf (`body.wb-root` + `--wb-*`: warm paper, display serif,
@@ -39,9 +42,12 @@ whose content is the package's own manual.
   `.wb-root`, so chrome written against `--color-*` works on both grounds.
 - **Contrast is measured**: every text color must clear WCAG AA on the
   surface it actually renders on (small text 4.5:1; an accent used as small
-  text has its own darkened `-text` tier). `node scripts/contrast_probe.mjs
-  demo/dist` samples the rendered demo in both themes and must report
-  `TEXT BELOW AA: 0` before a style commit.
+  text has its own darkened `-text` tier), at the opacity it actually
+  renders at — never dim text with `opacity`, use a token color that
+  clears the bar. `node scripts/contrast_probe.mjs demo/dist` samples the
+  rendered demo in both themes (dialogs probed open) and must report
+  `TEXT BELOW AA: 0` before a style commit. Hover and focus states are the
+  one surface reviewed by eye instead of probed.
 - **Light is the identity**: never read `prefers-color-scheme`; dark styles
   activate only under `[data-theme='dark']`.
 - The table double-wrapper (`.tbl-wrap` container-query container +

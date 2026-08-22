@@ -4,25 +4,19 @@
  * (lib/remark-callouts.ts): an <aside class="callout …"> with a title line.
  * Five variants: note (default), intuition, warn, system, abstract. `title`
  * replaces the variant's default label; `labels` supplies localized defaults
- * (the same shape as siteMarkdown's `calloutLabels`).
+ * (the same shape as siteMarkdown's `calloutLabels`). The default labels are
+ * remark-callouts' CALLOUT_LABELS — one table for both spellings.
  */
-type Variant = 'note' | 'intuition' | 'warn' | 'system' | 'abstract';
+import { CALLOUT_LABELS, type CalloutVariant } from '../lib/remark-callouts.ts';
 
 interface Props {
-  variant?: Variant | undefined;
+  variant?: CalloutVariant | undefined;
   title?: string | undefined;
-  labels?: Partial<Record<Variant, string>> | undefined;
+  labels?: Partial<Record<CalloutVariant, string>> | undefined;
 }
 const { variant = 'note', title, labels = {} } = Astro.props;
 
-const DEFAULT_LABELS: Record<Variant, string> = {
-  note: 'Note',
-  intuition: 'Intuition',
-  warn: 'Warning',
-  system: 'Important',
-  abstract: 'Abstract',
-};
-const heading = title ?? labels[variant] ?? DEFAULT_LABELS[variant];
+const heading = title ?? labels[variant] ?? CALLOUT_LABELS[variant];
 ---
 
 <aside class:list={['callout', variant !== 'note' && variant]}>

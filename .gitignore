@@ -2,6 +2,11 @@ node_modules/
 dist/
 .astro/
 
+# environment files are secrets by definition (lib/vite-security.ts denies
+# serving them; git must not carry them either)
+.env
+.env.*
+
 # demo site runtime state (CMS data and per-machine config — never committed)
 demo/.wiki/
 demo/inkbrush.config.ts
@@ -9,9 +14,10 @@ demo/inkbrush.config.ts
 # intermediate artifacts of the font subset build
 fonts/*.ttf
 
-# probe reports are run artifacts, never tracked
+# probe reports and logs are run artifacts, never tracked
 ui-probe.txt
 contrast-probe.txt
+*.log
 
 # Python bytecode from the font subset script
 __pycache__/

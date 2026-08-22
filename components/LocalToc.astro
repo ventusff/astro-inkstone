@@ -3,6 +3,8 @@
  * Local in-page jump list (.local-toc). Accepts both ToC shapes produced by
  * the two numbering presets — `TocData.items` (chapters) and
  * `TocData.entries` (sections) — so sites never need their own variant.
+ * Every depth-two entry is listed, unnumbered ones included (lib/toc.ts
+ * localTocRows), so a `chapters: false` page keeps its jump list.
  *
  *   <LocalToc toc={toc} label="On this page" />           — chapters
  *   <LocalToc toc={toc} label="In this chapter" min={5} /> — sections
@@ -11,7 +13,7 @@
  * Labels go through renderTocLabel (inline $TeX$ preserved); the ToC is
  * generated at build time, never hand-written.
  */
-import { renderTocLabel } from '../lib/toc.ts';
+import { localTocRows, renderTocLabel } from '../lib/toc.ts';
 import type { TocData as ChaptersToc } from '../lib/toc-types.ts';
 import type { TocData as SectionsToc } from '../lib/rehype-sections.ts';
 
@@ -23,17 +25,7 @@ interface Props {
 }
 const { toc, label, min = 0 } = Astro.props;
 
-interface Row {
-  id: string;
-  num: string;
-  label: string;
-}
-const rows: Row[] =
-  'entries' in toc
-    ? toc.entries.filter((e) => e.depth === 2).map((e) => ({ id: e.id, num: e.num, label: e.label }))
-    : toc.items
-        .filter((i) => i.kind === 'entry' && i.depth === 2 && i.num !== '')
-        .map((i) => ({ id: i.id, num: i.num, label: i.label }));
+const rows = localTocRows(toc);
 ---
 
 {
@@ -43,7 +35,7 @@ const rows: Row[] =
       <ol>
         {rows.map((r) => (
           <li>
-            <span class="idx">{r.num}</span>
+            {r.num !== '' && <span class="idx">{r.num}</span>}
             <a href={`#${r.id}`}>
               <Fragment set:html={renderTocLabel(r.label)} />
             </a>

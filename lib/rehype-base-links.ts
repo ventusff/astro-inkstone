@@ -6,12 +6,16 @@
  * `/topic/file.pdf`, `/inbox/<slug>/x.png`); with the notes mounted under a
  * subpath (siteMarkdown({ base })) every such reference gets the prefix.
  * A reference that already starts with the base, or with one of the `exempt`
- * mount points, is left as it is. Prefixes match whole path segments:
- * base `/docs` owns `/docs` and `/docs/...`, not `/docs-old`.
+ * mount points, is left as it is. `base` and `exempt` entries accept any
+ * spelling ('/docs', 'docs/', …) — both are normalized here. Prefixes match
+ * whole path segments: base `/docs` owns `/docs` and `/docs/...`, not
+ * `/docs-old`.
  * Applies to hast elements and to MDX JSX attributes alike (href / src /
  * poster on lowercase native tags; component props are the component's).
  */
 import type { Element, Root } from 'hast';
+
+import { normalizeBase } from './base.ts';
 
 const URL_ATTRS = ['href', 'src', 'poster'] as const;
 
@@ -24,8 +28,9 @@ interface JsxAttr {
 }
 
 export function rehypeBaseLinks(options: { base: string; exempt?: string[] }) {
-  const base = options.base;
-  const exempt = options.exempt ?? [];
+  const base = normalizeBase(options.base);
+  // '' normalizes out: an empty exempt prefix would own every root-absolute path
+  const exempt = (options.exempt ?? []).map(normalizeBase).filter((p) => p !== '');
   return function transform(tree: Root): void {
     if (!base) return;
     /** `prefix` owns `path` when they are equal or `path` continues past a `/` */

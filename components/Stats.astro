@@ -1,18 +1,22 @@
 ---
-/** Stat row (landing heroes): a value and its label per tile. */
+/**
+ * Stat row (landing heroes): a value and its label per tile. The row is a
+ * description list — each tile pairs the label (dt) with its value (dd);
+ * base.css renders the value above the label.
+ */
 interface Props {
   items: { value: string; label: string }[];
 }
 const { items } = Astro.props;
 ---
 
-<div class="stats">
+<dl class="stats">
   {
     items.map((s) => (
       <div class="stat">
-        <span class="v">{s.value}</span>
-        <span class="k">{s.label}</span>
+        <dt class="k">{s.label}</dt>
+        <dd class="v">{s.value}</dd>
       </div>
     ))
   }
-</div>
+</dl>

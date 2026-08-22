@@ -41,6 +41,16 @@
     "./fonts/*": "./fonts/*",
     "./package.json": "./package.json"
   },
+  "files": [
+    "lib",
+    "components",
+    "styles/*.css",
+    "fonts/MapleMonoCN-subset.woff2",
+    "fonts/OFL.txt",
+    "fonts/README.md",
+    "scripts",
+    "README.zh-CN.md"
+  ],
   "scripts": {
     "test": "node --test 'test/**/*.test.ts'",
     "probe": "node scripts/ui_probe.mjs demo/dist",
