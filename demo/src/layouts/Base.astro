@@ -2,6 +2,8 @@
 /**
  * Page shell: nav bar, search palette, lightbox and the site-wide scripts.
  * NoteLayout and BrowseLayout wrap their own column structure around this.
+ * Pure static — no ClientRouter; page transitions are native cross-document
+ * view transitions (base.css).
  *
  * Parts of the DOM here are astro-inkbrush's contract, not a styling choice:
  *
@@ -17,7 +19,7 @@ import '../styles/site.css';
 import Breadcrumb from '../components/Breadcrumb.astro';
 import SearchPalette from '../components/SearchPalette.astro';
 import ThemeInit from '../components/ThemeInit.astro';
-import { UI, type Locale } from '../lib/i18n';
+import type { Locale } from '../lib/i18n';
 
 interface Crumb {
   label: string;
@@ -33,6 +35,8 @@ interface Props {
   crumbs?: Crumb[];
   /** counterpart route in the other locale; omitted on pages with no twin */
   translateRoute?: string | undefined;
+  /** body class — browse pages pass `wb-root` to enter the browse context */
+  bodyClass?: string | undefined;
   /**
    * Collection entry id, when this page is editable through the CMS. The
    * <meta name="inkbrush-note"> tags are editing metadata — emitted in WIKI
@@ -47,6 +51,7 @@ const {
   htmlLang = locale === 'zh' ? 'zh-CN' : 'en',
   crumbs = [],
   translateRoute,
+  bodyClass,
   noteId,
 } = Astro.props;
 
@@ -58,8 +63,6 @@ const base = import.meta.env.BASE_URL.endsWith('/')
   : `${import.meta.env.BASE_URL}/`;
 const noteUrlTemplate = `${base}{id}/`;
 const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
-
-const t = UI[locale];
 
 /** Accessible names for the shell's own widgets. */
 const A11Y: Record<Locale, { lightbox: string; close: string }> = {
@@ -78,14 +81,14 @@ const a11y = A11Y[locale];
     {description && <meta name="description" content={description} />}
     <link
       rel="icon"
-      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13'>◈</text></svg>"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path d='M10 2.2 17.8 10 10 17.8 2.2 10Z' fill='none' stroke='%237d3a3a' stroke-width='1.6'/><path d='M10 6.4 13.6 10 10 13.6 6.4 10Z' fill='%237d3a3a'/></svg>"
     />
     <title>{title} · astro-inkstone</title>
     {wikiMode && noteId && <meta name="inkbrush-note" content={noteId} />}
     {wikiMode && noteId && <meta name="inkbrush-note-url" content={noteUrlTemplate} />}
     <ThemeInit />
   </head>
-  <body>
+  <body class={bodyClass}>
     <Breadcrumb locale={locale} crumbs={crumbs} translateRoute={translateRoute} />
     <slot />
 
@@ -99,57 +102,47 @@ const a11y = A11Y[locale];
     <SearchPalette locale={locale} />
 
     <script>
-      // ---- keep the sidebar in step with the page ------------------------
-      // On load the sidebar scrolls itself so the current row sits in view;
-      // while reading, the section under the reading line (30% viewport) is
-      // the highlighted one, and that link is kept visible in the sidebar.
+      // copy-tex: copying a formula yields its TeX source
+      import 'katex/dist/contrib/copy-tex.mjs';
+
+      // ---- sidebar scroll-spy ----------------------------------------------
+      // The section under the reading line is the highlighted ToC row, and
+      // that row is kept in view inside the (independently scrolling) sidebar.
       const sidebar = document.querySelector<HTMLElement>('.sidebar');
-      const here = document.querySelector<HTMLElement>('.toc .here');
-      if (sidebar && here) {
-        const sb = sidebar.getBoundingClientRect();
-        const hr = here.getBoundingClientRect();
-        sidebar.scrollTop += hr.top - sb.top - sidebar.clientHeight * 0.33;
-      }
-      const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc ul.sub a[href^="#"]')];
+      const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc a[href^="#"]')];
       // href attribute, not `.hash`: `.hash` comes back percent-encoded, and
       // heading ids may be Chinese — getElementById would find nothing
       const byId = new Map(links.map((a) => [(a.getAttribute('href') ?? '').slice(1), a]));
-      if (byId.size > 0 && sidebar) {
-        let active: HTMLAnchorElement | null = null;
-        const targets = [...byId.keys()]
-          .map((id) => document.getElementById(id))
-          .filter((el): el is HTMLElement => el !== null);
-        const pick = () => {
-          const line = window.innerHeight * 0.3;
-          let cur: HTMLElement | null = null;
-          for (const el of targets) {
-            if (el.getBoundingClientRect().top <= line) cur = el;
-            else break;
-          }
-          if (!cur && targets.length) cur = targets[0]!;
-          const link = cur ? byId.get(cur.id) : undefined;
-          if (!link || link === active) return;
-          active?.classList.remove('active');
+      if (byId.size > 0) {
+        let activeLink: HTMLAnchorElement | null = null;
+        const setActive = (link: HTMLAnchorElement | undefined): void => {
+          if (!link || link === activeLink) return;
+          activeLink?.classList.remove('active');
           link.classList.add('active');
-          active = link;
+          activeLink = link;
+          if (!sidebar) return;
           const lr = link.getBoundingClientRect();
           const sr = sidebar.getBoundingClientRect();
           if (lr.top < sr.top + 24 || lr.bottom > sr.bottom - 24) {
             sidebar.scrollTop += lr.top - sr.top - sidebar.clientHeight * 0.4;
           }
         };
-        let ticking = false;
-        const onScroll = () => {
-          if (ticking) return;
-          ticking = true;
-          requestAnimationFrame(() => {
-            ticking = false;
-            pick();
-          });
-        };
-        window.addEventListener('scroll', onScroll, { passive: true });
-        window.addEventListener('resize', onScroll, { passive: true });
-        pick();
+        const targets = [...byId.keys()]
+          .map((id) => document.getElementById(id))
+          .filter((el): el is HTMLElement => el !== null);
+        const visible = new Set<string>();
+        const io = new IntersectionObserver(
+          (recs) => {
+            for (const rec of recs) {
+              if (rec.isIntersecting) visible.add(rec.target.id);
+              else visible.delete(rec.target.id);
+            }
+            const first = targets.find((t) => visible.has(t.id));
+            if (first) setActive(byId.get(first.id));
+          },
+          { rootMargin: '-10% 0px -70% 0px' },
+        );
+        for (const t of targets) io.observe(t);
       }
 
       // ---- figure lightbox ------------------------------------------------
@@ -195,22 +188,35 @@ const a11y = A11Y[locale];
           const sources = blocks.map((b) => b.textContent ?? '');
           const renderAll = async (): Promise<void> => {
             const { default: mermaid } = await import('mermaid');
-            const dark = document.documentElement.dataset['theme'] === 'dark';
+            // diagrams are inked from the live tokens, so they sit on either
+            // ground like any other figure
+            const token = (name: string): string =>
+              getComputedStyle(document.documentElement).getPropertyValue(name).trim();
             blocks.forEach((b, i) => {
               b.textContent = sources[i] ?? '';
               b.removeAttribute('data-processed');
             });
             mermaid.initialize({
               startOnLoad: false,
-              theme: dark ? 'dark' : 'neutral',
-              fontFamily: 'var(--font-ui)',
+              theme: 'base',
+              themeVariables: {
+                background: token('--color-bg-card'),
+                primaryColor: token('--color-bg-soft'),
+                primaryTextColor: token('--color-ink'),
+                primaryBorderColor: token('--color-ink-faint'),
+                secondaryColor: token('--color-accent-soft'),
+                secondaryTextColor: token('--color-ink'),
+                tertiaryColor: token('--color-bg'),
+                lineColor: token('--color-ink-soft'),
+                textColor: token('--color-ink'),
+                edgeLabelBackground: token('--color-bg-card'),
+                fontFamily: token('--font-ui'),
+              },
             });
             await mermaid.run({ nodes: blocks });
           };
           void renderAll();
-          for (const btn of document.querySelectorAll('.theme-toggle')) {
-            btn.addEventListener('click', () => void renderAll());
-          }
+          window.addEventListener('themechange', () => void renderAll());
         }
       }
     </script>

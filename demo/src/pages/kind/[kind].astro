@@ -27,10 +27,10 @@ const domains = groupByDomain(units).map((g) => ({ def: g.def, count: g.notes.le
 const tags = [...tagIndex(units).entries()].slice(0, 10).map(([tag, list]) => ({ tag, count: list.length }));
 ---
 
-<BrowseLayout title={`${def.label} · garden`} description={`${def.desc} (${notes.length} notes)`} crumbs={[{ label: def.label }]}>
+<BrowseLayout title={`${def.label} · ${def.zh}`} description={`${def.desc} (${notes.length} notes)`} crumbs={[{ label: def.label }]}>
   <header class="wb-hero">
-    <p class="wb-kicker">by kind</p>
-    <h1 class="wb-title">{def.label}</h1>
+    <p class="wb-kicker">By kind <span class="sep">·</span> 按形式</p>
+    <h1 class="wb-title">{def.label}<span class="en">{def.zh}</span></h1>
     <p class="wb-lede">{def.desc} — <strong>{notes.length}</strong> notes.</p>
   </header>
   <FacetNav base={facetBase} kinds={kinds} domains={domains} tags={tags} active={{ dim: 'kind', value: def.id }} />

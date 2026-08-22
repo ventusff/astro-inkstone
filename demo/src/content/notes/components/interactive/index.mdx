@@ -1,11 +1,16 @@
 ---
 title: Interactive
-description: DemoMount and the site-owned loader contract, plus the page furniture — heroes, local ToCs and footers.
+description: DemoMount and the site-owned loader contract, plus the page furniture — heroes, part dividers, hub cards, jump lists and footers.
 part: 3
 navLabel: Interactive & furniture
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Interactive & furniture">
+  A live canvas demo and the contract behind it, then the quiet components every note is framed by — the ones you have been looking at since the first page.
+</PartHero>
 
 ## DemoMount — live
 
@@ -23,10 +28,14 @@ The module contract is one default export, `mount(ctx)`, returning a cleanup fun
 
 ## Page furniture
 
-The remaining components are the quiet ones:
+The remaining components frame a note rather than fill it:
 
+- `Hero` opens a note: kicker, display title, a lede that goes through the full Markdown pipeline, a meta line, and optional `tocLabel` that adds an unnumbered "intro" row to the sidebar. The note's frontmatter `title` stays the short canonical one for `<title>` and cards; the hero's may be long.
+- `PartHero` opens a chapter of a hub — this page's own head. Its kicker is never typed: the route passes the chapter's "Part Ⅲ · …" label in as `props.partLabel`.
+- `Part` divides a long single-page note into parts; the numbering preset turns it into the "PART Ⅱ · Foundations" group rows of the sidebar. The [[kitchen-sink]] is cut that way.
+- `HubCard` and `.hub-grid` are a hub's landing cards; `.path` is its reading-path box — both on [[components|the overview of this gallery]].
 - `LocalToc` renders an in-page jump list; it accepts both ToC shapes the two numbering presets produce, and hides itself under a configurable minimum.
 - `SidebarMemory` keeps a scrolling sidebar where the reader left it across page loads, and centres the current item (`[aria-current="page"]` by default) whenever it would otherwise be out of view. Drop it inside the sidebar's scroll box, after the navigation markup; it runs before first paint, so the sidebar never flashes at the top. The demo's own sidebar carries it.
-- `Hero` and `PartHero` are page and part headers for sites whose notes open with a full-width banner; this garden's note heads are assembled by its own layout instead — which is exactly the intended split ([[three-way-split]]).
-- `PageFooter` is the small print at a note's foot.
-- The browse pieces live in [[components/wiki|the wiki chapter]]; the Markdown-side of the gallery is the [[kitchen-sink]].
+- `LineageSvg` frames a hand-drawn SVG (a method lineage, a taxonomy tree) as a card.
+- `PageFooter` is the small print at a note's foot — the line under every note here.
+- The browse pieces live in [[components/wiki|the wiki chapter]]; the Markdown side of the gallery is the [[kitchen-sink]].

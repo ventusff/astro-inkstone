@@ -45,6 +45,8 @@ const notes = defineCollection({
     navLabel: z.string().optional(),
     /** how deep the sidebar ToC goes */
     tocDepth: z.union([z.literal(2), z.literal(3)]).default(2),
+    /** `false` switches chapter numbering off (a hub's overview page) */
+    chapters: z.boolean().default(true),
   }),
 });
 

@@ -1,7 +1,7 @@
 /**
  * astro-inkstone — aggregate export of the shared layer.
  * Components are imported by path (astro-inkstone/components/Callout.astro),
- * styles via astro-inkstone/styles/{tokens,base}.css; this barrel only
+ * styles via astro-inkstone/styles/{tokens,base,browse}.css; this barrel only
  * aggregates lib.
  */
 export { siteMarkdown, type SiteMarkdownOptions } from './markdown-preset';
@@ -22,5 +22,6 @@ export {
   type BacklinkIndex,
   type BacklinkItem,
   type BacklinksOptions,
+  type GraphNeighbor,
 } from './backlinks';
 export { secureFsDeny } from './vite-security';

@@ -1,5 +1,9 @@
 ---
-/** Light/dark toggle in the nav bar. Same key as ThemeInit ('inkstone-theme'). */
+/**
+ * Light/dark toggle in the nav bar. Same key as ThemeInit ('inkstone-theme').
+ * Flipping the theme dispatches `themechange` on window so canvas demos and
+ * diagrams that read the palette can re-render.
+ */
 ---
 
 <button class="theme-toggle" type="button" aria-label="Toggle light / dark theme" title="Light / dark">
@@ -25,6 +29,7 @@
       } catch {
         /* private mode: theme still flips, it just is not remembered */
       }
+      window.dispatchEvent(new CustomEvent('themechange', { detail: next }));
     });
   }
 </script>

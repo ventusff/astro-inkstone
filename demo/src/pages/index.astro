@@ -1,6 +1,6 @@
 ---
 /**
- * The garden's landing page — taxonomy-driven: hero with counts → facet
+ * The garden's landing page — taxonomy-driven: masthead with counts → facet
  * index → recently updated → one shelf per primary domain → status legend.
  * Everything on it comes from the note collection; adding a note changes
  * this page without touching it.
@@ -15,7 +15,7 @@ import { STATUSES } from '../content/notes/_meta/taxonomy';
 
 const units = await getWikiUnits();
 const shelves = groupByPrimaryDomain(units);
-const recent = units.slice(0, 4);
+const recent = units.slice(0, 3);
 const kinds = groupByKind(units).map((g) => ({ def: g.def, count: g.notes.length }));
 const domains = groupByDomain(units).map((g) => ({ def: g.def, count: g.notes.length }));
 const tags = [...tagIndex(units).entries()].slice(0, 10).map(([tag, notes]) => ({ tag, count: notes.length }));
@@ -24,18 +24,17 @@ const domainCount = new Set(units.flatMap((u) => u.domains)).size;
 
 <BrowseLayout
   title="A paper-and-ink garden"
-  description="The astro-inkstone demo — a multi-note taxonomy garden whose notes are the package's own manual."
+  description="The astro-inkstone demo — a taxonomy garden whose notes are the package's own manual."
 >
   <header class="wb-hero">
-    <p class="wb-kicker">astro-inkstone <span class="sep">·</span> demo garden</p>
+    <p class="wb-kicker">Garden <span class="sep">·</span> the manual, grown as notes</p>
     <h1 class="wb-title">Paper &amp; ink<span class="en">a growing garden of working notes</span></h1>
     <p class="wb-lede">
-      This site is the package's manual grown as a garden — <strong>{units.length}</strong> notes
-      across <strong>{domainCount}</strong> domains, browsable by kind, domain and tag. Every
-      rendering effect you see is the package at work: the notes are the manual, the manual is the
-      demo. Source: <a href={GITHUB_URL}>astro-inkstone</a> (this package) ·
-      <a href={ENGINE_URL}>astro-inkbrush</a> (the CMS engine — run <code>npm run wiki</code> to
-      edit these very pages).
+      The astro-inkstone manual, grown as a garden — <strong>{units.length}</strong> notes across{' '}
+      <strong>{domainCount}</strong> domains, browsable by kind, domain and tag. Every rendering
+      effect on these pages is the package at work. Source: <a href={GITHUB_URL}>astro-inkstone</a>{' '}
+      (this package) · <a href={ENGINE_URL}>astro-inkbrush</a> (the CMS engine —{' '}
+      <code>npm run wiki</code> edits these very pages).
     </p>
   </header>
 
@@ -44,6 +43,7 @@ const domainCount = new Set(units.flatMap((u) => u.domains)).size;
   <section class="wb-shelf" aria-label="Recently updated">
     <div class="wb-shelf-head">
       <h2 class="wb-shelf-title">Recently updated</h2>
+      <span class="wb-shelf-en">the last three to change</span>
     </div>
     <ul class="wb-grid">
       {recent.map((note) => <NoteCard note={cardOf(note)} />)}
@@ -54,9 +54,8 @@ const domainCount = new Set(units.flatMap((u) => u.domains)).size;
     shelves.map(({ def, notes }) => (
       <section class="wb-shelf" style={`--shelf-fg:${def.tone.fg}`}>
         <div class="wb-shelf-head">
-          <h2 class="wb-shelf-title" style="color: var(--shelf-fg)">
-            {def.label}
-          </h2>
+          <h2 class="wb-shelf-title">{def.label}</h2>
+          <span class="wb-shelf-en">{def.zh}</span>
           <a class="wb-shelf-count" href={browseHref.domain(def.id)}>
             {notes.length} primary · all →
           </a>
@@ -71,16 +70,16 @@ const domainCount = new Set(units.flatMap((u) => u.domains)).size;
     ))
   }
 
-  <footer class="legend">
+  <footer class="wb-legend">
     {
       STATUSES.map((s) => (
-        <span class="legend-item">
+        <span class="wb-legend-item">
           <span class="dot" style={`background:${s.dot}`} aria-hidden="true" />
           {s.label} — {s.desc}
         </span>
       ))
     }
-    <span class="legend-links">
+    <span class="wb-legend-links">
       <a href={browseHref.all()}>All notes →</a>
     </span>
   </footer>

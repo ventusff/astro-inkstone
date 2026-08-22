@@ -1,6 +1,8 @@
 ---
 title: Getting started
-description: A pair of submodules in your site repo, one line of siteMarkdown for the whole Markdown pipeline — and you have a garden.
+brand: Getting started
+subtitle: "two submodules, three imports,\none line of pipeline"
+description: A pair of submodules in your site repo, three stylesheet imports, one line of siteMarkdown for the whole Markdown pipeline — and you have a garden.
 kind: guide
 domains: [pipeline, design]
 tags: [install, submodules]
@@ -10,9 +12,18 @@ updated: 2026-08-22
 aliases: [install]
 ---
 
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Guide · from zero to a garden" title="Getting started" meta="two submodules · three stylesheets · one siteMarkdown() · three commands">
+  Neither the paper nor the engine is published to npm — both are zero-build and export raw TS/CSS source. A site vendors the two repos as git submodules, imports three stylesheets, and wires one function into `astro.config`. Everything on this site is built that way.
+</Hero>
+
+<Part title="Install" />
+
 ## A pair of submodules
 
-Neither the paper nor the engine is published to npm — both are zero-build and export raw TS/CSS source. A site vendors the two repos as git submodules and points `file:` dependencies at them:
+Vendor the two repos and point `file:` dependencies at them:
 
 ```bash title="site repo root"
 git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
@@ -35,16 +46,28 @@ git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-
 
 ## Styles
 
-In your global stylesheet: tokens first, then the content layer, then only your own chrome:
+In your global stylesheet: tokens first, then the content layer, then — for a site with browse pages — the shelf, then only your own chrome:
 
 ```css title="src/styles/site.css"
 @import 'astro-inkstone/styles/tokens.css';
 @import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* landing / facet pages, on body.wb-root */
 
-/* identity: override the tier-one palette; the semantic and component layers follow */
+/* identity: override the tier-one pigments; both semantic contexts and the component layer follow */
 :root {
-  --p-vermilion: #b03a48; /* your brand accent */
+  --p-shi: #b03a48; /* your reading accent */
+  --p-zhu: #3b4a7a; /* your shelf accent and mark */
 }
+```
+
+The shelf's serif is `--font-display` (Source Serif 4 + Noto Serif SC); self-host it as this demo does and the masthead looks exactly like this one:
+
+```css title="src/styles/site.css (fonts, optional)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
 ```
 
 Math sites add one line for KaTeX's stylesheet in the layout (without it, formula layout falls apart):
@@ -52,6 +75,8 @@ Math sites add one line for KaTeX's stylesheet in the layout (without it, formul
 ```ts title="src/layouts/Base.astro (frontmatter)"
 import 'katex/dist/katex.min.css';
 ```
+
+<Part title="Wire up" />
 
 ## The Markdown pipeline, one line
 

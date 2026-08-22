@@ -1,18 +1,22 @@
 ---
 title: Wiki & browse
-description: The taxonomy set — note cards, facet rows, badges and the linked-mentions panel — shown with sample data, and live all over this garden.
+description: The taxonomy set — note cards, facet rows, badges, the linked-mentions panel and the sidebar's local graph — shown with sample data, and live all over this garden.
 part: 2
 navLabel: Wiki & browse
 ---
 
 import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph from 'astro-inkstone/components/LocalGraph.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
 import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
 import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
 import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
 
 export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
-Everything in this chapter runs **live** on this site: the landing page's shelves are `NoteCard`s, its facet rows are a `FacetNav`, and the meta strip above this very text is a `TaxonomyLine`. All of them are pure display components — the site resolves its registry and passes display-ready data. The resolution helpers ship in the package as `createTaxonomy` ([[three-way-split#where-the-browse-machinery-sits|mechanics in the package, meaning in the site]]).
+<PartHero kicker={props.partLabel} title="Wiki & browse">
+  Everything in this chapter runs **live** on this site: the landing page's shelves are built of `NoteCard`, its facet rows are a `FacetNav`, the meta strip above this text is a `TaxonomyLine`, and the little constellation in the sidebar is a `LocalGraph`. All of them are pure display components — the site resolves its registry and passes display-ready data. The resolution helpers ship in the package as `createTaxonomy` and `createBacklinks` ([[three-way-split#where-the-browse-machinery-sits|mechanics in the package, meaning in the site]]).
+</PartHero>
 
 ## The binding, three lines
 
@@ -25,12 +29,17 @@ export const { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, t
     { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' });
 ```
 
-The registry (`_meta/taxonomy.ts`) is pure data in the content tree: kinds, domains with tone colors, statuses with dot colors. Add a value there, tag a note with it, and every browse page picks it up — the routes are value-parameterized.
+The registry (`_meta/taxonomy.ts`) is pure data in the content tree: kinds, domains with tone colors, statuses with dot colors, each with an English and a Chinese label. Add a value there, tag a note with it, and every browse page picks it up — the routes are value-parameterized.
+
+## The shelf and its tokens
+
+Browse pages live on a second ground: `browse.css` gives them the warm paper, the serif masthead, the two-point shelf rule and the card grid, all through the `--wb-*` tokens — the browse half of the [[design-tokens#two-contexts-one-palette|two-context palette]]. A page enters the context with one class, `wb-root`, on its body; inside it the chrome tokens are re-mapped so the same nav bar sits on either ground.
 
 ## NoteCard
 
-A card takes display-ready data — resolved labels, tones, a formatted date, mirror links:
+A card takes display-ready data — resolved labels, tones, a formatted date, mirror links. Cards live on the shelf, so the sample sits in a swatch of the browse context (`.wb-root.wb-inset`) inside this reading column:
 
+<div class="wb-root wb-inset">
 <ul class="wb-grid">
   <NoteCard
     note={{
@@ -52,13 +61,15 @@ A card takes display-ready data — resolved labels, tones, a formatted date, mi
       title: 'The component set',
       description: 'A three-chapter tour of every shipped component — and a live hub demonstration.',
       kind: { id: 'reference', label: 'Reference' },
-      domains: [{ id: 'components', label: 'Components', tone: { bg: '#f7e9dc', fg: '#a05a1e' }, href: `${base}/domain/components/` }],
+      domains: [{ id: 'components', label: 'Components', tone: { bg: '#f7e9dc', fg: '#98511a' }, href: `${base}/domain/components/` }],
       status: { id: 'evergreen', label: 'Evergreen', dot: '#1f5e46' },
       updated: '2026.08',
       chapterCount: 3,
+      sourceLine: 'Hero · HubCard · Stats — the hub furniture, on the hub itself',
     }}
   />
 </ul>
+</div>
 
 ## FacetNav
 
@@ -119,3 +130,19 @@ The "linked mentions" panel under every note in this garden is computed by the p
 />
 
 Scroll to the foot of this page for the real one — this chapter is itself a wikilink target.
+
+## LocalGraph
+
+The same index answers a second question — *what is one hop away from here?* — and `index.localGraph(id, titleOf)` returns it as a list of neighbours, inbound first. The component draws them on an ellipse around the note, inbound solid and outbound dashed; a neighbour may carry its own `color` (a second collection, say). Here at the column's width, with sample data; the real one sits in the sidebar of every note that has links:
+
+<div style="max-width: 300px">
+  <LocalGraph
+    centerTitle="Wiki & browse"
+    neighbors={[
+      { id: 'kitchen-sink', title: 'Kitchen sink', href: `${base}/kitchen-sink/`, dir: 'in' },
+      { id: 'design-tokens', title: 'Two-layer palette', href: `${base}/design-tokens/`, dir: 'out' },
+      { id: 'three-way-split', title: 'The three-way split', href: `${base}/three-way-split/`, dir: 'out' },
+      { id: 'checks', title: 'The checks', href: `${base}/checks/`, dir: 'in', color: 'var(--color-accent4)' },
+    ]}
+  />
+</div>

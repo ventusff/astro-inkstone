@@ -8,10 +8,15 @@ navLabel: Content & typography
 import Callout from 'astro-inkstone/components/Callout.astro';
 import Chip from 'astro-inkstone/components/Chip.astro';
 import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
 import Steps from 'astro-inkstone/components/Steps.astro';
 import Stats from 'astro-inkstone/components/Stats.astro';
 import PaperCard from 'astro-inkstone/components/PaperCard.astro';
 import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="Content & typography">
+  The pieces prose is built from. Each one consumes only the semantic tier of the tokens — re-skin the palette and all of them follow.
+</PartHero>
 
 ## Callout
 
@@ -23,7 +28,7 @@ Five variants; `title` overrides the built-in label. The [[kitchen-sink]] shows 
 
 ## Chip
 
-Inline badges for status and categories: <Chip variant="teal">stable</Chip> <Chip variant="mustard">beta</Chip> <Chip variant="violet">research</Chip> — or a custom tone for topic palettes: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>custom tone</Chip>
+Inline badges for status and categories: <Chip variant="teal">stable</Chip> <Chip variant="mustard">beta</Chip> <Chip variant="violet">research</Chip> <Chip variant="orange">new</Chip> — or a custom tone for topic palettes: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>custom tone</Chip>
 
 ## Grid
 
@@ -55,9 +60,9 @@ A markdown list on a vertical rail:
 
 <Steps>
 1. Add the two submodules and the `file:` dependencies.
-2. Import `tokens.css` and `base.css` in your global stylesheet.
+2. Import `tokens.css`, `base.css` and (for a wiki) `browse.css` in your global stylesheet.
 3. Wire `siteMarkdown()` into `astro.config`.
-4. Override the tier-one palette with your identity color.
+4. Override the tier-one palette with your identity pigments.
 </Steps>
 
 ## Stats
@@ -65,7 +70,7 @@ A markdown list on a vertical rail:
 <Stats
   items={[
     { v: '2', k: 'token tiers' },
-    { v: '20+', k: 'components' },
+    { v: '23', k: 'components' },
     { v: '4', k: 'probe viewports' },
     { v: '0', k: 'build steps' },
   ]}
@@ -87,6 +92,10 @@ The survey workhorse — alias, full title, venue tags, author meta, links, and 
   **Key idea**: attention alone, no recurrence — every token attends to every other in one step, and the whole sequence trains in parallel.
   <Fragment slot="diff">The architecture nearly every large language model since has built on.</Fragment>
 </PaperCard>
+
+Under a deep-dive heading, a one-line plain-language gloss (`.speak`) tells the reader what a module *does* before the mechanism:
+
+<p class="speak">Attention is a soft lookup table: every token asks "who is relevant to me?" and gets a weighted mix of the answers.</p>
 
 ## References
 

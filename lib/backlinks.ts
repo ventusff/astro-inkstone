@@ -24,6 +24,9 @@
  * Corpora beyond one collection are the site's business: map extra
  * collections into `BacklinkDoc`s under a namespace of your choosing
  * (e.g. `cards/<slug>`) and concatenate before calling `build`.
+ *
+ * `index.localGraph(id, titleOf)` turns the same index into the one-hop
+ * neighbourhood that components/LocalGraph.astro draws in the sidebar.
  */
 import { buildWikilinkResolver, extractWikilinks, maskNonProse } from 'astro-inkbrush/wikilinks';
 
@@ -54,6 +57,21 @@ export interface BacklinkIndex {
   /** source id → the targets it points at (unresolved included) */
   outbound: Map<string, { target: string; resolved: string | null }[]>;
   broken: { sourceId: string; target: string }[];
+  /**
+   * One-hop neighbourhood of `id`: inbound sources first, then resolved
+   * outbound targets, de-duplicated, capped at `cap` (default 12). Shape is
+   * what components/LocalGraph.astro takes; add a `color` per neighbour
+   * (e.g. by collection) before passing it on.
+   */
+  localGraph: (id: string, titleOf: (id: string) => string, cap?: number) => GraphNeighbor[];
+}
+
+/** One node of a note's link neighbourhood. */
+export interface GraphNeighbor {
+  id: string;
+  title: string;
+  href: string;
+  dir: 'in' | 'out';
 }
 
 export interface BacklinksOptions {
@@ -148,7 +166,23 @@ export function createBacklinks(options: BacklinksOptions) {
       outbound.set(doc.id, out);
     }
 
-    const index: BacklinkIndex = { inbound, outbound, broken };
+    const localGraph = (id: string, titleOf: (id: string) => string, cap = 12): GraphNeighbor[] => {
+      const seen = new Set<string>([id]);
+      const out: GraphNeighbor[] = [];
+      for (const item of inbound.get(id) ?? []) {
+        if (seen.has(item.sourceId)) continue;
+        seen.add(item.sourceId);
+        out.push({ id: item.sourceId, title: item.title, href: item.href, dir: 'in' });
+      }
+      for (const o of outbound.get(id) ?? []) {
+        if (!o.resolved || seen.has(o.resolved)) continue;
+        seen.add(o.resolved);
+        out.push({ id: o.resolved, title: titleOf(o.resolved), href: urlFor(o.resolved), dir: 'out' });
+      }
+      return out.slice(0, cap);
+    };
+
+    const index: BacklinkIndex = { inbound, outbound, broken, localGraph };
     if (import.meta.env.PROD) prodCache = index;
     return index;
   }

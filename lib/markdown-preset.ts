@@ -187,7 +187,9 @@ export function siteMarkdown(opts: SiteMarkdownOptions = {}): MarkdownConfig {
     // Dual themes: defaultColor:false emits both --shiki-light/--shiki-dark;
     // the stylesheet picks one in a single place — no !important tug-of-war.
     shikiConfig: {
-      themes: { light: 'github-light', dark: 'github-dark' },
+      // the pair whose token colors all clear AA on the paper and dusk code
+      // grounds (the plain github-light/dark keywords and comments do not)
+      themes: { light: 'github-light-high-contrast', dark: 'github-dark-default' },
       defaultColor: false,
       ...(codeFrame
         ? {

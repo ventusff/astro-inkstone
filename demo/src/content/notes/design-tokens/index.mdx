@@ -1,6 +1,8 @@
 ---
 title: Two-layer palette and themes
-description: The raw palette and the semantic tokens, the light/dark discipline, and the single entry point for site identity.
+brand: Palette & themes
+subtitle: "two tiers, two contexts\nthe pigments and the paper"
+description: The raw pigment palette and the two semantic contexts built on it — reading column and browse shelf — the light/dark discipline, the audited contrast, and the single entry point for site identity.
 kind: reference
 domains: [design]
 tags: [tokens, theming, dark-mode, fonts]
@@ -10,42 +12,65 @@ updated: 2026-08-22
 aliases: [tokens]
 ---
 
-## Two tiers
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
 
-`styles/tokens.css` is the single source of truth for the site's colors, in two tiers:
+<Hero kicker="Reference · the token layer" title="Two-layer palette and themes" meta="one palette · two contexts · both themes hand-set · every text value measured for AA">
+  `styles/tokens.css` is the single source of truth for every color in the system. It is written in two tiers — a **raw palette** of paper-and-ink pigments, and **semantic tokens** built on it — and the semantic tier comes in two contexts, because a wiki has two kinds of page: the column you read, and the shelf you browse.
+</Hero>
 
-**Tier 1: the raw palette** — constants named after paper and ink pigments, unchanged across themes. Papers: plain, silk, page, slip, note (page ground / soft surface / card face / code ground / math ground); inks: black, blue-black, faint, hairline; pigments: vermilion, indigo, ochre, violet; plus a dedicated "night" and "moon-white" set for dark. Variables start with `--p-`:
+<Part title="The tiers" />
 
-```css title="tokens.css (tier 1, excerpt)"
---p-paper: #fbf9f4; /* plain · page ground */
---p-ink: #25313a; /* black · body text */
---p-vermilion: #c14b02; /* vermilion · primary accent (AA-darkened, 4.7:1) */
---p-vermilion-raw: #fe5d01; /* vermilion · raw (glyphs/graphics only, never body links) */
+## Tier 1: pigments
+
+The raw palette is a painter's box, theme-invariant, named `--p-*`. **Papers**: the browse ground 纸 and its card face 页, the reading ground 素 (a notch cooler, easier on the eyes over an hour) and its soft surface 帛, the white card, the code and math grounds. **Inks**: a warm set for the shelf and a neutral set for the column, each in three strengths. **Binding**: the shelf rule, the pill border, the two hairlines. **Pigments**, the colors that carry meaning:
+
+```css title="tokens.css (tier 1, the pigments)"
+--p-zhu: #7d3a3a; /* 朱 · wine red — browse accent, the site's mark */
+--p-shi: #b6552e; /* 石 · burnt orange — reading accent: links, numbers, kickers */
+--p-shi-text: #8f3f1f; /* 石 · small-text tier (AA on its own tint) */
+--p-zhe: #c08a2c; /* 赭 · ochre — lines and borders */
+--p-dai: #2a6f6b; /* 黛 · teal — secondary content accent */
+--p-zi: #6b4ec4; /* 紫 · violet — "system" semantics */
 ```
 
-**Tier 2: semantic tokens** — purpose-named variables like `--color-bg`, `--color-ink`, `--color-accent`. Light points them at tier 1 in `:root`; dark re-points the whole set inside `[data-theme='dark']`. **The component layer (`base.css` and every component) may consume only this tier** — new rules must not contain raw color values. That is the package's hard discipline.
+Plus a **night** set for the dark edition: dusk grounds, moon-white inks, and a brightened twin of every pigment.
+
+## Two contexts, one palette
+
+Tier 2 is what the component layer consumes, and it has two faces:
+
+| Context | Tokens | Ground | Ink | Accent | Where |
+| --- | --- | --- | --- | --- | --- |
+| reading column | `--color-*` | 素 `#fbf9f4` | neutral `#1f2024` | 石 burnt orange | note pages, every content component, `base.css` |
+| browse shelf | `--wb-*` | 纸 `#faf6ec` | warm `#2b2622` | 朱 wine red | landing and facet pages, the wiki components, `browse.css` |
+
+The column is the quieter of the two — you read it for an hour. The shelf is warmer and set in a display serif — you glance at it and pick. A page enters the shelf context with one class, `wb-root`, on its body; inside it the chrome tokens (`--color-bg`, `--color-accent`, …) are re-mapped onto the shelf's, so a nav bar written once sits correctly on both grounds. **The component layer may consume only tier 2** — `base.css`, `browse.css` and every component; new rules must not contain a raw color value. That is the package's hard discipline.
+
+<Part title="Identity and discipline" />
 
 ## How a site customizes identity
 
-Override tier 1. Swap `--p-vermilion` for your brand color and the semantic and component layers follow untouched — both themes at once:
+Override tier 1. Swap the pigments for your own and both contexts and the whole component layer follow — light and dark at once:
 
 ```css title="your site.css"
 :root {
-  --p-vermilion: #b03a48;
-  --p-vermilion-text: #93303c; /* the small-text step is darkened separately, see below */
+  --p-shi: #b03a48; /* your reading accent */
+  --p-shi-text: #93303c; /* its small-text step is darkened separately, see below */
+  --p-zhu: #3b4a7a; /* your shelf accent and mark */
 }
 ```
 
-(Re-mapping tier-2 semantic tokens onto your own palette is equally supported when your design system already has one.) This garden deliberately overrides nothing — what you are reading is the package's bare face, the same one [[paper-and-ink]] argues for.
+Re-mapping tier 2 onto your own palette is equally supported when your design system already has one — point `--color-*` and `--wb-*` at your variables. This garden deliberately overrides nothing: what you are reading is the package's bare face, the same one [[paper-and-ink]] argues for.
 
 ## Contrast is audited
 
-Every value in the tokens is vetted for WCAG AA on every background it sits on: small text starts at 4.5:1; accent colors get an independently darkened **text step** (`--p-vermilion-text`, `--p-mustard-text`), because when the accent orange is used for 12.5px labels its background is often its own light tint; the dark theme carries its own brightened set. Before changing any value, know every surface it sits on.
+Every text-tier value is vetted for WCAG AA on every surface it sits on: small text starts at 4.5:1; an accent used as small text gets an independently darkened **text step** (`--p-shi-text`, `--p-zhe-text`), because a 12px label in the accent color usually sits on the accent's own tint; the faint inks are set at the darkest shade that still reads as faint — `#6a6d74` on the reading ground is 4.9:1, and still 4.5:1 on the soft surface; the dark edition carries its own brightened set, measured against the night grounds. The package ships the measurement as a tool: `scripts/contrast_probe.mjs` walks the rendered demo in a real browser, both themes, and reports every text node under the bar ([[checks#the-contrast-probe]]). Before changing any value, know every surface it sits on.
 
 ## Light is the identity
 
-The theme deliberately does **not** read `prefers-color-scheme`: a page must never flip its own theme under the reader. Dark activates only through `[data-theme='dark']`, toggled by the site's own switch (the sun/moon button at the right of this site's nav bar; the choice is stored under the `inkstone-theme` key in `localStorage` and replayed by the ThemeInit inline script before first paint, so dark-theme readers never see a cream flash).
+The theme deliberately does **not** read `prefers-color-scheme`: a page must never flip its own theme under the reader. Dark activates only through `[data-theme='dark']`, toggled by the site's own switch (the sun/moon button at the right of this site's nav bar; the choice is stored under the `inkstone-theme` key in `localStorage` and replayed by the ThemeInit inline script before first paint, so dark-theme readers never see a cream flash). Dark is not an inversion but a second hand-set edition: dusk grounds, moon-white inks, re-brightened pigments — [[paper-and-ink#dark-is-a-second-edition-not-an-inversion]].
 
 ## Fonts live here too
 
-The code font is a fixed-charset subset of Maple Mono CN (ASCII + box-drawing + the common-3500 Hanzi + the union of existing content): Latin at 0.6em, Hanzi at 1.2em — **a Hanzi is exactly two character cells wide**, so box-drawing diagrams align even in mixed Chinese/Latin text. The subset recipe and regeneration script ship with the package (`fonts/build_font_subset.py`); when content needs glyphs beyond coverage, re-run it and commit the woff2. The body serif and UI sans stacks are defined in the tokens as well (`--font-body`, `--font-ui`, `--font-mono`). Seeing them all in action? The [[kitchen-sink#code-frames|code frames]] section is set entirely in the subset.
+Four stacks. `--font-display` is the shelf's face — an optical-size serif (Source Serif 4, with Noto Serif SC for Hanzi) for mastheads and shelf titles; this demo self-hosts it through `@fontsource`, and a site that doesn't falls back to the reading face. `--font-body` is the reading column's — a system serif stack led by Charter and Iowan Old Style, with the display face stepping in where they are absent. `--font-ui` is Inter (Noto Sans SC for Hanzi) for headings, chrome and small print. `--font-mono` is a fixed-charset subset of Maple Mono CN (ASCII + box-drawing + the common-3500 Hanzi + the union of existing content): Latin at 0.6em, Hanzi at 1.2em — **a Hanzi is exactly two character cells wide**, so box-drawing diagrams align even in mixed Chinese/Latin text. The subset recipe and regeneration script ship with the package (`fonts/build_font_subset.py`); when content needs glyphs beyond coverage, re-run it and commit the woff2. The [[kitchen-sink#code-frames|code frames]] are set entirely in the subset.

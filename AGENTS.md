@@ -23,14 +23,22 @@ whose content is the package's own manual.
 
 ## Hard rules
 
-- **Two-tier token discipline**: `base.css` and components may only consume
-  second-tier semantic tokens (`--color-*`, `--font-*`, `--radius`…). New
-  rules must not contain raw color values. Identity customization happens in
-  tier one (`--p-*`) or by re-mapping tier two — both are supported paths.
-- **Contrast is audited**: token values are chosen for WCAG AA on every
-  background they appear on (body text 4.5:1 minimum; accent-colored text
-  has its own darkened text-tier). When changing a color, check every
-  surface it sits on.
+- **Two-tier token discipline**: `base.css`, `browse.css` and components may
+  only consume second-tier semantic tokens — `--color-*` (the reading
+  column), `--wb-*` (the browse shelf), `--font-*`, `--radius`…. New rules
+  must not contain raw color values. Identity customization happens in tier
+  one (`--p-*`, the pigments) or by re-mapping tier two — both are supported
+  paths.
+- **Two contexts, one palette**: note pages are the reading column
+  (`--color-*`: cool paper, 石 burnt orange accent); landing and facet pages
+  are the browse shelf (`body.wb-root` + `--wb-*`: warm paper, display serif,
+  朱 wine-red mark). `browse.css` re-maps the chrome tokens inside
+  `.wb-root`, so chrome written against `--color-*` works on both grounds.
+- **Contrast is measured**: every text color must clear WCAG AA on the
+  surface it actually renders on (small text 4.5:1; an accent used as small
+  text has its own darkened `-text` tier). `node scripts/contrast_probe.mjs
+  demo/dist` samples the rendered demo in both themes and must report
+  `TEXT BELOW AA: 0` before a style commit.
 - **Light is the identity**: never read `prefers-color-scheme`; dark styles
   activate only under `[data-theme='dark']`.
 - The table double-wrapper (`.tbl-wrap` container-query container +
@@ -39,7 +47,9 @@ whose content is the package's own manual.
   breaks).
 - The font subset is a fixed recipe (constants at the top of
   `fonts/build_font_subset.py`). If content needs glyphs beyond coverage,
-  re-run the script and commit the regenerated woff2.
+  re-run the script and commit the regenerated woff2. The display serif and
+  UI sans are not shipped: `--font-display` / `--font-ui` name the
+  `@fontsource` families the demo self-hosts, and fall back to system faces.
 - The engine dependency is deliberately **not** a peerDependency: the engine
   is distributed as a git submodule, not on npm, and a peer declaration
   would send package managers to the registry for a package that isn't
@@ -66,7 +76,11 @@ whose content is the package's own manual.
   backlink-index builder (`createBacklinks`) on the engine's own resolver.
 - The demo is the wiki-shape reference implementation: a taxonomy garden
   (registry in `demo/src/content/notes/_meta/`, browse routes under
-  `demo/src/pages/`) whose notes are the package manual.
+  `demo/src/pages/`) whose notes are the package manual. Notes open with
+  `<Hero>` (chapters with `<PartHero kicker={props.partLabel}>`); the layout
+  renders the taxonomy strip, the hub crumb, linked mentions, prev/next and
+  the footer around them, and the sidebar carries the note's brand, the
+  generated ToC and its local link graph.
 - `components/DemoMount.astro` renders mount markup only; the demo-module
   loader is site-owned (call your `mountAllDemos()` from the site layout).
 
@@ -77,10 +91,12 @@ npm install                          # repo root: package deps
 cd demo && npm install
 npm run build                        # build + engine check-dist (postbuild)
 npm run dev                          # the manual site
-node ../scripts/ui_probe.mjs dist    # render-layer probe (needs Chrome)
+node ../scripts/ui_probe.mjs dist        # render-layer probe (needs Chrome)
+node ../scripts/contrast_probe.mjs dist  # WCAG contrast of every text run, both themes
 ```
 
-Style/component changes go through a demo build + probe before committing.
+Style/component changes go through a demo build + both probes before
+committing.
 Comments and documentation are written in English; the README ships in
 English and Simplified Chinese (`README.zh-CN.md`) — keep both in sync.
 Commit messages: English, entirely — subject and body.

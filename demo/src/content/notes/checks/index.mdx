@@ -1,6 +1,8 @@
 ---
 title: The checks
-description: check-content, check-wikilinks, check-dist, ui_probe — one gate per layer, each catching a class of silent failure that ships under a green build.
+brand: The checks
+subtitle: "one gate per layer\nsource · links · output · render · contrast"
+description: check-content, check-wikilinks, check-dist, ui_probe, contrast_probe — one gate per layer, each catching a class of silent failure that ships under a green build.
 kind: reference
 domains: [tooling]
 tags: [ci, checks]
@@ -9,9 +11,13 @@ created: 2026-08-01
 updated: 2026-08-22
 ---
 
-## Four gates, four layers
+import Hero from 'astro-inkstone/components/Hero.astro';
 
-A green build does not mean the pages are fine. This toolchain places one check at each layer, each catching a class of "build green, page broken" silent failure:
+<Hero kicker="Reference · tooling" title="The checks" meta="five checks · three from the engine, two from this package · all green before a commit">
+  A green build does not mean the pages are fine. This toolchain places one check at each layer, each catching a class of "build green, page broken" silent failure — and two of them look at pages the way a reader does, in a real browser.
+</Hero>
+
+## Five gates, five layers
 
 | Check | Ships with | Looks at | When to run |
 | --- | --- | --- | --- |
@@ -19,6 +25,7 @@ A green build does not mean the pages are fine. This toolchain places one check 
 | check-wikilinks | engine, `scripts/check-wikilinks.mjs` | the `[[wikilink]]` graph | content-repo CI, or after renaming a note |
 | check-dist | engine, `scripts/check-dist.mjs` | the `astro build` output | after every build (postbuild) |
 | ui_probe | this package, `scripts/ui_probe.mjs` | pages rendered in a real browser | after style/layout changes |
+| contrast_probe | this package, `scripts/contrast_probe.mjs` | every text node's contrast, both themes | after any token change |
 
 ## check-content: the source layer
 
@@ -67,7 +74,15 @@ node ../scripts/ui_probe.mjs dist   # serves dist itself; pass a baseUrl to prob
 
 Green means the report's last line reads `PAGES WITH FINDINGS: 0`.
 
+## The contrast probe
+
+The tokens claim AA, so the claim is measured rather than asserted. `contrast_probe` loads every page of `dist` in a real browser, in the light theme and again in the dark one, and for every visible text node computes the WCAG ratio between its rendered color and the ground it actually sits on — the nearest opaque ancestor background, with translucent layers composited in. Small text is held to 4.5:1, large text (18px bold, or 24px) to 3:1; the report names the page, the selector, the two colors and the ratio of every node under the bar. Tinted chips, `color-mix()` grounds and the night palette are all measured as rendered, so a token change that quietly drops a label to 3.8:1 shows up the same evening:
+
+```bash title="after a build, both themes"
+node ../scripts/contrast_probe.mjs dist
+```
+
 <div class="callout system">
   <div class="callout-title">The style-change routine</div>
-  Any change to the package's <code>base.css</code> or components goes through this demo's build first, then ui_probe over the output — both green before committing. The demo doubles as the package's test bed.
+  Any change to the package's stylesheets or components goes through this demo's build first, then <code>ui_probe</code> and <code>contrast_probe</code> over the output — all green before committing. The demo doubles as the package's test bed.
 </div>

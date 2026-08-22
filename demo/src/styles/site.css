@@ -1,45 +1,41 @@
 /* ============================================================
    site.css — this site's (the demo's) own styles: chrome only
-   (nav bar, sidebar, browse shelves, search palette).
-   Content-layer styles (typography/code/tables/callouts/figures/KaTeX/
-   mermaid/print) all come from the package's base.css; palette and fonts
-   from the package's tokens.css. A site customizes identity by overriding
+   (the two-column note shell, the sidebar and its table of contents,
+   the search palette, the mobile drawer).
+
+   Everything a reader sees inside the column comes from the package:
+   palette and fonts from tokens.css, the content layer from base.css, the
+   browse shelf from browse.css. A site customizes identity by overriding
    tier one of the tokens (--p-*); this demo deliberately overrides none —
    what you see is the package's bare face.
    ============================================================ */
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+
 @import 'astro-inkstone/styles/tokens.css';
 @import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css';
 
-/* ============================== wiki-component token bridge ============ */
-/* The package's wiki components (NoteCard, FacetNav, …) theme themselves
-   through `--wb-*` variables with self-contained fallbacks. Mapping them onto
-   the semantic tokens here keeps them in step with both themes for free. */
-:root {
-  --wb-bg: var(--color-bg);
-  --wb-bg-card: var(--color-bg-card);
-  --wb-border: var(--color-line);
-  --wb-border-soft: var(--color-line);
-  --wb-rule: var(--color-ink-faint);
-  --wb-sans: var(--font-ui);
-  --wb-text: var(--color-ink);
-  --wb-text-dim: var(--color-ink-faint);
-  --wb-text-muted: var(--color-ink-faint);
-  --wb-text-soft: var(--color-ink-soft);
-  --wb-wine: var(--color-accent);
+/* the plain-language gloss label follows the page language */
+html[lang='zh-CN'] {
+  --speak-label: '说人话 →';
 }
 
 /* ============================================================ shell ==== */
 
 .layout {
-  min-height: calc(100vh - var(--nav-h));
   display: grid;
   grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  gap: 0;
   max-width: var(--shell-w);
   margin: 0 auto;
-  /* The sidebar is a sticky 100vh box, so its own background can only ever be
-     one screen tall — which is why an older layout showed a hard colour seam
-     partway down every long page. Painting the tint and its edge on the grid
-     instead makes the column run the full height of the document. */
+  min-height: calc(100vh - var(--nav-h));
+  /* The sidebar is a sticky viewport-tall box, so its own background could
+     only ever be one screen tall; the column's tint and its right edge are
+     painted on the grid instead, so they run the full document height. */
   background: linear-gradient(
     to right,
     var(--color-bg-soft) 0 calc(var(--sidebar-w) - 1px),
@@ -50,22 +46,23 @@
 
 .sidebar {
   position: sticky;
-  top: var(--nav-h); /* sit below the nav bar, never slide under it */
+  top: var(--nav-h); /* below the nav bar, never under it */
   align-self: start;
   height: calc(100vh - var(--nav-h));
   overflow-y: auto;
   scrollbar-width: thin;
-  padding: 26px 20px 48px;
+  padding: 28px 22px 40px;
   font-family: var(--font-ui);
   font-size: 14px;
 }
 
 main.note-main {
-  padding: 48px 56px 120px 52px;
+  padding: 56px 64px 120px 56px;
   min-width: 0;
 }
 .col {
   max-width: var(--maxw);
+  margin: 0;
 }
 
 /* ---------------------------------------------------------- sidebar ---- */
@@ -75,30 +72,23 @@ main.note-main {
   display: block;
   text-decoration: none;
 }
-/* the brand is chrome, not the page's title — a plain div carrying every
-   property an h1 would have got from the UA (block, 18px, 700, no margin) */
-.sidebar .brand-title {
+/* the brand is the note's own short title — chrome, not the page's h1 */
+.sidebar .brand {
   font-family: var(--font-body);
   font-size: 18px;
   font-weight: 700;
   margin: 0 0 4px;
   letter-spacing: -0.01em;
-}
-.sidebar .brand-title .glyph {
-  color: var(--color-brand);
-  margin-right: 7px;
-}
-.sidebar .brand-title em {
-  font-style: normal;
-  color: var(--color-accent);
+  line-height: 1.3;
 }
 .sidebar .subtitle {
   color: var(--color-ink-faint);
   font-size: 12px;
-  margin-bottom: 16px;
-  line-height: 1.45;
+  margin-bottom: 18px;
+  line-height: 1.4;
 }
 
+/* ---- table of contents ---- */
 .toc {
   list-style: none;
   padding: 0;
@@ -108,269 +98,86 @@ main.note-main {
   margin: 0;
 }
 .toc a {
-  /* number and title in two columns: a wrapped title aligns with its own first character, not the far left */
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 7px;
+  display: block;
   padding: 5px 8px;
   border-radius: 4px;
   color: var(--color-ink-soft);
   text-decoration: none;
+  border-bottom: none;
   line-height: 1.35;
-  text-wrap: pretty; /* no orphan word when the title wraps */
+  text-wrap: pretty;
 }
 .toc a:hover {
   background: var(--color-accent-soft);
   color: var(--color-ink);
 }
 .toc a.active {
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   font-weight: 600;
 }
+/* part labels ("PART I · Foundations") */
 .toc .group {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 9px;
   text-transform: uppercase;
-  font-size: 11.5px;
+  font-size: 10.5px;
   letter-spacing: 0.12em;
   color: var(--color-ink-faint);
-  padding: 16px 8px 4px;
+  padding: 14px 8px 4px;
   font-weight: 600;
 }
-.toc .group a {
-  display: inline;
-  padding: 0;
-  color: inherit;
-  letter-spacing: inherit;
-  white-space: nowrap; /* never break inside the chapter name; let the subtitle wrap instead */
+.toc .nested {
+  padding-left: 12px;
+  font-size: 13px;
 }
-.toc .group a:hover {
-  background: none;
-  color: var(--color-accent);
-}
-.toc .group .n {
-  font-family: var(--font-mono);
-  color: var(--color-accent);
-  letter-spacing: 0;
-}
-.toc .group .zh {
-  text-transform: none;
-  letter-spacing: 0.02em;
-  font-weight: 500;
-}
+/* hub rails: the current page row + its own expanded section list */
 .toc .here {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 7px;
-  margin-bottom: 7px;
+  display: block;
   padding: 5px 8px;
   color: var(--color-ink);
   font-weight: 600;
 }
 .toc ul.sub {
   list-style: none;
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   padding-left: 14px;
   font-size: 13px;
-  border-left: 1px solid var(--color-line);
-  margin-left: 10px;
 }
-.toc ul.sub a {
-  padding: 3px 8px;
+.toc ul.sub .idx {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-accent-text);
+  margin-right: 6px;
 }
-.toc ul.sub .idx,
 .toc .num-col {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   margin-right: 6px;
 }
-
-/* ----- part structure: sidebar part heads / cover grouping ----- */
-.sidebar .part-head {
-  margin: 22px 0 6px;
-  padding: 0 0 4px;
-  border-bottom: 1px solid var(--color-line);
-  font-family: var(--font-ui);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-ink-faint);
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-.sidebar .part-head[data-part='reference'] > span:first-child {
-  color: var(--color-accent2);
-}
-.sidebar .part-head[data-part='ops'] > span:first-child {
-  color: var(--color-accent4);
-}
-.sidebar .part-head .zh {
-  font-weight: 400;
-  letter-spacing: 0.04em;
-}
-.part-block {
-  margin-top: 30px;
-}
-.part-title {
-  font-size: 17px;
-  margin-bottom: 10px;
-}
-.part-title .part-sub {
-  margin-left: 10px;
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--color-ink-faint);
-  letter-spacing: 0.06em;
-}
-.part-block[data-part='reference'] .part-title {
-  color: var(--color-accent2);
-}
-.part-block[data-part='ops'] .part-title {
-  color: var(--color-accent4);
+.toc .katex {
+  font-size: 1em;
 }
 
-/* ================================================== browse chrome ===== */
-
-main.browse {
-  padding: 44px 24px 110px;
-}
-.browse-col {
-  max-width: 62rem;
-  margin: 0 auto;
-}
-
-.wb-hero {
-  margin-bottom: 20px;
-}
-.wb-kicker {
-  font: 600 11.5px/1 var(--font-ui);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--color-ink-faint);
-  margin: 0 0 10px;
-}
-.wb-kicker .sep {
-  margin: 0 0.4em;
-  opacity: 0.6;
-}
-.wb-title {
-  font-size: 34px;
-  letter-spacing: -0.01em;
-  margin: 0 0 10px;
-}
-.wb-title .en {
-  display: block;
-  font: 400 13px/1.4 var(--font-ui);
-  letter-spacing: 0.05em;
-  color: var(--color-ink-faint);
-  margin-top: 6px;
-}
-.wb-lede {
-  font-size: 15.5px;
-  line-height: 1.75;
-  color: var(--color-ink-soft);
-  max-width: 46rem;
-  margin: 0;
-}
-
-.wb-shelf {
-  margin-top: 40px;
-}
-.wb-shelf-head {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  border-bottom: 1px solid var(--color-line);
-  padding-bottom: 6px;
-}
-.wb-shelf-title {
-  font-size: 19px;
-  margin: 0;
-  /* shelves tint their own heading via --shelf-fg (set inline per domain) */
-}
-.wb-shelf-count {
-  margin-left: auto;
-  font: 500 12px/1 var(--font-ui);
-  color: var(--color-ink-faint);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.wb-shelf-count:hover {
-  color: var(--color-accent);
-}
-.wb-shelf-desc {
-  font: 400 12.5px/1.5 var(--font-ui);
-  color: var(--color-ink-faint);
-  margin: 8px 0 0;
-}
-.wb-grid {
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
-  gap: 14px;
-  margin: 16px 0 0;
-  padding: 0;
-}
-
-.legend {
-  margin-top: 3.2rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--color-line);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  font: 400 12px/1.6 var(--font-ui);
-  color: var(--color-ink-faint);
-}
-.legend-item {
+/* ---- language toggle (notes that exist in more than one locale) ---- */
+.lang-toggle {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.legend .dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  display: inline-block;
-}
-.legend-links {
-  margin-left: auto;
-  display: inline-flex;
-  gap: 16px;
-}
-.legend-links a {
-  color: var(--color-accent);
-  text-decoration: none;
-}
-
-/* --------- sidebar extras for the garden: language chips --------------- */
-.lang-row {
-  display: flex;
-  gap: 6px;
-  margin: 2px 0 6px;
-}
-.lang-chip {
-  font: 500 11px/1 var(--font-ui);
-  padding: 4px 9px;
+  gap: 0;
+  margin: 10px 0 4px;
   border: 1px solid var(--color-line);
-  border-radius: 999px;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 12px;
+}
+.lang-toggle a,
+.lang-toggle span {
+  padding: 3px 10px;
+  border-bottom: none;
   color: var(--color-ink-soft);
   text-decoration: none;
 }
-.lang-chip:hover {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
-}
-.lang-chip.current {
-  background: var(--color-ink);
-  border-color: var(--color-ink);
+.lang-toggle .active {
+  background: var(--color-accent);
   color: var(--color-bg);
+  font-weight: 600;
 }
 
 /* =================================================== search palette ==== */
@@ -385,7 +192,7 @@ dialog.se-dialog {
   height: 100%;
 }
 dialog.se-dialog::backdrop {
-  background: rgba(18, 20, 24, 0.5);
+  background: color-mix(in srgb, var(--color-overlay) 55%, transparent);
   backdrop-filter: blur(2px);
 }
 .se-box {
@@ -394,7 +201,7 @@ dialog.se-dialog::backdrop {
   background: var(--color-bg-card);
   border: 1px solid var(--color-line);
   border-radius: 12px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--shadow);
   overflow: hidden;
   font-family: var(--font-ui);
 }
@@ -408,10 +215,8 @@ dialog.se-dialog::backdrop {
   padding: 15px 18px;
   outline: none;
 }
-/* the UA ring was suppressed above and nothing replaced it, so a keyboard
-   reader had no focus indicator at all. Drawn INSIDE the field: `.se-box`
-   clips overflow, which would eat an outset ring. --color-accent is 4.7:1 on
-   the light card and 7.9:1 on the dark one, both past the 3:1 UI minimum. */
+/* the UA ring is suppressed above, so a ring is drawn INSIDE the field:
+   `.se-box` clips overflow and would eat an outset one */
 .se-input:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
@@ -465,7 +270,7 @@ dialog.se-dialog::backdrop {
 }
 .se-results mark {
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   border-radius: 2px;
   padding: 0 1px;
 }
@@ -491,20 +296,19 @@ dialog.se-dialog::backdrop {
   display: none;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1024px) {
   .layout {
     grid-template-columns: 1fr;
-    /* the sidebar is hidden here, so the gradient that paints its ground
-       must go too — otherwise a 280px cream band stands to the left of the
-       text, as if an invisible column were pinned underneath. */
+    /* no sidebar column, so no tinted band either */
     background: none;
   }
   .sidebar {
     display: none;
     position: static;
     height: auto;
-    border-right: none;
     border-bottom: 1px solid var(--color-line);
+    background: var(--color-bg-soft);
+    padding: 18px 22px;
   }
   body.nav-open .sidebar {
     display: block;
@@ -526,15 +330,7 @@ dialog.se-dialog::backdrop {
     border-color: currentColor;
   }
   main.note-main {
-    padding: 32px 20px 90px;
-  }
-  .col h1 {
-    font-size: 30px;
-  }
-  .col h2 {
-    font-size: 23px;
-    margin-top: 44px;
-    padding-top: 26px;
+    padding: 32px 22px 80px;
   }
   .pagination {
     grid-template-columns: 1fr;
@@ -548,23 +344,9 @@ dialog.se-dialog::backdrop {
   font-family: var(--font-ui);
   font-size: 12px;
 }
-.wiki-comments {
-  margin-top: 56px;
-  padding-top: 28px;
-  border-top: 1px solid var(--color-line);
-}
 
 @media print {
-  .site-nav,
-  .sidebar,
-  .pagination,
-  .wiki-comments {
+  .nav-toggle {
     display: none;
-  }
-  .layout {
-    grid-template-columns: 1fr;
-  }
-  main.note-main {
-    padding: 0;
   }
 }

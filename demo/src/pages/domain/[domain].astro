@@ -1,5 +1,5 @@
 ---
-/** /domain/<id>/ — browse by domain (only non-empty values prerender). */
+/** /domain/<id>/ — browse by domain: every note that carries it, primary or not. */
 import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
 import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
 import BrowseLayout from '../../layouts/BrowseLayout.astro';
@@ -27,11 +27,11 @@ const domains = groupByDomain(units).map((g) => ({ def: g.def, count: g.notes.le
 const tags = [...tagIndex(units).entries()].slice(0, 10).map(([tag, list]) => ({ tag, count: list.length }));
 ---
 
-<BrowseLayout title={`${def.label} · garden`} description={`${def.desc} (${notes.length} notes)`} crumbs={[{ label: def.label }]}>
+<BrowseLayout title={`${def.label} · ${def.zh}`} description={`${def.desc} (${notes.length} notes)`} crumbs={[{ label: def.label }]}>
   <header class="wb-hero">
-    <p class="wb-kicker">by domain</p>
-    <h1 class="wb-title" style={`color:${def.tone.fg}`}>{def.label}</h1>
-    <p class="wb-lede">{def.desc} — <strong>{notes.length}</strong> notes.</p>
+    <p class="wb-kicker" style={`--kicker-fg:${def.tone.fg}`}>By domain <span class="sep">·</span> 按方向</p>
+    <h1 class="wb-title">{def.label}<span class="en">{def.zh}</span></h1>
+    <p class="wb-lede">{def.desc} — <strong>{notes.length}</strong> notes, primary or secondary.</p>
   </header>
   <FacetNav base={facetBase} kinds={kinds} domains={domains} tags={tags} active={{ dim: 'domain', value: def.id }} />
   <ul class="wb-grid">

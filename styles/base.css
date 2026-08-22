@@ -8,7 +8,12 @@
    pagination, footers) · tables (with container-query card reflow) ·
    callouts · measured cards · chips · grids/steps · figures + lightbox ·
    hero · part dividers · paper cards · tags · demo stages · stats ·
-   references · wikilinks · CMS comment area · print.
+   reading paths · hub cards · references · wikilinks · CMS comment area ·
+   print.
+
+   The metrics are those of the reading column of a long-form technical
+   wiki: 18px serif body on an 820px column, sans headings, a burnt-orange
+   accent, chapter rules above every h2.
 
    Discipline: this file consumes ONLY tier-2 semantic tokens from
    tokens.css (--color-*, --font-*, --radius, …). New rules must not
@@ -40,7 +45,7 @@
 html {
   scroll-behavior: smooth;
   /* nav bar height + breathing room, so an anchor never lands under the bar */
-  scroll-padding-top: 64px;
+  scroll-padding-top: 56px;
 }
 
 body {
@@ -52,6 +57,10 @@ body {
   line-height: 1.62;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* the theme toggle cross-fades instead of snapping */
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
 }
 
 
@@ -65,48 +74,49 @@ h4 {
   letter-spacing: -0.012em;
 }
 .col h1 {
-  font-size: 40px;
-  line-height: 1.1;
-  margin: 0 0 10px;
+  font-size: 44px;
+  line-height: 1.05;
+  margin: 0 0 8px;
   font-weight: 800;
 }
 .col h2 {
-  font-size: 27px;
-  line-height: 1.25;
-  margin: 60px 0 14px;
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 64px 0 12px;
   font-weight: 700;
   border-top: 1px solid var(--color-line);
-  padding-top: 34px;
-  scroll-margin-top: 60px;
+  padding-top: 36px;
+  scroll-margin-top: 56px;
 }
 .col h3 {
-  font-size: 21px;
-  margin: 36px 0 8px;
+  font-size: 22px;
+  margin: 38px 0 8px;
   font-weight: 700;
-  scroll-margin-top: 60px;
+  scroll-margin-top: 56px;
 }
 .col h4 {
-  font-size: 15px;
+  font-size: 16px;
   margin: 22px 0 6px;
   font-weight: 700;
   color: var(--color-ink-soft);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-/* section numbers are injected by rehype-sections — never typed in MDX */
+/* section numbers are injected by the numbering preset — never typed in MDX */
 .col h2 .num,
 .col h3 .num {
   color: var(--color-accent);
   font-family: var(--font-mono);
   font-weight: 500;
-  margin-right: 11px;
-  vertical-align: 3px;
 }
 .col h2 .num {
-  font-size: 17px;
+  font-size: 18px;
+  margin-right: 12px;
+  vertical-align: 4px;
 }
 .col h3 .num {
-  font-size: 14px;
+  font-size: 15px;
+  margin-right: 10px;
   vertical-align: 2px;
 }
 /* an h2 straight after the jump list needs no rule — the box already drew one */
@@ -115,6 +125,7 @@ h4 {
   padding-top: 0;
   margin-top: 40px;
 }
+/* a page-footer is never the page's own h1: the footer slot takes prose */
 
 .col p {
   margin: 0 0 14px;
@@ -172,11 +183,12 @@ h4 {
 /* ----- code ----- */
 .col code {
   font-family: var(--font-mono-cjk);
-  font-size: 0.9em;
+  font-size: 0.92em;
   background: var(--color-bg-soft);
   padding: 1px 5px;
   border-radius: 3px;
-  color: var(--color-accent);
+  /* the text tier: inline code is small type on the soft surface */
+  color: var(--color-accent-text);
   overflow-wrap: break-word;
 }
 .col pre.astro-code {
@@ -213,12 +225,14 @@ h4 {
 :root[data-theme='dark'] .astro-code span {
   color: var(--shiki-dark);
 }
-/* GitHub's themes use the same comment color #6A737D in both variants: fine
-   on light (4.7:1) but only 3.36:1 on the dark code background. Shiki writes
-   colors as inline styles, so rewriting this one token by value is more
-   robust than swapping the whole theme. */
-:root[data-theme='dark'] .astro-code span[style*='--shiki-dark:#6A737D'] {
-  color: #9aa4ae;
+/* The light theme's comment color is tuned for a white code ground and lands
+   at 4.46:1 on this paper; Shiki writes colors as inline styles, so that one
+   token is rewritten by value to the faint ink (4.6:1). */
+.astro-code span[style*='--shiki-light:#66707b' i] {
+  color: var(--color-ink-faint);
+}
+:root[data-theme='dark'] .astro-code span[style*='--shiki-light:#66707b' i] {
+  color: var(--shiki-dark);
 }
 
 
@@ -244,7 +258,7 @@ h4 {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--color-ink-faint);
-  background: color-mix(in oklab, var(--color-code-bg) 60%, var(--bg-soft));
+  background: color-mix(in oklab, var(--color-code-bg) 60%, var(--color-bg-soft));
   border-bottom: 1px solid var(--color-line);
 }
 .code-frame .code-lang {
@@ -297,7 +311,7 @@ pre.astro-code .line.diff {
   padding: 0 22px;
 }
 pre.astro-code .line.highlighted {
-  background: color-mix(in oklab, var(--accent) 10%, transparent);
+  background: color-mix(in oklab, var(--color-accent) 10%, transparent);
 }
 pre.astro-code .line.diff.add {
   background: color-mix(in oklab, var(--color-accent2) 14%, transparent);
@@ -308,12 +322,12 @@ pre.astro-code .line.diff.add::before {
   margin-right: 8px;
 }
 pre.astro-code .line.diff.remove {
-  background: color-mix(in oklab, var(--seal) 12%, transparent);
+  background: color-mix(in oklab, var(--color-accent) 12%, transparent);
   opacity: 0.75;
 }
 pre.astro-code .line.diff.remove::before {
   content: '-';
-  color: var(--seal);
+  color: var(--color-accent);
   margin-right: 8px;
 }
 pre.astro-code.has-focused .line:not(.focused) {
@@ -328,7 +342,7 @@ pre.astro-code.has-focused:hover .line:not(.focused) {
   opacity: 1;
 }
 .highlighted-word {
-  background: color-mix(in oklab, var(--accent) 16%, transparent);
+  background: color-mix(in oklab, var(--color-accent) 16%, transparent);
   border-radius: 3px;
   padding: 1px 2px;
 }
@@ -423,7 +437,7 @@ pre.astro-code.has-focused:hover .line:not(.focused) {
   border: 1px solid var(--color-line);
   border-radius: var(--radius);
   padding: 14px 18px;
-  margin: 0 0 30px;
+  margin: 0 0 28px;
   font-family: var(--font-ui);
   font-size: 13px;
 }
@@ -440,7 +454,7 @@ pre.astro-code.has-focused:hover .line:not(.focused) {
   padding: 0;
   list-style: none;
   columns: 2;
-  column-gap: 26px;
+  column-gap: 24px;
 }
 .local-toc li {
   margin: 2px 0;
@@ -536,6 +550,27 @@ pre.astro-code.has-focused:hover .line:not(.focused) {
 }
 .page-foot code {
   font-family: var(--font-mono);
+}
+
+/* single-line small print at the foot of a note (components/PageFooter.astro) */
+footer.page-footer {
+  margin-top: 80px;
+  padding: 30px 0;
+  border-top: 1px solid var(--color-line);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--color-ink-faint);
+}
+footer.page-footer p {
+  margin: 0;
+}
+footer.page-footer a {
+  color: var(--color-ink-soft);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--color-line);
+}
+footer.page-footer a:hover {
+  color: var(--color-accent);
 }
 
 
@@ -935,17 +970,17 @@ table.tbl {
 }
 .chip.orange {
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   border-color: transparent;
 }
 .chip.teal {
-  background: color-mix(in srgb, var(--color-accent2) 18%, var(--color-bg));
+  background: color-mix(in srgb, var(--color-accent2) 12%, var(--color-bg));
   color: var(--color-accent2);
   border-color: transparent;
 }
 .chip.mustard {
-  background: color-mix(in srgb, var(--color-accent3) 22%, var(--color-bg));
-  color: var(--color-accent3);
+  background: color-mix(in srgb, var(--color-accent3) 16%, var(--color-bg));
+  color: var(--color-accent3-text);
   border-color: transparent;
 }
 .chip.violet {
@@ -1120,7 +1155,7 @@ dialog.lightbox {
   max-height: 96vh;
 }
 dialog.lightbox::backdrop {
-  background: rgba(12, 14, 18, 0.86);
+  background: var(--color-overlay);
 }
 dialog.lightbox img {
   display: block;
@@ -1134,14 +1169,14 @@ dialog.lightbox img {
 dialog.lightbox .cap {
   font-family: var(--font-ui);
   font-size: 12.5px;
-  color: #d8d4cd;
+  color: var(--color-overlay-ink);
   padding: 8px 2px 0;
   text-align: center;
 }
 /* The dialog is position:absolute in the UA sheet, so it is already the
    containing block for this — no `position` override here, which would break
-   the UA's auto-margin centring. Fixed dark chip: the lightbox always sits on
-   its own near-black backdrop, in either theme. */
+   the UA's auto-margin centring. The chip sits on the overlay, which is dark
+   in either theme, so it takes the overlay tokens rather than the theme's. */
 dialog.lightbox .lb-close {
   position: absolute;
   top: 8px;
@@ -1151,19 +1186,19 @@ dialog.lightbox .lb-close {
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.34);
+  border: 1px solid color-mix(in srgb, var(--color-overlay-ink) 34%, transparent);
   border-radius: 999px;
-  background: rgba(12, 14, 18, 0.62);
-  color: #f2efe9;
+  background: color-mix(in srgb, var(--color-overlay) 72%, transparent);
+  color: var(--color-overlay-ink);
   font: 400 19px/1 var(--font-ui);
   cursor: pointer;
 }
 dialog.lightbox .lb-close:hover {
-  background: rgba(12, 14, 18, 0.88);
-  border-color: rgba(255, 255, 255, 0.7);
+  background: var(--color-overlay);
+  border-color: color-mix(in srgb, var(--color-overlay-ink) 70%, transparent);
 }
 dialog.lightbox .lb-close:focus-visible {
-  outline: 2px solid #ffffff;
+  outline: 2px solid var(--color-overlay-ink);
   outline-offset: 2px;
 }
 
@@ -1189,6 +1224,9 @@ dialog.lightbox .lb-close:focus-visible {
   color: var(--color-ink-soft);
   max-width: 720px;
   margin: 18px 0 10px;
+}
+.hero h1 {
+  margin-bottom: 8px;
 }
 .hero p.meta {
   font-family: var(--font-ui);
@@ -1310,10 +1348,10 @@ section:has(.hero) + h2 {
 }
 
 /* =================== .speak — plain-language gloss =================== */
-/* A one-line gloss placed under a deep-dive h3 so the reader grabs "what this
-   does" before the mechanism. The ::before label defaults to the Chinese
-   "说人话 →" (roughly "in plain words →"); sites can rebrand it via
-   --speak-label. */
+/* A one-line gloss placed under a deep-dive heading so the reader grabs
+   "what this does" before the mechanism. The ::before label is
+   --speak-label (default "In plain words →"); a site sets it per language,
+   e.g. html[lang='zh-CN'] { --speak-label: '说人话 →' }. */
 .speak {
   font-family: var(--font-ui);
   font-size: 14px;
@@ -1326,7 +1364,7 @@ section:has(.hero) + h2 {
   margin: 10px 0 16px;
 }
 .speak::before {
-  content: var(--speak-label, '说人话 →');
+  content: var(--speak-label, 'In plain words →');
   font-weight: 700;
   color: var(--color-accent2);
   margin-right: 8px;
@@ -1339,7 +1377,7 @@ section:has(.hero) + h2 {
   padding: 2px 8px;
   border-radius: 12px;
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-accent-text);
   margin-right: 6px;
   font-family: var(--font-ui);
   font-weight: 600;
@@ -1347,15 +1385,15 @@ section:has(.hero) + h2 {
   letter-spacing: 0.02em;
 }
 .tag.teal {
-  background: #d6e8e6;
+  background: color-mix(in srgb, var(--color-accent2) 12%, var(--color-bg));
   color: var(--color-accent2);
 }
 .tag.mustard {
-  background: #f3e2bf;
-  color: #8a6512;
+  background: color-mix(in srgb, var(--color-accent3) 16%, var(--color-bg));
+  color: var(--color-accent3-text);
 }
 .tag.violet {
-  background: #e2dbf3;
+  background: color-mix(in srgb, var(--color-accent4) 16%, var(--color-bg));
   color: var(--color-accent4);
 }
 
@@ -1381,7 +1419,7 @@ section:has(.hero) + h2 {
 .demo-stage {
   position: relative;
   width: 100%;
-  background: #f8f6ef;
+  background: color-mix(in srgb, var(--color-bg-card) 55%, var(--color-bg-soft));
   border-radius: 6px;
   border: 1px solid var(--color-line);
   overflow: hidden;
@@ -1396,7 +1434,7 @@ section:has(.hero) + h2 {
 .demo-stage.multi > canvas {
   flex: 1 1 0;
   min-width: 0;
-  background: #f8f6ef;
+  background: color-mix(in srgb, var(--color-bg-card) 55%, var(--color-bg-soft));
   border-radius: 6px;
   border: 1px solid var(--color-line);
 }
@@ -1596,6 +1634,123 @@ section:has(.hero) + h2 {
   max-width: 720px;
 }
 
+/* =================== reading paths (hub landing) =================== */
+/* "Where to start" boxes: a title and a route of linked sections joined by
+   arrows — <div class="path"><div class="title">…</div><div class="route">
+   <a>§1</a><span class="arrow">→</span><a>§4</a></div></div>. */
+.path {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin: 14px 0;
+  font-family: var(--font-ui);
+}
+.path .title {
+  font-weight: 700;
+  color: var(--color-ink);
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.path .route {
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  color: var(--color-ink-soft);
+  line-height: 1.65;
+}
+.path .route a {
+  color: var(--color-accent);
+  border-bottom: 1px solid var(--color-accent-soft);
+}
+.path .arrow {
+  color: var(--color-ink-faint);
+  margin: 0 6px;
+  font-family: var(--font-mono);
+}
+
+/* =================== hub cards (components/HubCard.astro) =================== */
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+  margin: 28px 0 48px;
+}
+/* the card is an <a>: written with the element so it outranks the column's
+   link rule (color / underline) at equal specificity */
+a.hub-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 18px 20px 16px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow);
+  transition:
+    transform 0.12s ease,
+    border-color 0.12s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+a.hub-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-accent);
+}
+a.hub-card.soft {
+  background: var(--color-bg-soft);
+}
+.hub-card .num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-accent);
+  letter-spacing: 0.05em;
+}
+.hub-card h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.hub-card .one-liner {
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+  margin: 0;
+  flex: 1;
+}
+.hub-card .one-liner p {
+  margin: 0;
+}
+.hub-card .topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.hub-card .topics .chip {
+  font-size: 11px;
+  padding: 1px 6px;
+}
+.hub-card .meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  color: var(--color-ink-faint);
+  margin-top: 6px;
+  border-top: 1px solid var(--color-line);
+  padding-top: 8px;
+}
+.hub-card .meta .count {
+  font-family: var(--font-mono);
+  color: var(--color-accent2);
+}
+.hub-card .meta .arrow {
+  color: var(--color-accent);
+}
+
 /* =================== references =================== */
 .references {
   font-size: 14.5px;
@@ -1663,6 +1818,27 @@ span.wikilink-dead {
   margin-top: 56px;
   padding-top: 28px;
   border-top: 1px solid var(--color-line);
+}
+
+
+/* ----- narrow screens: the reading column tightens its measure ----- */
+@media (max-width: 640px) {
+  body {
+    font-size: 16.5px;
+  }
+  .col h1 {
+    font-size: 32px;
+  }
+  .col h2 {
+    font-size: 22px;
+    margin-top: 44px;
+  }
+  .paper {
+    padding: 16px 18px;
+  }
+  .demo {
+    padding: 14px;
+  }
 }
 
 

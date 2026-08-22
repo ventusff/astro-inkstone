@@ -6,8 +6,12 @@
  */
 import type { NoteCardData } from 'astro-inkstone/components/wiki/NoteCard.astro';
 
-import { href, LOCALES } from './i18n';
+import { href, LOCALES, type Locale } from './i18n';
 import { domainDef, fmtMonth, kindDef, statusDef, type ResolvedNote } from './taxonomy';
+
+/** registry def → the label of the page's language (the registry carries both) */
+const localized = <T extends { label: string; zh: string }>(def: T, locale: Locale): T =>
+  locale === 'zh' ? { ...def, label: def.zh } : def;
 
 /** browse route helpers (root-relative, then through the deploy base) */
 export const browseHref = {
@@ -40,12 +44,12 @@ export function cardOf(note: ResolvedNote): NoteCardData {
   };
 }
 
-/** the TaxonomyLine strip for a note page */
-export function stripOf(note: ResolvedNote) {
+/** the TaxonomyLine strip for a note page, labelled in the page's language */
+export function stripOf(note: ResolvedNote, locale: Locale = 'en') {
   return {
-    kind: note.kind ? kindDef(note.kind) : undefined,
-    domains: note.domains.map((d) => ({ ...domainDef(d), href: browseHref.domain(d) })),
-    status: note.status ? statusDef(note.status) : undefined,
+    kind: note.kind ? localized(kindDef(note.kind), locale) : undefined,
+    domains: note.domains.map((d) => ({ ...localized(domainDef(d), locale), href: browseHref.domain(d) })),
+    status: note.status ? localized(statusDef(note.status), locale) : undefined,
     updated: fmtMonth(note.updated),
   };
 }

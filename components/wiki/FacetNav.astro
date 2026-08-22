@@ -145,4 +145,12 @@ const isActive = (dim: string, value: string): boolean =>
   .more {
     color: var(--wb-wine, #7d3a3a);
   }
+  /* registry tones are tuned for the light ground; on night the pill takes a
+     lightened mix of its tone instead */
+  :global(:root[data-theme='dark']) .pill[style] {
+    color: color-mix(in srgb, var(--pill-fg) 45%, var(--wb-text, #e6e4dc));
+  }
+  :global(:root[data-theme='dark']) .pill[aria-current='page'][style] {
+    color: var(--wb-bg, #12141d);
+  }
 </style>

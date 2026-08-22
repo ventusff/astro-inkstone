@@ -1,0 +1,304 @@
+/* ============================================================
+   astro-inkstone · browse.css — the browse shelf
+
+   The furniture of a wiki's browse pages (landing, by-kind / by-domain /
+   by-tag, all-notes): a warm-paper ground, a serif masthead with an italic
+   English subtitle, shelves ruled in two points, a card grid, the status
+   legend, the instant filters and the tag cloud. The cards, facet index and
+   meta strip themselves are components (components/wiki/*).
+
+   Context root: `.wb-root` — put it on <body> (or on the browse page's
+   wrapper). Everything in here is scoped under it, so a site can load this
+   file globally and only browse pages change. Inside the context the
+   chrome tokens (--color-*) are re-mapped onto the shelf tokens (--wb-*),
+   so a nav bar or theme toggle written against --color-* matches the
+   warm ground without a second set of rules.
+
+   Discipline: consumes ONLY tier-2 tokens from tokens.css (--wb-*,
+   --color-*, --font-*). New rules must not introduce raw color values.
+   ============================================================ */
+
+.wb-root {
+  /* chrome bridge: --color-* → --wb-* inside the browse context */
+  --color-bg: var(--wb-bg);
+  --color-bg-card: var(--wb-bg-card);
+  --color-ink: var(--wb-text);
+  --color-ink-soft: var(--wb-text-soft);
+  --color-ink-faint: var(--wb-text-muted);
+  --color-line: var(--wb-border-soft);
+  --color-accent: var(--wb-wine);
+  --color-brand: var(--wb-wine);
+
+  margin: 0;
+  background: var(--wb-bg);
+  color: var(--wb-text);
+  font-family: var(--wb-serif);
+  line-height: 1.72;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
+}
+
+/* Registry tones (a domain's chip / shelf-title color pair) are tuned for the
+   light ground; on night the text takes a lightened mix of its tone rather
+   than a second pair carried in every registry. */
+/* a shelf sets --shelf-fg (its domain's tone) on the section; the title takes it */
+.wb-root .wb-shelf[style*='--shelf-fg'] .wb-shelf-title {
+  color: var(--shelf-fg);
+}
+:root[data-theme='dark'] .wb-root .wb-shelf[style*='--shelf-fg'] .wb-shelf-title {
+  color: color-mix(in srgb, var(--shelf-fg) 45%, var(--wb-text));
+}
+:root[data-theme='dark'] .wb-root .wb-kicker[style] {
+  color: color-mix(in srgb, var(--kicker-fg) 45%, var(--wb-text));
+}
+
+.wb-root main,
+.wb-root .wb-main {
+  max-width: var(--browse-w);
+  margin: 0 auto;
+  padding: 0 28px 5rem;
+}
+
+/* the context as a region: a swatch of the shelf inside a reading column */
+.wb-root.wb-inset {
+  padding: 16px 18px;
+  border: 1px solid var(--wb-border-soft);
+  border-radius: var(--radius);
+  margin: 18px 0;
+}
+.wb-root.wb-inset > .wb-grid {
+  margin-top: 0;
+}
+
+/* ---- masthead ---- */
+.wb-root .wb-hero {
+  padding: 3rem 0 1.2rem;
+}
+.wb-root .wb-kicker {
+  font: 600 12px/1 var(--wb-sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--wb-wine);
+  margin: 0 0 0.6em;
+}
+.wb-root .wb-kicker[style*='--kicker-fg'] {
+  color: var(--kicker-fg);
+}
+.wb-root .wb-kicker .sep {
+  margin: 0 0.4em;
+  opacity: 0.6;
+}
+.wb-root .wb-title {
+  font-family: var(--wb-serif);
+  font-size: 42px;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0;
+}
+.wb-root .wb-title .en {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--wb-text-dim);
+  font-size: 0.62em;
+  margin-left: 0.45em;
+}
+.wb-root .wb-lede {
+  color: var(--wb-text-soft);
+  max-width: 62ch;
+  margin: 0.7em 0 0;
+  font-size: 16px;
+}
+.wb-root .wb-lede a {
+  color: var(--wb-wine);
+  text-decoration: none;
+  border-bottom: 1px solid var(--wb-border);
+}
+.wb-root .wb-lede a:hover {
+  border-bottom-color: currentColor;
+}
+.wb-root .wb-lede code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+/* ---- card grid ---- */
+.wb-root .wb-grid {
+  list-style: none;
+  margin: 1.1rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
+  gap: 14px;
+}
+
+/* ---- shelves ---- */
+.wb-root .wb-shelf {
+  margin-top: 2.6rem;
+}
+.wb-root .wb-shelf-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  border-bottom: 2px solid var(--wb-rule);
+  padding-bottom: 8px;
+}
+.wb-root .wb-shelf-title {
+  font-family: var(--wb-serif);
+  margin: 0;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.wb-root .wb-shelf-en {
+  font-style: italic;
+  color: var(--wb-text-dim);
+  font-size: 14px;
+}
+.wb-root .wb-shelf-count {
+  margin-left: auto;
+  font: 500 12px/1 var(--wb-sans);
+  color: var(--wb-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.wb-root a.wb-shelf-count:hover {
+  color: var(--wb-wine);
+}
+.wb-root .wb-shelf-desc {
+  margin: 0.55em 0 0;
+  color: var(--wb-text-dim);
+  font-size: 13.5px;
+}
+
+/* ---- status legend (landing page foot) ---- */
+.wb-root .wb-legend {
+  margin-top: 3.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--wb-border-soft);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font: 400 12px/1.6 var(--wb-sans);
+  color: var(--wb-text-dim);
+}
+.wb-root .wb-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.wb-root .wb-legend .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.wb-root .wb-legend-links {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 16px;
+}
+.wb-root .wb-legend-links a {
+  color: var(--wb-wine);
+  text-decoration: none;
+}
+
+/* ---- instant filters (all-notes page) ----
+   Plain links to the facet pages; a few lines of site script turn them into
+   in-page filters (data-on marks the active pill). */
+.wb-root .wb-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 1.2rem 0 0.4rem;
+}
+.wb-root .wb-filters .f-dim {
+  font: 600 11px/1 var(--wb-sans);
+  letter-spacing: 0.12em;
+  color: var(--wb-text-muted);
+  margin-left: 6px;
+}
+.wb-root .wb-filters .f-dim:first-child {
+  margin-left: 0;
+}
+.wb-root .wb-filters .f-pill {
+  font: 500 12px/1 var(--wb-sans);
+  color: var(--wb-text-soft);
+  border: 1px solid var(--wb-border);
+  border-radius: 999px;
+  padding: 4.5px 10px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.wb-root .wb-filters .f-pill:hover {
+  border-color: var(--wb-rule);
+}
+.wb-root .wb-filters .f-pill[data-on] {
+  background: var(--wb-text);
+  border-color: var(--wb-text);
+  color: var(--wb-bg);
+}
+.wb-root .wb-filters .f-clear {
+  font: 500 12px/1 var(--wb-sans);
+  color: var(--wb-wine);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.wb-root .wb-empty {
+  color: var(--wb-text-muted);
+  font-style: italic;
+}
+
+/* ---- tag cloud ---- */
+.wb-root .wb-tags {
+  margin-top: 3rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--wb-border-soft);
+}
+.wb-root .wb-tags-title {
+  font-family: var(--wb-serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0 0 0.6em;
+}
+.wb-root .wb-tag {
+  display: inline-block;
+  font: 400 12.5px/1.9 var(--wb-sans);
+  color: var(--wb-text-dim);
+  text-decoration: none;
+  margin-right: 12px;
+}
+.wb-root .wb-tag:hover {
+  color: var(--wb-wine);
+}
+
+/* ---- narrow screens ---- */
+@media (max-width: 640px) {
+  .wb-root main,
+  .wb-root .wb-main {
+    padding: 0 18px 4rem;
+  }
+  .wb-root .wb-hero {
+    padding-top: 2rem;
+  }
+  .wb-root .wb-title {
+    font-size: 32px;
+  }
+  .wb-root .wb-title .en {
+    display: block;
+    margin-left: 0;
+    margin-top: 0.2em;
+  }
+  .wb-root .wb-shelf-head {
+    flex-wrap: wrap;
+  }
+  .wb-root .wb-shelf-count {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}

@@ -2,10 +2,16 @@
 /**
  * Note page: Base shell + sidebar + reading column.
  *
+ * The column's order is the wiki's: the taxonomy strip, the hub crumb when
+ * the note is a chapter, the note itself (which opens with its own <Hero>
+ * or <PartHero>), the linked mentions, prev/next for chapters, small print.
+ *
  * `main.note-main > .col` is astro-inkbrush's mount contract for the comment
  * section — keep the pair intact.
  */
 import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph, { type LocalGraphNeighbor } from 'astro-inkstone/components/LocalGraph.astro';
+import PageFooter from 'astro-inkstone/components/PageFooter.astro';
 import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
 import type { BacklinkItem } from 'astro-inkstone/lib/backlinks';
 import type { TocData } from 'astro-inkstone/lib/toc-types';
@@ -46,9 +52,11 @@ interface Props {
   description?: string | undefined;
   locale: Locale;
   crumbs: Crumb[];
+  /** sidebar brand line (the note's short title) and its link */
+  brand: string;
+  brandHref: string;
+  subtitle?: string | undefined;
   noteId?: string | undefined;
-  /** "1-N" frontmatter line range, for the CMS ✎ handle on the page head */
-  headSrc?: string | undefined;
   translateRoute?: string | undefined;
   toc: TocData;
   tocDepth?: 2 | 3;
@@ -57,14 +65,18 @@ interface Props {
   hubPage?: HubPageChrome | undefined;
   lang?: LangNav | undefined;
   backlinks?: BacklinkItem[] | undefined;
+  /** one-hop link neighbourhood for the sidebar graph; empty = no panel */
+  graph?: LocalGraphNeighbor[] | undefined;
 }
 const {
   title,
   description,
   locale,
   crumbs,
+  brand,
+  brandHref,
+  subtitle,
   noteId,
-  headSrc,
   translateRoute,
   toc,
   tocDepth = 2,
@@ -73,6 +85,7 @@ const {
   hubPage,
   lang,
   backlinks = [],
+  graph = [],
 } = Astro.props;
 const t = UI[locale];
 const zh = locale === 'zh';
@@ -87,20 +100,11 @@ const zh = locale === 'zh';
   noteId={noteId}
 >
   <div class="layout">
-    <Sidebar locale={locale} title={title} toc={toc} tocDepth={tocDepth} hub={hub} lang={lang} />
+    <Sidebar brand={brand} brandHref={brandHref} subtitle={subtitle} toc={toc} tocDepth={tocDepth} hub={hub} lang={lang}>
+      {graph.length > 0 && <LocalGraph centerTitle={title} neighbors={graph} label={t.localGraph} />}
+    </Sidebar>
     <main class="note-main">
       <div class="col">
-        <header class="page-head" {...(headSrc ? { 'data-wiki-src': headSrc } : {})}>
-          {
-            hubPage && (
-              <p class="kicker">
-                <a href={hubPage.hubHref}>Hub</a> › {hubPage.crumbLabel}
-              </p>
-            )
-          }
-          <h1>{title}</h1>
-          {description && <p class="page-desc">{description}</p>}
-        </header>
         {
           taxonomy && (
             <TaxonomyLine
@@ -108,18 +112,23 @@ const zh = locale === 'zh';
               domains={taxonomy.domains}
               status={taxonomy.status}
               updated={taxonomy.updated}
-              labels={{ updated: zh ? '更新' : 'updated' }}
+              labels={{ updated: t.updated }}
             />
+          )
+        }
+        {
+          hubPage && (
+            <div class="crumb">
+              <a href={hubPage.hubHref}>{t.hub}</a>
+              <span class="sep">›</span>
+              {hubPage.crumbLabel}
+            </div>
           )
         }
         <slot />
         {
           backlinks.length > 0 && (
-            <Backlinks
-              items={backlinks}
-              heading={zh ? '反向链接' : 'Linked mentions'}
-              sub={zh ? 'Linked mentions' : ''}
-            />
+            <Backlinks items={backlinks} heading={t.backlinks} sub={zh ? 'Linked mentions' : ''} />
           )
         }
         {
@@ -144,10 +153,9 @@ const zh = locale === 'zh';
             </nav>
           )
         }
-        <footer class="page-foot">
-          <span></span>
-          <span>{t.footer}</span>
-        </footer>
+        <PageFooter>
+          <p>{t.footer}</p>
+        </PageFooter>
       </div>
     </main>
   </div>

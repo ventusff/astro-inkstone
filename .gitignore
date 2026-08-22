@@ -14,3 +14,7 @@ fonts/content-dirs.local.txt
 
 # probe reports are run artifacts, never tracked
 ui-probe.txt
+contrast-probe.txt
+
+# Python bytecode from the font subset script
+__pycache__/

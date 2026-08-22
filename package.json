@@ -32,13 +32,15 @@
     "./markdown-preset": "./lib/markdown-preset.ts",
     "./styles/tokens.css": "./styles/tokens.css",
     "./styles/base.css": "./styles/base.css",
+    "./styles/browse.css": "./styles/browse.css",
     "./components/*": "./components/*",
     "./lib/*": "./lib/*.ts",
     "./fonts/*": "./fonts/*",
     "./package.json": "./package.json"
   },
   "scripts": {
-    "probe": "node scripts/ui_probe.mjs demo/dist"
+    "probe": "node scripts/ui_probe.mjs demo/dist",
+    "contrast": "node scripts/contrast_probe.mjs demo/dist"
   },
   "dependencies": {
     "@shikijs/transformers": "^3.0.0",

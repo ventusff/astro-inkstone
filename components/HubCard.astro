@@ -1,0 +1,48 @@
+---
+/**
+ * Hub landing card — one card per chapter on a collection's overview page,
+ * laid out by `.hub-grid` (base.css):
+ *
+ *   <div class="hub-grid">
+ *     <HubCard href="/chasing/primer/" num="PART I" title="Primer" count="§1.1–§1.4"
+ *              chips={[{ label: 'Roofline', variant: 'teal' }]}>
+ *       One sentence on what the chapter covers (markdown works).
+ *     </HubCard>
+ *   </div>
+ *
+ * `soft` gives the card the secondary surface (an appendix, a side track).
+ */
+export interface HubChip {
+  label: string;
+  variant?: 'teal' | 'mustard' | 'orange' | 'violet' | undefined;
+}
+
+interface Props {
+  href: string;
+  num?: string | undefined;
+  title: string;
+  chips?: HubChip[] | undefined;
+  count?: string | undefined;
+  soft?: boolean | undefined;
+}
+const { href, num, title, chips = [], count, soft = false } = Astro.props;
+---
+
+<a class:list={['hub-card', soft && 'soft']} href={href}>
+  {num && <span class="num">{num}</span>}
+  <h3>{title}</h3>
+  <div class="one-liner"><slot /></div>
+  {
+    chips.length > 0 && (
+      <div class="topics">
+        {chips.map((c) => (
+          <span class:list={['chip', c.variant]}>{c.label}</span>
+        ))}
+      </div>
+    )
+  }
+  <div class="meta">
+    {count && <span class="count">{count}</span>}
+    <span class="arrow">→</span>
+  </div>
+</a>

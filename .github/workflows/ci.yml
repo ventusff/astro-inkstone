@@ -1,9 +1,10 @@
 name: CI
 
-# Build the demo site and run the render-layer probe against the output.
-# The probe loads every built page in headless Chrome at four viewport widths
+# Build the demo site and run the two render-layer probes against the output.
+# ui_probe loads every built page in headless Chrome at four viewport widths
 # and fails on horizontal overflow, unstyled classes, dead anchors, images
-# without alt text, and skipped heading levels.
+# without alt text, and skipped heading levels; contrast_probe measures every
+# text run's WCAG contrast on its rendered ground, in both themes.
 
 on:
   push:
@@ -36,3 +37,7 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
         run: node scripts/ui_probe.mjs demo/dist
+      - name: Contrast probe
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/contrast_probe.mjs demo/dist

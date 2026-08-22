@@ -157,6 +157,9 @@ export function rehypeChapters(options: ChaptersOptions = {}) {
 
         if (node.type === 'element') {
           const el = node as unknown as Element;
+          // GFM's footnote section carries a screen-reader-only heading; it is
+          // neither a chapter nor a ToC row
+          if (el.tagName === 'section' && el.properties?.['dataFootnotes'] !== undefined) continue;
           if (el.tagName === 'h2' || el.tagName === 'h3') {
             el.properties ??= {};
             const props = el.properties;

@@ -1,0 +1,126 @@
+---
+/**
+ * LocalGraph — the one-hop link neighbourhood of a note, as a small
+ * server-rendered SVG for the sidebar: the note at the centre, its
+ * neighbours on an ellipse, inbound links solid and outbound dashed. Sized
+ * to sit under a table of contents — it is a local view, not a site graph.
+ *
+ * The site computes the neighbours (`localGraph` from lib/backlinks.ts) and
+ * passes them in; a neighbour may carry its own `color` (any CSS color,
+ * e.g. a per-collection token) — the default is the accent.
+ */
+export interface LocalGraphNeighbor {
+  id: string;
+  title: string;
+  href: string;
+  dir: 'in' | 'out';
+  color?: string | undefined;
+}
+
+interface Props {
+  centerTitle: string;
+  neighbors: LocalGraphNeighbor[];
+  /** Panel heading; pass a localized string to override. */
+  label?: string | undefined;
+}
+const { centerTitle, neighbors, label = 'Local graph' } = Astro.props;
+
+const W = 236;
+const H = 184;
+const CX = W / 2;
+const CY = 92;
+const RX = 92;
+const RY = 62;
+
+const placed = neighbors.map((n, i) => {
+  const angle = -Math.PI / 2 + (i * 2 * Math.PI) / Math.max(neighbors.length, 3);
+  const x = CX + RX * Math.cos(angle);
+  const y = CY + RY * Math.sin(angle);
+  return { ...n, x, y, above: y < CY, color: n.color ?? 'var(--color-accent)' };
+});
+
+/* A label gets about 18 Latin cells of room on the ellipse; a Hanzi takes two.
+   Clipping counts cells, so "三维高斯泼溅重建" and "Gaussian splatting" are
+   cut at the same visual width. */
+const CELLS = 18;
+const cellsOf = (ch: string): number => (/[\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef]/.test(ch) ? 2 : 1);
+const short = (s: string): string => {
+  let used = 0;
+  let out = '';
+  for (const ch of s) {
+    const w = cellsOf(ch);
+    if (used + w > CELLS) return `${out.trimEnd()}…`;
+    used += w;
+    out += ch;
+  }
+  return out;
+};
+---
+
+{
+  neighbors.length > 0 && (
+    <div class="lg-wrap">
+      <p class="lg-title">{label}</p>
+      <svg class="lg-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${centerTitle}: ${label}`}>
+        {placed.map((n) => (
+          <line
+            x1={CX}
+            y1={CY}
+            x2={n.x.toFixed(1)}
+            y2={n.y.toFixed(1)}
+            stroke={n.color}
+            stroke-width="1"
+            stroke-dasharray={n.dir === 'out' ? '3 3' : undefined}
+            opacity="0.45"
+          />
+        ))}
+        <circle cx={CX} cy={CY} r="5" fill="var(--color-ink)" />
+        {placed.map((n) => (
+          <a href={n.href}>
+            <circle cx={n.x.toFixed(1)} cy={n.y.toFixed(1)} r="3.6" fill={n.color} />
+            <text
+              x={n.x.toFixed(1)}
+              y={(n.above ? n.y - 8 : n.y + 14).toFixed(1)}
+              text-anchor="middle"
+              class="lg-label"
+            >
+              {short(n.title)}
+            </text>
+          </a>
+        ))}
+      </svg>
+    </div>
+  )
+}
+
+<style>
+  .lg-wrap {
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-line);
+  }
+  .lg-title {
+    margin: 0 0 4px;
+    font: 600 10px/1 var(--font-mono);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+  }
+  .lg-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .lg-label {
+    font: 500 8.5px var(--font-ui);
+    fill: var(--color-ink-soft);
+  }
+  .lg-svg a:hover circle {
+    r: 5;
+  }
+  .lg-svg a:hover .lg-label {
+    fill: var(--color-accent);
+    font-weight: 600;
+  }
+</style>

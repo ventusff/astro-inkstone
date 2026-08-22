@@ -50,6 +50,6 @@ const style = `--chip-bg:${def.tone.bg}; --chip-fg:${def.tone.fg};`;
      night variant from the fg color so every host page stays consistent. */
   :global(:root[data-theme='dark']) .domain-chip {
     background: color-mix(in srgb, var(--chip-fg) 20%, transparent);
-    color: color-mix(in srgb, var(--chip-fg) 50%, #e6e4dc);
+    color: color-mix(in srgb, var(--chip-fg) 45%, var(--wb-text, #e6e4dc));
   }
 </style>

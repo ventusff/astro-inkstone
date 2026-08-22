@@ -133,14 +133,16 @@ for (const r of routes(DIST)) {
       for (const el of document.querySelectorAll('main [class]')) {
         for (const cls of el.classList) {
           // Shiki-generated classes are colored via CSS variables, not class
-          // selectors; `.line` is deliberately rule-free (a display:block rule
-          // would double every line break inside <pre> — see base.css).
+          // selectors (the theme names it stamps on <pre> included); `.line` is
+          // deliberately rule-free (a display:block rule would double every
+          // line break inside <pre> — see base.css).
           // has-diff / is-collapsible / code-frame-body are structural markers
           // from the code-frame transformer — styled through element selectors
           // (details.code-frame …), so no class rule mentions them by name.
           // data-footnote-backref is GFM's marker class on footnote
           // back-links — deliberately rule-free.
-          const GENERATED = new Set(['line', 'github-light', 'github-dark', 'has-diff', 'is-collapsible', 'code-frame-body', 'data-footnote-backref']);
+          if (el.matches('pre.astro-code')) continue;
+          const GENERATED = new Set(['line', 'has-diff', 'is-collapsible', 'code-frame-body', 'data-footnote-backref']);
           // Generated/stateful families that must not count as "unstyled":
           // KaTeX's internal classes (.mord etc. — katex.css does not style
           // them one by one), mermaid/shiki, and copy-button state classes.
@@ -200,3 +202,4 @@ const brief = findings.map((f) => {
 writeFileSync(process.argv[4] || 'ui-probe.txt', brief.join('\n') + `\n\nPAGES WITH FINDINGS: ${findings.length}\n`);
 console.log(brief.slice(0, 40).join('\n'));
 console.log(`\nPAGES WITH FINDINGS: ${findings.length}`);
+process.exitCode = findings.length ? 1 : 0;

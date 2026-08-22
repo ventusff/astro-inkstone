@@ -1,6 +1,8 @@
 ---
 title: Paper and ink, on purpose
-description: Why this design system commits to a warm paper ground, real serifs and a hand-set dark theme — a note on the stance behind the tokens.
+brand: Paper & ink
+subtitle: "the stance behind the tokens"
+description: Why this design system commits to a warm paper ground, real serifs, two grounds for two kinds of page, and a hand-set dark theme — a note on the stance behind the tokens.
 kind: pattern
 domains: [design]
 tags: [philosophy, typography]
@@ -9,15 +11,23 @@ created: 2026-08-10
 updated: 2026-08-22
 ---
 
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Pattern · a design stance" title="Paper and ink, on purpose" meta="a warm ground · a serif body · two grounds · a second edition for the dark">
+  Most documentation themes reach for the same defaults: white `#fff`, a grotesque sans, gray-800 text, system dark mode. They read fine and look like nothing. This system starts from a different premise — **a long technical document is a thing you read for an hour** — and the tokens follow from it.
+</Hero>
+
 ## The stance
 
-Most documentation themes reach for the same defaults: white `#fff`, a grotesque sans, gray-800 text, system dark mode. They read fine and look like nothing. This system starts from a different premise — **a long technical document is a thing you read for an hour**, and an hour of reading wants what print figured out centuries ago: a warm ground that doesn't glare, a text face with real contrast between strokes, and a layout rhythm measured in ems of body text rather than pixels of chrome.
+An hour of reading wants what print figured out centuries ago: a warm ground that doesn't glare, a text face with real contrast between strokes, and a layout rhythm measured in ems of body text rather than pixels of chrome. Hence the vocabulary the [[design-tokens|token layer]] is written in: papers (纸 the sheet, 页 the page, 素 the plain ground, 帛 the silk) instead of gray-50 through gray-200; inks and pigments from a painter's box — 朱 wine, 石 burnt orange, 赭 ochre, 黛 teal, 紫 violet — instead of primary/secondary/accent. The names are not decoration: they keep every new color decision anchored to the same physical metaphor, which is why five different surfaces still read as one sheet of paper.
 
-Hence the vocabulary the [[design-tokens|token layer]] is written in: papers (plain, silk, page, slip, note) instead of gray-50 through gray-200; inks and pigments (vermilion, indigo, ochre) instead of primary/secondary/accent. The names are not decoration — they keep every new color decision anchored to the same physical metaphor, which is why five different surfaces still read as one sheet of paper.
+## Two grounds, because two kinds of page
+
+A wiki is read two ways. You **read** a note — one column, an hour, the eyes want calm: a slightly cool paper, a neutral ink, one accent for links and numbers. You **browse** a shelf — a grid of cards, a glance, a choice: the paper can be warmer, the titles can be a display serif, the accent can be a deep wine that reads as a mark rather than a link. Giving those two situations one palette would compromise both. So the semantic tier has two contexts — the reading column (`--color-*`) and the browse shelf (`--wb-*`) — drawn from one box of pigments, and a page declares which one it is. The result is a site that feels like one object and two rooms.
 
 ## Dark is a second edition, not an inversion
 
-Algorithmic dark modes invert lightness and call it done; text becomes chalk on slate and every tinted surface turns to mud. Here the dark theme is a **second hand-set edition**: night grounds and moon-white inks chosen on their own, accent pigments re-brightened just enough to hold their AA contrast on the darker papers. It costs a second set of decisions — that is the point. The switch honors the reader's explicit choice only ([[design-tokens#light-is-the-identity|never the OS preference]]), because a page that flips its own theme mid-read is a page that startles.
+Algorithmic dark modes invert lightness and call it done; text becomes chalk on slate and every tinted surface turns to mud. Here the dark theme is a **second hand-set edition**: dusk grounds and moon-white inks chosen on their own, accent pigments re-brightened just enough to hold their AA contrast on the darker papers. It costs a second set of decisions — that is the point. The switch honors the reader's explicit choice only ([[design-tokens#light-is-the-identity|never the OS preference]]), because a page that flips its own theme mid-read is a page that startles.
 
 ## CJK is load-bearing
 

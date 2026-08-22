@@ -20,7 +20,6 @@ import type { HubNav, HubRow, LangNav } from '../components/Sidebar.astro';
 import { backlinks as backlinkBuilder, toDocs } from '../lib/backlinks';
 import { stripOf } from '../lib/display';
 import { baseIdOf, counterpartId, href, localeOfId, LOCALES, routeOfId, type Locale } from '../lib/i18n';
-import { frontmatterRange } from '../lib/note-source';
 import { resolveTaxonomy } from '../lib/taxonomy';
 
 export async function getStaticPaths() {
@@ -151,15 +150,17 @@ const crumbs =
       ];
 
 /* ---------- taxonomy strip (chapters and mirrors inherit at build time) --- */
-const taxonomy = stripOf(resolveTaxonomy(entry, byId));
+const taxonomy = stripOf(resolveTaxonomy(entry, byId), locale);
 
-/* ---------- backlinks (package index; PROD builds it once) ---------- */
+/* ---------- backlinks + the sidebar's local graph (PROD builds once) ---------- */
 const index = backlinkBuilder.build(toDocs(notes));
 const backlinks = index.inbound.get(entry.id) ?? [];
+const graph = index.localGraph(entry.id, (id) => byId.get(id)?.data.title ?? id);
 
-/* ---------- CMS ✎ handle on the page head (editing mode only) ---------- */
-const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
-const headSrc = wikiMode ? frontmatterRange(entry.id) : undefined;
+/* ---------- sidebar brand: the hub's for chapters, the note's own otherwise ---------- */
+const brandEntry = hubEntry ?? entry;
+const brand = brandEntry.data.brand ?? brandEntry.data.title;
+const brandHref = hub ? hub.hubHref : routeTo(baseId);
 ---
 
 <NoteLayout
@@ -167,8 +168,10 @@ const headSrc = wikiMode ? frontmatterRange(entry.id) : undefined;
   description={entry.data.description}
   locale={locale}
   crumbs={crumbs}
+  brand={brand}
+  brandHref={brandHref}
+  subtitle={brandEntry.data.subtitle}
   noteId={entry.id}
-  headSrc={headSrc}
   translateRoute={translateRoute}
   toc={toc}
   tocDepth={entry.data.tocDepth}
@@ -177,6 +180,7 @@ const headSrc = wikiMode ? frontmatterRange(entry.id) : undefined;
   hubPage={hubPage}
   lang={lang}
   backlinks={backlinks}
+  graph={graph}
 >
-  <Content />
+  <Content partLabel={hubPage?.crumbLabel} toc={toc} />
 </NoteLayout>

@@ -11,9 +11,12 @@ import Grid from 'astro-inkstone/components/Grid.astro';
 import Steps from 'astro-inkstone/components/Steps.astro';
 import Stats from 'astro-inkstone/components/Stats.astro';
 import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
 import References from 'astro-inkstone/components/References.astro';
 
-本页所有内容都从 `astro-inkstone/components/` 按路径导入,用包的默认 token 渲染。组件是纯展示的:数据与标签文案都走 props(默认英文),任何语言的站点传自己的即可。
+<PartHero kicker={props.partLabel} title="内容与排版组件">
+  行文由这些零件搭成。每一个都只消费 token 的语义层——换一套颜料,它们全部跟着变。本页所有内容都从 `astro-inkstone/components/` 按路径导入,用包的默认 token 渲染;组件是纯展示的:数据与标签文案都走 props(默认英文),任何语言的站点传自己的即可。
+</PartHero>
 
 ## Callout
 

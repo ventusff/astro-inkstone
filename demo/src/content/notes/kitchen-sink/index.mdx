@@ -1,5 +1,7 @@
 ---
 title: Kitchen sink
+brand: Kitchen sink
+subtitle: "every pipeline switch, once\nthe page is its own test bed"
 description: Every element of the markdown pipeline performs once on this page — the page itself is their test bed.
 kind: reference
 domains: [pipeline]
@@ -11,6 +13,14 @@ aliases: [markdown-demo]
 ---
 
 import Callout from 'astro-inkstone/components/Callout.astro';
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Reference · the Markdown pipeline, performed" title="Kitchen sink" tocLabel="Intro · why a sink" meta="4 parts · every siteMarkdown switch · the guard's rejections listed at the end">
+  Every element of the Markdown pipeline performs once on this page: inline marks, wikilinks, tables that turn into cards, callouts in three spellings, math, code frames, diagrams, GFM extras. That the page builds at all is the demonstration — the content guard rejects every malformed spelling listed at the end, so what you see is what the dialect accepts.
+</Hero>
+
+<Part title="Text" />
 
 ## Inline marks
 
@@ -26,14 +36,16 @@ A table of six or more columns should reflow one row per card in a narrow contai
 
 | Variant | Class | Quote-syntax keywords | Border | Ground | Default title | Typical use |
 | --- | --- | --- | --- | --- | --- | --- |
-| note | `callout` | `note` `info` | ochre `--color-accent3` | note `--color-math-bg` | Note | neutral side notes |
-| intuition | `callout intuition` | `tip` `intuition` `hint` | indigo `--color-accent2` | note | Intuition | analogies that build intuition |
-| warn | `callout warn` | `warn` `warning` `caution` `danger` | vermilion `--color-accent` | 8% vermilion mix | Warning | heads-up before risky steps |
-| system | `callout system` | `important` `system` | violet `--color-accent4` | 8% violet mix | Important | system-level conventions |
-| abstract | `callout abstract` | `abstract` `summary` `quote` | faint ink `--color-ink-faint` | silk `--color-bg-soft` | Abstract | chapter-opening summaries |
-| bad | `callout bad` | (raw HTML only) | vermilion | 10% vermilion mix | — | recorded mistakes, rejected designs |
+| note | `callout` | `note` `info` | 赭 ochre `--color-accent3` | math ground `--color-math-bg` | Note | neutral side notes |
+| intuition | `callout intuition` | `tip` `intuition` `hint` | 黛 teal `--color-accent2` | math ground | Intuition | analogies that build intuition |
+| warn | `callout warn` | `warn` `warning` `caution` `danger` | 石 burnt orange `--color-accent` | 8% accent mix | Warning | heads-up before risky steps |
+| system | `callout system` | `important` `system` | 紫 violet `--color-accent4` | 8% violet mix | Important | system-level conventions |
+| abstract | `callout abstract` | `abstract` `summary` `quote` | faint ink `--color-ink-faint` | soft surface `--color-bg-soft` | Abstract | chapter-opening summaries |
+| bad | `callout bad` | (raw HTML only) | 石 burnt orange | 10% accent mix | — | recorded mistakes, rejected designs |
 
 Default titles are English; a site swaps the whole set through `siteMarkdown`'s `calloutLabels` option, e.g. `calloutLabels: { tip: '直觉 · Intuition' }`. A title written in the quote syntax (`> [!tip] My title`) always wins.
+
+<Part title="Callouts and math" />
 
 ## Callouts: three spellings
 
@@ -57,12 +69,12 @@ Third, raw HTML, all six variants in one pass (matching `base.css`'s `.callout` 
 
 <div class="callout intuition">
   <div class="callout-title">Intuition</div>
-  Indigo left edge, for paragraphs about <em>how to think of it</em> rather than <em>what it is</em>.
+  Teal left edge, for paragraphs about <em>how to think of it</em> rather than <em>what it is</em>.
 </div>
 
 <div class="callout warn">
   <div class="callout-title">Warning</div>
-  Vermilion left edge over an 8% vermilion ground — appears before the step that can go wrong.
+  Burnt-orange left edge over an 8% accent ground — appears before the step that can go wrong.
 </div>
 
 <div class="callout system">
@@ -72,7 +84,7 @@ Third, raw HTML, all six variants in one pass (matching `base.css`'s `.callout` 
 
 <div class="callout abstract">
   <div class="callout-title">Abstract</div>
-  Faint-ink edge on a silk ground, for the quick overview at a chapter's head.
+  Faint-ink edge on the soft surface, for the quick overview at a chapter's head.
 </div>
 
 <div class="callout bad">
@@ -88,7 +100,9 @@ $$
 \int_0^1 x^2 \, \mathrm{d}x = \frac{1}{3}
 $$
 
-The formula ground (note paper) is deliberately distinct from the body paper, and swaps with the theme. Incidentally, escape dollar prices in prose: this coffee costs \$3.
+The formula ground is deliberately a different paper from the body's, and swaps with the theme. Incidentally, escape dollar prices in prose: this coffee costs \$3.
+
+<Part title="Code and diagrams" />
 
 ## Code frames
 
@@ -141,6 +155,8 @@ Task lists and footnotes ride along with GFM:
 A claim worth sourcing gets a footnote.[^src]
 
 [^src]: Footnotes render at the page foot with back-links, styled by the content layer.
+
+<Part title="The guard" />
 
 ## What the guard rejects on this page
 

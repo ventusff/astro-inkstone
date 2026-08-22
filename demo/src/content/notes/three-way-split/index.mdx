@@ -1,5 +1,7 @@
 ---
 title: The three-way split
+brand: The three-way split
+subtitle: "the engine edits, the paper looks,\nthe site is you"
 description: The engine edits, the paper looks, the site is you — who owns what, and why the lines sit where they do.
 kind: guide
 domains: [design]
@@ -10,12 +12,16 @@ updated: 2026-08-22
 aliases: [boundaries]
 ---
 
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Guide · architecture" title="The three-way split" meta="three repos · three owners · one line to remember">
+  A docs/wiki site built with this toolkit is assembled from three parts, each owning exactly one layer. The lines between them are not taste — each is backed by a constraint that bites when it is crossed.
+</Hero>
+
 ## Three layers, three owners
 
-A docs/wiki site built with this toolkit is assembled from three parts, each owning exactly one layer:
-
 - **astro-inkbrush (the engine)**: a minimal CMS — in-place block editing in the browser, block-level revision history and revert, comments, AI Q&A / rewriting / translation, inbox import. It also owns one thing that looks like it shouldn't belong to a CMS: **the Markdown dialect and the content guard**. The reason is hard: the grammar the editor accepts and the grammar the page renders must be the same one, or "saves fine in the editor, renders wrong on the page" is only a matter of time. So the parser rules are written once, in the engine, and consumed in three places — site rendering, CMS save validation, CI checks.
-- **astro-inkstone (the paper — this package)**: the shared appearance and pipeline layer — two-tier design tokens, the content stylesheet `base.css`, the component library, the `siteMarkdown` pipeline preset, the taxonomy and backlink helpers this garden runs on, the Maple Mono CN code-font subset, and the render-layer probe. It does **not** do site identity: brand colors, layout chrome, routing and deployment are none of its business.
+- **astro-inkstone (the paper — this package)**: the shared appearance and pipeline layer — two-tier design tokens in two contexts, the content stylesheet `base.css` and the browse shelf `browse.css`, the component library, the `siteMarkdown` pipeline preset, the taxonomy and backlink helpers this garden runs on, the Maple Mono CN code-font subset, and the render-layer probes. It does **not** do site identity: brand colors, layout chrome, routing and deployment are none of its business.
 - **The site (like the garden you are reading)**: overrides tier-one tokens for its identity color; owns its own Sidebar and nav chrome (this site's implementation is the reference answer); decides how content is organized, what routes look like, and where it deploys.
 
 One line to remember: **the engine edits, the paper looks, the site is you.**
@@ -38,11 +44,11 @@ The same discipline applies to what you're navigating right now. The package shi
 
 From the site's point of view, consuming this package plus the engine buys:
 
-- `astro-inkstone/styles/tokens.css` + `base.css`: tokens first, then the content layer — two `@import` lines for the whole content look;
+- `astro-inkstone/styles/tokens.css` + `base.css` + `browse.css`: tokens first, then the reading column, then the browse shelf — three `@import` lines for the whole look;
 - `siteMarkdown(...)`: the entire Markdown pipeline in one line, switches described in [[getting-started]];
 - components under `astro-inkstone/components/`, imported by path as needed;
 - the taxonomy factory and backlink builder under `astro-inkstone/lib/`, bound to the site's own registry;
 - in WIKI mode, the engine's full CMS (try it on this site with `npm run wiki`);
-- three checks: `check-content`, `check-wikilinks` and `check-dist` (shipped with the engine) and `ui_probe` (shipped here) — see [[checks]].
+- five checks: `check-content`, `check-wikilinks` and `check-dist` (shipped with the engine), `ui_probe` and `contrast_probe` (shipped here) — see [[checks]].
 
 Every rendering effect on every page of this garden is the product of that split — the notes are the manual, and the manual is the demo.

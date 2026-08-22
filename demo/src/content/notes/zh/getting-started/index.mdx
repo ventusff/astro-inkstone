@@ -1,11 +1,22 @@
 ---
 title: 快速上手
-description: 一对 submodule 装进站点仓,siteMarkdown 一行接通整条 markdown 管线——一座园地就此立起。
+brand: 快速上手
+subtitle: "两个 submodule、三行样式导入\n一行管线"
+description: 一对 submodule 装进站点仓,三行样式表导入,siteMarkdown 一行接通整条 markdown 管线——一座园地就此立起。
 ---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="指南 · 从零到一座园地" title="快速上手" meta="两个 submodule · 三张样式表 · 一个 siteMarkdown() · 三条命令">
+  纸面与引擎都不发 npm、零构建、直指 TS/CSS 源码。站点以 git submodule 的方式把两个仓装进来,导入三张样式表,再把一个函数接进 `astro.config`——本站就是这么搭起来的。
+</Hero>
+
+<Part title="安装" />
 
 ## 一对 submodule
 
-纸面与引擎都不发 npm、零构建、直指 TS/CSS 源码。站点以 git submodule 的方式把两个仓装进来,再用 `file:` 依赖指过去:
+把两个仓装进来,再用 `file:` 依赖指过去:
 
 ```bash title="站点仓根目录"
 git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
@@ -28,16 +39,28 @@ git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-
 
 ## 样式接入
 
-站点全局样式表里,先 token 后组件层,之后只写你自己的 chrome:
+站点全局样式表里,先 token、再阅读列、有导览页的站再加书架,之后只写你自己的 chrome:
 
 ```css title="src/styles/site.css"
 @import 'astro-inkstone/styles/tokens.css';
 @import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* 落地页 / 分类页,挂在 body.wb-root 上 */
 
-/* 身份定制:只覆盖第 1 层色板,语义层与组件层跟着走 */
+/* 身份定制:只覆盖第 1 层颜料,两套语义语境与组件层跟着走 */
 :root {
-  --p-vermilion: #b03a48; /* 换成你的品牌强调色 */
+  --p-shi: #b03a48; /* 换成你的阅读列强调色 */
+  --p-zhu: #3b4a7a; /* 换成你的书架强调色与字标色 */
 }
+```
+
+书架用的衬线是 `--font-display`(Source Serif 4 + 思源宋体);像本站一样自托管,版头就和这里一模一样:
+
+```css title="src/styles/site.css(字体,可选)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
 ```
 
 KaTeX 的样式在布局组件里补一行(数学站点必需,否则公式排版是散的):
@@ -45,6 +68,8 @@ KaTeX 的样式在布局组件里补一行(数学站点必需,否则公式排版
 ```ts title="src/layouts/Base.astro(frontmatter)"
 import 'katex/dist/katex.min.css';
 ```
+
+<Part title="接线" />
 
 ## markdown 管线一行接入
 

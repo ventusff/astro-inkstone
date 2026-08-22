@@ -1,6 +1,10 @@
 ---
 /**
- * Site nav bar — the full-width chrome strip above every page.
+ * Site nav bar — the full-width chrome strip above every page: the mark at
+ * the left (back to the garden), the breadcrumb trail, and at the right the
+ * search, language and theme controls. Colors are the --color-* chrome
+ * tokens, which browse.css re-maps inside the browse context — one bar,
+ * both grounds.
  *
  * Three of its parts are an INTERFACE, not decoration. astro-inkbrush's
  * client looks for them by name and silently does nothing when they are
@@ -16,10 +20,10 @@
  *                                      off)
  *
  * The fourth surface, the comment section, needs `main.note-main > .col` —
- * see layouts/Base.astro.
+ * see layouts/NoteLayout.astro.
  */
 import ThemeToggle from './ThemeToggle.astro';
-import { GITHUB_URL, href, UI, type Locale } from '../lib/i18n';
+import { href, UI, type Locale } from '../lib/i18n';
 
 interface Crumb {
   label: string;
@@ -38,13 +42,16 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
 
 <nav class="site-nav" aria-label="Site breadcrumb">
   <button class="nav-toggle" type="button" aria-label={t.menu} aria-controls="site-sidebar" aria-expanded="false">☰</button>
-  <a class="repo-btn" href={GITHUB_URL} title="astro-inkstone on GitHub" aria-label="astro-inkstone on GitHub">
-    <span aria-hidden="true">◈</span>
+  <a class="hub-btn" href={href('')} aria-label={t.home} title={t.home}>
+    <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+      <path d="M10 2.2 17.8 10 10 17.8 2.2 10Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+      <path d="M10 6.4 13.6 10 10 13.6 6.4 10Z" fill="currentColor"></path>
+    </svg>
   </a>
   <span class="rule" aria-hidden="true"></span>
   <ol class="trail">
     {/* one landing page for both locales — zh exists as per-note mirrors */}
-    <li><a class="root" href={href('')}>inkstone</a></li>
+    <li><a class="gw" href={href('')}>{t.home}</a></li>
     {
       crumbs.map((c) => (
         <li>{c.route !== undefined ? <a href={href(c.route)}>{c.label}</a> : <span class="here" aria-current="page">{c.label}</span>}</li>
@@ -80,7 +87,7 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
   });
 
   // Language preference persists across visits (the link already points at the
-  // counterpart page; this only records the choice for the covers to honour).
+  // counterpart page; this only records the choice).
   document.getElementById('lang-toggle')?.addEventListener('click', (e) => {
     const el = e.currentTarget as HTMLElement;
     try {
@@ -98,9 +105,9 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
     z-index: 1000;
     display: flex;
     align-items: center;
-    gap: 10px;
-    height: var(--nav-h, 42px);
-    padding: 0 14px 0 8px;
+    gap: 12px;
+    height: var(--nav-h);
+    padding: 0 14px 0 10px;
     background: color-mix(in srgb, var(--color-bg) 86%, transparent);
     backdrop-filter: saturate(170%) blur(10px);
     -webkit-backdrop-filter: saturate(170%) blur(10px);
@@ -109,23 +116,22 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
     color: var(--color-ink-soft);
   }
 
-  .repo-btn {
+  /* ---- the mark (back to the garden) ---- */
+  .hub-btn {
     display: inline-grid;
     place-items: center;
     width: 30px;
     height: 30px;
     border-radius: 8px;
     color: var(--color-brand);
-    font-size: 15px;
-    text-decoration: none;
     flex-shrink: 0;
     transition:
       background 0.15s ease,
-      transform 0.4s cubic-bezier(0.34, 1.3, 0.44, 1);
+      transform 0.5s cubic-bezier(0.34, 1.3, 0.44, 1);
   }
-  .repo-btn:hover {
+  .hub-btn:hover {
     background: color-mix(in srgb, var(--color-accent) 12%, transparent);
-    transform: scale(1.12);
+    transform: rotate(180deg);
   }
 
   .rule {
@@ -135,6 +141,7 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
     flex-shrink: 0;
   }
 
+  /* ---- trail ---- */
   .trail {
     display: flex;
     align-items: center;
@@ -164,20 +171,24 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
     text-decoration: none;
     padding: 3px 1px;
     border-bottom: 1px solid transparent;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
   }
   .trail a:hover {
     color: var(--color-accent);
     border-bottom-color: currentColor;
   }
-  .trail .root {
+  .trail .gw {
     font-weight: 700;
     font-size: 13px;
     color: var(--color-ink);
-    letter-spacing: 0.01em;
+    letter-spacing: 0.02em;
   }
   .here {
     color: var(--color-ink);
     font-weight: 650;
+    letter-spacing: 0.01em;
   }
 
   .spacer {
@@ -187,17 +198,22 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
   .search-btn {
     display: inline-grid;
     place-items: center;
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
     border: 1px solid transparent;
     border-radius: 7px;
     background: none;
-    color: var(--color-ink-soft);
+    color: inherit;
     cursor: pointer;
+    opacity: 0.75;
+    transition:
+      opacity 0.15s ease,
+      border-color 0.15s ease;
   }
   .search-btn:hover {
-    color: var(--color-accent);
-    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+    opacity: 1;
+    border-color: currentColor;
   }
 
   .lang-btn {
@@ -222,10 +238,10 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
 
   @media (max-width: 720px) {
     .site-nav {
-      padding: 0 8px;
-      gap: 7px;
+      padding: 0 10px;
+      gap: 9px;
     }
-    /* Narrow screens keep only "brand › current page": the full trail does
+    /* Narrow screens keep only "garden › current page": the full trail does
        not fit 430px and would be hard-clipped mid-word. Middle crumbs
        collapse; the last one ends in an ellipsis. */
     .trail {

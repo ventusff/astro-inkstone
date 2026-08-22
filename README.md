@@ -31,22 +31,30 @@ alone for a static site that simply looks and reads beautifully.
 
 ## Features
 
-- 🎨 **Two-tier design tokens** — a raw paper/ink palette (`--p-*`) feeding a
-  semantic layer (`--color-*`). Re-skin the whole site by overriding either
-  tier; every shipped color pair is audited for WCAG AA contrast on every
-  background it sits on.
+- 🎨 **Two-tier design tokens, two contexts** — a raw palette of papers and
+  painter's pigments (`--p-*`: 朱 wine, 石 burnt orange, 赭 ochre, 黛 teal,
+  紫 violet) feeding two semantic contexts: the *reading column*
+  (`--color-*`, a cool paper and one accent for an hour of reading) and the
+  *browse shelf* (`--wb-*`, warm paper, a display serif, a wine-red mark for
+  landing and facet pages). Re-skin the whole site by overriding either
+  tier; every text color is **measured** for WCAG AA on the surface it
+  actually renders on (`scripts/contrast_probe.mjs`, both themes).
 - 🌗 **Deliberate theming** — light is the identity; dark ships complete and
   activates only via `[data-theme='dark']`, so your toggle owns the decision
   (no `prefers-color-scheme` surprises).
-- 📖 **A content stylesheet that has seen things** — typography, code frames
-  (title bar, copy button, collapse, line annotations, diff/focus/word
-  highlight), tables that reflow into cards on narrow containers with pure
-  CSS container queries, callouts, figure groups, academic paper cards,
-  reference lists, and a print stylesheet that turns any page into a clean PDF.
-- 🧩 **20+ Astro components** — `Callout`, `Steps`, `Grid`, `Hero`,
-  `PaperCard`, `References`, `Stats`, `LocalToc`, `Backlinks`, a faceted
-  wiki-browsing set, and more. Presentational and token-driven: they follow
-  your palette automatically.
+- 📖 **A content stylesheet that has seen things** — the reading column of a
+  long-form wiki: serif body, chapter rules, code frames (title bar, copy
+  button, collapse, line annotations, diff/focus/word highlight), tables that
+  reflow into cards on narrow containers with pure CSS container queries,
+  callouts, figure groups, academic paper cards, hub cards and reading
+  paths, reference lists, and a print stylesheet that turns any page into a
+  clean PDF. Plus `browse.css`: the shelf — masthead, ruled shelves, card
+  grid, status legend, instant filters, tag cloud.
+- 🧩 **23 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`,
+  `Steps`, `Grid`, `PaperCard`, `HubCard`, `Stats`, `LocalToc`, `Backlinks`,
+  `LocalGraph` (a note's one-hop link neighbourhood in the sidebar), a faceted
+  wiki-browsing set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …), and more.
+  Presentational and token-driven: they follow your palette automatically.
 - 🌱 **Digital-garden machinery** — a taxonomy factory (kinds / domains /
   tags / status, hub notes with numbered chapters, locale mirrors) and a
   backlink-index builder with context snippets, both bound to your own
@@ -62,9 +70,11 @@ alone for a static site that simply looks and reads beautifully.
   code-font subset (Maple Mono CN) where Hanzi sit exactly two cells wide.
 - 🔍 **Search included** — a build-time index endpoint factory plus a tiny
   dependency-free client.
-- 🩺 **Render-layer probe** — a headless-Chrome checker that loads every
-  built page at four viewport widths and fails CI on horizontal overflow,
-  unstyled classes, dead anchors, missing alt text and skipped headings.
+- 🩺 **Render-layer probes** — two headless-Chrome checkers: `ui_probe`
+  loads every built page at four viewport widths and fails CI on horizontal
+  overflow, unstyled classes, dead anchors, missing alt text and skipped
+  headings; `contrast_probe` samples the ground every text run actually
+  renders on, in both themes, and fails on anything under WCAG AA.
 - 🪶 **Zero build step** — plain TypeScript and CSS, consumed as source by
   your site's own Vite. Pin it by commit like any other part of your site.
 
@@ -103,19 +113,27 @@ export default defineConfig({
 ```
 
 ```css
-/* your global stylesheet: tokens first, then the content layer */
+/* your global stylesheet: tokens, the reading column, then (for a wiki) the shelf */
 @import 'astro-inkstone/styles/tokens.css';
 @import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* landing / facet pages, on body.wb-root */
 
-/* identity: override the raw palette… */
-:root { --p-vermilion: #8a4baf; }
-/* …or re-map semantic tokens onto your own palette — both paths are supported */
+/* identity: override the raw pigments… */
+:root { --p-shi: #8a4baf; --p-zhu: #3b4a7a; }
+/* …or re-map the semantic tokens (--color-* / --wb-*) onto your own palette — both paths are supported */
 ```
 
+The shelf's display serif (`--font-display`: Source Serif 4 + Noto Serif SC)
+and the UI sans (Inter) are self-hosted by the demo through `@fontsource`;
+install the same packages and import their CSS to see exactly what the demo
+shows — without them the stacks fall back to system faces.
+
 Layout, navigation, routing and deployment stay yours — the demo ships a
-complete reference implementation (faceted browse pages, hub chapter rails,
-a sidebar that follows your reading position, ⌘K search, zh mirror routing,
-and a static + editing-machine deployment skeleton under `deploy/`).
+complete reference implementation (a warm-paper landing shelf with facet
+pages, hub notes with chapter rails, a sidebar table of contents that follows
+your reading position with a local link graph beneath it, ⌘K search, zh
+mirror routing, and a static + editing-machine deployment skeleton under
+`deploy/`).
 
 ## Who does what
 

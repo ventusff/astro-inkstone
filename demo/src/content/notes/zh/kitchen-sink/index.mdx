@@ -1,9 +1,19 @@
 ---
 title: 全要素演示
+brand: 全要素演示
+subtitle: "管线每个开关各演一遍\n这一页就是它们的试验台"
 description: markdown 管线的每个要素在这一页各演一遍——这页本身就是它们的测试场。
 ---
 
 import Callout from 'astro-inkstone/components/Callout.astro';
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="参考 · markdown 管线全要素演示" title="全要素演示" tocLabel="引子 · 为什么要有这一页" meta="4 部 · siteMarkdown 每个开关各演一遍 · 守门拦截清单在最后">
+  markdown 管线的每个要素在这一页各演一遍:行内标记、双链、会转卡的表格、三种写法的 callout、数学、代码框、图、GFM 附加件。这一页能构建出来本身就是演示——内容守门把结尾列出的每种坏写法都拦在构建外,你看到的就是方言接受的。
+</Hero>
+
+<Part title="文本" />
 
 ## 行内标记
 
@@ -19,14 +29,16 @@ import Callout from 'astro-inkstone/components/Callout.astro';
 
 | 变体 | 类名 | 引用语法关键词 | 边框色 | 底色 | 标题默认文案 | 典型用途 |
 | --- | --- | --- | --- | --- | --- | --- |
-| note | `callout` | `note` `info` | 赭 `--color-accent3` | 笺 `--color-math-bg` | Note | 一般补充说明 |
-| intuition | `callout intuition` | `tip` `intuition` `hint` | 黛 `--color-accent2` | 笺 | Intuition | 帮助建立直觉的类比 |
-| warn | `callout warn` | `warn` `warning` `caution` `danger` | 朱 `--color-accent` | 朱 8% 调和 | Warning | 会出事的操作前置提醒 |
+| note | `callout` | `note` `info` | 赭 `--color-accent3` | 公式底 `--color-math-bg` | Note | 一般补充说明 |
+| intuition | `callout intuition` | `tip` `intuition` `hint` | 黛 `--color-accent2` | 公式底 | Intuition | 帮助建立直觉的类比 |
+| warn | `callout warn` | `warn` `warning` `caution` `danger` | 石 `--color-accent` | 石 8% 调和 | Warning | 会出事的操作前置提醒 |
 | system | `callout system` | `important` `system` | 紫 `--color-accent4` | 紫 8% 调和 | Important | 系统级约定与硬规则 |
 | abstract | `callout abstract` | `abstract` `summary` `quote` | 淡墨 `--color-ink-faint` | 帛 `--color-bg-soft` | Abstract | 章节开头的内容摘要 |
-| bad | `callout bad` | (仅裸 HTML) | 朱 | 朱 10% 调和 | — | 出错的做法、被推翻的实现 |
+| bad | `callout bad` | (仅裸 HTML) | 石 | 石 10% 调和 | — | 出错的做法、被推翻的实现 |
 
 默认标题文案是英文;中文站点在 `siteMarkdown` 里用 `calloutLabels` 整组换掉,比如 `calloutLabels: { tip: '直觉 · Intuition', warn: '注意 · Warning' }`。引用语法里自带标题(`> [!tip] 标题`)时,以自带的为准。
+
+<Part title="callout 与数学" />
 
 ## Callout:三种写法
 
@@ -55,7 +67,7 @@ import Callout from 'astro-inkstone/components/Callout.astro';
 
 <div class="callout warn">
   <div class="callout-title">注意 · Warning</div>
-  朱红左边,底色带 8% 朱红调和——先于出事的操作出现。
+  石色(焦橙)左边,底色带 8% 石色调和——先于出事的操作出现。
 </div>
 
 <div class="callout system">
@@ -82,6 +94,8 @@ $$
 $$
 
 公式底色(笺)与正文纸色有意区分,深色主题下自动换组。顺带一提,正文里的美元价格记得转义:这杯咖啡 \$3。
+
+<Part title="代码与图" />
 
 ## 代码框
 
@@ -134,6 +148,8 @@ flowchart LR
 值得注明出处的断言,加脚注。[^src]
 
 [^src]: 脚注渲染在页脚,带回跳链接,样式来自内容层。
+
+<Part title="守门" />
 
 ## 内容守门在这页拦什么
 

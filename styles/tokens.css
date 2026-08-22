@@ -2,28 +2,35 @@
    astro-inkstone · tokens.css — two-tier design tokens
    (the single source of truth for every color in the system)
 
-   Tier 1: the raw palette (paper-and-ink pigment constants, theme-
-           independent, named --p-*).
-   Tier 2: semantic tokens (--color-*): light defaults on :root,
-           dark overrides under [data-theme='dark']. The component
-           layer (base.css and every component) may consume ONLY
-           this tier — never raw hex, never tier 1 directly.
+   Tier 1: the raw palette — paper-and-ink pigment constants, theme-
+           independent, named --p-*. Papers, inks, binding and the
+           pigments of a Chinese painter's box (朱 zhu, 石 shi, 赭 zhe,
+           黛 dai, 紫 zi), plus a night set for the dark edition.
+   Tier 2: semantic tokens in TWO contexts, light defaults on :root and
+           dark overrides under [data-theme='dark']:
+             --color-*  the reading column (note pages): a slightly cool
+                        paper, neutral ink, 石 burnt orange as the accent;
+             --wb-*     the browse shelf (landing / facet pages): warmer
+                        paper, warm ink, 朱 wine red as the accent.
+           The component layer (base.css, browse.css, every component)
+           may consume ONLY this tier — never raw hex, never tier 1.
 
    Giving a site its own identity — two sanctioned paths:
      a) override tier 1 wholesale (redefine the --p-* palette);
-        the semantic and component layers follow automatically;
-     b) re-map tier 2 onto your own palette (point --color-* at
-        your variables) when your site already has one.
+        both semantic contexts and the component layer follow;
+     b) re-map tier 2 onto your own palette (point --color-* / --wb-*
+        at your variables) when your site already has one.
 
    Light is the identity: prefers-color-scheme is deliberately not
    read — a page must not flip themes on its own as readers move
    between sites. Dark mode exists only via [data-theme='dark']
    (the site provides the toggle; see demo/ ThemeInit/ThemeToggle).
 
-   Contrast: every value here is audited for WCAG AA on every
-   background it sits on (small text starts at 4.5:1; accent-as-text
-   gets its own darkened tier). Before changing any value, check
-   every surface it is used against.
+   Contrast: every text-tier value is audited for WCAG AA on every
+   surface it sits on (small text 4.5:1 minimum; an accent used as small
+   text gets its own darkened -text tier). `node scripts/contrast_probe.mjs`
+   measures the rendered demo. Before changing a value, check every
+   surface it is used against.
    ============================================================ */
 
 /* Code font: a fixed-charset subset of Maple Mono CN (ASCII + box drawing +
@@ -39,66 +46,119 @@
 }
 
 :root {
-  /* ====== Tier 1: raw palette (paper-and-ink pigments, theme-invariant) === */
-  /* ---- paper ---- */
-  --p-paper: #fbf9f4; /* page ground */
-  --p-paper-soft: #f3efe5; /* secondary surface */
-  --p-card: #ffffff; /* card face */
-  --p-code: #f3f1ea; /* code background */
-  --p-math: #f6f1e3; /* math background */
-  /* ---- ink ---- */
-  --p-ink: #25313a; /* body text */
-  --p-ink-soft: #4b5560; /* secondary text */
-  --p-ink-faint: #646d76; /* small text (4.6:1 on the paper ground — no lighter) */
-  --p-line: #e5e0d3; /* hairlines */
-  /* ---- pigments ---- */
-  --p-vermilion: #c14b02; /* primary accent (darkened to AA, 4.7:1) */
-  --p-vermilion-soft: #f9dcc6;
-  --p-vermilion-text: #a03f02; /* accent at small-text sizes (5.5:1, for its own soft tint) */
-  --p-vermilion-raw: #fe5d01; /* raw accent (glyphs/graphics only — never body links) */
-  --p-teal: #2a6f6b; /* secondary content accent */
-  --p-mustard: #c08a2c; /* lines/borders */
-  --p-mustard-text: #8c5f0c; /* mustard at small-text sizes (the lighter tint fails AA as text) */
-  --p-violet: #6b4ec4; /* content semantic */
-  /* ---- night (dark-only constants) ---- */
-  --p-night: #12161b;
-  --p-night-soft: #1a2027;
-  --p-night-card: #1e252d;
-  --p-night-code: #1a2028;
-  --p-night-line: #2b333c;
-  --p-moon: #e8e6e1; /* dark-mode body text */
-  --p-moon-soft: #b1b6ba;
-  --p-moon-faint: #8b939b; /* 4.97:1 on the dark card face */
-  --p-vermilion-night: #f5854a; /* accent, brightened for dark (7.9:1) */
-  --p-vermilion-night-soft: #4a2f1d;
-  --p-teal-night: #5cb8b2;
-  --p-mustard-night: #d9a94f;
-  --p-violet-night: #a08fe0;
+  /* ====== Tier 1: raw palette (theme-invariant) ====== */
 
-  /* ====== Tier 2: semantic tokens (light defaults) ====== */
-  --color-bg: var(--p-paper);
+  /* ---- paper ---- */
+  --p-paper: #faf6ec; /* 纸 · browse ground */
+  --p-paper-deep: #f3ecd6; /* 笺 · browse secondary surface */
+  --p-paper-card: #f6f0dc; /* 页 · browse card face */
+  --p-paper-read: #fbf9f4; /* 素 · reading ground (a notch cooler, easier on the eyes) */
+  --p-paper-soft: #f3efe5; /* 帛 · reading secondary surface */
+  --p-white: #ffffff; /* reading card face */
+  --p-code: #f3f1ea; /* code ground */
+  --p-math: #f6f1e3; /* math / callout ground */
+
+  /* ---- ink, warm (browse) ---- */
+  --p-ink: #2b2622;
+  --p-ink-soft: #5a5344;
+  --p-ink-warm-soft: #4a4137; /* browse body copy */
+  --p-ink-dim: #6e6453;
+  --p-ink-faint: #756c5a; /* small print; 4.8:1 on paper, 4.6:1 on the card face */
+
+  /* ---- ink, neutral (reading) ---- */
+  --p-ink-read: #1f2024;
+  --p-ink-read-soft: #4a4d57;
+  --p-ink-read-faint: #6a6d74; /* small print; 4.9:1 on the reading ground, 4.5:1 on the soft surface */
+
+  /* ---- binding (rules and borders) ---- */
+  --p-rule: #b8a98a; /* browse: shelf rule */
+  --p-border: #d6cbb1; /* browse: pill / card border */
+  --p-border-soft: #e2d9c3; /* browse: hairline */
+  --p-line-read: #e5e0d3; /* reading: hairline */
+
+  /* ---- pigments ---- */
+  --p-zhu: #7d3a3a; /* 朱 · wine red — browse accent, brand mark (7.7:1 on paper) */
+  --p-shi: #b6552e; /* 石 · burnt orange — reading accent (4.6:1 on the reading ground) */
+  --p-shi-soft: #ecd5c8; /* 石 · tint (link underline, chip ground) */
+  --p-shi-text: #8f3f1f; /* 石 · small-text tier (6.9:1 on the ground, 5.2:1 on its own tint) */
+  --p-zhe: #c08a2c; /* 赭 · ochre — lines and borders (callout edge, frontier tags) */
+  --p-zhe-text: #8c5f0c; /* 赭 · small-text tier (5.3:1; the line tint fails AA as text) */
+  --p-dai: #2a6f6b; /* 黛 · teal — secondary content accent (5.6:1) */
+  --p-zi: #6b4ec4; /* 紫 · violet — "system" semantics (5.7:1) */
+
+  /* ---- night (dark-only constants) ---- */
+  --p-dusk: #12141d; /* ground */
+  --p-dusk-1: #1a1d29; /* secondary surface */
+  --p-dusk-card: #1e222f; /* reading card face */
+  --p-dusk-card-wb: #1b1f2b; /* browse card face */
+  --p-dusk-code: #191c26; /* code / math ground */
+  --p-dusk-line: #2c2f3c; /* reading hairline */
+  --p-dusk-rule: #4a4f60; /* browse shelf rule */
+  --p-dusk-border: #2e3242; /* browse pill / card border */
+  --p-dusk-border-soft: #262a38; /* browse hairline */
+  --p-moon: #f5eddc; /* 月白 · brand mark on night */
+  --p-ink-n: #e6e4dc; /* body text */
+  --p-ink-n-soft: #b3b2aa;
+  --p-ink-n-dim: #8e8f96; /* browse dim text (5.7:1 on the ground) */
+  --p-ink-n-faint: #888990; /* reading small print (5.3:1 on the ground, 4.6:1 on the card face) */
+  --p-ink-n-muted: #84868f; /* browse small print (5.1:1 on the ground, 4.5:1 on the card face) */
+  --p-zhu-n: #c98577;
+  --p-shi-n: #d98a5f; /* 6.8:1 on the ground */
+  --p-shi-soft-n: #3a2a20; /* 5.1:1 under the night accent */
+  --p-zhe-n: #d9a94f;
+  --p-dai-n: #5cb8b2;
+  --p-zi-n: #a78bfa;
+
+  /* ====== Tier 2a: the reading column (light) ====== */
+  --color-bg: var(--p-paper-read);
   --color-bg-soft: var(--p-paper-soft);
-  --color-bg-card: var(--p-card);
-  --color-ink: var(--p-ink);
-  --color-ink-soft: var(--p-ink-soft);
-  --color-ink-faint: var(--p-ink-faint);
-  --color-line: var(--p-line);
-  --color-accent: var(--p-vermilion);
-  --color-accent-soft: var(--p-vermilion-soft);
-  --color-accent-text: var(--p-vermilion-text);
-  --color-brand: var(--p-vermilion-raw);
-  --color-accent2: var(--p-teal);
-  --color-accent3: var(--p-mustard);
-  --color-accent3-text: var(--p-mustard-text);
-  --color-accent4: var(--p-violet);
+  --color-bg-card: var(--p-white);
+  --color-ink: var(--p-ink-read);
+  --color-ink-soft: var(--p-ink-read-soft);
+  --color-ink-faint: var(--p-ink-read-faint);
+  --color-line: var(--p-line-read);
+  --color-accent: var(--p-shi);
+  --color-accent-soft: var(--p-shi-soft);
+  --color-accent-text: var(--p-shi-text);
+  --color-brand: var(--p-zhu); /* the site's mark in the chrome */
+  --color-accent2: var(--p-dai);
+  --color-accent3: var(--p-zhe);
+  --color-accent3-text: var(--p-zhe-text);
+  --color-accent4: var(--p-zi);
   --color-code-bg: var(--p-code);
   --color-math-bg: var(--p-math);
+  /* the lightbox overlay is dark in both themes */
+  --color-overlay: color-mix(in srgb, var(--p-dusk) 88%, transparent);
+  --color-overlay-ink: var(--p-moon);
+
+  /* ====== Tier 2b: the browse shelf (light) ====== */
+  --wb-bg: var(--p-paper);
+  --wb-bg-card: var(--p-paper-card);
+  --wb-rule: var(--p-rule);
+  --wb-border: var(--p-border);
+  --wb-border-soft: var(--p-border-soft);
+  --wb-text: var(--p-ink);
+  --wb-text-soft: var(--p-ink-warm-soft);
+  --wb-text-dim: var(--p-ink-dim);
+  --wb-text-muted: var(--p-ink-faint);
+  --wb-wine: var(--p-zhu);
+  --wb-serif: var(--font-display);
+  --wb-sans: var(--font-ui);
 
   /* ---- type ---- */
-  --font-body: 'Charter', 'Iowan Old Style', 'Source Serif 4', 'Source Serif Pro', 'Noto Serif SC',
-    'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', ui-serif, Georgia, serif;
-  --font-ui: 'Inter', 'Helvetica Neue', 'Noto Sans SC', 'Noto Sans CJK SC', 'PingFang SC',
-    ui-sans-serif, system-ui, sans-serif;
+  /* The browse shelf and page titles: an optical-size serif. Self-host
+     "Source Serif 4 Variable" and "Noto Serif SC" (e.g. via @fontsource) to see
+     exactly what the demo shows; without them the stack falls back to the
+     reading face. */
+  --font-display: 'Source Serif 4 Variable', 'Source Serif 4', 'Noto Serif SC', 'Noto Serif CJK SC',
+    'Source Han Serif SC', 'Songti SC', Georgia, serif;
+  /* Body copy: a system serif stack — the identity is serif body text; the
+     self-hosted display face steps in where Charter / Iowan are absent. */
+  --font-body: 'Charter', 'Iowan Old Style', 'Source Serif 4 Variable', 'Source Serif 4',
+    'Source Serif Pro', 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC',
+    ui-serif, Georgia, serif;
+  --font-ui: 'Inter Variable', 'Inter', 'Helvetica Neue', 'Noto Sans SC', 'Noto Sans CJK SC',
+    'PingFang SC', ui-sans-serif, system-ui, sans-serif;
   /* Monospace: the self-hosted subset comes first so everyone sees the same
      glyphs and the same widths (a Hanzi is exactly two cells — box diagrams
      depend on it); characters outside the subset fall back to a local full
@@ -113,26 +173,40 @@
   --maxw: 820px; /* reading column */
   --sidebar-w: 280px;
   --nav-h: 42px; /* top bar height — the sticky sidebar tracks it */
-  --shell-w: 1240px;
+  --shell-w: 1220px; /* sidebar + reading column */
+  --browse-w: 1080px; /* browse shelf column */
 }
 
 :root[data-theme='dark'] {
-  --color-bg: var(--p-night);
-  --color-bg-soft: var(--p-night-soft);
-  --color-bg-card: var(--p-night-card);
-  --color-ink: var(--p-moon);
-  --color-ink-soft: var(--p-moon-soft);
-  --color-ink-faint: var(--p-moon-faint);
-  --color-line: var(--p-night-line);
-  --color-accent: var(--p-vermilion-night);
-  --color-accent-soft: var(--p-vermilion-night-soft);
-  --color-accent-text: var(--p-vermilion-night); /* the accent is already bright enough on dark */
-  --color-brand: var(--p-vermilion-raw);
-  --color-accent2: var(--p-teal-night);
-  --color-accent3: var(--p-mustard-night);
-  --color-accent3-text: var(--p-mustard-night);
-  --color-accent4: var(--p-violet-night);
-  --color-code-bg: var(--p-night-code);
-  --color-math-bg: var(--p-night-code);
+  /* ---- the reading column (dark) ---- */
+  --color-bg: var(--p-dusk);
+  --color-bg-soft: var(--p-dusk-1);
+  --color-bg-card: var(--p-dusk-card);
+  --color-ink: var(--p-ink-n);
+  --color-ink-soft: var(--p-ink-n-soft);
+  --color-ink-faint: var(--p-ink-n-faint);
+  --color-line: var(--p-dusk-line);
+  --color-accent: var(--p-shi-n);
+  --color-accent-soft: var(--p-shi-soft-n);
+  --color-accent-text: var(--p-shi-n); /* the accent is already bright enough on dark */
+  --color-brand: var(--p-moon);
+  --color-accent2: var(--p-dai-n);
+  --color-accent3: var(--p-zhe-n);
+  --color-accent3-text: var(--p-zhe-n);
+  --color-accent4: var(--p-zi-n);
+  --color-code-bg: var(--p-dusk-code);
+  --color-math-bg: var(--p-dusk-code);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.35);
+
+  /* ---- the browse shelf (dark) ---- */
+  --wb-bg: var(--p-dusk);
+  --wb-bg-card: var(--p-dusk-card-wb);
+  --wb-rule: var(--p-dusk-rule);
+  --wb-border: var(--p-dusk-border);
+  --wb-border-soft: var(--p-dusk-border-soft);
+  --wb-text: var(--p-ink-n);
+  --wb-text-soft: var(--p-ink-n-soft);
+  --wb-text-dim: var(--p-ink-n-dim);
+  --wb-text-muted: var(--p-ink-n-muted);
+  --wb-wine: var(--p-zhu-n);
 }
