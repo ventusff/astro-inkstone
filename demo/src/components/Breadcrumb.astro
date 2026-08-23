@@ -23,7 +23,7 @@
  * see layouts/NoteLayout.astro.
  */
 import ThemeToggle from './ThemeToggle.astro';
-import { href, UI, type Locale } from '../lib/i18n';
+import { href, landingRoute, otherLocale, UI, type Locale } from '../lib/i18n';
 
 interface Crumb {
   label: string;
@@ -32,14 +32,19 @@ interface Crumb {
 interface Props {
   locale: Locale;
   crumbs: Crumb[];
-  /** counterpart route in the other locale; omitted on pages with no twin */
+  /** this page's route in the other locale; a page with no twin sends the
+   *  language switch to the other locale's landing page instead */
   translateRoute?: string | undefined;
   /** render the menu button — only pages that have a sidebar drawer */
   hasSidebar?: boolean;
 }
 const { locale, crumbs, translateRoute, hasSidebar = false } = Astro.props;
 const t = UI[locale];
-const otherLocale = locale === 'zh' ? 'en' : 'zh';
+const other = otherLocale(locale);
+// the garden's landing page in this locale — the mark and the trail's root
+const home = landingRoute(locale);
+const switchRoute = translateRoute ?? landingRoute(other);
+const switchTitle = translateRoute !== undefined ? t.langButton : t.langHome;
 ---
 
 <header class="site-nav">
@@ -50,7 +55,7 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
       </button>
     )
   }
-  <a class="hub-btn" href={href('')} aria-label={t.home} title={t.home}>
+  <a class="hub-btn" href={href(home)} aria-label={t.home} title={t.home}>
     <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
       <path d="M10 2.2 17.8 10 10 17.8 2.2 10Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
       <path d="M10 6.4 13.6 10 10 13.6 6.4 10Z" fill="currentColor"></path>
@@ -61,8 +66,8 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
       controls are the bar's, not the breadcrumb's */}
   <nav class="trail-nav" aria-label={t.breadcrumb}>
     <ol class="trail">
-      {/* one landing page for both locales — zh exists as per-note mirrors */}
-      <li><a class="gw" href={href('')}>{t.home}</a></li>
+      {/* each locale has its own landing page and browse tree */}
+      <li><a class="gw" href={href(home)}>{t.home}</a></li>
       {
         crumbs.map((c) => (
           <li>{c.route !== undefined ? <a href={href(c.route)}>{c.label}</a> : <span class="here" aria-current="page">{c.label}</span>}</li>
@@ -78,13 +83,9 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
       <path d="M13.2 13.2 17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
     </svg>
   </button>
-  {
-    translateRoute !== undefined && (
-      <a class="lang-btn" href={href(translateRoute)} title={t.langButton} hreflang={otherLocale === 'zh' ? 'zh-CN' : 'en'}>
-        {t.langSwitch}
-      </a>
-    )
-  }
+  <a class="lang-btn" href={href(switchRoute)} title={switchTitle} hreflang={other === 'zh' ? 'zh-CN' : 'en'}>
+    {t.langSwitch}
+  </a>
   <span class="cms-slot" data-inkbrush-slot="share"></span>
   <span class="cms-slot" data-inkbrush-slot="account"></span>
   <ThemeToggle label={t.theme} />

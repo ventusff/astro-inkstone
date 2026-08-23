@@ -1,0 +1,12 @@
+---
+/** /zh/kind/<id>/ — browse by kind (only non-empty values prerender); Chinese. */
+import FacetPage from '../../../components/browse/FacetPage.astro';
+import { getWikiUnits, groupByKind } from '../../../lib/taxonomy';
+
+export async function getStaticPaths() {
+  const units = await getWikiUnits();
+  return groupByKind(units).map((g) => ({ params: { kind: g.def.id }, props: { def: g.def, notes: g.notes } }));
+}
+---
+
+<FacetPage locale="zh" dim="kind" {...Astro.props} />

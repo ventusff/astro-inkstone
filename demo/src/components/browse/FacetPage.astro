@@ -1,0 +1,74 @@
+---
+/**
+ * One facet page — the notes of one kind / domain / status / tag, in one
+ * locale: hero with the facet's name and description, the facet index with
+ * this value marked active, then the cards. The en and zh routes render this
+ * one component with their locale and the value they resolved.
+ */
+import { getCollection } from 'astro:content';
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import BrowseLayout from '../../layouts/BrowseLayout.astro';
+import { cardOf, facetBaseFor, facetsOf, localized } from '../../lib/display';
+import { localePrefix, otherLocale, UI, type Locale } from '../../lib/i18n';
+import { getWikiUnits, type ResolvedNote } from '../../lib/taxonomy';
+import type { DomainDef, KindDef, StatusDef } from '../../content/notes/_meta/taxonomy';
+
+type Dim = 'kind' | 'domain' | 'status' | 'tag';
+
+interface Props {
+  locale: Locale;
+  dim: Dim;
+  /** the registry def for kind / domain / status; the tag string for tag */
+  def?: KindDef | DomainDef | StatusDef | undefined;
+  tag?: string | undefined;
+  notes: ResolvedNote[];
+}
+const { locale, dim, def, tag, notes } = Astro.props;
+const t = UI[locale];
+const b = t.browse;
+
+const units = await getWikiUnits();
+const byId = new Map((await getCollection('notes')).map((e) => [e.id, e]));
+const facets = facetsOf(units, locale);
+
+const d = def ? localized(def, locale) : undefined;
+const value = def ? def.id : (tag ?? '');
+// the route of this same page in the other locale
+const twin = `${localePrefix(otherLocale(locale))}${dim}/${value}/`;
+
+const kicker = { kind: b.byKind, domain: b.byDomain, status: b.byStatus, tag: b.byTag }[dim];
+const kickerSub = {
+  kind: locale === 'zh' ? 'By kind' : '按形式',
+  domain: locale === 'zh' ? 'By domain' : '按方向',
+  status: locale === 'zh' ? 'By status' : '按成熟度',
+  tag: locale === 'zh' ? 'By tag' : '按标签',
+}[dim];
+
+const title = d ? (locale === 'zh' ? `${def!.zh} · ${def!.label}` : `${def!.label} · ${def!.zh}`) : `#${tag}`;
+const heading = d ? d.label : `#${tag}`;
+const headingSub = d ? (locale === 'zh' ? def!.label : def!.zh) : undefined;
+const description = d ? b.facetDesc(d.desc, notes.length) : b.tagDesc(tag ?? '', notes.length);
+const lede = d ? (dim === 'domain' ? b.domainLede(d.desc, notes.length) : b.facetLede(d.desc, notes.length)) : b.tagLede(notes.length);
+const tone = dim === 'domain' && def && 'tone' in def ? def.tone.fg : undefined;
+---
+
+<BrowseLayout title={title} description={description} locale={locale} crumbs={[{ label: heading }]} translateRoute={twin}>
+  <header class="wb-hero">
+    <p class="wb-kicker" style={tone ? `--kicker-fg:${tone}` : undefined}>{kicker} <span class="sep">·</span> {kickerSub}</p>
+    <h1 class="wb-title">{heading}{headingSub && <span class="en">{headingSub}</span>}</h1>
+    <p class="wb-lede">{lede}</p>
+  </header>
+  <FacetNav
+    base={facetBaseFor(locale)}
+    kinds={facets.kinds}
+    domains={facets.domains}
+    statuses={facets.statuses}
+    tags={facets.tags}
+    labels={facets.labels}
+    active={{ dim, value }}
+  />
+  <ul class="wb-grid">
+    {notes.map((note) => <NoteCard note={cardOf(note, locale, byId)} labels={{ chapters: b.chapters }} />)}
+  </ul>
+</BrowseLayout>

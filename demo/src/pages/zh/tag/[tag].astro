@@ -1,0 +1,12 @@
+---
+/** /zh/tag/<tag>/ — browse by tag (only non-empty values prerender); Chinese. */
+import FacetPage from '../../../components/browse/FacetPage.astro';
+import { getWikiUnits, tagIndex } from '../../../lib/taxonomy';
+
+export async function getStaticPaths() {
+  const units = await getWikiUnits();
+  return [...tagIndex(units).entries()].map(([tag, notes]) => ({ params: { tag }, props: { tag, notes } }));
+}
+---
+
+<FacetPage locale="zh" dim="tag" {...Astro.props} />
