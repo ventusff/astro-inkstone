@@ -100,7 +100,7 @@ const zh = locale === 'zh';
     <Sidebar brand={brand} brandHref={brandHref} subtitle={subtitle} toc={toc} tocDepth={tocDepth} hub={hub} lang={lang} labels={{ contents: t.contents, languages: t.languages }}>
       {graph.length > 0 && <LocalGraph centerTitle={title} neighbors={graph} label={t.localGraph} />}
     </Sidebar>
-    <main class="note-main">
+    <main class="note-main" id="main">
       <div class="col">
         {
           taxonomy && (

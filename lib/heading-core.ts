@@ -16,6 +16,9 @@ export type AnyNode = { type: string; children?: AnyNode[] } & Record<string, un
 export function slugify(text: string): string {
   return (
     text
+      // canonical equivalence: NFC and NFD spellings of the same heading
+      // must yield the same anchor id
+      .normalize('NFC')
       .toLowerCase()
       .trim()
       .replace(/[\s·/]+/g, '-')

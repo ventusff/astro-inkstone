@@ -101,7 +101,7 @@ function routes(dir, prefix = '') {
     else if (e === 'index.html') out.push(`${prefix}/`);
     else if (e.endsWith('.html')) out.push(`${prefix}/${e}`); // flat pages, 404.html
   }
-  return out;
+  return out.sort(); // deterministic order — the dialog pass runs on the first route
 }
 
 /* ------------------------------------------------------------ png decode */
@@ -162,7 +162,8 @@ function decodePng(buf) {
 
 /* ---------------------------------------------------------------- color */
 const lum = ([r, g, b]) => {
-  const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  // sRGB linearization (IEC 61966-2-1 breakpoint 0.04045)
+  const f = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
   return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
 };
 const ratio = (a, b) => { const [l1, l2] = [lum(a), lum(b)].sort((x, y) => y - x); return (l1 + 0.05) / (l2 + 0.05); };
@@ -313,8 +314,10 @@ for (const r of routeList) {
               fontSize: parseFloat(cs.fontSize),
               fontWeight: +cs.fontWeight || 400,
               ...(() => {
-                const [gx, gy] = groundPoint(el, rect.left + rect.width / 2, rect.top + rect.height / 2);
-                return { x: gx + window.scrollX, y: gy + window.scrollY };
+                const cx = rect.left + rect.width / 2;
+                const [gx, gy] = groundPoint(el, cx, rect.top + rect.height / 2);
+                // a clamped point sits in a scroll box: only its own pixel is safe
+                return { x: gx + window.scrollX, y: gy + window.scrollY, w: gx === cx ? rect.width : 0 };
               })(),
             });
           }
@@ -347,7 +350,7 @@ for (const r of routeList) {
                   pseudo === '::before' ? box.left + inset : box.right - inset,
                   box.top + Math.min(box.height / 2, parseFloat(cs.lineHeight) / 2 || box.height / 2),
                 );
-                return { x: gx + window.scrollX, y: gy + window.scrollY };
+                return { x: gx + window.scrollX, y: gy + window.scrollY, w: 0 };
               })(),
             });
           }
@@ -358,7 +361,9 @@ for (const r of routeList) {
       // 2) hide every glyph and screenshot the document in slices
       await page.evaluate(() => {
         const st = document.getElementById('__probe');
-        st.textContent += `*{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important}svg text{fill:transparent!important}`;
+        // -webkit-text-fill-color hides glyphs while `color` still paints
+        // currentColor borders and icons - the ground keeps every non-text ink
+        st.textContent += `*{-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important}svg text{fill:transparent!important}`;
       });
       // a modal dialog sits in the top layer at viewport coordinates: its
       // pass keeps the collection viewport so nothing moves between the run
@@ -389,19 +394,31 @@ for (const r of routeList) {
 
       for (const run of runs) {
         const fg = parseColor(run.color);
-        const bg = sample(run.x, run.y);
         measured += 1;
         const large = run.fontSize >= 24 || (run.fontSize >= 18.66 && run.fontWeight >= 700);
         const min = large ? 3 : 4.5;
-        if (!fg || !bg) {
-          findings.push({ route: r, theme, width, ...run, fg: fg ? hex(fg) : `unparsed: ${run.color}`, bg: bg ? hex(bg) : 'unsampled', ratio: 0, min });
+        // the worst pixel wins: a line box over a gradient or a seam is
+        // sampled at several points across its width
+        const half = Math.max((run.w ?? 0) / 2 - 2, 0);
+        const offsets = half > 4 ? [-half, -half / 2, 0, half / 2, half] : [0];
+        let worst = null;
+        let worstBg = null;
+        for (const dx of offsets) {
+          const bg = sample(run.x + dx, run.y);
+          if (!bg) continue;
+          worstBg = bg;
+          if (!fg) break;
+          const a = fg[3] * (run.alpha ?? 1);
+          const fgOn = a < 1 ? over([fg[0], fg[1], fg[2], a], bg) : fg.slice(0, 3);
+          const c = ratio(fgOn, bg);
+          if (worst === null || c < worst.ratio) worst = { ratio: c, fgOn, bg };
+        }
+        if (!fg || worst === null) {
+          findings.push({ route: r, theme, width, ...run, fg: fg ? hex(fg) : `unparsed: ${run.color}`, bg: worstBg ? hex(worstBg) : 'unsampled', ratio: 0, min });
           continue;
         }
-        const a = fg[3] * (run.alpha ?? 1);
-        const fgOn = a < 1 ? over([fg[0], fg[1], fg[2], a], bg) : fg.slice(0, 3);
-        const c = ratio(fgOn, bg);
-        if (c < min - 0.005) {
-          findings.push({ route: r, theme, width, ...run, fg: hex(fgOn), bg: hex(bg), ratio: c, min });
+        if (worst.ratio < min) {
+          findings.push({ route: r, theme, width, ...run, fg: hex(worst.fgOn), bg: hex(worst.bg), ratio: worst.ratio, min });
         }
       }
       }

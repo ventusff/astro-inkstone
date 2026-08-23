@@ -22,7 +22,7 @@ export interface NoteCardData {
   kind?: KindDisplay | undefined;
   domains: DomainDisplay[];
   status?: StatusDisplay | undefined;
-  /** Pre-formatted display date (e.g. "2026.05"). */
+  /** Pre-formatted display date, "YYYY.MM". */
   updated?: string | undefined;
   /** Chapter count, for multi-chapter collection notes. */
   chapterCount?: number | undefined;
@@ -56,7 +56,7 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
   <a class="title" href={note.href}>{note.title}</a>
   {note.description && <p class="desc">{note.description}</p>}
   <div class="meta">
-    {note.domains.map((dom) => <DomainChip def={dom} href={dom.href} />)}
+    {note.domains.map((dom) => <DomainChip def={dom} />)}
     {note.status && <StatusDot def={note.status} />}
     {(note.mirrors ?? []).map((m) => (
       <a class="mirror" href={m.href}>{m.label}</a>

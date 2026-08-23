@@ -21,6 +21,18 @@ test('an existing frontmatter object keeps its fields and gains the minutes', ()
   assert.deepEqual(file.data.astro?.frontmatter, { title: 'T', readingMinutes: 1 });
 });
 
+test('CJK Extension B counts as CJK; CJK punctuation counts as neither', () => {
+  // 800 Han characters read as 2 minutes whichever plane they live on
+  const extB: FileData = { data: {} };
+  remarkReadingTime()(treeOf('\u{20000}'.repeat(800)) as never, extB as never);
+  assert.equal(extB.data.astro?.frontmatter?.['readingMinutes'], 2);
+  // punctuation on top of the same text changes nothing: it is neither a
+  // CJK character nor a Latin word
+  const punct: FileData = { data: {} };
+  remarkReadingTime()(treeOf(('字。、「」'.repeat(200) + '字'.repeat(200))) as never, punct as never);
+  assert.equal(punct.data.astro?.frontmatter?.['readingMinutes'], 1);
+});
+
 test('CJK counts at 400 chars/min, Latin at 200 words/min, floor 1 minute', () => {
   const cjk: FileData = { data: {} };
   remarkReadingTime()(treeOf('字'.repeat(800)) as never, cjk as never);

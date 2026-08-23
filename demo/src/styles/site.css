@@ -27,6 +27,32 @@ html[lang='zh-CN'] {
 
 /* ============================================================ shell ==== */
 
+/* Skip link: the page's first tab stop — sr-only (base.css) while
+   unfocused, shown over the sticky nav bar while it holds keyboard focus.
+   The skin lives on the class; the focus state reverts every declaration
+   of the sr-only clipping and places the pill. */
+.skip-link {
+  z-index: 2000;
+  background: var(--color-bg-card);
+  color: var(--color-ink);
+  border-radius: 8px;
+  font: 600 13px/1 var(--font-ui);
+  text-decoration: none;
+}
+.skip-link:focus-visible {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip-path: none;
+  border: 2px solid var(--color-accent);
+  padding: 9px 14px;
+  outline: none;
+}
+
 .layout {
   display: grid;
   grid-template-columns: var(--sidebar-w) minmax(0, 1fr);

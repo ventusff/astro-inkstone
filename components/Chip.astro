@@ -3,11 +3,13 @@
  * Inline chip/badge. For topic-specific category palettes (e.g. one color
  * per method family in a survey) pass a custom `tone` instead of a variant.
  */
+import type { Tone } from '../lib/wiki-display.ts';
+
 export type ChipVariant = 'teal' | 'mustard' | 'orange' | 'violet';
 
 interface Props {
   variant?: ChipVariant | undefined;
-  tone?: { bg: string; fg: string } | undefined;
+  tone?: Tone | undefined;
 }
 const { variant, tone } = Astro.props;
 const style = tone ? `background:${tone.bg};color:${tone.fg};border-color:transparent;` : undefined;

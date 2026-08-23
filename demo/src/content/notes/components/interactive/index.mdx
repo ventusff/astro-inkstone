@@ -18,7 +18,7 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
 
 The division of labor is the package's usual one: the **mount markup** (stage, controls slot, caption slot) ships in the package; the **demo module and its loader** belong to the site. This site keeps its loader in `src/lib/demo-loader.ts` and calls `mountAllDemos()` once from the layout; the call runs on every page, but a demo module chunk is fetched only for a page that carries a `[data-demo]` mount.
 
-This one draws two-source wave interference with the page's own ink token, so it follows the theme:
+A demo that takes pointer input on its canvas passes `interactive` — the stage then claims touch gestures and shows a crosshair. This one is passive (render-only), so it leaves the flag off and a swipe over the canvas still scrolls the page. It draws two-source wave interference with the page's own ink token, so it follows the theme:
 
 <DemoMount demo="waves/interference" title="Demo · Two-source wave interference" canvas={{ w: 640, h: 300 }}>
   <Fragment slot="caption">

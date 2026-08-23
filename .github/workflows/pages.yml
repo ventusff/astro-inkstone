@@ -34,14 +34,18 @@ jobs:
         # The demo consumes the package via `file:..`; the package's own
         # dependencies are provided by this repo-root install.
         run: npm ci --no-audit --no-fund
-      - name: Install & build demo
+      - name: Unit tests
+        run: npm test
+      - name: Install, check & build demo
         working-directory: demo
         env:
           DEMO_SITE: https://ventusff.github.io
           DEMO_BASE: /astro-inkstone/
         run: |
           npm ci --no-audit --no-fund
+          npx astro check
           npm run build
+          npm run check
       - name: Render-layer probes on the production-base artifact
         env:
           CHROME_PATH: /usr/bin/google-chrome

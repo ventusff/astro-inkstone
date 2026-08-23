@@ -80,7 +80,7 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
   </button>
   {
     translateRoute !== undefined && (
-      <a class="lang-btn" id="lang-toggle" href={href(translateRoute)} data-to={otherLocale} title={t.langButton} hreflang={otherLocale === 'zh' ? 'zh-CN' : 'en'}>
+      <a class="lang-btn" href={href(translateRoute)} title={t.langButton} hreflang={otherLocale === 'zh' ? 'zh-CN' : 'en'}>
         {t.langSwitch}
       </a>
     )
@@ -96,17 +96,6 @@ const otherLocale = locale === 'zh' ? 'en' : 'zh';
   toggle?.addEventListener('click', () => {
     const open = document.body.classList.toggle('nav-open');
     toggle.setAttribute('aria-expanded', String(open));
-  });
-
-  // Language preference persists across visits (the link already points at the
-  // counterpart page; this only records the choice).
-  document.getElementById('lang-toggle')?.addEventListener('click', (e) => {
-    const el = e.currentTarget as HTMLElement;
-    try {
-      localStorage.setItem('inkstone-lang', el.dataset['to'] ?? 'zh');
-    } catch {
-      /* private mode: the jump still works, the preference is just not kept */
-    }
   });
 </script>
 

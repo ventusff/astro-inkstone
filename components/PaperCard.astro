@@ -3,11 +3,11 @@
  * Paper card — the survey workhorse.
  *
  *   <PaperCard
- *     alias="Transformer" full="Attention Is All You Need"
- *     tags={[{ label: 'NeurIPS 2017' }]}
- *     meta="Vaswani, Shazeer, Parmar … · Google Brain / Google Research"
- *     links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
- *     id="transformer-card">
+ *     alias="ShortName" full="The Paper's Full Title"
+ *     tags={[{ label: 'VENUE YYYY' }]}
+ *     meta="Author, Author … · Lab"
+ *     links={[{ label: 'arXiv:YYMM.NNNNN', href: 'https://arxiv.org/abs/YYMM.NNNNN' }]}
+ *     id="shortname-card">
  *     <Fragment slot="pain">What earlier methods struggled with… (markdown works)</Fragment>
  *     **Key idea**: …body text (markdown works)
  *     <Fragment slot="diff">Why this paper changed the follow-up landscape.</Fragment>
@@ -18,13 +18,14 @@
  * rendered at build time; everything else is escaped.
  */
 import type { ChipVariant } from './Chip.astro';
+import type { Tone } from '../lib/wiki-display.ts';
 import { renderTocLabel } from '../lib/toc.ts';
 
 export interface PaperTag {
   label: string;
   variant?: ChipVariant | undefined;
   /** custom category color (e.g. one tone per method family) */
-  tone?: { bg: string; fg: string } | undefined;
+  tone?: Tone | undefined;
 }
 export interface PaperLink {
   label: string;

@@ -1,16 +1,19 @@
 ---
 /**
  * Domain chip — colored by the registry's tone pair. Purely presentational:
- * the site resolves the def from its registry and passes it in; with `href`
- * it renders as a link (e.g. to the domain's browse page).
+ * the site resolves the def from its registry and passes it in. With a link
+ * target it renders as a link (e.g. to the domain's browse page): the
+ * `href` prop when given, else the def's own `href`.
  */
 import type { DomainDisplay } from '../../lib/wiki-display.ts';
 
 interface Props {
   def: DomainDisplay;
+  /** overrides `def.href` */
   href?: string | undefined;
 }
-const { def, href } = Astro.props;
+const { def, href: hrefProp } = Astro.props;
+const href = hrefProp ?? def.href;
 const style = `--chip-bg:${def.tone.bg}; --chip-fg:${def.tone.fg};`;
 ---
 

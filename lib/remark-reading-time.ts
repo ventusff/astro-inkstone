@@ -7,7 +7,13 @@ import type { Root } from 'mdast';
 import type { VFile } from 'vfile';
 import { visit } from 'unist-util-visit';
 
-const CJK = /[⺀-鿿豈-﫿぀-ヿ가-힯]/g;
+// CJK = the Han, kana and hangul scripts, by Unicode script property — all
+// planes, CJK Extension B+ included. Punctuation is Script=Common, so it is
+// never a CJK character.
+const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
+// punctuation and symbols are not prose: dropped before the word split, so
+// CJK punctuation (、。「」…) counts as neither a CJK character nor a word
+const PUNCT = /[\p{P}\p{S}]/gu;
 
 export function remarkReadingTime() {
   return (tree: Root, file: VFile): void => {
@@ -18,6 +24,7 @@ export function remarkReadingTime() {
     const cjkChars = (text.match(CJK) ?? []).length;
     const latinWords = text
       .replace(CJK, ' ')
+      .replace(PUNCT, ' ')
       .split(/\s+/)
       .filter((w) => w.length > 0).length;
     const minutes = Math.max(1, Math.round(cjkChars / 400 + latinWords / 200));

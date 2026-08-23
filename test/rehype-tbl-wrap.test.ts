@@ -40,3 +40,10 @@ test('roles and data-label on every body cell; a spanning table has no card form
   const spanning = wrap(table(6, 1, { colSpan: 2 }));
   assert.deepEqual(classes(spanning), ['tbl-wrap']);
 });
+
+test('rowspan="0" spans all remaining rows per HTML — the table has no card form', () => {
+  for (const rowSpan of ['0', 0]) {
+    const w = wrap(table(6, 2, { rowSpan }));
+    assert.deepEqual(classes(w), ['tbl-wrap']);
+  }
+});

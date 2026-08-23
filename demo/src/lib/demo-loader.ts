@@ -26,9 +26,16 @@ type DemoModule = { default: (ctx: DemoCtx) => DemoCleanup };
 
 const modules = import.meta.glob<DemoModule>('../demos/**/*.ts');
 
-/** Mount every `[data-demo]` on the page; cleanups run on pagehide. */
+/** Mount every `[data-demo]` on the page; cleanups run on pagehide. A
+ *  module whose load resolves after pagehide does not mount, and a cleanup
+ *  registered after disposal runs immediately instead of leaking. */
 export function mountAllDemos(): void {
   const cleanups: (() => void)[] = [];
+  let disposed = false;
+  const register = (cleanup: () => void): void => {
+    if (disposed) cleanup();
+    else cleanups.push(cleanup);
+  };
   for (const el of document.querySelectorAll<HTMLElement>('section.demo[data-demo]')) {
     const id = el.dataset['demo'];
     const stage = el.querySelector<HTMLElement>('.demo-stage');
@@ -40,14 +47,16 @@ export function mountAllDemos(): void {
     }
     load()
       .then((mod) => {
+        if (disposed) return; // the page is gone — nothing to mount into
         const cleanup = mod.default({ stage, canvases: [...stage.querySelectorAll('canvas')] });
-        if (cleanup) cleanups.push(cleanup);
+        if (cleanup) register(cleanup);
       })
       .catch((err: unknown) => {
         console.error(`[demo-loader] demo "${id}" failed to load`, err);
       });
   }
   window.addEventListener('pagehide', () => {
-    for (const cleanup of cleanups) cleanup();
+    disposed = true;
+    for (const cleanup of cleanups.splice(0)) cleanup();
   });
 }

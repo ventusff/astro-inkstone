@@ -54,7 +54,14 @@ export interface TaxonomyLocale {
 }
 
 export interface TaxonomyOptions {
-  /** mirror-locale prefixes. Default en/ + de/. The primary locale has none. */
+  /**
+   * MIRROR locales only: each entry is a mirror's id prefix (non-empty,
+   * unique) — the primary locale is not listed here, it is named by
+   * `primary` and its ids carry no prefix. Note the difference from
+   * backlinks' `locales` option (lib/backlinks.ts), which is the full
+   * registry and includes the primary as the one `''`-prefix entry.
+   * Default en/ + de/.
+   */
   locales?: TaxonomyLocale[];
   /** locale code reported for unprefixed ids. Default 'zh'. */
   primary?: string;
@@ -116,6 +123,17 @@ export function createTaxonomyCore<
   const { kinds, domains, statuses } = registry;
   const locales = options.locales ?? DEFAULT_LOCALES;
   const primary = options.primary ?? 'zh';
+  if (locales.some((l) => l.prefix === '')) {
+    throw new Error(
+      "createTaxonomyCore: locales lists MIRROR prefixes only and they must be non-empty — the primary locale is named by `primary` and carries no prefix (an empty prefix would claim every id)",
+    );
+  }
+  const prefixes = new Set(locales.map((l) => l.prefix));
+  if (prefixes.size !== locales.length) {
+    throw new Error(
+      `createTaxonomyCore: mirror prefixes must be unique, got ${locales.map((l) => l.prefix).join(', ')}`,
+    );
+  }
 
   type Resolved = ResolvedNote<K, D, S, E>;
 
@@ -157,7 +175,9 @@ export function createTaxonomyCore<
         : {}),
       kind: pick(chain, (d) => d.kind) as K['id'] | undefined,
       domains: (pick(chain, (d) => d.domains) ?? []) as D['id'][],
-      tags: pick(chain, (d) => d.tags) ?? [],
+      // deduplicated: a tag repeated in one note is one tag, so facet
+      // counts and the tag index count the note once
+      tags: [...new Set(pick(chain, (d) => d.tags) ?? [])],
       status: pick(chain, (d) => d.status) as S['id'] | undefined,
       created,
       updated: pick(chain, (d) => d.updated) ?? created,
@@ -247,7 +267,7 @@ export function createTaxonomyCore<
   };
 }
 
-/** YYYY.MM (UTC fields; `z.coerce.date` parses `2026-05-01` as UTC midnight). */
+/** YYYY.MM (UTC fields; `z.coerce.date` parses a YYYY-MM-DD string as UTC midnight). */
 export function fmtMonth(d: Date | undefined): string {
   if (!d) return '';
   return `${d.getUTCFullYear()}.${String(d.getUTCMonth() + 1).padStart(2, '0')}`;

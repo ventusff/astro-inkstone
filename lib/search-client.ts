@@ -61,23 +61,50 @@ function countOf(haystack: string, term: string): number {
 const escapeHtml = (s: string): string =>
   s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
+/**
+ * Case fold with an index map back into the original string. Lowercasing
+ * can change length ('İ' folds to two code units), so an offset found in
+ * the folded string cannot slice the original directly: `map[i]` is the
+ * original index of the character that produced folded position `i`, with
+ * `map[folded.length]` = the original length as the end sentinel.
+ */
+function foldWithMap(s: string): { folded: string; map: number[] } {
+  let folded = '';
+  const map: number[] = [];
+  let at = 0;
+  for (const ch of s) {
+    const low = ch.toLowerCase();
+    for (let k = 0; k < low.length; k += 1) map.push(at);
+    folded += low;
+    at += ch.length;
+  }
+  map.push(s.length);
+  return { folded, map };
+}
+
 /** An ellipsis marks each side of the snippet only where text is cut. */
 function makeSnippet(text: string, term: string): string {
-  const at = norm(text).indexOf(term);
+  const { folded, map } = foldWithMap(text);
+  const at = folded.indexOf(term);
   if (at === -1) {
     return escapeHtml(text.slice(0, 120)) + (text.length > 120 ? '…' : '');
   }
-  const from = Math.max(0, at - 44);
-  const to = Math.min(text.length, from + 168);
-  const raw = text.slice(from, to);
-  const rel = at - from;
+  const start = map[at]!;
+  // the match end, widened to a character boundary of the original: when the
+  // folded match ends inside one character's expansion, the mark covers that
+  // whole character
+  let endAt = at + term.length;
+  while (endAt < folded.length && map[endAt]! <= start) endAt += 1;
+  const end = map[endAt]!;
+  const from = Math.max(0, start - 44);
+  const to = Math.min(text.length, Math.max(from + 168, end));
   return (
     (from > 0 ? '…' : '') +
-    escapeHtml(raw.slice(0, rel)) +
+    escapeHtml(text.slice(from, start)) +
     '<mark>' +
-    escapeHtml(raw.slice(rel, rel + term.length)) +
+    escapeHtml(text.slice(start, end)) +
     '</mark>' +
-    escapeHtml(raw.slice(rel + term.length)) +
+    escapeHtml(text.slice(end, to)) +
     (to < text.length ? '…' : '')
   );
 }

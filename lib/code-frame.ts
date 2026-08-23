@@ -50,6 +50,10 @@ export function transformerCodeFrame(opts: CodeFrameLabels = {}): ShikiTransform
       const collapse = /(^|\s)collapse(\s|$)/.test(raw);
       const lang = this.options.lang || 'text';
 
+      // the pre is a horizontal scroll region: it must be keyboard-reachable
+      // (and focus inside the block reveals focus-notation-dimmed lines)
+      (pre.properties ??= {})['tabIndex'] = 0;
+
       const copyBtn = h(
         'button',
         {

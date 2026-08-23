@@ -10,15 +10,21 @@
  *     </HubCard>
  *   </div>
  *
+ * The card is an <article> whose title anchor is stretched over it (its
+ * ::after covers the card, base.css), so the slot may carry Markdown links
+ * of its own — they sit above the overlay and never nest inside an anchor.
+ * The card's accessible name is the title link.
+ *
  * `soft` gives the card the secondary surface (an appendix, a side track).
  */
 import Chip, { type ChipVariant } from './Chip.astro';
+import type { Tone } from '../lib/wiki-display.ts';
 
 export interface HubChip {
   label: string;
   variant?: ChipVariant | undefined;
-  /** custom category color — the same { bg, fg } pair Chip and PaperCard take */
-  tone?: { bg: string; fg: string } | undefined;
+  /** custom category color — the same Tone pair Chip and PaperCard take */
+  tone?: Tone | undefined;
 }
 
 interface Props {
@@ -32,9 +38,9 @@ interface Props {
 const { href, num, title, chips = [], count, soft = false } = Astro.props;
 ---
 
-<a class:list={['hub-card', soft && 'soft']} href={href}>
+<article class:list={['hub-card', soft && 'soft']}>
   {num && <span class="num">{num}</span>}
-  <h3>{title}</h3>
+  <h3><a class="hub-card-link" href={href}>{title}</a></h3>
   <div class="one-liner"><slot /></div>
   {
     chips.length > 0 && (
@@ -49,4 +55,4 @@ const { href, num, title, chips = [], count, soft = false } = Astro.props;
     {count && <span class="count">{count}</span>}
     <span class="arrow">→</span>
   </div>
-</a>
+</article>

@@ -1,16 +1,17 @@
 /**
  * astro-inkstone — aggregate export of the shared layer. The barrel is
- * engine-free by contract: no value export here may come from a module that
- * imports astro-inkbrush, so a pure-static site can import the barrel with
- * no engine installed. The engine-coupled values are imported by subpath —
- * siteMarkdown via 'astro-inkstone/markdown-preset', createBacklinks via
- * 'astro-inkstone/lib/backlinks'; their types stay re-exported here
- * (type-only re-exports are erased and load nothing).
+ * engine-free by contract: no export here — type re-exports included — may
+ * come from a module that imports astro-inkbrush, so a pure-static site can
+ * import and type-check the barrel with no engine installed (a type
+ * re-export is erased at runtime but still makes TypeScript resolve the
+ * engine-importing module). The engine-coupled surface lives on subpaths
+ * only — siteMarkdown and SiteMarkdownOptions via
+ * 'astro-inkstone/markdown-preset', createBacklinks and the Backlink* types
+ * via 'astro-inkstone/lib/backlinks'.
  * Components are imported by path (astro-inkstone/components/Callout.astro),
  * styles via astro-inkstone/styles/{tokens,base,browse}.css; this barrel only
  * aggregates lib.
  */
-export type { SiteMarkdownOptions } from './markdown-preset.ts';
 export { normalizeBase } from './base.ts';
 export { rehypeChapters, slugify, roman, type ChaptersOptions } from './rehype-chapters.ts';
 export type { TocData, TocEntry, TocGroup, TocItem } from './toc-types.ts';
@@ -29,12 +30,5 @@ export { remarkCallouts, type CalloutOptions } from './remark-callouts.ts';
 export { remarkReadingTime } from './remark-reading-time.ts';
 export { transformerCodeFrame, type CodeFrameLabels } from './code-frame.ts';
 export { buildSearchIndexEndpoint, type SearchIndexOptions, type SearchIndexSource } from './search-index.ts';
-export type {
-  BacklinkDoc,
-  BacklinkIndex,
-  BacklinkItem,
-  BacklinksOptions,
-  GraphNeighbor,
-} from './backlinks.ts';
 export { secureFsDeny } from './vite-security.ts';
 export type { DomainDisplay, KindDisplay, StatusDisplay, Tone } from './wiki-display.ts';

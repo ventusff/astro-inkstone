@@ -17,7 +17,7 @@ interface Props {
   kind?: KindDisplay | undefined;
   domains?: DomainDisplay[] | undefined;
   status?: StatusDisplay | undefined;
-  /** Pre-formatted display date (e.g. "2026.05"). */
+  /** Pre-formatted display date, "YYYY.MM". */
   updated?: string | undefined;
   /** Pre-formatted reading time (e.g. "6 min read"). */
   reading?: string | undefined;
@@ -35,7 +35,7 @@ const show =
     <div class="taxo-line">
       {kind && <KindBadge def={kind} />}
       {domains.map((d) => (
-        <DomainChip def={d} href={d.href} />
+        <DomainChip def={d} />
       ))}
       {status && <StatusDot def={status} />}
       {updated && (

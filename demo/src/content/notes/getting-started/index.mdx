@@ -88,7 +88,7 @@ A minimal configuration in this site's shape — chapter numbering, math, callou
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import { normalizeBase } from 'astro-inkstone';
-import { siteMarkdown } from 'astro-inkstone/lib/markdown-preset';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
 import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
 
 const WIKI_MODE = process.env.WIKI === '1';

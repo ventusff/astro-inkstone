@@ -28,7 +28,7 @@ import References from 'astro-inkstone/components/References.astro';
 
 ## Chip
 
-行内徽章,标状态或分类:<Chip variant="teal">稳定</Chip> <Chip variant="mustard">测试中</Chip> <Chip variant="violet">研究</Chip>——也可传自定义色调做主题色板:<Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>自定义色调</Chip>
+行内徽章,标状态或分类,四个变体与 `PaperCard` 标签、`HubCard` 徽章共用一套:<Chip variant="teal">稳定</Chip> <Chip variant="mustard">测试中</Chip> <Chip variant="violet">研究</Chip> <Chip variant="orange">新增</Chip>——也可传自定义色调做主题色板:<Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>自定义色调</Chip>
 
 ## Grid
 
@@ -60,7 +60,7 @@ import References from 'astro-inkstone/components/References.astro';
 
 <Steps>
 1. 加两个 submodule 与 `file:` 依赖。
-2. 全局样式表里引入 `tokens.css` 与 `base.css`。
+2. 全局样式表里引入 `tokens.css` 与 `base.css`,做 wiki 站再加 `browse.css`。
 3. `astro.config` 里接上 `siteMarkdown()`。
 4. 用你的身份色覆盖第一层色板。
 </Steps>
@@ -92,6 +92,10 @@ import References from 'astro-inkstone/components/References.astro';
   **核心思想**:只用注意力、不用循环——每个 token 一步看到所有其他 token,整个序列并行训练。
   <Fragment slot="diff">此后几乎所有大语言模型都建在这套架构上。</Fragment>
 </PaperCard>
+
+深入小节的标题下,可以放一行大白话注解(`.speak`),先讲清这个模块*是干什么的*,再进机制:
+
+<p class="speak">注意力就是一张软查找表:每个 token 都问一句"谁跟我相关?",拿回一份按相关度加权的混合答案。</p>
 
 ## References
 

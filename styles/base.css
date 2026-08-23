@@ -336,17 +336,26 @@ pre.astro-code .line.diff.remove::before {
   color: var(--color-accent-text);
   margin-right: 8px;
 }
+/* The pre is a horizontal scroll region and is focusable (tabindex="0",
+   written by the code-frame transformer); the ring is drawn inset so the
+   frame's overflow clipping cannot eat it. */
+pre.astro-code:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
 /* focus notation blurs the other lines on devices that can hover to reveal
-   them; keyboard focus inside the block reveals them too; touch and
-   reduced-motion readers see the whole block. The de-emphasis is blur only —
-   never opacity, which would drop the glyph colors below AA */
+   them; keyboard focus on the pre or anywhere in its frame (the copy
+   button, the fold summary) reveals them too; touch and reduced-motion
+   readers see the whole block. The de-emphasis is blur only — never
+   opacity, which would drop the glyph colors below AA */
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   pre.astro-code.has-focused .line:not(.focused) {
     filter: blur(1.6px);
     transition: filter 0.25s;
   }
   pre.astro-code.has-focused:hover .line:not(.focused),
-  pre.astro-code.has-focused:focus-within .line:not(.focused) {
+  pre.astro-code.has-focused:focus-within .line:not(.focused),
+  .code-frame:focus-within pre.astro-code.has-focused .line:not(.focused) {
     filter: none;
   }
 }
@@ -1440,6 +1449,10 @@ section:has(.hero) + h2 {
   display: block;
   width: 100%;
   height: auto;
+}
+/* only an interactive demo (DemoMount `interactive`) claims touch gestures
+   and advertises a pointer tool — over a passive canvas the page scrolls */
+.demo[data-interactive] canvas {
   touch-action: none;
   cursor: crosshair;
 }
@@ -1651,14 +1664,16 @@ section:has(.hero) + h2 {
   gap: 18px;
   margin: 28px 0 48px;
 }
-/* written as a.hub-card: same specificity as the column's link rule, later wins */
-a.hub-card {
+/* The card is an <article>; its title anchor is the stretched link: the
+   anchor's ::after covers the card, so the whole card is one click target
+   while the slot may carry links of its own (positioned, so they sit above
+   the overlay — see .one-liner a). */
+.hub-card {
+  position: relative;
   background: var(--color-bg-card);
   border: 1px solid var(--color-line);
   border-radius: var(--radius);
   padding: 18px 20px 16px;
-  text-decoration: none;
-  color: inherit;
   box-shadow: var(--shadow);
   transition:
     transform 0.12s ease,
@@ -1667,11 +1682,19 @@ a.hub-card {
   flex-direction: column;
   gap: 8px;
 }
-a.hub-card:hover {
+.hub-card:hover {
   transform: translateY(-2px);
   border-color: var(--color-accent);
 }
-a.hub-card.soft {
+/* a site may render the whole card as one anchor (no links in its slot):
+   the anchor form resets the column's link skin itself — written as
+   a.hub-card so it outranks the `.col a` rule */
+a.hub-card {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: none;
+}
+.hub-card.soft {
   background: var(--color-bg-soft);
 }
 .hub-card .num {
@@ -1686,6 +1709,25 @@ a.hub-card.soft {
   font-weight: 700;
   color: var(--color-ink);
 }
+/* the title link carries the card's ink, not the column's link accent */
+.hub-card h3 a.hub-card-link {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: none;
+}
+.hub-card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+}
+.hub-card-link:focus-visible {
+  outline: none;
+}
+.hub-card-link:focus-visible::after {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
 .hub-card .one-liner {
   font-family: var(--font-body);
   font-size: 14.5px;
@@ -1696,6 +1738,11 @@ a.hub-card.soft {
 }
 .hub-card .one-liner p {
   margin: 0;
+}
+/* a link authored in the slot: positioned, so it paints above the stretched
+   link's overlay and stays independently clickable */
+.hub-card .one-liner a {
+  position: relative;
 }
 .hub-card .topics {
   display: flex;
@@ -1825,14 +1872,13 @@ span.wikilink-dead {
 }
 
 
-/* ----- print: Ctrl+P on any page yields a clean PDF -----
-   Without print styles, printing drags the sidebar ToC, breadcrumb,
-   theme/search buttons, backlinks and prev/next navigation onto paper — a
-   note can't be shared as a PDF. These rules do exactly three things: hide
-   interactive chrome, let the 820px reading column fill the page width, and
-   protect tables/cards from page breaks. Colors are untouched (the warm
-   paper ground is the identity; the browser's "background graphics" toggle
-   decides whether it prints). */
+/* ----- print: any page yields a clean PDF -----
+   Three rules, nothing more: interactive chrome (sidebar, nav, search,
+   theme controls, backlinks, pagination, comments) is hidden; the reading
+   column fills the page width; tables, cards and captions do not split
+   across page breaks. Colors stay untouched — the paper ground is the
+   identity, and the browser's "background graphics" toggle decides whether
+   it prints. */
 @media print {
   .site-nav,
   .sidebar,

@@ -88,6 +88,9 @@ const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
     <ThemeInit />
   </head>
   <body class={bodyClass}>
+    {/* first tab stop on every page; #main is the layouts' main element.
+        sr-only while unfocused (the focused state is styled in site.css) */}
+    <a class="sr-only skip-link" href="#main">{t.skip}</a>
     <Breadcrumb locale={locale} crumbs={crumbs} translateRoute={translateRoute} hasSidebar={hasSidebar} />
     <slot />
 

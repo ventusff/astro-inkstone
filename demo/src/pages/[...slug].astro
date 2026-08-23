@@ -139,6 +139,24 @@ if (hubEntry?.data.nav) {
       };
     }
   }
+} else if (subPath !== '') {
+  // A mirror chapter whose hub has no mirror: the canonical hub still knows
+  // the chapter's position, so the hub chrome (the PartHero kicker and the
+  // in-column crumb, pointing at the canonical hub — the only hub route
+  // that exists) is derived from it. The sibling rail and prev/next stay
+  // absent: their rows would cross into the other language.
+  const canonicalHub = byId.get(topic);
+  if (canonicalHub?.data.nav) {
+    const pages = canonicalHub.data.nav.flatMap((group) => group.pages);
+    const position = pages.indexOf(subPath) + 1;
+    if (position > 0) {
+      const label = entry.data.navLabel ?? entry.data.title;
+      hubPage = {
+        crumbLabel: `Part ${roman(position)} · ${label}`,
+        hubHref: routeTo(topic),
+      };
+    }
+  }
 }
 
 /* ---------- language switch (locales this note exists in) ---------- */
@@ -178,7 +196,8 @@ const taxonomy = stripOf(
   typeof readingMinutes === 'number' ? readingMinutes : undefined,
 );
 
-/* ---------- backlinks + the sidebar's local graph (PROD builds once) ---------- */
+/* ---------- backlinks + the sidebar's local graph (the index is memoized
+   per collection array — see src/lib/backlinks.ts) ---------- */
 const index = backlinkBuilder.build(toDocs(notes));
 const backlinks = index.inbound.get(entry.id) ?? [];
 const graph = index.localGraph(entry.id, (id) => byId.get(id)?.data.title ?? id);

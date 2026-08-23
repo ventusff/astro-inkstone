@@ -81,6 +81,7 @@ export const UI = {
     readingTime: (min: number) => `${min} min read`,
     footer: 'astro-inkstone demo · the notes are the manual, the manual is the demo',
     menu: 'Menu',
+    skip: 'Skip to content',
   },
   zh: {
     searchPlaceholder: '搜索这座园地…（Esc 关闭）',
@@ -113,5 +114,6 @@ export const UI = {
     readingTime: (min: number) => `阅读约 ${min} 分钟`,
     footer: 'astro-inkstone 示范站 · 笔记即手册,手册即示范',
     menu: '菜单',
+    skip: '跳到正文',
   },
 } as const;

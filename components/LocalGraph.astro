@@ -33,8 +33,18 @@ const CY = 92;
 const RX = 92;
 const RY = 62;
 
+/* Node angles on the ellipse: a lone neighbour sits on top, a pair sits
+   symmetrically left/right of the centre; three or more spread evenly from
+   the top. */
+const anglesFor = (n: number): number[] => {
+  if (n === 1) return [-Math.PI / 2];
+  if (n === 2) return [Math.PI, 0];
+  return Array.from({ length: n }, (_, i) => -Math.PI / 2 + (i * 2 * Math.PI) / n);
+};
+const angles = anglesFor(neighbors.length);
+
 const placed = neighbors.map((n, i) => {
-  const angle = -Math.PI / 2 + (i * 2 * Math.PI) / Math.max(neighbors.length, 3);
+  const angle = angles[i]!;
   const x = CX + RX * Math.cos(angle);
   const y = CY + RY * Math.sin(angle);
   return { ...n, x, y, above: y < CY, color: n.color ?? 'var(--color-accent)' };
@@ -70,8 +80,13 @@ const short = (s: string): string => {
   neighbors.length > 0 && (
     <nav class="lg-wrap" aria-label={`${label}: ${centerTitle}`}>
       <p class="lg-title" aria-hidden="true">{label}</p>
-      {/* the drawing is decoration for sighted readers; the list below it is
-          the navigation — one link per neighbour, the same targets */}
+      {/* Deliberate division of surfaces: the SVG is aria-hidden decoration
+          whose anchors carry tabindex="-1" — they are a mouse affordance
+          only, kept out of the tab order so keyboard users are not walked
+          through the drawing twice. The visually-hidden list below is the
+          assistive-technology and keyboard surface: one link per neighbour,
+          the same targets. Do not make the SVG anchors focusable and do not
+          expose the SVG to AT. */}
       <svg class="lg-svg" viewBox={`0 0 ${W} ${H}`} aria-hidden="true" focusable="false">
         {placed.map((n) => (
           <line

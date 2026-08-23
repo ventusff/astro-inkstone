@@ -17,7 +17,14 @@ test('the baseline is a strict superset of the installed Vite fs.deny defaults',
 
 test('the baseline denies the editing machine state and key material', () => {
   const { fs } = secureFsDeny();
-  for (const entry of ['**/.wiki/**', '**/.ssh/**', '**/*.db', '**/*.sqlite']) {
+  for (const entry of [
+    '**/.wiki/**',
+    '**/.ssh/**',
+    '**/*.{db,sqlite,sqlite3}',
+    '**/*.{db,sqlite,sqlite3}-wal',
+    '**/*.{db,sqlite,sqlite3}-shm',
+    '**/*.{db,sqlite,sqlite3}-journal',
+  ]) {
     assert.ok(fs?.deny?.includes(entry), `baseline misses ${entry}`);
   }
 });

@@ -62,7 +62,7 @@ export function importSpecifiers(source: string): { spec: string; typeOnly: bool
   return out;
 }
 
-test('no module value-reachable from the barrel imports astro-inkbrush (source walk)', () => {
+test('no module reachable from the barrel imports astro-inkbrush, types included (source walk)', () => {
   const engineImports: string[] = [];
   const seen = new Set<string>();
   const queue = [resolve(libDir, 'index.ts')];
@@ -70,8 +70,9 @@ test('no module value-reachable from the barrel imports astro-inkbrush (source w
     const path = queue.pop()!;
     if (seen.has(path)) continue;
     seen.add(path);
-    for (const { spec, typeOnly } of importSpecifiers(readFileSync(path, 'utf8'))) {
-      if (typeOnly) continue; // erased, loads nothing
+    for (const { spec } of importSpecifiers(readFileSync(path, 'utf8'))) {
+      // type-only edges count too: TypeScript must still resolve them, so a
+      // consumer without the engine would fail type resolution
       if (spec.startsWith('astro-inkbrush')) engineImports.push(`${path} → ${spec}`);
       if (spec.startsWith('.')) queue.push(resolve(dirname(path), spec));
     }

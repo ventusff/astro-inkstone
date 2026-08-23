@@ -34,6 +34,22 @@ test('a plain fence becomes a figure frame with title bar and copy button', () =
   assert.ok(find(frame, 'code-frame-head'));
 });
 
+test('the pre is keyboard-reachable: tabindex="0" in every frame shape', () => {
+  const findPre = (el: Element): Element | undefined => {
+    if (el.tagName === 'pre') return el;
+    for (const c of el.children) {
+      if (c.type !== 'element') continue;
+      const hit = findPre(c);
+      if (hit) return hit;
+    }
+    return undefined;
+  };
+  for (const meta of ['', 'title="train.py"', 'collapse']) {
+    const pre = findPre(run(meta).children[0] as Element)!;
+    assert.equal(pre.properties?.['tabIndex'], 0, `meta: "${meta}"`);
+  }
+});
+
 test('an untitled fence shows its language; `collapse` renders a folded details', () => {
   const plain = run('').children[0] as Element;
   assert.deepEqual(find(plain, 'code-lang')!.children, [{ type: 'text', value: 'py' }]);

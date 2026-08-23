@@ -6,6 +6,7 @@
  * here instead of falling back silently in the browser.
  */
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -16,11 +17,19 @@ const NOTES = fileURLToPath(new URL('../demo/src/content/notes', import.meta.url
 
 const covered = new Set<number>();
 const absentFromSource = new Set<number>();
+let artifactSha: string | null = null;
 for (const line of readFileSync(join(FONTS, 'coverage.txt'), 'utf8').split('\n')) {
   const t = line.trim();
   if (t.startsWith('U+')) covered.add(parseInt(t.slice(2), 16));
   else if (t.startsWith('absent ')) absentFromSource.add(parseInt(t.slice(7), 16));
+  else if (t.startsWith('sha256 ')) artifactSha = t.slice(7);
 }
+
+test('coverage.txt describes the committed woff2 (artifact hash anchored)', () => {
+  assert.ok(artifactSha, 'coverage.txt carries no sha256 line — regenerate the subset');
+  const actual = createHash('sha256').update(readFileSync(join(FONTS, 'MapleMonoCN-subset.woff2'))).digest('hex');
+  assert.equal(actual, artifactSha, 'the woff2 and coverage.txt were not committed together — regenerate both');
+});
 
 const label = (cp: number): string => `U+${cp.toString(16).toUpperCase().padStart(4, '0')} ${String.fromCodePoint(cp)}`;
 
@@ -53,7 +62,8 @@ test('every character the demo notes use is in the subset (or marked absent from
   for (const f of files) {
     for (const c of readFileSync(f, 'utf8')) {
       const cp = c.codePointAt(0)!;
-      // the scan rule of build_font_subset.py: printable, no combining marks
+      // build_font_subset.py's printable filter (write_extra): combining
+      // marks and zero-widths never enter the recipe, so they are exempt here
       if (cp < 0x20 || (cp >= 0x300 && cp <= 0x36f) || cp === 0x200b || cp === 0xfffd) continue;
       used.add(cp);
     }

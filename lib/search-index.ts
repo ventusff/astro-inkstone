@@ -120,14 +120,53 @@ function maskNonProse(body: string): string {
 }
 
 /**
+ * Blank every JSX/HTML tag in `masked` — a quote-aware scan, not a regex:
+ * inside a tag, `>` within a quoted attribute value ('…', "…") or a `{…}`
+ * expression does not end it, so `<X label="a > b" />` and
+ * `<X on={a > b} />` are removed whole. It is a masker, not a parser: it
+ * does not pair opening and closing tags, does not read comments or CDATA,
+ * and an unterminated tag is blanked to the end of the string. Only
+ * `<letter` / `</letter` starts a tag, so prose `a < b` survives.
+ */
+function stripTags(masked: string): string {
+  let out = '';
+  let i = 0;
+  while (i < masked.length) {
+    const c = masked[i]!;
+    const next = masked[i + 1];
+    const opensTag = c === '<' && next !== undefined && /[A-Za-z/]/.test(next) && (next !== '/' || /[A-Za-z]/.test(masked[i + 2] ?? ''));
+    if (!opensTag) {
+      out += c;
+      i += 1;
+      continue;
+    }
+    // inside the tag: skip quoted spans and balanced {…} expressions
+    let quote: string | null = null;
+    let depth = 0;
+    i += 1;
+    while (i < masked.length) {
+      const t = masked[i]!;
+      i += 1;
+      if (quote !== null) {
+        if (t === quote) quote = null;
+      } else if (t === '"' || t === "'") quote = t;
+      else if (t === '{') depth += 1;
+      else if (t === '}') depth = Math.max(0, depth - 1);
+      else if (t === '>' && depth === 0) break;
+    }
+    out += ' ';
+  }
+  return out;
+}
+
+/**
  * Masked MDX source (maskNonProse) → searchable prose. Removes JSX tags,
  * link targets and image syntax; keeps link text and inline-code words
  * (code blocks are already masked — code is found through the prose that
  * explains it, not by token).
  */
 function plainText(masked: string, maxChars: number): string {
-  return masked
-    .replace(/<\/?[A-Za-z][^>]*>/g, ' ')
+  return stripTags(masked)
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     // `_` stays: snake_case identifiers are searched whole

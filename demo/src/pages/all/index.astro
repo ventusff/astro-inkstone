@@ -119,6 +119,9 @@ const statusDefs = STATUSES.filter((s) => units.some((u) => u.status === s.id));
     }
     clearBtn.addEventListener('click', () => {
       active.clear();
+      // clearing hides this button, so focus moves to the first filter pill
+      // first — keyboard focus must never rest on a hidden element
+      pills[0]?.focus();
       apply();
     });
   }

@@ -11,7 +11,7 @@ import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
 // dialect and content guard come from the engine in both modes, through
 // siteMarkdown, so the editor and the page share one grammar.
 const WIKI_MODE = Boolean(process.env.WIKI);
-const { siteMarkdown } = await import('astro-inkstone/lib/markdown-preset');
+const { siteMarkdown } = await import('astro-inkstone/markdown-preset');
 const { secureFsDeny } = await import('astro-inkstone/lib/vite-security');
 const { normalizeBase } = await import('astro-inkstone/lib/base');
 const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;

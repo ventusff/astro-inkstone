@@ -19,14 +19,29 @@
    ============================================================ */
 
 .wb-root {
-  /* chrome bridge: --color-* → --wb-* inside the browse context */
+  /* Chrome bridge: every --color-* token that shared chrome (nav bar,
+     search palette, breadcrumb, copy button, wikilinks) consumes is
+     re-mapped onto the shelf here, so chrome written against --color-*
+     sits on the warm ground in both themes (the --wb-* right-hand sides
+     flip under [data-theme='dark'], so one block covers both).
+     Deliberately NOT bridged: --color-overlay/-overlay-ink (the lightbox
+     overlay is dark in either theme and either context) and the content
+     accents --color-accent2/3/4 and code/math grounds (pigments shared by
+     both contexts; they hold AA on the warm papers). */
   --color-bg: var(--wb-bg);
   --color-bg-card: var(--wb-bg-card);
+  /* the shelf's secondary surface is its ground: the card face is the only
+     surface with muted-ink AA headroom below it */
+  --color-bg-soft: var(--wb-bg);
   --color-ink: var(--wb-text);
   --color-ink-soft: var(--wb-text-soft);
   --color-ink-faint: var(--wb-text-muted);
   --color-line: var(--wb-border-soft);
   --color-accent: var(--wb-wine);
+  /* wine tint + wine small-text tier: ≥4.5:1 on the tint and on every
+     shelf surface in both themes (measured by the contrast probe) */
+  --color-accent-soft: color-mix(in srgb, var(--wb-wine) 14%, var(--wb-bg));
+  --color-accent-text: var(--wb-wine);
   --color-brand: var(--wb-wine);
 
   margin: 0;

@@ -47,7 +47,8 @@ function textOf(node: AnyNode): string {
   return s;
 }
 
-/** true when any cell spans rows or columns */
+/** true when any cell spans rows or columns (rowspan="0" spans all
+ *  remaining rows of its row group per HTML, so 0 counts as spanning) */
 function hasSpans(table: Element): boolean {
   let found = false;
   const walk = (node: AnyNode): void => {
@@ -55,7 +56,8 @@ function hasSpans(table: Element): boolean {
     if (isEl(node, 'td') || isEl(node, 'th')) {
       const props = (node as unknown as Element).properties ?? {};
       const span = (v: unknown): number => (typeof v === 'string' || typeof v === 'number' ? Number(v) : 1);
-      if (span(props['rowSpan']) > 1 || span(props['colSpan']) > 1) found = true;
+      const rows = span(props['rowSpan']);
+      if (rows === 0 || rows > 1 || span(props['colSpan']) > 1) found = true;
       return;
     }
     for (const c of node.children ?? []) walk(c);

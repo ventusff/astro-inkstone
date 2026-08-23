@@ -20,7 +20,11 @@ whose content is the package's own manual.
   to consuming sites (the editing-machine deployment shape is documented
   with the engine).
 - **Sites**: override tokens for identity; own their Sidebar/Nav chrome
-  (the demo has a reference implementation).
+  (the demo has a reference implementation). The package owns the layout
+  *skeleton* vocabulary the wiki shape is built on — `.layout`, `.sidebar`,
+  `main.note-main`, `.col`, the shell width tokens, and their print rules —
+  the same way it owns `.col`: sites compose these classes, restyle them
+  through tokens, and hang their own chrome components inside them.
 
 ## Hard rules
 

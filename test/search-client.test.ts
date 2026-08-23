@@ -60,6 +60,17 @@ test('an unmatched body snippet gets a trailing ellipsis only when truncated', (
   assert.equal(search([longDoc], 'needle', 'en')[0]!.snippet, 'z'.repeat(120) + '…');
 });
 
+test('case-expanding characters (İ) do not displace the snippet highlight', () => {
+  // 'İ'.toLowerCase() is two code units, so folded offsets differ from the
+  // original's — the mark must still wrap the real match
+  const shifted = doc('tr', 'x', 'DİYARBAKIR and İZMİR come first, istanbul follows');
+  assert.match(search([shifted], 'istanbul', 'en')[0]!.snippet, /<mark>istanbul<\/mark> follows/);
+  // a match inside the expansion marks the whole original character
+  const inside = doc('dot', 'x', 'İstanbul opens');
+  const hit = search([inside], 'i̇stanbul', 'en')[0]!;
+  assert.match(hit.snippet, /<mark>İstanbul<\/mark> opens/);
+});
+
 test('limit must be a positive integer', () => {
   const docs = [doc('a', 'x', 'body')];
   assert.throws(() => search(docs, 'body', 'en', 0), /search: limit must be a positive integer, got 0/);

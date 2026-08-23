@@ -11,7 +11,8 @@
  * Site wiring (inside astro.config, spread into vite.server):
  *   import { secureFsDeny } from 'astro-inkstone/lib/vite-security';
  *   vite: { server: { allowedHosts: [...], ...secureFsDeny() } }
- * `extraDeny` adds site-specific paths; the baseline is never trimmed.
+ * `extraDeny` adds site-specific paths — a co-located app's state
+ * directory, a private data folder; the baseline is never trimmed.
  */
 import type { AstroUserConfig } from 'astro';
 
@@ -34,13 +35,12 @@ export function secureFsDeny(extraDeny: string[] = []): Pick<ViteServerConfig, '
       deny: [
         ...VITE_DEFAULT_DENY,
         '**/.wiki/**', // CMS state: session secret, revisions, comments
-        '**/.brain/**', // a co-located app's state directory
         '**/.ssh/**',
-        '**/*.db',
-        '**/*.db-wal',
-        '**/*.db-shm',
-        '**/*.sqlite',
-        '**/*.sqlite3',
+        // databases and their recoverable sidecars
+        '**/*.{db,sqlite,sqlite3}',
+        '**/*.{db,sqlite,sqlite3}-wal',
+        '**/*.{db,sqlite,sqlite3}-shm',
+        '**/*.{db,sqlite,sqlite3}-journal',
         ...extraDeny,
       ],
     },

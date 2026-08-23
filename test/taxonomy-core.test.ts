@@ -59,6 +59,26 @@ test('units are top-level primary entries, newest first; grouping follows regist
   assert.equal(fmtMonth(new Date('2026-03-01')), '2026.03');
 });
 
+test('duplicate tags resolve to one: facet counts and the tag index count the note once', () => {
+  const dup = note('dup', { tags: ['t', 't', 'u'] });
+  const { t, byId } = bind([dup]);
+  assert.deepEqual(t.resolveTaxonomy(dup, byId).tags, ['t', 'u']);
+  const units = t.unitsOf([dup]);
+  assert.deepEqual([...t.tagIndex(units).entries()].map(([tag, list]) => [tag, list.length]), [['t', 1], ['u', 1]]);
+});
+
+test('locales are mirror prefixes: non-empty and unique, or the binding throws', () => {
+  assert.throws(
+    () => createTaxonomyCore(registry, { locales: [{ code: 'en', prefix: '' }], primary: 'zh' }),
+    /MIRROR prefixes only and they must be non-empty/,
+  );
+  assert.throws(
+    () => createTaxonomyCore(registry, { locales: [{ code: 'en', prefix: 'x/' }, { code: 'de', prefix: 'x/' }] }),
+    /mirror prefixes must be unique/,
+  );
+  createTaxonomyCore(registry, { locales: [{ code: 'en', prefix: 'en/' }, { code: 'de', prefix: 'de/' }] });
+});
+
 test('aliases are entry-local: neither a chapter nor a mirror inherits them', () => {
   const hub = note('guides', { nav: [{ group: 'g', pages: ['a'] }], aliases: ['the-guides'] });
   const chapter = note('guides/a', {});

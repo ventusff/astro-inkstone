@@ -67,7 +67,9 @@
     "unist-util-visit": "^5.0.0",
     "vfile": "^6.0.3"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "vite": "^8.0.0"
+  },
   "peerDependencies": {
     "astro": "^7.0.0"
   },

@@ -81,7 +81,7 @@ import 'katex/dist/katex.min.css';
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import { normalizeBase } from 'astro-inkstone';
-import { siteMarkdown } from 'astro-inkstone/lib/markdown-preset';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
 import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
 
 const WIKI_MODE = process.env.WIKI === '1';

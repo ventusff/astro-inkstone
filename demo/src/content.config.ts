@@ -36,8 +36,12 @@ const notes = defineCollection({
      *  exactly one note), so they may default to `[]`. */
     kind: z.enum(KIND_IDS).optional(),
     domains: z.array(z.enum(DOMAIN_IDS)).optional(),
-    /** free tags; slug-safe so a tag is also its browse route segment */
-    tags: z.array(z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'tag must be a lowercase slug')).optional(),
+    /** free tags; slug-safe so a tag is also its browse route segment, and
+     *  unique — a repeated tag would double-count the note in facets */
+    tags: z
+      .array(z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'tag must be a lowercase slug'))
+      .refine((tags) => new Set(tags).size === tags.length, { message: 'tags must be unique' })
+      .optional(),
     status: z.enum(STATUS_IDS).optional(),
     created: z.coerce.date().optional(),
     updated: z.coerce.date().optional(),

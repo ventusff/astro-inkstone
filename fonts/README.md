@@ -39,7 +39,7 @@ When content uses a character outside the subset, the browser falls back to
 a system font for that glyph (alignment may be loose there). To fold it in:
 
 ```bash
-python3 -m venv /tmp/fontenv && /tmp/fontenv/bin/pip install 'fonttools==4.63.*' 'brotli==1.1.*'
+python3 -m venv /tmp/fontenv && /tmp/fontenv/bin/pip install 'fonttools==4.63.0' 'brotli==1.1.0'
 /tmp/fontenv/bin/python fonts/build_font_subset.py --scan path/to/content   # extends extra-chars.txt
 ```
 

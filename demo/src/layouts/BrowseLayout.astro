@@ -22,7 +22,7 @@ const { title, description, locale = 'en', crumbs = [] } = Astro.props;
 ---
 
 <Base title={title} description={description} locale={locale} crumbs={crumbs} bodyClass="wb-root">
-  <main>
+  <main id="main">
     <slot />
   </main>
 </Base>

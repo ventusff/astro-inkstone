@@ -92,6 +92,23 @@ test('CRLF frontmatter is stripped and CRLF heading lines are found', async () =
   assert.match(doc!.text, /Prose here/);
 });
 
+test('JSX tags are stripped whole even with ">" inside quoted props or expressions', async () => {
+  const body = [
+    'Before tags.',
+    '',
+    '<X label="a > b" />',
+    '',
+    '<Chart on={a > b} title={`x > ${y}`}>kept child text</Chart>',
+    '',
+    'And 3 < 5 stays prose. After tags.',
+  ].join('\n');
+  const [doc] = await emit([{ id: 'j', route: '/j/', locale: 'any', title: 'J', crumb: '', body }]);
+  assert.doesNotMatch(doc!.text, /label|a > b|Chart|title/);
+  assert.match(doc!.text, /Before tags\./);
+  assert.match(doc!.text, /kept child text/);
+  assert.match(doc!.text, /3 < 5 stays prose\. After tags\./);
+});
+
 test('multiline import/export statements are masked to their closing line', async () => {
   const body = [
     'import {',

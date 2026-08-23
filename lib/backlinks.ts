@@ -37,6 +37,13 @@ export interface BacklinkDoc {
   brand?: string | undefined;
   aliases: string[];
   body: string | undefined;
+  /**
+   * The body is MDX source: extraction parses it with the MDX grammar, so
+   * wikilink-looking strings inside ESM, JSX attributes and expressions are
+   * not prose and create no edge. Set it from the source file type
+   * (`.mdx` → true); default false (CommonMark reading).
+   */
+  mdx?: boolean | undefined;
 }
 
 /** One mention of a target note (shape consumed by components/Backlinks.astro). */
@@ -78,7 +85,14 @@ export interface GraphNeighbor {
 export interface BacklinksOptions {
   /** note id → site URL (the same mapping the site's wikilink rendering uses) */
   urlFor: (id: string) => string;
-  /** locale registry for mirror-aware resolution; defaults to the engine's */
+  /**
+   * Locale registry for mirror-aware resolution; defaults to the engine's.
+   * This is the FULL registry, primary locale included: the primary is the
+   * entry with prefix `''` (at most one), mirrors carry non-empty prefixes.
+   * Note the difference from taxonomy's `locales` option
+   * (lib/taxonomy-core.ts), which lists mirror prefixes only and names the
+   * primary separately as `primary`. Codes and prefixes must be unique.
+   */
   locales?: { code: string; prefix: string }[] | undefined;
   /** characters of context kept on each side of a mention — a positive
    *  integer. Default 90. */
@@ -99,6 +113,24 @@ export function createBacklinks(options: BacklinksOptions) {
   const { urlFor, locales, snippetSpan = 90 } = options;
   if (!Number.isInteger(snippetSpan) || snippetSpan < 1) {
     throw new Error(`createBacklinks: snippetSpan must be a positive integer, got ${String(options.snippetSpan)}`);
+  }
+  if (locales) {
+    const primaries = locales.filter((l) => l.prefix === '');
+    if (primaries.length > 1) {
+      throw new Error(
+        `createBacklinks: locales may name at most one primary (prefix ''), got ${primaries.length} (${primaries.map((l) => l.code).join(', ')})`,
+      );
+    }
+    const codes = new Set(locales.map((l) => l.code));
+    if (codes.size !== locales.length) {
+      throw new Error(`createBacklinks: locale codes must be unique, got ${locales.map((l) => l.code).join(', ')}`);
+    }
+    const prefixes = new Set(locales.map((l) => l.prefix));
+    if (prefixes.size !== locales.length) {
+      throw new Error(
+        `createBacklinks: locale prefixes must be unique, got ${locales.map((l) => JSON.stringify(l.prefix)).join(', ')}`,
+      );
+    }
   }
 
   /** Slice a snippet around `offset`, widened to whitespace boundaries. */
@@ -143,9 +175,12 @@ export function createBacklinks(options: BacklinksOptions) {
     for (const doc of docs) {
       const body = doc.body;
       if (!body) continue;
-      const links = extractWikilinks(body);
+      // the doc's own grammar: an .mdx body is parsed as MDX, so ESM, JSX
+      // attributes and expressions are masked and create no edge
+      const grammar = { mdx: doc.mdx ?? false };
+      const links = extractWikilinks(body, grammar);
       if (links.length === 0) continue;
-      const masked = maskNonProse(body);
+      const masked = maskNonProse(body, grammar);
       const out: { target: string; resolved: string | null }[] = [];
 
       for (const link of links) {
