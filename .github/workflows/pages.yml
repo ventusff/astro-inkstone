@@ -50,9 +50,10 @@ jobs:
           npx astro check
           npm run build
           npm run check
-      - name: Render-layer probes on the production-base artifact
+      - name: Render-layer and playground probes on the production-base artifact
         # the artifact is built for the /astro-inkstone/ mount: probing it
-        # requires serving it AT that prefix, exactly as Pages mounts it
+        # requires serving it AT that prefix, exactly as Pages mounts it; the
+        # playground probe drives the browser-local editor end to end there
         env:
           CHROME_PATH: /usr/bin/google-chrome
         run: |
@@ -60,6 +61,7 @@ jobs:
           cp -r dist/. probe-root/astro-inkstone/
           node ../scripts/ui_probe.mjs probe-root
           node ../scripts/contrast_probe.mjs probe-root
+          node ../scripts/playground_probe.mjs probe-root /astro-inkstone/
         working-directory: demo
       - uses: actions/upload-pages-artifact@v3
         with:

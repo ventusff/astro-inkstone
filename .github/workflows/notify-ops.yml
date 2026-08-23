@@ -1,0 +1,31 @@
+name: Notify ops
+
+# A push to main tells the operations repository (variable OPS_REPO) to bump
+# the consuming sites to this commit of the paper layer, via repository_dispatch with the
+# secret OPS_DISPATCH_TOKEN. Where neither is configured — this public
+# repository, any fork — the job says so and exits clean; the private
+# mirror the sites pin carries both, so a mirror absorb fans out by itself.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch paper-bump
+        env:
+          OPS_REPO: ${{ vars.OPS_REPO }}
+          OPS_TOKEN: ${{ secrets.OPS_DISPATCH_TOKEN }}
+        run: |
+          set -eu
+          if [ -z "${OPS_REPO:-}" ] || [ -z "${OPS_TOKEN:-}" ]; then
+            echo "ops not configured here — nothing to notify"; exit 0
+          fi
+          curl -sf -X POST \
+            -H "Authorization: Bearer ${OPS_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${OPS_REPO}/dispatches" \
+            -d "{\"event_type\":\"paper-bump\",\"client_payload\":{\"sha\":\"${GITHUB_SHA}\"}}"
+          echo "notified ${OPS_REPO}: paper-bump ${GITHUB_SHA}"

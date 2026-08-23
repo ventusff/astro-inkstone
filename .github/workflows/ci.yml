@@ -17,6 +17,8 @@ concurrency:
 
 jobs:
   build-and-probe:
+    # Guard: the canonical repo runs CI; a mirror absorbing this tree does not.
+    if: github.repository == 'ventusff/astro-inkstone'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
