@@ -17,6 +17,8 @@ const ZH_STRINGS: PlaygroundStrings = {
   activeHint: '把鼠标移到任意段落上就能编辑;触屏轻点段落',
   jsxEditedNote:
     '组件块已本地改写——静态页面无法重渲 Astro 组件,下方是素文呈现(或维持构建版原貌)。你的源码已保存;还原即恢复页面。',
+  frontmatterEditedNote:
+    '页面元信息已本地改写——静态页头无法据此重绘,显示仍是构建版。你的 YAML 已保存;还原即恢复页面。',
   active: '本地编辑中',
   edits: '#n 处本地修改',
   reset: '还原',
