@@ -15,6 +15,7 @@ const BASE_PREFIX = normalizeBase(import.meta.env.BASE_URL);
 const ZH_STRINGS: PlaygroundStrings = {
   tryIt: '试一试编辑',
   tryItHint: '编辑这一页——一切只存在你的浏览器里',
+  activeHint: '把鼠标移到任意段落上就能编辑;触屏轻点段落',
   active: '本地编辑中',
   edits: '#n 处本地修改',
   reset: '还原',
