@@ -13,8 +13,9 @@ import { normalizeBase } from 'astro-inkstone/lib/base';
 const BASE_PREFIX = normalizeBase(import.meta.env.BASE_URL);
 
 const ZH_STRINGS: PlaygroundStrings = {
-  tryIt: '试一试编辑——只存在你的浏览器里',
-  active: '本地编辑已开启',
+  tryIt: '试一试编辑',
+  tryItHint: '编辑这一页——一切只存在你的浏览器里',
+  active: '本地编辑中',
   edits: '#n 处本地修改',
   reset: '还原',
   resetConfirm: '丢弃这个 demo 的全部本地修改(所有页面)?',
