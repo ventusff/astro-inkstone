@@ -103,7 +103,18 @@ export interface SiteMarkdownOptions {
   rehypePlugins?: RehypePlugin[];
 }
 
-export function siteMarkdown(opts: SiteMarkdownOptions = {}): MarkdownConfig {
+/**
+ * The site-side plugin arrays alone — everything siteMarkdown mounts beyond
+ * the engine dialect, in the contractual order. siteMarkdown consumes this;
+ * a browser-side consumer (the playground's fragment renderer) calls it
+ * directly to reuse the exact build plugins with fragment-appropriate
+ * options (numbering/readingTime off, wikilinks false — the playground
+ * mounts the resolver itself).
+ */
+export function sitePluginSets(opts: SiteMarkdownOptions = {}): {
+  remarkPlugins: RemarkPlugin[];
+  rehypePlugins: RehypePlugin[];
+} {
   const {
     wikiBlocks = false,
     baseExempt = [],
@@ -113,11 +124,9 @@ export function siteMarkdown(opts: SiteMarkdownOptions = {}): MarkdownConfig {
     calloutLabels,
     readingTime = false,
     mermaid = false,
-    codeFrame = true,
     wikilinks = false,
     numbering = 'chapters',
     appendixLabel,
-    guard,
     remarkPlugins = [],
     rehypePlugins = [],
   } = opts;
@@ -167,6 +176,13 @@ export function siteMarkdown(opts: SiteMarkdownOptions = {}): MarkdownConfig {
     ...(base ? [[rehypeBaseLinks, { base, exempt: baseExempt }] as RehypePlugin] : []),
     ...(wikiBlocks ? [rehypeWikiBlocks as RehypePlugin] : []),
   ];
+
+  return { remarkPlugins: remark, rehypePlugins: rehype };
+}
+
+export function siteMarkdown(opts: SiteMarkdownOptions = {}): MarkdownConfig {
+  const { mermaid = false, codeFrame = true, guard } = opts;
+  const { remarkPlugins: remark, rehypePlugins: rehype } = sitePluginSets(opts);
 
   return {
     // The MDX integration inherits the processor's plugins automatically

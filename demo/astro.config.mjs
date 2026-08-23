@@ -11,6 +11,10 @@ import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
 // dialect and content guard come from the engine in both modes, through
 // siteMarkdown, so the editor and the page share one grammar.
 const WIKI_MODE = Boolean(process.env.WIKI);
+// PLAYGROUND=1 astro build → the browser-local playground: the build stamps
+// blocks (data-wiki-src) and ships the sources manifest; postbuild declares
+// the shape with check-dist --playground. Default builds stay untouched.
+const PLAYGROUND = Boolean(process.env.PLAYGROUND);
 const { siteMarkdown } = await import('astro-inkstone/markdown-preset');
 const { secureFsDeny } = await import('astro-inkstone/lib/vite-security');
 const { normalizeBase } = await import('astro-inkstone/lib/base');
@@ -43,7 +47,28 @@ export default defineConfig({
   site: SITE,
   base: BASE,
   trailingSlash: 'ignore',
-  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  integrations: [
+    mdx(),
+    ...(inkbrush ? [inkbrush()] : []),
+    // the playground's client mount: injected only when the env is set, so
+    // a default build's module graph never contains the playground at all
+    ...(PLAYGROUND
+      ? [
+          {
+            name: 'playground-mount',
+            hooks: {
+              /** @param {{ injectScript: (stage: string, code: string) => void }} arg */
+              'astro:config:setup': ({ injectScript }) => {
+                injectScript(
+                  'page',
+                  "import { mountPlayground } from '/src/lib/playground'; mountPlayground();",
+                );
+              },
+            },
+          },
+        ]
+      : []),
+  ],
 
   // The whole Markdown pipeline in one call: chapter numbering (hub chapters
   // read frontmatter `part:` for their §k.n heading numbers), math, callouts,
@@ -59,7 +84,7 @@ export default defineConfig({
       callouts: true,
       gemoji: true,
       readingTime: true,
-      wikiBlocks: WIKI_MODE,
+      wikiBlocks: WIKI_MODE || PLAYGROUND,
       guard: { autoNumberedHeadings: true },
       wikilinks: {
         resolve,

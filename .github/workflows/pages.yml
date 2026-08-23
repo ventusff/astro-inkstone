@@ -41,6 +41,10 @@ jobs:
         env:
           DEMO_SITE: https://ventusff.github.io
           DEMO_BASE: /astro-inkstone/
+          # the Pages demo ships the browser-local playground (visitor edits
+          # stay in their own IndexedDB); postbuild declares the shape via
+          # check-dist --playground
+          PLAYGROUND: '1'
         run: |
           npm ci --no-audit --no-fund
           npx astro check

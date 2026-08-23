@@ -70,6 +70,12 @@ const base = import.meta.env.BASE_URL.endsWith('/')
 const noteUrlTemplate = `${base}{id}/`;
 const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
 
+// PLAYGROUND=1 astro build → the browser-local playground; the client mount
+// is injected by the astro.config integration (a conditional import here
+// still lands in the default bundle — the bundler resolves it statically).
+// This flag only gates the editing metadata below.
+const playground = Boolean(import.meta.env.PLAYGROUND ?? process.env.PLAYGROUND);
+
 ---
 
 <!doctype html>
@@ -84,8 +90,8 @@ const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path d='M10 2.2 17.8 10 10 17.8 2.2 10Z' fill='none' stroke='%237d3a3a' stroke-width='1.6'/><path d='M10 6.4 13.6 10 10 13.6 6.4 10Z' fill='%237d3a3a'/></svg>"
     />
     <title>{title} · astro-inkstone</title>
-    {wikiMode && noteId && <meta name="inkbrush-note" content={noteId} />}
-    {wikiMode && noteId && <meta name="inkbrush-note-url" content={noteUrlTemplate} />}
+    {(wikiMode || playground) && noteId && <meta name="inkbrush-note" content={noteId} />}
+    {(wikiMode || playground) && noteId && <meta name="inkbrush-note-url" content={noteUrlTemplate} />}
     <ThemeInit />
   </head>
   <body class={bodyClass}>
