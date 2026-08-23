@@ -1,115 +1,141 @@
 <h1 align="center">astro-inkstone</h1>
 
-<p align="center"><b>A paper-and-ink design layer for Astro docs, wikis and digital gardens.</b></p>
+<p align="center"><b>The Astro wiki you can write in.</b><br>
+Paper-and-ink typography for docs, wikis and digital gardens — paired with Inkbrush, its editing
+engine, for in-place, what-you-see-is-what-you-get editing. Markdown stays the source. Git stays the history.</p>
 
 <p align="center">
   <a href="https://github.com/ventusff/astro-inkstone/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/ventusff/astro-inkstone/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-2b2622"></a>
   <img alt="Astro 7" src="https://img.shields.io/badge/Astro-7-b6552e?logo=astro&logoColor=white">
+  <a href="https://ventusff.github.io/astro-inkstone/kitchen-sink/"><img alt="Try editing in your browser" src="https://img.shields.io/badge/%E2%9C%8E%20try%20it-in%20your%20browser-2b6e5f"></a>
 </p>
 
 <p align="center">
-  <a href="https://ventusff.github.io/astro-inkstone/"><b>Live demo & manual&nbsp;→</b></a>
+  <a href="https://ventusff.github.io/astro-inkstone/kitchen-sink/"><b>✎ Try editing in your browser&nbsp;→</b></a>
+  &nbsp;·&nbsp;
+  <a href="https://ventusff.github.io/astro-inkstone/">Demo &amp; manual</a>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/ventusff/astro-inkbrush">The engine</a>
   &nbsp;·&nbsp;
   <a href="README.zh-CN.md">简体中文</a>
 </p>
 
 <p align="center">
-  <img alt="astro-inkstone demo, light and dark" src=".github/assets/demo-preview.png" width="920">
+  <img alt="Hover a paragraph, click ✎, type an inline formula — the preview renders it as you type; save, and the page updates in place; then the same page in dark" src=".github/assets/hero-edit.gif" width="1040">
 </p>
 
-**Inkstone** (砚 — the stone an ink brush draws from) is the *look* of a documentation
-or wiki site, packaged: design tokens, the content stylesheets, a component set,
-and a one-line Markdown pipeline. You keep what makes a site *yours* — brand
-color, layout chrome, routing — and inherit everything else.
+Hover over any block, click **✎**, and write Markdown. The preview underneath is rendered by
+your site's own pipeline — formulas, tables, callouts, Mermaid, `[[wikilinks]]` — so it matches
+the published page exactly. Save, and the page re-renders where you stand; with `autocommit`
+on, every save is a git commit. No database, no admin panel, no second authoring app: your
+content files stay the single source of truth.
 
-It pairs with [**astro-inkbrush**](https://github.com/ventusff/astro-inkbrush)
-(笔 — the brush), a tiny git-backed CMS that lets you edit the very same pages
-in place. Use them together for a wiki you can write *in*, or use Inkstone
-alone for a static site that simply looks and reads beautifully.
+**Inkstone** (砚, the ink stone) is the design layer — tokens, content styles, components and a
+one-line Markdown pipeline. [**Inkbrush**](https://github.com/ventusff/astro-inkbrush) (笔,
+the brush) is the in-place editing engine. Use them together for a wiki you write *in*; use
+Inkstone alone for a static site that simply reads beautifully.
 
-## Features
+## Why you'll like it
 
-- 🎨 **Two-tier design tokens, two contexts** — a raw palette of papers and
-  painter's pigments (`--p-*`: 朱 wine, 石 burnt orange, 赭 ochre, 黛 teal,
-  紫 violet) feeding two semantic contexts: the *reading column*
-  (`--color-*`, a cool paper and one accent for an hour of reading) and the
-  *browse shelf* (`--wb-*`, warm paper, a display serif, a wine-red mark for
-  landing and facet pages). Re-skin the whole site by overriding either
-  tier; every text run rendered in the default state is **measured** for
-  WCAG AA against the pixels it actually sits on, at its rendered opacity
-  (`scripts/contrast_probe.mjs`, both themes, dialogs probed open).
-- 🌗 **Deliberate theming** — light is the identity; dark ships complete and
-  activates only via `[data-theme='dark']`, so your toggle owns the decision
-  (no `prefers-color-scheme` surprises).
-- 📖 **Two stylesheets, one look** — `base.css` is the reading column of a
-  long-form wiki: serif body, chapter rules, code frames (title bar, copy
-  button, collapse, line annotations, diff/focus/word highlight), tables that
-  reflow into cards on narrow containers with pure CSS container queries,
-  callouts (folding included), figure groups, academic paper cards, hub cards
-  and reading paths, reference lists, reduced-motion handling, and a print
-  stylesheet that turns any page into a clean PDF. `browse.css` is the
-  shelf — masthead, ruled shelves, card grid, status legend, instant
-  filters, tag cloud.
-- 🧩 **25 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`,
-  `Steps`, `Grid`, `PaperCard`, `HubCard`, `Stats`, `LocalToc`, `Backlinks`,
-  `SearchPalette` (the ⌘K overlay over the search factory + client, with
-  optional crumb-scoped filter chips; any `[data-search-open]` element opens it),
-  `LocalGraph` (a note's one-hop link neighbourhood in the sidebar), a faceted
-  wiki-browsing set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …), and more.
-  Presentational and token-driven: they follow your palette automatically.
-- 🌱 **Digital-garden machinery** — a taxonomy factory (kinds / domains /
-  tags / status, hub notes with numbered chapters, locale mirrors) and a
-  backlink-index builder with context snippets, both bound to your own
-  vocabulary in a three-line site module. The demo garden runs on them.
-- ⚙️ **One-line Markdown pipeline** — `siteMarkdown()` assembles GFM,
-  CJK-friendly emphasis, KaTeX (dual-theme), Mermaid, Obsidian-style
-  callouts, `[[wikilinks]]`, reading time, auto-numbered headings with ToC
-  extraction, base-prefix link rewriting, and a build-time **content guard**
-  that fails the build on silent Markdown deformations instead of shipping
-  them.
-- 🀄 **CJK-first typography** — emphasis that survives Chinese punctuation
-  (`**报文。**同时` bolds correctly), CJK-aware reading time, and a tuned
-  code-font subset (Maple Mono CN) where Hanzi sit exactly two cells wide.
-- 🔍 **Search included** — a build-time index endpoint factory plus a tiny
-  dependency-free client.
-- 🩺 **Render-layer probes** — two headless-Chrome checkers: `ui_probe`
-  loads every built page at four viewport widths and fails CI on horizontal
-  overflow, unstyled classes, dead anchors, missing alt text and skipped
-  headings, duplicate ids and dangling `aria-controls`; `contrast_probe`
-  samples from pixels the ground every rendered text run sits on — HTML,
-  SVG and generated text, both themes, two widths — and fails on anything
-  under WCAG AA. Unit tests cover the library (`npm test`).
-- 🪶 **Zero build step** — plain TypeScript and CSS, consumed as source by
-  your site's own Vite. Pin it by commit like any other part of your site.
+- ✎ **Edit in place — what you see is what you get.** Every block is editable from the page,
+  including paragraphs, headings, tables, code, math, and the frontmatter in YAML. The live
+  preview runs your site's own plugins, and `[[` autocompletes your note titles. Before a save
+  is written, the whole file is validated and the block is checked against concurrent edits —
+  then it's a commit.
+- 🧪 **What-you-see-is-what-you-get editing — try it right now.** The
+  [live demo](https://ventusff.github.io/astro-inkstone/kitchen-sink/) has a *✎ Try editing*
+  button: the same block editor on the static site, every edit kept in your own browser, nothing
+  to install.
+- ✦ **AI assist, sandboxed.** Hover over a block and click ✦ to polish or tighten the text, fix
+  its formulas, or give your own instruction. Claude, run through the `claude` CLI, edits a
+  throwaway copy of the note; its file tools are confined to that copy, with no shell and no
+  network, and its progress streams into the popover. The result must pass the same build gate
+  as a manual save. A chat panel answers questions about the note, and one button translates
+  the whole note into another locale.
+- ⟲ **Every save is journaled — one click to revert.** Block-level revision history records who
+  changed which lines, and when, with a diff and a one-click revert for every save. Whole-file
+  operations (imports, translations) are audited and undone through git.
+- 📥 **Obsidian inbox.** Point it at a vault folder and new notes are converted and imported
+  automatically: embeds are copied next to the note, `[[wikilinks]]` are resolved by the same
+  parser the pages use, and highlights are preserved.
+- 🔐 **Sign-in and permissions for a team.** Dev login locally; Google OAuth or Google Workspace
+  SAML for your domain, with fail-closed allowlists and an optional member registry (only members
+  edit, only admins manage). Comments under every note; password-gated sharing of a single note
+  as a static snapshot.
+- 📜 **Typography for long reading sessions.** Note pages use a cool-paper reading column with a
+  single accent; landing and facet pages use a warm-paper browse shelf; real serifs, tuned code
+  blocks, and tables that reflow into cards on narrow containers. Light is the default identity
+  and the dark theme is complete — every text color is measured for WCAG AA against the pixels
+  it actually sits on.
+- 🧰 **And the rest.** A digital garden proper: kinds, domains, tags and status, hub notes with
+  numbered chapters, linked mentions, a local link graph, ⌘K search and locale mirrors. CJK-first
+  typography: bold that survives Chinese punctuation, a zh UI, and Hanzi two cells wide in code.
+  Broken Markdown doesn't ship: a content guard refuses the save and fails the build on silent
+  deformations, and two headless Chrome probes fail CI on overflow, dead anchors and contrast
+  below AA. No separate build step and no production footprint: your site consumes the
+  TypeScript and CSS straight from the git submodule, and the CMS runs only in `astro dev`, so
+  readers get a purely static site.
+
+## See it in action
+
+**✦ Ask Claude to tighten a block.** Pick an intent, let it work — its tool calls stream into the
+popover while it edits a sandboxed copy — and the block comes back shorter, already validated.
+
+<p align="center"><img alt="The ✦ popover: Condense is chosen, Claude's tool lines stream in, and after the job the paragraph is visibly shorter" src=".github/assets/tour-ai.gif" width="1040"></p>
+
+**`[[wikilinks]]` complete as you type — and backlinks follow.** The new link appears in the
+preview; after you save, the target note lists the mention with its snippet and the sidebar
+graph gains the new edge.
+
+<p align="center"><img alt="Typing [[ opens a completion list of notes; the link renders in the preview; after save the target note's Linked mentions lists the new mention" src=".github/assets/tour-wikilink.gif" width="1040"></p>
+
+**The frontmatter is a block too.** The meta strip opens the note's YAML; change a status, a
+tag or a date, and the page header re-renders from the updated frontmatter.
+
+<p align="center"><img alt="Hovering the meta strip opens the frontmatter as YAML; changing the status re-renders the strip after save" src=".github/assets/tour-frontmatter.gif" width="1040"></p>
+
+**The guard says no.** An unpaired `**` would have rendered as two literal asterisks — the
+save is refused, with the exact spot and the fix. The same guard fails the build in CI.
+
+<p align="center"><img alt="A save refused by the content guard: an unpaired ** reported with file, line, column and a caret" src=".github/assets/guard.png" width="720"></p>
+
+**⟲ Block history.** Every save on this block, who made it and when; open the diff, revert with one click.
+
+<p align="center"><img alt="The ⟲ block-history popover: manual edits listed with author and time, View changes, and Revert this change" src=".github/assets/history.png" width="760"></p>
+
+**Paper and ink, on purpose.** The warm-paper landing shelf with its facets, and a note
+page in the dark theme — the same tokens, measured for contrast in both.
+
+<p align="center">
+  <img alt="The demo's landing shelf in light, and a note page in dark" src=".github/assets/demo-preview.png" width="920">
+</p>
 
 ## Quick start
 
-Try the demo (it is also the manual — written with the package itself):
+The demo doubles as the manual: a digital garden organized by taxonomy, built with the package
+itself and editable in place:
 
 ```bash
 git clone --recurse-submodules https://github.com/ventusff/astro-inkstone
 cd astro-inkstone && npm install
-cd demo && npm install && npm run dev
+cd demo && npm install
+npm run wiki      # WIKI=1 astro dev → sign in (dev login), hover a paragraph, click ✎
+npm run build     # the static site readers get — zero CMS bytes, checked by postbuild
 ```
 
-## Using it in your site
+## Add it to your site
 
-Inkstone isn't published to npm — it is designed to be **vendored as a git
-submodule** and imported as source. You get exact commit pinning, readable
-code in your editor instead of a dist blob, and zero publish lag:
+Inkstone and the engine are vendored as git submodules and imported as source — exact commit
+pinning, readable code in your editor, no publish lag:
 
 ```bash
 git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
 git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
 ```
 
-Declare them in your site's `package.json` — pnpm workspaces
-(`"astro-inkstone": "workspace:*"` with `packages/*` in
-`pnpm-workspace.yaml`) or npm `file:` links both work.
-
 ```ts
-// astro.config.ts — the whole Markdown pipeline in one line
+// astro.config.ts — the whole Markdown pipeline, one line
 import { defineConfig } from 'astro/config';
 import { siteMarkdown } from 'astro-inkstone/markdown-preset';
 
@@ -119,76 +145,107 @@ export default defineConfig({
 ```
 
 ```css
-/* your global stylesheet: tokens, the reading column, then (for a wiki) the shelf */
+/* your global stylesheet: tokens, the reading column, then (for a wiki) the browse shelf */
 @import 'astro-inkstone/styles/tokens.css';
 @import 'astro-inkstone/styles/base.css';
-@import 'astro-inkstone/styles/browse.css'; /* landing / facet pages, on body.wb-root */
+@import 'astro-inkstone/styles/browse.css';
 
-/* identity: override the raw pigments — the day pigment and its night twin… */
-:root { --p-shi: #8a4baf; --p-shi-n: #b98fd6; --p-zhu: #3b4a7a; --p-zhu-n: #93a3cf; }
-/* …or re-map the semantic tokens (--color-* / --wb-*) onto your own palette — both paths are supported */
+/* identity: override the raw pigments (day + night twin), or re-map the semantic tokens */
+:root { --p-shi: #8a4baf; --p-shi-n: #b98fd6; }
 ```
 
-```html
-<!-- the reading column: base.css styles prose inside a .col column -->
-<main class="note-main"><div class="col">
-  <!-- your rendered Markdown -->
-</div></main>
-```
+Declare both packages in your `package.json` (pnpm `workspace:*` or npm `file:`), wrap your
+rendered Markdown in `<main class="note-main"><div class="col">…</div></main>`, and you have
+the reading column. Enabling the editing mode takes three more Astro config changes, all gated
+on `WIKI=1`. Everything else — layout, navigation, routing, deployment — stays yours; the demo
+is a complete reference implementation.
 
-The shelf's display serif (`--font-display`: Source Serif 4 + Noto Serif SC)
-and the UI sans (Inter) are self-hosted by the demo through `@fontsource`;
-install the same packages and import their CSS to see exactly what the demo
-shows — without them the stacks fall back to system faces.
-
-Layout, navigation, routing and deployment stay yours — the demo ships a
-complete reference implementation (a warm-paper landing shelf with facet
-pages, hub notes with chapter rails, a sidebar table of contents that follows
-your reading position with a local link graph beneath it, ⌘K search and zh
-mirror routing). The editing-machine deployment shape is documented with the
-engine, in [astro-inkbrush's manual](https://github.com/ventusff/astro-inkbrush/blob/main/docs/manual.md).
+→ **[Getting started](https://ventusff.github.io/astro-inkstone/getting-started/)** (install,
+styles, the pipeline switches, running the editor) ·
+[Two-layer palette & themes](https://ventusff.github.io/astro-inkstone/design-tokens/) ·
+[Kitchen sink](https://ventusff.github.io/astro-inkstone/kitchen-sink/) (every pipeline feature,
+performed) · [The component set](https://ventusff.github.io/astro-inkstone/components/) ·
+[The checks](https://ventusff.github.io/astro-inkstone/checks/) ·
+[Engine manual](https://github.com/ventusff/astro-inkbrush/blob/main/docs/manual.md) (sign-in,
+AI assist, inbox, sharing, deployment shape)
 
 ## Who does what
 
 ```
-astro-inkbrush   the brush — editing: in-place block CMS, revision history,
-                 comments, AI assist, Obsidian inbox, Markdown dialect + guard
+astro-inkbrush   the brush — editing: in-place block CMS, revision history, comments,
+                 AI assist, Obsidian inbox, Markdown dialect + content guard
 astro-inkstone   the stone — appearance: tokens, content styles, components,
                  pipeline preset, fonts, render checks
 your site        the hand — identity: brand palette, layout chrome, routing,
                  content, deployment
 ```
 
-The Markdown preset builds on inkbrush's dialect (so what the editor accepts
-and what the page renders are one grammar) — add both submodules, as the demo
-does. The token/style/component layer has no engine dependency.
+The one grammar rule: the Markdown the editor accepts and the Markdown the page renders are
+the same dialect, defined once in the engine and consumed by the preset — so "saves fine,
+renders wrong" cannot happen.
 
-## Documentation
+<details>
+<summary><b>Everything in the box</b></summary>
 
-The [demo site](https://ventusff.github.io/astro-inkstone/) is a multi-note
-taxonomy garden whose notes are the manual: browse by kind, domain and tag;
-a hub note with numbered chapters; wikilinked notes with linked-mentions
-panels; and pages covering installation, the token architecture, a
-kitchen-sink of every pipeline feature and the check tooling. Everything on
-it is built with the package, so every page is also a living test.
+- **Two-tier design tokens, two contexts** — a raw palette of papers and painter's pigments
+  (`--p-*`: 朱 wine, 石 burnt orange, 赭 ochre, 黛 teal, 紫 violet) feeding the *reading column*
+  (`--color-*`) and the *browse shelf* (`--wb-*`). Re-skin the whole site by overriding either tier.
+- **Deliberate theming** — light is the identity; dark activates only via `[data-theme='dark']`,
+  so your toggle owns the decision.
+- **`base.css`** — serif body, chapter rules, code frames (title bar, copy button, collapse,
+  line annotations, diff / focus / word highlight), tables that reflow into cards with pure CSS
+  container queries, callouts (folding included), figure groups, academic paper cards, hub cards
+  and reading paths, reference lists, reduced-motion handling, a print stylesheet that turns any
+  page into a clean PDF. **`browse.css`** — masthead, ruled shelves, card grid, status legend,
+  instant filters, tag cloud.
+- **25 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
+  `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `SearchPalette` (the ⌘K overlay), `LocalGraph`,
+  the faceted wiki set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational
+  and token-driven.
+- **Digital-garden machinery** — a taxonomy factory (kinds / domains / tags / status, hub notes
+  with numbered chapters, locale mirrors) and a backlink-index builder with context snippets,
+  both bound to your vocabulary in a three-line site module.
+- **`siteMarkdown()`** — GFM, CJK-friendly emphasis, KaTeX (dual-theme), Mermaid, Obsidian-style
+  callouts, `[[wikilinks]]`, reading time, auto-numbered headings with ToC extraction,
+  base-prefix link rewriting, and the build-time content guard.
+- **CJK-first typography** — emphasis that survives Chinese punctuation, CJK-aware reading time,
+  a tuned Maple Mono CN subset where Hanzi sit exactly two cells wide; the display serif and UI
+  sans are named `@fontsource` families the demo self-hosts.
+- **Search** — a build-time index endpoint factory plus a tiny dependency-free client.
+- **Render-layer probes** — `ui_probe` (every page at four widths: overflow, unstyled classes,
+  dead anchors, missing alt text, skipped headings, duplicate ids, dangling `aria-controls`) and
+  `contrast_probe` (every rendered text run, both themes, sampled from pixels). Unit tests cover
+  the library.
+- **No separate build step** — plain TypeScript and CSS, consumed as source by your site's Vite
+  and pinned by commit like the rest of your site.
+- **The engine's side** — block editing with live preview and `[[` completion, the frontmatter
+  as a YAML block, block-level revision history and revert, comments, and an Obsidian inbox. AI
+  assist rewrites, answers and translates in a throwaway workspace with its file tools confined
+  to it. The engine also provides the shared wikilink resolver, dev / Google OAuth / SAML sign-in
+  with a member registry, password-gated sharing, three check CLIs (`check-content`,
+  `check-wikilinks`, `check-dist`), and a browser-local playground for demo sites. It has zero
+  production footprint: the integration does nothing outside `astro dev`, and `check-dist` fails
+  a build that carries any of its bytes.
+
+</details>
 
 ## FAQ
 
-**Why no npm package?** — A design layer changes in lockstep with the sites
-that use it. Submodules give you exact commit pinning, transparent source in
-`node_modules`-free form, and instant local patching. If you prefer a
-registry workflow, vendoring a tagged commit works just as well.
+**Why no npm package?** — Inkstone is designed to evolve in lockstep with the sites that use
+it. Submodules give exact commit pinning, transparent source and instant local patching.
+Vendoring a tagged commit works just as well.
 
-**Can I use it without the CMS engine?** — Yes for tokens, styles and
-components. `siteMarkdown()` imports the engine's dialect, so keep the
-engine submodule if you want the pipeline preset (your build never ships any
-of its editing code — the CMS activates only in dev mode).
+**Can I use it without the CMS engine?** — Yes for tokens, styles and components. The pipeline
+preset imports the engine's dialect, so keep the engine submodule for `siteMarkdown()`; your
+build never ships any editing code — the CMS activates only in dev mode.
 
-**How do I update?** — `git submodule update --remote packages/astro-inkstone`,
-review the diff, commit the pointer. Your site pins exactly what it tested.
+**How do I update?** — `git submodule update --remote packages/astro-inkstone`, review the
+diff, commit the pointer. Your site pins exactly what it tested.
 
 ## License
 
 [MIT](LICENSE) © Jianfei Guo. Code font: a subset of
 [Maple Mono](https://github.com/subframe7536/maple-font), released under the
 [SIL OFL 1.1](fonts/OFL.txt) — see [`fonts/README.md`](fonts/README.md).
+
+<p align="center"><sub>If Inkstone makes your notes nicer to read and easier to write, a ⭐ helps others find it.</sub></p>

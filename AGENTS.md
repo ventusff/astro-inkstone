@@ -109,6 +109,13 @@ whose content is the package's own manual.
   generated ToC and its local link graph.
 - `components/DemoMount.astro` renders mount markup only; the demo-module
   loader is site-owned (call your `mountAllDemos()` from the site layout).
+- The demo's browse tree exists in both locales: `demo/src/components/browse/`
+  holds the landing, facet and all-notes pages as locale-parameterized
+  components; `demo/src/pages/` and `demo/src/pages/zh/` are one-line route
+  files over them. Registry defs carry `label`/`desc` (en) and `zh`/`descZh`.
+- The README's GIFs and screenshots are recorded by `scripts/readme-clips/`
+  against the demo in editing mode (see its README); re-record rather than
+  hand-edit them.
 
 ## How to verify
 
