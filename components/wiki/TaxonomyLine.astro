@@ -8,12 +8,16 @@
  * the `createTaxonomy` helpers from `astro-inkstone/lib/taxonomy`) and passes
  * display-ready values in.
  */
+import type { HTMLAttributes } from 'astro/types';
+
 import DomainChip from './DomainChip.astro';
 import KindBadge from './KindBadge.astro';
 import StatusDot from './StatusDot.astro';
 import type { DomainDisplay, KindDisplay, StatusDisplay } from '../../lib/wiki-display.ts';
 
-interface Props {
+/** Extra attributes land on the strip's root element (a site's data-* hooks,
+ *  an id); `class` is the strip's own. */
+interface Props extends Omit<HTMLAttributes<'div'>, 'class'> {
   kind?: KindDisplay | undefined;
   domains?: DomainDisplay[] | undefined;
   status?: StatusDisplay | undefined;
@@ -24,7 +28,7 @@ interface Props {
   /** Display strings; pass localized overrides. */
   labels?: { updated?: string | undefined } | undefined;
 }
-const { kind, domains = [], status, updated, reading, labels = {} } = Astro.props;
+const { kind, domains = [], status, updated, reading, labels = {}, ...rest } = Astro.props;
 const dateLabel = labels.updated ?? 'updated';
 const show =
   kind !== undefined || domains.length > 0 || status !== undefined || updated !== undefined || reading !== undefined;
@@ -32,7 +36,7 @@ const show =
 
 {
   show && (
-    <div class="taxo-line">
+    <div class="taxo-line" {...rest}>
       {kind && <KindBadge def={kind} />}
       {domains.map((d) => (
         <DomainChip def={d} />

@@ -7,7 +7,9 @@
  * or <PartHero>), the linked mentions, prev/next for chapters, small print.
  *
  * `main.note-main > .col` is astro-inkbrush's mount contract for the comment
- * section — keep the pair intact.
+ * section — keep the pair intact. The taxonomy strip carries the engine's
+ * frontmatter slot: in editing mode its ✎ opens the note's frontmatter as
+ * YAML.
  */
 import Backlinks from 'astro-inkstone/components/Backlinks.astro';
 import LocalGraph, { type LocalGraphNeighbor } from 'astro-inkstone/components/LocalGraph.astro';
@@ -111,6 +113,7 @@ const zh = locale === 'zh';
               updated={taxonomy.updated}
               reading={taxonomy.reading}
               labels={{ updated: t.updated }}
+              data-inkbrush-slot="frontmatter"
             />
           )
         }
