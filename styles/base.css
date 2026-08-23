@@ -683,9 +683,10 @@ table.tbl {
   border-bottom: 1px solid var(--color-line);
   vertical-align: top;
 }
-/* whole-row hover highlight, a reading aid */
+/* whole-row hover highlight, a reading aid — the warm flash is part of the
+   paper identity (--color-row-hover, retunable per site) */
 .tbl tr:hover td {
-  background: color-mix(in srgb, var(--color-bg-soft) 40%, var(--color-bg-card));
+  background: var(--color-row-hover);
 }
 .tbl tr:last-child td,
 .tbl tr:last-child th {

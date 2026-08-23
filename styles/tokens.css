@@ -111,6 +111,8 @@
   --color-bg: var(--p-paper-read);
   --color-bg-soft: var(--p-paper-soft);
   --color-bg-card: var(--p-white);
+  /* whole-row hover flash on tables: a warm glow on the white card */
+  --color-row-hover: #fffaf2;
   --color-ink: var(--p-ink-read);
   --color-ink-soft: var(--p-ink-read-soft);
   --color-ink-faint: var(--p-ink-read-faint);
@@ -180,6 +182,7 @@
   --color-bg: var(--p-dusk);
   --color-bg-soft: var(--p-dusk-1);
   --color-bg-card: var(--p-dusk-card);
+  --color-row-hover: var(--p-dusk-1);
   --color-ink: var(--p-ink-n);
   --color-ink-soft: var(--p-ink-n-soft);
   --color-ink-faint: var(--p-ink-n-faint);

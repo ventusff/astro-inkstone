@@ -33,6 +33,7 @@
   /* the shelf's secondary surface is its ground: the card face is the only
      surface with muted-ink AA headroom below it */
   --color-bg-soft: var(--wb-bg);
+  --color-row-hover: var(--wb-bg); /* shelf ground flashing under a card row */
   --color-ink: var(--wb-text);
   --color-ink-soft: var(--wb-text-soft);
   --color-ink-faint: var(--wb-text-muted);
