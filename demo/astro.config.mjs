@@ -15,7 +15,7 @@ const WIKI_MODE = Boolean(process.env.WIKI);
 // blocks (data-wiki-src) and ships the sources manifest; postbuild declares
 // the shape with check-dist --playground. Default builds stay untouched.
 const PLAYGROUND = Boolean(process.env.PLAYGROUND);
-const { siteMarkdown } = await import('astro-inkstone/markdown-preset');
+const { siteMarkdown, sitePluginSets } = await import('astro-inkstone/markdown-preset');
 const { secureFsDeny } = await import('astro-inkstone/lib/vite-security');
 const { normalizeBase } = await import('astro-inkstone/lib/base');
 const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
@@ -49,7 +49,29 @@ export default defineConfig({
   trailingSlash: 'ignore',
   integrations: [
     mdx(),
-    ...(inkbrush ? [inkbrush()] : []),
+    // The CMS preview and save gate get the page's own plugin set (table
+    // wrapper, callouts, math, …) rather than the bare dialect; numbering
+    // and reading time need the whole document, and the engine mounts its
+    // own wikilink resolver.
+    ...(inkbrush
+      ? [
+          inkbrush({
+            markdown: {
+              ...sitePluginSets({
+                math: true,
+                callouts: true,
+                gemoji: true,
+                mermaid: true,
+                base: BASE_PREFIX,
+                numbering: false,
+                readingTime: false,
+              }),
+              guard: { autoNumberedHeadings: true },
+              urlFor: (id) => `${BASE_PREFIX}/${id}/`,
+            },
+          }),
+        ]
+      : []),
     // the playground's client mount: injected only when the env is set, so
     // a default build's module graph never contains the playground at all
     ...(PLAYGROUND

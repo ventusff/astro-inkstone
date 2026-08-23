@@ -30,6 +30,7 @@ import {
 
 import { rehypeWikiBlocks } from 'astro-inkbrush';
 import { type MarkdownProcessorOptions, markdownProcessor } from 'astro-inkbrush/markdown';
+import type { SitePluginSet } from 'astro-inkbrush/render-pipeline';
 import { buildWikilinkResolver, remarkWikilinks } from 'astro-inkbrush/wikilinks';
 
 import { normalizeBase } from './base.ts';
@@ -111,10 +112,7 @@ export interface SiteMarkdownOptions {
  * options (numbering/readingTime off, wikilinks false — the playground
  * mounts the resolver itself).
  */
-export function sitePluginSets(opts: SiteMarkdownOptions = {}): {
-  remarkPlugins: RemarkPlugin[];
-  rehypePlugins: RehypePlugin[];
-} {
+export function sitePluginSets(opts: SiteMarkdownOptions = {}): SitePluginSet {
   const {
     wikiBlocks = false,
     baseExempt = [],
@@ -177,7 +175,10 @@ export function sitePluginSets(opts: SiteMarkdownOptions = {}): {
     ...(wikiBlocks ? [rehypeWikiBlocks as RehypePlugin] : []),
   ];
 
-  return { remarkPlugins: remark, rehypePlugins: rehype };
+  // Astro's plugin type admits bare plugin names; these arrays never carry
+  // them — every entry is a plugin function or a [plugin, options] pair,
+  // which is exactly what the engine's pipeline factory takes.
+  return { remarkPlugins: remark, rehypePlugins: rehype } as unknown as SitePluginSet;
 }
 
 export function siteMarkdown(opts: SiteMarkdownOptions = {}): MarkdownConfig {

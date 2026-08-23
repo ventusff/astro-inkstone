@@ -7,7 +7,6 @@
  * engine mounts it itself).
  */
 import { bootPlayground, type PlaygroundStrings } from 'astro-inkbrush/playground';
-import type { SitePluginSet } from 'astro-inkbrush/render-pipeline';
 import { normalizeBase } from 'astro-inkstone/lib/base';
 
 const BASE_PREFIX = normalizeBase(import.meta.env.BASE_URL);
@@ -36,9 +35,6 @@ export function mountPlayground(): void {
       // static import here would land it in the boot chunk of every page
       const { sitePluginSets } = await import('astro-inkstone/lib/markdown-preset');
       return {
-        // Astro's plugin type admits bare string names; these arrays never
-        // carry them — every entry is a plugin function or a [plugin, options]
-        // pair, which is what the engine's pipeline factory takes.
         site: sitePluginSets({
           math: true,
           callouts: true,
@@ -47,7 +43,7 @@ export function mountPlayground(): void {
           base: BASE_PREFIX,
           numbering: false,
           readingTime: false,
-        }) as SitePluginSet,
+        }),
         guard: { autoNumberedHeadings: true },
         urlFor: (id: string) => `${BASE_PREFIX}/${id}/`,
         noteIdOf: (path: string | undefined) => path?.match(/src\/content\/notes\/(.+)\/index\.mdx?$/)?.[1],
