@@ -225,7 +225,7 @@ h4 {
 }
 :root[data-theme='dark'] .col pre.astro-code {
   background: var(--color-code-bg) !important;
-  border-color: var(--color-line);
+  border-color: var(--color-code-bg); /* the dark slab is borderless */
 }
 :root[data-theme='dark'] .astro-code,
 :root[data-theme='dark'] .astro-code span {
@@ -638,10 +638,7 @@ section.footnotes p {
 .tbl-wrap {
   container-type: inline-size;
   container-name: tbl;
-  margin: 20px 0;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius);
-  overflow: hidden; /* the radius always clips the inner box, scrolling or not */
+  margin: 18px 0;
 }
 .tbl-scroll {
   overflow-x: auto;
@@ -655,26 +652,12 @@ section.footnotes p {
     radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--color-ink) 14%, transparent), transparent)
       right / 13px 100% no-repeat scroll;
 }
-/* identifiers, hashes and numbers must not be broken across lines in a cell */
-.tbl code,
-.tbl th {
-  white-space: nowrap;
-}
-/* CJK in cells wraps at punctuation only (keep-all): compound words stay
-   whole, an over-wide table scrolls. The first column is the row's label: no wrap. */
-.tbl td {
-  word-break: keep-all;
-  text-wrap: pretty;
-}
-.tbl td:first-child {
-  white-space: nowrap;
-}
 table.tbl {
   width: 100%;
   border-collapse: collapse;
   margin: 0;
   font-family: var(--font-ui);
-  font-size: 13.5px;
+  font-size: 14px;
 }
 .tbl th,
 .tbl td {
@@ -688,17 +671,13 @@ table.tbl {
 .tbl tr:hover td {
   background: var(--color-row-hover);
 }
-.tbl tr:last-child td,
-.tbl tr:last-child th {
-  border-bottom: none;
-}
+
 .tbl th {
   background: var(--color-bg-soft);
   font-weight: 700;
-  font-size: 11.5px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  white-space: nowrap;
 }
 .tbl code {
   white-space: nowrap;
@@ -813,11 +792,10 @@ table.tbl {
 .callout {
   background: var(--color-math-bg);
   border-radius: var(--radius);
-  padding: 16px 20px;
+  padding: 18px 22px;
   margin: 22px 0;
   border-left: 4px solid var(--color-accent3);
   font-family: var(--font-body);
-  font-size: 16.5px;
 }
 /* the title line: `.callout-title` (component / quote syntax) or `.label`
    (authored HTML, where it is a span and must be made block here) */
@@ -826,7 +804,7 @@ table.tbl {
   display: block;
   font-family: var(--font-ui);
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--color-accent3-text);
@@ -841,7 +819,7 @@ table.tbl {
 }
 .callout.warn {
   border-left-color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg));
+  background: var(--color-warn-bg);
 }
 .callout.warn .callout-title,
 .callout.warn .label {
@@ -849,7 +827,7 @@ table.tbl {
 }
 .callout.system {
   border-left-color: var(--color-accent4);
-  background: color-mix(in srgb, var(--color-accent4) 8%, var(--color-bg));
+  background: var(--color-system-bg);
 }
 .callout.system .callout-title,
 .callout.system .label {
@@ -985,18 +963,18 @@ details.callout[open] > summary.callout-title::before {
   border-color: transparent;
 }
 .chip.teal {
-  background: color-mix(in srgb, var(--color-accent2) 12%, var(--color-bg));
+  background: var(--color-tint-teal);
   color: var(--color-accent2);
   border-color: transparent;
 }
 .chip.mustard {
-  background: color-mix(in srgb, var(--color-accent3) 16%, var(--color-bg));
+  background: var(--color-tint-mustard);
   color: var(--color-accent3-text);
   border-color: transparent;
 }
 .chip.violet {
-  background: color-mix(in srgb, var(--color-accent4) 16%, var(--color-bg));
-  color: var(--color-accent4);
+  background: var(--color-tint-violet);
+  color: var(--color-accent4-text);
   border-color: transparent;
 }
 
@@ -1393,16 +1371,16 @@ section:has(.hero) + h2 {
   letter-spacing: 0.02em;
 }
 .tag.teal {
-  background: color-mix(in srgb, var(--color-accent2) 12%, var(--color-bg));
+  background: var(--color-tint-teal);
   color: var(--color-accent2);
 }
 .tag.mustard {
-  background: color-mix(in srgb, var(--color-accent3) 16%, var(--color-bg));
+  background: var(--color-tint-mustard);
   color: var(--color-accent3-text);
 }
 .tag.violet {
-  background: color-mix(in srgb, var(--color-accent4) 16%, var(--color-bg));
-  color: var(--color-accent4);
+  background: var(--color-tint-violet);
+  color: var(--color-accent4-text);
 }
 
 

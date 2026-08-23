@@ -16,12 +16,17 @@ interface Props {
 }
 const { variant = 'note', title, labels = {} } = Astro.props;
 
-const heading = title ?? labels[variant] ?? CALLOUT_LABELS[variant];
+// The title line renders only when the author (or the site's labels map)
+// says so — an untitled callout is a bare slab. CALLOUT_LABELS names the
+// landmark either way, so repeated callouts stay distinguishable to
+// assistive technology without printing a forced title.
+const heading = title ?? labels[variant];
 ---
 
-{/* the aria-label names the complementary landmark after its title, so
-    repeated callouts are distinguishable in a landmark list */}
-<aside class:list={['callout', variant !== 'note' && variant]} aria-label={heading}>
-  <div class="callout-title">{heading}</div>
+<aside
+  class:list={['callout', variant !== 'note' && variant]}
+  aria-label={heading ?? CALLOUT_LABELS[variant]}
+>
+  {heading && <div class="callout-title">{heading}</div>}
   <slot />
 </aside>

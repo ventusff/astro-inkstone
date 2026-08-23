@@ -80,16 +80,17 @@
   --p-shi-soft: #ecd5c8; /* 石 · tint (link underline, chip ground) */
   --p-shi-text: #8f3f1f; /* 石 · small-text tier (6.9:1 on the ground, 5.2:1 on its own tint) */
   --p-zhe: #c08a2c; /* 赭 · ochre — lines and borders (callout edge, frontier tags) */
-  --p-zhe-text: #8c5f0c; /* 赭 · small-text tier (5.3:1; the line tint fails AA as text) */
+  --p-zhe-text: #885c0c; /* 赭 · small-text tier (4.6:1 on the mustard tint) */
   --p-dai: #2a6f6b; /* 黛 · teal — secondary content accent (5.6:1) */
   --p-zi: #6b4ec4; /* 紫 · violet — "system" semantics (5.7:1) */
+  --p-zi-text: #6a4dc2; /* 紫 · small-text tier (4.5:1 on the violet tint) */
 
   /* ---- night (dark-only constants) ---- */
   --p-dusk: #12141d; /* ground */
   --p-dusk-1: #1a1d29; /* secondary surface */
   --p-dusk-card: #1e222f; /* reading card face */
   --p-dusk-card-wb: #1b1f2b; /* browse card face */
-  --p-dusk-code: #191c26; /* code / math ground */
+  --p-dusk-code: #191c26; /* math / formula ground */
   --p-dusk-line: #2c2f3c; /* reading hairline */
   --p-dusk-rule: #4a4f60; /* browse shelf rule */
   --p-dusk-border: #2e3242; /* browse pill / card border */
@@ -98,14 +99,14 @@
   --p-ink-n: #e6e4dc; /* body text */
   --p-ink-n-soft: #b3b2aa;
   --p-ink-n-dim: #8e8f96; /* browse dim text (5.7:1 on the ground) */
-  --p-ink-n-faint: #888990; /* reading small print (5.3:1 on the ground, 4.6:1 on the card face) */
+  --p-ink-n-faint: #8a8b92; /* reading small print (4.6:1 on the code-frame strip, its darkest seat) */
   --p-ink-n-muted: #84868f; /* browse small print (5.1:1 on the ground, 4.5:1 on the card face) */
   --p-zhu-n: #c98577;
-  --p-shi-n: #d98a5f; /* 6.8:1 on the ground */
+  --p-shi-n: #dc8c61; /* 6.9:1 on the ground, 4.6:1 on the diff tint */
   --p-shi-soft-n: #3a2a20; /* 5.1:1 under the night accent */
   --p-zhe-n: #d9a94f;
   --p-dai-n: #5cb8b2;
-  --p-zi-n: #a78bfa;
+  --p-zi-n: #b99aff; /* 4.6:1 on its dark tint over the card face */
 
   /* ====== Tier 2a: the reading column (light) ====== */
   --color-bg: var(--p-paper-read);
@@ -113,6 +114,12 @@
   --color-bg-card: var(--p-white);
   /* whole-row hover flash on tables: a warm glow on the white card */
   --color-row-hover: #fffaf2;
+  /* the chip/tag/callout pastels — the reference tints, not derivations */
+  --color-tint-teal: #d6e8e6;
+  --color-tint-mustard: #f3e2bf;
+  --color-tint-violet: #e2dbf3;
+  --color-warn-bg: #fbeee6;
+  --color-system-bg: #ece8f7;
   --color-ink: var(--p-ink-read);
   --color-ink-soft: var(--p-ink-read-soft);
   --color-ink-faint: var(--p-ink-read-faint);
@@ -125,6 +132,7 @@
   --color-accent3: var(--p-zhe);
   --color-accent3-text: var(--p-zhe-text);
   --color-accent4: var(--p-zi);
+  --color-accent4-text: var(--p-zi-text);
   --color-code-bg: var(--p-code);
   --color-math-bg: var(--p-math);
   /* the lightbox overlay is dark in both themes */
@@ -183,6 +191,11 @@
   --color-bg-soft: var(--p-dusk-1);
   --color-bg-card: var(--p-dusk-card);
   --color-row-hover: var(--p-dusk-1);
+  --color-tint-teal: color-mix(in srgb, var(--p-dai-n) 22%, transparent);
+  --color-tint-mustard: color-mix(in srgb, var(--p-zhe-n) 22%, transparent);
+  --color-tint-violet: color-mix(in srgb, var(--p-zi-n) 22%, transparent);
+  --color-warn-bg: color-mix(in srgb, var(--p-shi-n) 14%, var(--p-dusk-1));
+  --color-system-bg: color-mix(in srgb, var(--p-zi-n) 14%, var(--p-dusk-1));
   --color-ink: var(--p-ink-n);
   --color-ink-soft: var(--p-ink-n-soft);
   --color-ink-faint: var(--p-ink-n-faint);
@@ -195,7 +208,10 @@
   --color-accent3: var(--p-zhe-n);
   --color-accent3-text: var(--p-zhe-n);
   --color-accent4: var(--p-zi-n);
-  --color-code-bg: var(--p-dusk-code);
+  --color-accent4-text: var(--p-zi-n);
+  /* the dark code slab is its own, lighter, borderless ground — the
+     GitHub-dimmed tone the reading identity pairs with the shiki theme */
+  --color-code-bg: #24292e;
   --color-math-bg: var(--p-dusk-code);
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0, 0, 0, 0.35);
 
