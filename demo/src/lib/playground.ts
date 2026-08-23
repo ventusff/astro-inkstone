@@ -16,6 +16,8 @@ const ZH_STRINGS: PlaygroundStrings = {
   tryIt: '试一试编辑',
   tryItHint: '编辑这一页——一切只存在你的浏览器里',
   activeHint: '把鼠标移到任意段落上就能编辑;触屏轻点段落',
+  jsxEditedNote:
+    '组件块已本地改写——静态页面无法重渲 Astro 组件,下方是素文呈现(或维持构建版原貌)。你的源码已保存;还原即恢复页面。',
   active: '本地编辑中',
   edits: '#n 处本地修改',
   reset: '还原',
