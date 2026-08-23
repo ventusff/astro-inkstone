@@ -47,11 +47,15 @@ jobs:
           npm run build
           npm run check
       - name: Render-layer probes on the production-base artifact
+        # the artifact is built for the /astro-inkstone/ mount: probing it
+        # requires serving it AT that prefix, exactly as Pages mounts it
         env:
           CHROME_PATH: /usr/bin/google-chrome
         run: |
-          node ../scripts/ui_probe.mjs dist
-          node ../scripts/contrast_probe.mjs dist
+          mkdir -p probe-root/astro-inkstone
+          cp -r dist/. probe-root/astro-inkstone/
+          node ../scripts/ui_probe.mjs probe-root
+          node ../scripts/contrast_probe.mjs probe-root
         working-directory: demo
       - uses: actions/upload-pages-artifact@v3
         with:
