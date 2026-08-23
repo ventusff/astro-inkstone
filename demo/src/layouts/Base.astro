@@ -18,9 +18,10 @@
 import 'katex/dist/katex.min.css';
 import '../styles/site.css';
 import Breadcrumb from '../components/Breadcrumb.astro';
-import SearchPalette from '../components/SearchPalette.astro';
+import SearchPalette from 'astro-inkstone/components/SearchPalette.astro';
+import { KINDS } from '../content/notes/_meta/taxonomy';
 import ThemeInit from '../components/ThemeInit.astro';
-import { UI, type Locale } from '../lib/i18n';
+import { href, UI, type Locale } from '../lib/i18n';
 
 interface Crumb {
   label: string;
@@ -101,7 +102,24 @@ const wikiMode = Boolean(import.meta.env.WIKI ?? process.env.WIKI);
       <img alt="" />
       <div class="cap"></div>
     </dialog>
-    <SearchPalette locale={locale} />
+    <SearchPalette
+      indexUrl={href('search-index.json')}
+      locale={locale}
+      scopes={[
+        { id: 'all', label: t.searchScopeAll },
+        ...KINDS.map((k) => ({ id: k.id, label: locale === 'zh' ? k.zh : k.label, crumb: k.label })),
+      ]}
+      labels={{
+        dialog: t.searchDialog,
+        input: t.searchInput,
+        results: t.searchResults,
+        placeholder: t.searchPlaceholder,
+        hint: t.searchHint,
+        empty: t.searchEmpty,
+        unavailable: t.searchUnavailable,
+        unit: t.searchUnit,
+      }}
+    />
     {/* polite live region: copy-button outcomes for assistive technology */}
     <div class="sr-only" role="status" data-copy-status data-done={t.copied} data-fail={t.copyFailed}></div>
 

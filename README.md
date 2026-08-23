@@ -51,8 +51,10 @@ alone for a static site that simply looks and reads beautifully.
   stylesheet that turns any page into a clean PDF. `browse.css` is the
   shelf — masthead, ruled shelves, card grid, status legend, instant
   filters, tag cloud.
-- 🧩 **24 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`,
+- 🧩 **25 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`,
   `Steps`, `Grid`, `PaperCard`, `HubCard`, `Stats`, `LocalToc`, `Backlinks`,
+  `SearchPalette` (the ⌘K overlay over the search factory + client, with
+  optional crumb-scoped filter chips; any `[data-search-open]` element opens it),
   `LocalGraph` (a note's one-hop link neighbourhood in the sidebar), a faceted
   wiki-browsing set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …), and more.
   Presentational and token-driven: they follow your palette automatically.

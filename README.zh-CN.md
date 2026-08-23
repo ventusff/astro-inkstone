@@ -43,8 +43,9 @@
   hub 卡片与阅读路径、文献列表、减少动效的处理,以及一键 Ctrl+P 出干净 PDF 的
   打印样式。`browse.css` 是书架——版头、带横线的书架、卡片栅格、状态图例、
   即时过滤、标签云。
-- 🧩 **24 个 Astro 组件** —— `Hero`、`Part`、`PartHero`、`Callout`、`Steps`、
+- 🧩 **25 个 Astro 组件** —— `Hero`、`Part`、`PartHero`、`Callout`、`Steps`、
   `Grid`、`PaperCard`、`HubCard`、`Stats`、`LocalToc`、`Backlinks`、
+  `SearchPalette`（⌘K 搜索浮层,基于索引工厂与匹配客户端,可选 crumb 范围筛选,任何带 `data-search-open` 的元素都能唤起）、
   `LocalGraph`(侧栏里本篇的一跳链接邻域)、wiki 多维导览组件(`NoteCard`、
   `FacetNav`、`TaxonomyLine`……)等。纯展示、token 驱动:自动跟随你的色板。
 - 🌱 **数字花园机械** —— taxonomy 工厂(形式/方向/标签/状态、带编号章节的

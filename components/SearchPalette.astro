@@ -1,0 +1,399 @@
+---
+/**
+ * ⌘K search palette over the build-time index (lib/search-index.ts factory +
+ * lib/search-client.ts matching). The index is fetched on first open — a
+ * reader who never searches pays nothing — from an endpoint both the dev
+ * server and the static build serve.
+ *
+ * Site contract:
+ *   - mount once per page (usually in the base layout);
+ *   - any element carrying `data-search-open` opens it, so trigger chrome
+ *     stays site-owned; ⌘K / Ctrl+K always works;
+ *   - `scopes` narrows results by the crumb label the index assigned each
+ *     document (a scope without `crumb` shows everything);
+ *   - every label is a prop; defaults are English.
+ *
+ * Presentational like every wiki component: second-tier tokens only, and the
+ * dialog carries `data-probe-open` so the render probes sample it open.
+ */
+interface Scope {
+  id: string;
+  label: string;
+  /** match documents whose crumb equals this; omit for an "all" scope */
+  crumb?: string;
+}
+
+interface Props {
+  /** endpoint route of the JSON index (a buildSearchIndexEndpoint page) */
+  indexUrl?: string;
+  /** locale passed to the matcher; 'any'-locale documents always match */
+  locale?: string;
+  scopes?: Scope[];
+  labels?: {
+    dialog?: string;
+    input?: string;
+    results?: string;
+    placeholder?: string;
+    hint?: string;
+    empty?: string;
+    unavailable?: string;
+    /** counter suffix: "12 pages" */
+    unit?: string;
+  };
+}
+
+const {
+  indexUrl = '/search-index.json',
+  locale = 'en',
+  scopes = [],
+  labels = {},
+} = Astro.props;
+
+const t = {
+  dialog: 'Site search',
+  input: 'Search',
+  results: 'Search results',
+  placeholder: 'Search…',
+  hint: 'Type to search · ↑↓ to choose · Enter to open',
+  empty: 'No results.',
+  unavailable: 'Search index unavailable.',
+  unit: 'pages',
+  ...labels,
+};
+---
+
+<dialog
+  data-probe-open
+  id="site-search"
+  class="se-dialog"
+  aria-label={t.dialog}
+  data-index={indexUrl}
+  data-locale={locale}
+  data-empty={t.empty}
+  data-unavailable={t.unavailable}
+  data-unit={t.unit}
+  data-scopes={JSON.stringify(scopes)}
+>
+  <div class="se-box">
+    <input
+      class="se-input"
+      type="search"
+      role="combobox"
+      aria-label={t.input}
+      aria-controls="se-results"
+      aria-expanded="false"
+      aria-autocomplete="list"
+      placeholder={t.placeholder}
+      autocomplete="off"
+      spellcheck="false"
+    />
+    {
+      scopes.length > 0 && (
+        <div class="se-filters" role="group" aria-label={t.results}>
+          {scopes.map((s, i) => (
+            <button type="button" data-scope={s.id} aria-pressed={String(i === 0)}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )
+    }
+    <div class="se-status" role="status" aria-live="polite" aria-atomic="true">{t.hint}</div>
+    <ol class="se-results" id="se-results" role="listbox" aria-label={t.results}></ol>
+    <div class="se-foot">
+      <span><kbd>↑↓</kbd> · <kbd>Enter</kbd> · <kbd>Esc</kbd></span>
+      <span>astro-inkstone</span>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  import { search, type Hit, type SearchDoc } from 'astro-inkstone/lib/search-client';
+
+  interface ScopeDef {
+    id: string;
+    label: string;
+    crumb?: string;
+  }
+
+  // bound once so the closures below hold a non-null reference (narrowing an
+  // outer `let` does not survive into a nested function)
+  function mount(dialog: HTMLDialogElement): void {
+    const input = dialog.querySelector('.se-input') as HTMLInputElement;
+    const status = dialog.querySelector('.se-status') as HTMLElement;
+    const list = dialog.querySelector('.se-results') as HTMLOListElement;
+    const chips = [...dialog.querySelectorAll<HTMLButtonElement>('.se-filters button')];
+    const indexUrl = dialog.dataset['index'] ?? '/search-index.json';
+    const locale = dialog.dataset['locale'] ?? 'en';
+    const scopes: ScopeDef[] = JSON.parse(dialog.dataset['scopes'] ?? '[]') as ScopeDef[];
+    const hint = status.textContent ?? '';
+
+    let docs: SearchDoc[] | null = null;
+    let loading: Promise<void> | null = null;
+    let hits: Hit[] = [];
+    let sel = 0;
+    let scope: ScopeDef | null = scopes[0] ?? null;
+
+    const load = (): Promise<void> =>
+      (loading ??= fetch(indexUrl)
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((d: SearchDoc[]) => {
+          docs = d;
+        })
+        .catch(() => {
+          // a failed fetch is retried on the next keystroke
+          loading = null;
+          status.textContent = dialog.dataset['unavailable'] ?? '';
+        }));
+
+    /**
+     * The combobox keeps DOM focus in the input and points at the current
+     * row with `aria-activedescendant`. render() rebuilds the rows whenever
+     * the query changes; moving the selection goes through paint() alone,
+     * which re-marks the existing rows — so between arrow presses the
+     * active option stays a live element with a live id.
+     */
+    function paint(): void {
+      const items = [...list.children] as HTMLElement[];
+      items.forEach((li, i) => {
+        const on = i === sel;
+        li.classList.toggle('sel', on);
+        li.firstElementChild?.setAttribute('aria-selected', String(on));
+      });
+      const activeId = items[sel]?.firstElementChild?.id;
+      if (activeId) input.setAttribute('aria-activedescendant', activeId);
+      else input.removeAttribute('aria-activedescendant');
+      input.setAttribute('aria-expanded', String(items.length > 0));
+    }
+
+    function render(): void {
+      list.replaceChildren();
+      hits.forEach((h, i) => {
+        // the li is only a layout box; the anchor is the listbox option, so
+        // the row keeps its href for click / Enter / open-in-new-tab
+        const li = document.createElement('li');
+        li.setAttribute('role', 'presentation');
+        const a = document.createElement('a');
+        a.id = `se-opt-${i}`;
+        a.setAttribute('role', 'option');
+        a.href = new URL(h.doc.route, new URL(indexUrl, location.href)).pathname;
+        const t = document.createElement('div');
+        t.className = 't';
+        t.textContent = h.doc.title;
+        if (h.doc.crumb) {
+          const c = document.createElement('span');
+          c.className = 'crumb';
+          c.textContent = h.doc.crumb;
+          t.append(c);
+        }
+        const s = document.createElement('div');
+        s.className = 's';
+        s.innerHTML = h.snippet; // built by search-client, all values escaped there
+        a.append(t, s);
+        li.append(a);
+        list.append(li);
+      });
+      paint();
+    }
+
+    async function run(): Promise<void> {
+      const q = input.value.trim();
+      if (!q) {
+        hits = [];
+        sel = 0;
+        status.textContent = hint;
+        render();
+        return;
+      }
+      await load();
+      if (!docs) return;
+      const pool = scope?.crumb ? docs.filter((d) => d.crumb === scope!.crumb) : docs;
+      hits = search(pool, q, locale);
+      sel = 0;
+      status.textContent = hits.length
+        ? `${hits.length} ${dialog.dataset['unit'] ?? ''}`
+        : (dialog.dataset['empty'] ?? '');
+      render();
+    }
+
+    function open(): void {
+      if (!dialog.open) dialog.showModal();
+      input.focus();
+      input.select();
+      void load();
+    }
+
+    input.addEventListener('input', () => void run());
+    chips.forEach((c) => {
+      c.addEventListener('click', () => {
+        chips.forEach((x) => x.setAttribute('aria-pressed', String(x === c)));
+        scope = scopes.find((s) => s.id === c.dataset['scope']) ?? null;
+        void run();
+        input.focus();
+      });
+    });
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    dialog.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (hits.length === 0) return;
+        sel = (sel + (e.key === 'ArrowDown' ? 1 : hits.length - 1)) % hits.length;
+        paint();
+        list.children[sel]?.scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter') {
+        const a = list.children[sel]?.querySelector('a');
+        if (a) {
+          e.preventDefault();
+          location.href = (a as HTMLAnchorElement).href;
+        }
+      }
+    });
+
+    for (const btn of document.querySelectorAll('[data-search-open]')) {
+      btn.addEventListener('click', open);
+    }
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        open();
+      }
+    });
+  }
+
+  const el = document.getElementById('site-search');
+  if (el instanceof HTMLDialogElement) mount(el);
+</script>
+
+<style is:global>
+  dialog.se-dialog {
+    border: none;
+    padding: 0;
+    background: none;
+    max-width: 100vw;
+    max-height: 100vh;
+    width: 100%;
+    height: 100%;
+  }
+  dialog.se-dialog::backdrop {
+    background: color-mix(in srgb, var(--color-overlay) 55%, transparent);
+    backdrop-filter: blur(2px);
+  }
+  .se-box {
+    width: min(640px, calc(100vw - 32px));
+    margin: 12vh auto 0;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    font-family: var(--font-ui);
+  }
+  .se-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid var(--color-line);
+    background: none;
+    color: var(--color-ink);
+    font: 400 16px/1.4 var(--font-ui);
+    padding: 15px 18px;
+    outline: none;
+  }
+  /* the UA ring is suppressed above, so a ring is drawn INSIDE the field:
+     `.se-box` clips overflow and would eat an outset one */
+  .se-input:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+  }
+  .se-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .se-filters button {
+    font: 500 11.5px/1 var(--font-ui);
+    color: var(--color-ink-soft);
+    background: none;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .se-filters button[aria-pressed='true'] {
+    color: var(--color-accent-text);
+    border-color: var(--color-accent);
+    background: var(--color-accent-soft);
+  }
+  .se-filters button:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+  .se-status {
+    font-size: 11.5px;
+    color: var(--color-ink-faint);
+    padding: 8px 18px;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .se-results {
+    list-style: none;
+    margin: 0;
+    padding: 6px;
+    max-height: min(52vh, 420px);
+    overflow-y: auto;
+  }
+  .se-results li {
+    margin: 0;
+  }
+  .se-results a {
+    display: block;
+    padding: 9px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .se-results li.sel a,
+  .se-results a:hover {
+    background: var(--color-bg-soft);
+  }
+  .se-results .t {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .se-results .t .crumb {
+    font-weight: 400;
+    font-size: 11.5px;
+    color: var(--color-ink-faint);
+    margin-left: 8px;
+  }
+  .se-results .s {
+    font-size: 12.5px;
+    color: var(--color-ink-soft);
+    margin-top: 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .se-results mark {
+    background: var(--color-accent-soft);
+    color: var(--color-accent-text);
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+  .se-foot {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--color-ink-faint);
+    padding: 7px 18px;
+    border-top: 1px solid var(--color-line);
+  }
+  .se-foot kbd {
+    font-family: var(--font-mono);
+    font-size: 10px;
+  }
+</style>
