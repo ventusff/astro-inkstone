@@ -392,15 +392,13 @@ pre.astro-code:focus-visible {
 
 
 /* ----- KaTeX ----- */
-.katex {
-  font-size: 1.04em;
-}
+/* formula scale is KaTeX's own default (1.21em) — do not shrink it */
 .katex-display {
   background: var(--color-math-bg);
   padding: 12px 18px;
   border-radius: 6px;
   overflow-x: auto;
-  margin: 16px 0;
+  margin: 18px 0;
 }
 
 
@@ -632,9 +630,10 @@ section.footnotes p {
 
 /* Two wrappers with two jobs: .tbl-wrap is the container-query container,
    .tbl-scroll the scroll box. `@container` styles a container's descendants
-   only, so the scrolling and its shadows live one level down where card
-   mode can switch them off. The query is on the container, not the
-   viewport: a table reflows by the width of the column it lands in. */
+   only, so the scrolling lives one level down where card mode can switch it
+   off. The query is on the container, not the viewport: a table reflows by
+   the width of the column it lands in. The scroll box paints no background
+   of its own: cells sit directly on the page paper. */
 .tbl-wrap {
   container-type: inline-size;
   container-name: tbl;
@@ -642,15 +641,6 @@ section.footnotes p {
 }
 .tbl-scroll {
   overflow-x: auto;
-  /* edge shadows while the table can scroll, gone at either end (`local` +
-     `scroll` background-attachment pairing, no JS) */
-  background:
-    linear-gradient(to right, var(--color-bg-card) 30%, transparent) left / 26px 100% no-repeat local,
-    linear-gradient(to left, var(--color-bg-card) 30%, transparent) right / 26px 100% no-repeat local,
-    radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--color-ink) 14%, transparent), transparent)
-      left / 13px 100% no-repeat scroll,
-    radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--color-ink) 14%, transparent), transparent)
-      right / 13px 100% no-repeat scroll;
 }
 table.tbl {
   width: 100%;
@@ -679,9 +669,6 @@ table.tbl {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.tbl code {
-  white-space: nowrap;
-}
 /* wide tables keep their natural width and scroll; columns are never squeezed */
 .tbl-wrap.wide table.tbl {
   min-width: max-content;
@@ -696,11 +683,10 @@ table.tbl {
    run out of room. Applies only to .wide (≥6 columns) and .wide-narrow (4–5):
    two- and three-column tables fit anyway, and cards would just be noisier. */
 @container tbl (max-width: 560px) {
-  /* cards never overflow horizontally: no scroll box, no scroll shadows */
+  /* cards never overflow horizontally: no scroll box */
   .wide > .tbl-scroll,
   .wide-narrow > .tbl-scroll {
     overflow-x: visible;
-    background: none;
   }
 
   .tbl-wrap.wide table.tbl,
@@ -868,7 +854,7 @@ details.callout[open] > summary.callout-title::before {
 .callout.bad .label {
   color: var(--color-accent-text);
 }
-.callout > :last-child {
+.callout :last-child {
   margin-bottom: 0;
 }
 
@@ -1405,7 +1391,7 @@ section:has(.hero) + h2 {
 .demo-stage {
   position: relative;
   width: 100%;
-  background: color-mix(in srgb, var(--color-bg-card) 55%, var(--color-bg-soft));
+  background: var(--color-stage-bg);
   border-radius: 6px;
   border: 1px solid var(--color-line);
   overflow: hidden;
@@ -1420,7 +1406,7 @@ section:has(.hero) + h2 {
 .demo-stage.multi > canvas {
   flex: 1 1 0;
   min-width: 0;
-  background: color-mix(in srgb, var(--color-bg-card) 55%, var(--color-bg-soft));
+  background: var(--color-stage-bg);
   border-radius: 6px;
   border: 1px solid var(--color-line);
 }
