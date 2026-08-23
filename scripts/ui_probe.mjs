@@ -115,8 +115,15 @@ for (const r of routeList) {
         }
         return false;
       };
+      // A `display: contents` parent generates no box (its rect is empty by
+      // spec) — the containment reference is the nearest ancestor that does.
+      const boxedParent = (el) => {
+        let n = el.parentElement;
+        while (n && n.tagName !== 'BODY' && getComputedStyle(n).display === 'contents') n = n.parentElement;
+        return n;
+      };
       for (const el of document.querySelectorAll('body *')) {
-        const p = el.parentElement;
+        const p = boxedParent(el);
         if (!p) continue;
         if (el.closest('.katex-mathml, math, .katex')) continue;
         const a = el.getBoundingClientRect(), b = p.getBoundingClientRect();
@@ -238,8 +245,13 @@ for (const r of routeList) {
             }
             return false;
           };
+          const boxedParent = (el) => {
+            let n = el.parentElement;
+            while (n && n.tagName !== 'BODY' && getComputedStyle(n).display === 'contents') n = n.parentElement;
+            return n;
+          };
           for (const el of document.querySelectorAll('dialog[open], dialog[open] *')) {
-            const p = el.parentElement;
+            const p = boxedParent(el);
             if (!p || el.tagName === 'DIALOG') continue;
             if (el.closest('.katex-mathml, math, .katex')) continue;
             const a = el.getBoundingClientRect(), b = p.getBoundingClientRect();
