@@ -1,7 +1,7 @@
 {
   "name": "astro-inkstone",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Paper-and-ink design layer for Astro docs, wikis and digital gardens — two-tier design tokens, content styles, 25 components, a one-line Markdown pipeline preset, CJK-first typography and render-layer checks; pairs with astro-inkbrush for in-place WYSIWYG editing.",
   "author": "Jianfei Guo",
