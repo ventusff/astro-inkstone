@@ -12,7 +12,7 @@
  * exist. It makes no aesthetic judgement.
  *
  * Usage (site-agnostic — everything site-specific arrives via args/env):
- *   node scripts/ui_probe.mjs [distDir] [baseUrl] [outFile]
+ *   node scripts/ui_probe.mjs [distDir] [baseUrl] [outFile] [--exclude <route regex>]
  *     distDir  build output directory, default ./dist (relative to cwd)
  *     baseUrl  optional address of an already-running static server; when
  *              omitted the probe serves distDir itself on an ephemeral port
@@ -28,12 +28,19 @@ import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 
-const DIST = process.argv[2] || resolve('dist');
+// --exclude <regex>: routes matching it are not probed. A site with many
+// locale trees probes a representative subset by default and passes nothing
+// here for the full run.
+const __argv = process.argv.slice(2);
+const __ex = __argv.indexOf('--exclude');
+const EXCLUDE = __ex >= 0 ? new RegExp(__argv.splice(__ex, 2)[1]) : null;
+
+const DIST = __argv[0] || resolve('dist');
 const WIDTHS = [1440, 1024, 768, 430];
 
 // Serve DIST ourselves unless the caller points us at a running server.
 let server = null;
-let BASE = process.argv[3];
+let BASE = __argv[1];
 if (!BASE) {
   const MIME = {
     '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
@@ -96,7 +103,7 @@ const quiet = async (idleMs, capMs) => {
   }
 };
 
-const routeList = routes(DIST);
+const routeList = routes(DIST).filter((r) => !EXCLUDE || !EXCLUDE.test(r));
 for (const r of routeList) {
   for (const w of WIDTHS) {
     await page.setViewport({ width: w, height: 1200 });
@@ -305,7 +312,7 @@ const brief = findings.map((f) => {
 });
 const pages = new Set(findings.map((f) => f.route)).size;
 const tally = `SAMPLES WITH FINDINGS: ${findings.length} (${pages} pages)`;
-writeFileSync(process.argv[4] || 'ui-probe.txt', brief.join('\n') + `\n\n${tally}\n`);
+writeFileSync(__argv[2] || 'ui-probe.txt', brief.join('\n') + `\n\n${tally}\n`);
 console.log(brief.slice(0, 40).join('\n'));
 console.log(`\n${tally}`);
 process.exitCode = findings.length ? 1 : 0;

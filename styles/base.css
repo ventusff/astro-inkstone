@@ -924,6 +924,11 @@ details.callout[open] > summary.callout-title::before {
 .measured.solo .measured-body {
   grid-template-columns: 1fr;
 }
+/* a lone pane spans the full row: the two-column form exists only when both
+   panes are present, so a single-pane body never strands an empty column */
+.measured-pane:only-child {
+  grid-column: 1 / -1;
+}
 /* narrow screens: the two panes stack (below 620px the column is the viewport) */
 @media (max-width: 620px) {
   .measured-body {

@@ -39,7 +39,7 @@
  * 18.66px at weight 700).
  *
  * Usage (site-agnostic):
- *   node scripts/contrast_probe.mjs [distDir] [baseUrl] [outFile]
+ *   node scripts/contrast_probe.mjs [distDir] [baseUrl] [outFile] [--exclude <route regex>]
  *     distDir  build output directory, default ./dist
  *     baseUrl  optional address of a running static server; when omitted the
  *              probe serves distDir itself on an ephemeral port
@@ -56,7 +56,14 @@ import { createServer } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 import { inflateSync } from 'node:zlib';
 
-const DIST = process.argv[2] || resolve('dist');
+// --exclude <regex>: routes matching it are not probed. A site with many
+// locale trees probes a representative subset by default and passes nothing
+// here for the full run.
+const __argv = process.argv.slice(2);
+const __ex = __argv.indexOf('--exclude');
+const EXCLUDE = __ex >= 0 ? new RegExp(__argv.splice(__ex, 2)[1]) : null;
+
+const DIST = __argv[0] || resolve('dist');
 const THEMES = (process.env.PROBE_THEMES || 'light,dark').split(',').map((s) => s.trim()).filter(Boolean);
 const WIDTHS = (process.env.PROBE_WIDTHS || '1440,430').split(',').map((s) => Number(s.trim())).filter(Boolean);
 const VIEW = 900; // the one viewport height: collection and screenshots share it
@@ -64,7 +71,7 @@ const OVERLAP = 120; // sticky chrome at a shot's top is sampled from the previo
 
 /* ---------------------------------------------------------------- serve */
 let server = null;
-let BASE = process.argv[3];
+let BASE = __argv[1];
 if (!BASE) {
   const MIME = {
     '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
@@ -191,7 +198,7 @@ const page = await browser.newPage();
 
 const findings = [];
 let measured = 0;
-const routeList = routes(DIST);
+const routeList = routes(DIST).filter((r) => !EXCLUDE || !EXCLUDE.test(r));
 for (const r of routeList) {
   for (const theme of THEMES) {
     for (const width of WIDTHS) {
@@ -486,7 +493,7 @@ for (const f of findings.sort((a, b) => a.route.localeCompare(b.route) || a.them
   lines.push(`    ${f.ratio.toFixed(2)}:1 < ${f.min}  ${f.fg} on ${f.bg}  ${f.fontSize}px/${f.fontWeight}  ${f.selector}  "${f.text}"`);
 }
 lines.push('', `text runs measured: ${measured}`, `TEXT BELOW AA: ${findings.length}`);
-writeFileSync(process.argv[4] || 'contrast-probe.txt', lines.join('\n') + '\n');
+writeFileSync(__argv[2] || 'contrast-probe.txt', lines.join('\n') + '\n');
 console.log(lines.slice(0, 80).join('\n'));
 if (lines.length > 80) console.log(`… (${lines.length - 80} more lines in the report)`);
 process.exitCode = findings.length ? 1 : 0;

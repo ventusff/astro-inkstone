@@ -48,8 +48,9 @@ whose content is the package's own manual.
   surface it actually renders on (small text 4.5:1; an accent used as small
   text has its own darkened `-text` tier), at the opacity it actually
   renders at — never dim text with `opacity`, use a token color that
-  clears the bar. `node scripts/contrast_probe.mjs demo/dist` samples the
-  rendered demo in both themes (dialogs probed open) and must report
+  clears the bar. `node scripts/probe.mjs contrast` (from `demo/`; `--all`
+  for every locale's tree) samples the rendered demo in both themes
+  (dialogs and marked popovers probed open) and must report
   `TEXT BELOW AA: 0` before a style commit. Hover and focus states are the
   one surface reviewed by eye instead of probed.
 - **Light is the identity**: never read `prefers-color-scheme`; dark styles
@@ -139,15 +140,23 @@ npx astro check                      # types (a build alone does not check them)
 npm run build                        # build + engine check-dist (postbuild)
 npm run dev                          # the manual site
 npm run check                            # engine CLIs: content + wikilinks (strict)
-node ../scripts/ui_probe.mjs dist        # render-layer probe (needs Chrome)
-node ../scripts/contrast_probe.mjs dist  # WCAG contrast of rendered text, both themes
+node scripts/probe.mjs ui                # render-layer probe, en+zh trees (needs Chrome)
+node scripts/probe.mjs contrast          # WCAG contrast, en+zh trees, both themes
+node scripts/probe.mjs ui --all          # every locale's tree — before a release,
+node scripts/probe.mjs contrast --all    #   and after any language-shaped change
 ```
 
 Library changes go through the unit tests; style/component changes through a
-demo build + both probes — all green before committing. CI runs the same,
-except the contrast probe: pixel-sampling every page in both themes is too
-slow for every push at the demo's size, so in CI it runs only on manual
-dispatch (the `contrast` input) — the run before a style commit is local.
+demo build + both probes — all green before committing. The probes default
+to the en and zh trees (the registry-driven wrapper passes `--exclude` to
+the package scripts); `--all` covers every locale and is the bar before a
+release and after any language-shaped change — the locale registry, the ui
+strings files, fonts, per-language CSS, a component that lays out
+per-language labels — because the failures such a change causes live only
+in the other locales' trees. CI runs ui_probe over everything on every
+push; the contrast probe runs there only on manual dispatch (the
+`contrast` input) — pixel-sampling every page in both themes is too slow
+for every push at the demo's size.
 Comments and documentation are written in English; the README ships in
 English and Simplified Chinese (`README.zh-CN.md`) — keep both in sync.
 Commit messages: English, entirely — subject and body.
