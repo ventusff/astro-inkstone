@@ -60,7 +60,6 @@ jobs:
           mkdir -p probe-root/astro-inkstone
           cp -r dist/. probe-root/astro-inkstone/
           node ../scripts/ui_probe.mjs probe-root
-          node ../scripts/contrast_probe.mjs probe-root
           node ../scripts/playground_probe.mjs probe-root /astro-inkstone/
         working-directory: demo
       - uses: actions/upload-pages-artifact@v3

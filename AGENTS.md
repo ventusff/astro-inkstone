@@ -144,7 +144,10 @@ node ../scripts/contrast_probe.mjs dist  # WCAG contrast of rendered text, both 
 ```
 
 Library changes go through the unit tests; style/component changes through a
-demo build + both probes — all green before committing. CI runs the same.
+demo build + both probes — all green before committing. CI runs the same,
+except the contrast probe: pixel-sampling every page in both themes is too
+slow for every push at the demo's size, so in CI it runs only on manual
+dispatch (the `contrast` input) — the run before a style commit is local.
 Comments and documentation are written in English; the README ships in
 English and Simplified Chinese (`README.zh-CN.md`) — keep both in sync.
 Commit messages: English, entirely — subject and body.

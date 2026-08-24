@@ -1,15 +1,23 @@
 name: CI
 
 # The package's gate: unit tests for the library, a type check and a build of
-# the demo (with the engine's dist check), then the two render-layer probes
-# over the output — ui_probe (layout and markup defects at four viewport
-# widths) and contrast_probe (WCAG contrast of rendered text, both themes).
+# the demo (with the engine's dist check), then ui_probe over the output
+# (layout and markup defects at four viewport widths). contrast_probe (WCAG
+# contrast of rendered text, both themes) samples pixels page by page and is
+# far too slow for every push at the demo's size — it stays the LOCAL gate
+# before any style commit, and runs here only on manual dispatch with the
+# `contrast` input set.
 
 on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      contrast:
+        description: 'also run the contrast probe (slow: pixel-samples every page in both themes)'
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -47,7 +55,8 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
         run: node scripts/ui_probe.mjs demo/dist
-      - name: Contrast probe
+      - name: Contrast probe (manual dispatch only — the local pre-commit gate otherwise)
+        if: github.event_name == 'workflow_dispatch' && inputs.contrast
         env:
           CHROME_PATH: /usr/bin/google-chrome
         run: node scripts/contrast_probe.mjs demo/dist
