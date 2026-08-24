@@ -33,16 +33,6 @@ export interface HubNav {
   hubHere: boolean;
   groups: HubGroup[];
 }
-export interface LangLink {
-  code: string;
-  label: string;
-  href: string;
-  current: boolean;
-}
-export interface LangNav {
-  /** every language this note exists in, current one flagged */
-  langs: LangLink[];
-}
 
 interface Props {
   brand: string;
@@ -51,11 +41,10 @@ interface Props {
   toc: TocData;
   tocDepth?: 2 | 3;
   hub?: HubNav | undefined;
-  lang?: LangNav | undefined;
-  /** accessible names of the two landmarks, in the page's language */
-  labels: { contents: string; languages: string };
+  /** accessible name of the contents landmark, in the page's language */
+  labels: { contents: string };
 }
-const { brand, brandHref, subtitle, toc, tocDepth = 2, hub, lang, labels } = Astro.props;
+const { brand, brandHref, subtitle, toc, tocDepth = 2, hub, labels } = Astro.props;
 
 const entries = toc.items.filter((i) => i.kind === 'entry');
 const subEntries = entries.filter((e) => e.depth === 2);
@@ -79,15 +68,6 @@ const subEntries = entries.filter((e) => e.depth === 2);
       )
     }
   </a>
-  {
-    lang && lang.langs.length > 1 && (
-      <div class="lang-toggle" role="group" aria-label={labels.languages}>
-        {lang.langs.map((l) =>
-          l.current ? <span class="active">{l.label}</span> : <a href={l.href}>{l.label}</a>,
-        )}
-      </div>
-    )
-  }
   <nav aria-label={labels.contents}>
     {
       hub ? (

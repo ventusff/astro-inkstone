@@ -32,15 +32,14 @@ const BASE_PREFIX = normalizeBase(BASE);
 
 // [[wikilinks]] resolve against the note collection with the engine's own
 // resolver — the same alias/brand/locale rules the CMS preview and the
-// check-wikilinks CLI use, so the three can never drift. en is the primary
-// locale (unprefixed ids); zh mirrors live under zh/.
+// check-wikilinks CLI use, so the three can never drift. The locale table is
+// the site registry's: the default locale's ids are unprefixed, every other
+// locale's mirrors live under its prefix.
+const { LOCALE_DEFS } = await import('./src/content/notes/_meta/locales.ts');
 const resolve = buildWikilinkResolver({
   notes: cachedScan('src/content/notes'),
   urlFor: (id) => `${BASE_PREFIX}/${id}/`,
-  locales: [
-    { code: 'en', prefix: '' },
-    { code: 'zh', prefix: 'zh/' },
-  ],
+  locales: LOCALE_DEFS.map(({ code, prefix }) => ({ code, prefix })),
 });
 
 export default defineConfig({

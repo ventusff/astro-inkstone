@@ -1,0 +1,24 @@
+---
+title: Como os wikilinks resolvem
+description: Um resolvedor só para as páginas, a pré-visualização do editor, o importador e o lint do CI — espelhos de idioma primeiro, depois ids, aliases, brands e títulos.
+navLabel: Wikilinks
+part: 5
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Como os wikilinks resolvem">
+  As notas se ligam umas às outras com colchetes duplos, resolvidos na hora do build contra o conjunto de notas que de fato existem. Os resultados renderizados — id, alias, rótulo, âncora — se apresentam ao vivo na [[kitchen-sink|vitrine completa]]; este capítulo é sobre as regras de resolução por trás deles.
+</PartHero>
+
+## O que um alvo pode ser
+
+Um alvo não precisa ser o id de uma nota. A resolução tenta, nesta ordem: **o espelho do idioma corrente** (um link numa das dezessete edições irmãs desta página cai na edição do mesmo idioma do seu alvo, recuando para a nota canônica só onde não existe espelho), depois o id exato, depois aliases, nomes de brand e títulos, sem diferenciar maiúsculas. O ensaio [[garden-craft]] declara, na edição canônica, `tending` como alias — então lá `[[tending]]` chega à [[garden-craft|mesma página]]. Âncoras e rótulos compõem como você esperaria: `[[garden-craft#pruning]]` vai direto a uma seção, `[[garden-craft|o ensaio de jardinagem]]` renderiza um texto personalizado — e as duas coisas se combinam.
+
+## Links mortos não derrubam builds
+
+Um link para uma nota que não existe renderiza como um link visivelmente morto, com o motivo no tooltip, e o build registra um aviso. É uma escolha deliberada para jardins: uma nota ainda não escrita é um convite, não um erro. Um alvo que casa com várias notas ao mesmo tempo renderiza do mesmo jeito, marcado como ambíguo. Apodrecimento de link continua sendo assunto de CI — o CLI `check-wikilinks` do motor resolve cada link com as regras da própria biblioteca e, em modo `--strict`, transforma links mortos em saída de erro; é assim que este repositório o roda ([[checks|as cinco verificações]]).
+
+## Uma implementação, quatro consumidores
+
+As páginas, a pré-visualização ao vivo do editor, o [[inkbrush/inbox|importador da caixa de entrada]] e o lint do CI resolvem com o mesmo código — então um link quer dizer a mesma coisa em toda parte, e o editor pode ser generoso: digitar `[[` em modo de edição abre um autocompletar sobre ids, títulos e aliases.

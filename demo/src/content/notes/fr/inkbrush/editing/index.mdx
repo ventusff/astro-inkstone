@@ -1,0 +1,30 @@
+---
+title: "L’édition, bloc par bloc"
+description: "Le flux ✎ — CodeMirror à la place du bloc que vous lisez, un aperçu en direct via le pipeline du site lui-même, et deux filets de sécurité avant que rien ne touche le disque."
+navLabel: "Édition"
+part: 1
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="L’édition, bloc par bloc">
+  L’édition fonctionne comme la correction d’une coquille sur Wikipédia : vous éditez le paragraphe que vous avez sous les yeux, pas un immense textarea contenant la page entière. En mode édition (`npm run wiki`), connectez-vous, survolez n’importe quel bloc de n’importe quelle note — celui-ci compris — et cliquez ✎.
+</PartHero>
+
+## La boucle
+
+Le bloc rendu s’efface et un éditeur [CodeMirror](https://codemirror.net/) se déploie à sa place, avec la source Markdown de ce bloc. Un aperçu en direct se rend dessous à mesure que vous tapez — via le dialecte du moteur plus les plugins que le site passe à `inkbrush({ markdown })`, le même jeu de règles que monte le pipeline des pages : l’aperçu et la page ne peuvent donc jamais diverger. `⌘/Ctrl + Entrée` enregistre ; `Échap` annule.
+
+Le frontmatter est un bloc, lui aussi : la bande de taxonomie en tête de chaque note d’ici porte son propre ✎, qui ouvre le YAML de la note — changez un statut ou une date, et l’en-tête se re-rend depuis le frontmatter mis à jour.
+
+## Les deux filets de sécurité
+
+**Le verrouillage optimiste.** Chaque bloc porte un hachage de la source dont il a été découpé. Si quelqu’un d’autre a modifié le fichier sous vos pieds, l’enregistrement est rejeté avec un conflit au lieu d’écraser son travail en silence — rechargez et recommencez.
+
+**Une porte de build.** Avant que quoi que ce soit ne s’écrive sur le disque, le fichier entier passe par le pipeline Markdown du site — le dialecte, le garde-fou du contenu, les plugins propres au site, et le compilateur MDX pour les `.mdx`. Un enregistrement qui casserait la page — un `**` sans paire, une balise de composant non refermée, une expression malformée — est refusé avec l’erreur exacte, et le fichier sur disque reste intact. La liste complète des refus du garde-fou se démontre en fin de [[kitchen-sink|démonstration intégrale]].
+
+## Où vont les enregistrements
+
+Un enregistrement écrit le fichier Markdown et, avec `autocommit` activé, devient un commit git au nom de l’utilisateur connecté. Il n’y a de base de données nulle part : les fichiers de contenu sont la seule source de vérité, et git l’historique durable. Le journal fin, bloc par bloc, qui alimente [[inkbrush/revisions|l’historique des révisions]] circule par-dessus.
+
+Le dialecte lui-même — GFM avec une règle d’emphase compatible CJK, plus un garde-fou du contenu qui refuse le Markdown qui se déforme en silence — se définit une fois dans le moteur et se partage entre le rendu des pages, l’aperçu de cet éditeur et la CLI `check-content` ([[checks|les cinq vérifications]]). Une grammaire, trois consommateurs, zéro dérive.

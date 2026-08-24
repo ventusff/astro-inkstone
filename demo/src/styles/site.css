@@ -19,10 +19,36 @@
 @import 'astro-inkstone/styles/base.css';
 @import 'astro-inkstone/styles/browse.css';
 
-/* generated labels follow the page language */
-html[lang='zh-CN'] {
-  --speak-label: '说人话 →';
-  --diff-label: '相比前作 →';
+/* Generated content labels (--speak-label / --diff-label) follow the page
+   language through an inline style emitted by layouts/Base.astro from the
+   locale's UI strings — no per-language rules here. */
+
+/* Han glyph forms follow the page language: the shared stacks name SC faces
+   for Hanzi, which would set Japanese kanji and Korean hanja in Chinese
+   forms. Japanese and Korean pages put their own system faces ahead of the
+   SC ones; every other script resolves through the generic families. */
+html[lang='ja'] {
+  --font-display:
+    'Source Serif 4 Variable', 'Source Serif 4', 'Hiragino Mincho ProN', 'Yu Mincho',
+    'Noto Serif JP', 'Noto Serif CJK JP', Georgia, serif;
+  --font-body:
+    'Charter', 'Iowan Old Style', 'Source Serif 4 Variable', 'Source Serif 4',
+    'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', 'Noto Serif CJK JP', ui-serif, Georgia,
+    serif;
+  --font-ui:
+    'Inter Variable', 'Inter', 'Helvetica Neue', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI',
+    'Meiryo', 'Noto Sans JP', 'Noto Sans CJK JP', ui-sans-serif, system-ui, sans-serif;
+}
+html[lang='ko'] {
+  --font-display:
+    'Source Serif 4 Variable', 'Source Serif 4', 'Apple Myungjo', 'Nanum Myeongjo',
+    'Noto Serif KR', 'Noto Serif CJK KR', Georgia, serif;
+  --font-body:
+    'Charter', 'Iowan Old Style', 'Source Serif 4 Variable', 'Source Serif 4', 'Apple Myungjo',
+    'Nanum Myeongjo', 'Noto Serif KR', 'Noto Serif CJK KR', ui-serif, Georgia, serif;
+  --font-ui:
+    'Inter Variable', 'Inter', 'Helvetica Neue', 'Apple SD Gothic Neo', 'Malgun Gothic',
+    'Noto Sans KR', 'Noto Sans CJK KR', ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ============================================================ shell ==== */
@@ -182,29 +208,6 @@ main.note-main {
 }
 .toc .katex {
   font-size: 1em;
-}
-
-/* ---- language toggle (notes that exist in more than one locale) ---- */
-.lang-toggle {
-  display: inline-flex;
-  gap: 0;
-  margin: 10px 0 4px;
-  border: 1px solid var(--color-line);
-  border-radius: 6px;
-  overflow: hidden;
-  font-size: 12px;
-}
-.lang-toggle a,
-.lang-toggle span {
-  padding: 3px 10px;
-  border-bottom: none;
-  color: var(--color-ink-soft);
-  text-decoration: none;
-}
-.lang-toggle .active {
-  background: var(--color-accent);
-  color: var(--color-bg);
-  font-weight: 600;
 }
 
 /* =================================================== search palette ==== */

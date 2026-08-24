@@ -5,15 +5,15 @@
  * facet pages (kind / domain / status routes); the script below swaps each
  * one for a real toggle button (aria-pressed) filtering in place (one value
  * per dimension, AND across dimensions) with an announced result count —
- * without it every pill still leads somewhere. The en and zh routes render
- * this one component with their locale.
+ * without it every pill still leads somewhere. Every locale's route renders
+ * this one component with its locale.
  */
 import { getCollection } from 'astro:content';
 import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
 import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
 import BrowseLayout from '../../layouts/BrowseLayout.astro';
 import { browseHrefFor, cardOf, facetBaseFor, facetsOf, localized } from '../../lib/display';
-import { localePrefix, otherLocale, UI, type Locale } from '../../lib/i18n';
+import { browseAlternates, UI, type Locale } from '../../lib/i18n';
 import { getWikiUnits, tagIndex } from '../../lib/taxonomy';
 import { DOMAINS, KINDS, STATUSES } from '../../content/notes/_meta/taxonomy';
 
@@ -28,13 +28,12 @@ const units = await getWikiUnits();
 const byId = new Map((await getCollection('notes')).map((e) => [e.id, e]));
 const facets = facetsOf(units, locale);
 const allTags = [...tagIndex(units).keys()];
-const kindDefs = KINDS.filter((k) => units.some((u) => u.kind === k.id)).map((k) => localized(k, locale));
-const domainDefs = DOMAINS.filter((d) => units.some((u) => u.domains.includes(d.id))).map((d) => localized(d, locale));
-const statusDefs = STATUSES.filter((s) => units.some((u) => u.status === s.id)).map((s) => localized(s, locale));
-const twin = `${localePrefix(otherLocale(locale))}all/`;
+const kindDefs = KINDS.filter((k) => units.some((u) => u.kind === k.id)).map((k) => localized('kind', k, locale));
+const domainDefs = DOMAINS.filter((d) => units.some((u) => u.domains.includes(d.id))).map((d) => localized('domain', d, locale));
+const statusDefs = STATUSES.filter((s) => units.some((u) => u.status === s.id)).map((s) => localized('status', s, locale));
 ---
 
-<BrowseLayout title={b.all} description={b.allDesc(units.length)} locale={locale} crumbs={[{ label: b.all }]} translateRoute={twin}>
+<BrowseLayout title={b.all} description={b.allDesc(units.length)} locale={locale} crumbs={[{ label: b.all }]} alternates={browseAlternates('all/')}>
   <header class="wb-hero">
     <p class="wb-kicker">{b.all} <span class="sep">·</span> {b.allKicker}</p>
     <h1 class="wb-title">{b.all}<span class="en">{b.allEntries(units.length)}</span></h1>

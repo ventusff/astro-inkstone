@@ -1,0 +1,28 @@
+---
+title: Kertas dan tinta, dengan sengaja
+brand: Kertas & tinta
+subtitle: "sikap di balik token"
+description: Mengapa sistem desain ini memilih dasar kertas hangat, serif sungguhan, dua dasar untuk dua macam halaman, dan tema gelap racikan tangan — catatan tentang sikap di balik token.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Pola · sebuah sikap desain" title="Kertas dan tinta, dengan sengaja" meta="dasar hangat · badan berserif · dua dasar · edisi kedua untuk gelap">
+  Kebanyakan tema dokumentasi meraih bawaan yang itu-itu juga: putih `#fff`, sans grotesque, teks gray-800, mode gelap ikut sistem. Semuanya terbaca lumayan dan tak berkesan apa-apa. Sistem ini berangkat dari premis lain — **dokumen teknis yang panjang adalah sesuatu yang Anda baca selama satu jam** — dan token-tokennya mengalir dari sana.
+</Hero>
+
+## Sikapnya
+
+Membaca satu jam menuntut apa yang sudah dipecahkan dunia cetak berabad-abad lalu: dasar hangat yang tidak menyilaukan, huruf teks dengan kontras goresan yang nyata, dan irama tata letak yang diukur dalam em teks tubuh, bukan piksel chrome. Dari situlah kosakata yang dipakai [[design-tokens|lapisan token]]: kertas-kertas (纸 lembarannya, 页 halamannya, 素 dasar polosnya, 帛 suteranya) alih-alih gray-50 sampai gray-200; tinta dan pigmen dari kotak cat pelukis — 朱 merah anggur, 石 jingga bakar, 赭 oker, 黛 teal, 紫 ungu — alih-alih primary/secondary/accent. Nama-nama itu bukan hiasan: mereka menambatkan setiap keputusan warna baru pada metafora fisik yang sama, dan itulah sebabnya lima permukaan berbeda tetap terbaca sebagai satu lembar kertas.
+
+## Dua dasar, karena dua macam halaman
+
+Wiki dibaca dengan dua cara. Anda **membaca** sebuah catatan — satu kolom, satu jam, mata ingin tenang: kertas yang sedikit sejuk, tinta netral, satu aksen untuk tautan dan angka. Anda **menjelajahi** sebuah rak — kisi kartu, satu lirikan, satu pilihan: kertasnya boleh lebih hangat, judulnya boleh serif display, aksennya boleh anggur tua yang terbaca sebagai tanda alih-alih tautan. Memaksa kedua situasi itu berbagi satu palet berarti mengorbankan keduanya. Maka tingkat semantiknya punya dua konteks — kolom baca (`--color-*`) dan rak jelajah (`--wb-*`) — yang ditarik dari satu kotak pigmen yang sama, dan setiap halaman menyatakan dirinya yang mana. Hasilnya: situs yang terasa seperti satu benda dengan dua ruangan.
+
+## Gelap adalah edisi kedua, bukan inversi
+
+Mode gelap algoritmik membalik kecerahan lalu menganggap urusan selesai; teks menjadi kapur di atas batu tulis dan setiap permukaan bersemburat berubah jadi lumpur. Di sini tema gelap adalah **edisi kedua yang diracik tangan**: dasar senja dan tinta putih rembulan dipilih tersendiri, pigmen aksen dicerahkan ulang hanya secukupnya agar kontras AA-nya bertahan di kertas yang lebih gelap. Harganya adalah satu set keputusan kedua — dan justru itulah intinya. Sakelarnya hanya menghormati pilihan eksplisit pembaca ([[design-tokens|tak pernah preferensi OS]]), karena halaman yang membalik temanya sendiri di tengah bacaan adalah halaman yang mengagetkan.
+
+## CJK ikut menanggung beban
+
+Teks campuran Tionghoa/Latin adalah tempat kebanyakan tema diam-diam ambruk: emphasis yang menolak menutup di depan titik lebar-penuh, diagram kode yang miring karena satu Hanzi selebar 1.7 sel. Keduanya di sini diperlakukan sebagai bug kebenaran, bukan selera tipografi — [[kitchen-sink|dialeknya mengurai emphasis CJK dengan benar]], dan subset font kode mematok satu Hanzi tepat dua sel sehingga diagram garis-kotak selamat diterjemahkan. Tema yang hanya beres dalam bahasa Inggris baru setengah tema.

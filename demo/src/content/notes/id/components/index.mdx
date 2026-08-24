@@ -1,0 +1,70 @@
+---
+title: Koleksi komponen
+description: Tur tiga bab atas semua komponen bawaan — dan pada saat yang sama, catatan ini sendiri adalah demonstrasi langsung cara kerja hub yang berbab.
+brand: Komponen
+subtitle: "galeri komponen\ntiga bab · satu hub"
+navLabel: Ikhtisar
+chapters: false
+nav:
+  - group: Galeri
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Galeri dalam tiga bab · 2026.08" title="Koleksi komponen" meta="3 bab · 24 komponen · semuanya diimpor per jalur dari astro-inkstone/components/">
+  Segala isi galeri ini diimpor dari `astro-inkstone/components/` per jalur dan dirender dengan token bawaan paket. Komponennya **presentasional**: data dan teks label masuk lewat props (bawaannya bahasa Inggris), sehingga situs dalam bahasa apa pun tinggal mengoper miliknya sendiri.
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: 'bab' },
+        { value: '24', label: 'komponen' },
+        { value: '6', label: 'kepingan wiki' },
+        { value: '0', label: 'warna mentah' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## Bab-babnya `{#chapters notoc}`
+
+Tiap kartu adalah satu bab pada rel bab di bilah sisi; chip-nya menyebut apa saja yang diperagakan.
+
+<div class="hub-grid">
+  <HubCard href={`${base}/id/components/content/`} num="Bagian I" title="Konten & tipografi" count="7 komponen"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    Kepingan-kepingan penyusun tubuh tulisan — callout, chip, kisi, rel langkah, baris statistik, kartu makalah, dan daftar pustaka.
+  </HubCard>
+
+  <HubCard href={`${base}/id/components/wiki/`} num="Bagian II" title="Wiki & jelajah" count="8 komponen"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    Set taksonomi tempat rak-rak taman ini dibangun, plus dua panel graf tautan — tautan balik dan graf lokal di bilah sisi.
+  </HubCard>
+
+  <HubCard href={`${base}/id/components/interactive/`} num="Bagian III" title="Interaktif & perabot" count="9 komponen"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    Demo canvas yang hidup beserta kontrak pemuat milik situs, plus perabot halaman — hero, kartu hub, daftar loncat, kaki halaman.
+  </HubCard>
+</div>
+
+## Hub, secara langsung
+
+Catatan ini sendirilah demonstrasi sebuah **hub**: catatan tingkat atas yang frontmatter-nya mendeklarasikan `nav` — daftar bab yang terurut. Mesin yang sedang Anda saksikan:
+
+- bilah sisi menampilkan rel bab (I/II/III) di bawah brand milik hub, dengan navigasi sebelumnya/berikutnya di kaki tiap bab;
+- bab mewarisi taksonomi hub — tak satu pun dari ketiga bab galeri ini mendeklarasikan jenis, bidang, atau statusnya sendiri, namun masing-masing menampilkan milik catatan ini; bab yang menetapkan nilainya sendiri menimpa seutuhnya ([[three-way-split|aturan eksplisit-menang yang sama seperti di mana-mana]]);
+- di halaman jelajah, hub adalah **satu kesatuan**: satu kartu, dengan cacah bab — bab tak pernah berserakan memenuhi rak;
+- nomor `part:` tiap bab wajib cocok dengan posisinya di `nav`, atau build gagal — rel dan frontmatter mustahil berbeda cerita;
+- kartu-kartu di atas adalah komponen `HubCard` di dalam `.hub-grid`; kotak di bawah adalah **jalur baca** (`.path`), perabot hub yang satunya lagi.
+
+<div class="path">
+  <div class="title">Mulai dari mana</div>
+  <div class="route">
+    Baru mengenal paket ini → <a href={`${base}/id/components/content/`}>Bagian I</a><span class="arrow">→</span><a href={`${base}/id/components/wiki/`}>Bagian II</a>; hendak membangun situs jelajah → langsung ke <a href={`${base}/id/components/wiki/`}>Bagian II</a><span class="arrow">→</span><a href={`${base}/id/getting-started/`}>panduan memulai</a>; sisi Markdown dari cerita yang sama → <a href={`${base}/id/kitchen-sink/`}>halaman serba ada</a>.
+  </div>
+</div>

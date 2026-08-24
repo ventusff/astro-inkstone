@@ -1,0 +1,18 @@
+---
+/** /<locale>/ — the garden's landing page in every non-default locale; one
+ *  route file for all of them, parameterized by the locale registry. */
+import LandingPage from '../../components/browse/LandingPage.astro';
+import { LOCALE_DEFS, type Locale } from '../../content/notes/_meta/locales';
+
+export function getStaticPaths() {
+  return LOCALE_DEFS.filter((l) => l.prefix !== '').map((l) => ({
+    params: { lang: l.code },
+    props: { locale: l.code as Locale },
+  }));
+}
+interface Props {
+  locale: Locale;
+}
+---
+
+<LandingPage locale={Astro.props.locale} />

@@ -1,0 +1,82 @@
+---
+title: 五道检查
+brand: 五道检查
+subtitle: "一层一道关\n源码 · 链接 · 产物 · 渲染 · 对比度"
+description: check-content、check-wikilinks、check-dist、ui_probe、contrast_probe——一层一道关,各拦一类构建全绿也照样上线的静默故障。
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="参考 · 工具" title="五道检查" meta="五道检查 · 引擎发三道,本包发两道 · 全绿才提交">
+  构建绿了,不等于页面没事。这条工具链在每一层放一道检查,各拦一类「构建全绿、页面已坏」的静默故障——其中两道用读者的方式看页面:开一个真实的浏览器。
+</Hero>
+
+## 五道关,一层一道
+
+| 检查 | 随谁分发 | 看什么 | 什么时候跑 |
+| --- | --- | --- | --- |
+| check-content | 引擎,`scripts/check-content.mjs` | 每个 md/mdx 源文件 | 内容仓 CI,或写完一篇之后 |
+| check-wikilinks | 引擎,`scripts/check-wikilinks.mjs` | `[[双链]]` 组成的链接图 | 内容仓 CI,或给笔记改名之后 |
+| check-dist | 引擎,`scripts/check-dist.mjs` | `astro build` 的产物 | 每次构建之后(postbuild) |
+| ui_probe | 本包,`scripts/ui_probe.mjs` | 真实浏览器里渲染出的页面 | 改样式/布局之后 |
+| contrast_probe | 本包,`scripts/contrast_probe.mjs` | 每个文本节点的对比度,两套主题 | 改任何 token 之后 |
+
+## check-content:源码层
+
+把每一个将要变成页面的 md/mdx,用**和站点完全相同的方言**编译一遍——语法错误与静默变形(配不上对的强调标记、被 MDX 求值吞掉的花括号、换行换出来的列表标记、单行 `$$`、KaTeX 渲不出来的公式——正是[[kitchen-sink|全要素演示]]结尾列的那一串)统统让 CI 变红。
+
+为什么这支脚本必须由引擎来发:检查器的插件集和站点不一致,**比没有检查还糟**——缺数学插件的会把公式花括号误读成 JSX 表达式,没开 GFM 的会对表格放行。方言在引擎里只写一次;站点渲染、CMS 保存校验和这支脚本,消费的永远是同一份。
+
+```bash title="内容仓根目录"
+node <engine>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
+```
+
+编译之外,它还抓两类 frontmatter 里的静默丢失:值里没加引号的 `#`(YAML 把它当注释,后半截被悄悄截掉),以及整个就解析不了的 YAML——报错带行号。
+
+## check-wikilinks:链接图
+
+死掉的 `[[双链]]` 有意不弄红构建——一座园地必须允许链接到还没长出来的笔记。但链接腐坏终究该在 CI 里现形,所以引擎带了一支 lint:用**库自己的解析器和解析规则**(别名、brand、标题、语言镜像)把每个双链过一遍,报告找不到的、有歧义的、锚点可疑的。加 `--strict`,死链就变成非零退出——本仓的 CI 正是这么跑的:
+
+```bash title="本园地的链接检查,CI 同款"
+node scripts/check-links.mjs
+```
+
+## check-dist:产物层
+
+构建出的 `dist/` 里,读者能点到的每一个内部引用都必须真的存在。它抓的是绿色构建底下的静默缺口:
+
+- 指向不存在文件的内部链接与资源(路由一重排,这种问题能一次冒出几十个);
+- 指向不存在 id 的页内锚点;
+- 路径里叠出来的语言段(`/en/en/`——i18n 回退把前缀叠在已带前缀的路由上,经典产物);
+- `<a>` 里套 `<a>`(HTML 解析器会提前闭合外层,按钮从卡片里掉出来);
+- KaTeX 的报错残留(页面上公式已经是红字,构建照样绿)。
+
+本 demo 把它接在 postbuild 里:`npm run build` 绿了,产物检查也就一并过了。
+
+```bash title="站点根目录,构建之后(站点部署在子路径下时传 --base)"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
+```
+
+## 渲染体检
+
+源码和产物可以都对,页面却照样是坏的——经典一幕:落地页的卡片没有任何一条样式规则能命中,渲成挤作一行的裸文本;链接检查和锚点检查依旧全绿,因为它们从头到尾没看过渲染后的页面。`ui_probe` 驱动一个真实浏览器,把 `dist` 里的每一页在四档视口宽度(1440/1024/768/430)各过一遍,量这些:页面横向溢出、比容器宽却没有滚动盒可待的元素、没有任何样式规则命中的类名、跳级的标题、重复的 id、缺 `alt` 的图片、指向空处的页内锚点与 `aria-controls`。它只报告机器能证明的事——不做审美判断。
+
+```bash title="需要本机装有 Chrome/Chromium"
+npm run build
+node ../scripts/ui_probe.mjs dist   # 自带静态服务托管 dist;传 baseUrl 可改测线上服务器
+```
+
+它检查的是整份文档——chrome、侧栏、对话框都在内。绿的标准只有一条:报告最后一行是 `SAMPLES WITH FINDINGS: 0`(一个 sample,就是一条路由在一档宽度下的一次采样)。
+
+## 对比度体检
+
+token 声称全线达到 WCAG AA(网页无障碍标准的对比度门槛),这句话就得靠测,不能靠说。`contrast_probe` 在真实浏览器里加载 `dist` 的每一页——亮色、暗色两套主题,桌面、手机两档宽度——把默认状态下渲出来的每一段文字都量一遍:HTML 文本、SVG 文本、`::before` / `::after` 生成的文字都算数;代表页上凡是标了 `<dialog data-probe-open>` 的对话框,都会被打开来量(里面若有搜索框,还会敲进一个查询词)——这个标记就是站点的自我声明:这个对话框写到这里就是完整形态。底色不从样式表里读:先把页面上所有字形调成透明、截一张图,每段文字脚下的那颗像素就是它的底——于是渐变、`color-mix()` 调和色、半透明叠层、夜间色板,全都按实际渲染的样子被测到。前景色会带上元素与祖先层层累积的 `opacity`,调暗过的文字按读者真正看到的浓度来量。hover 与 focus 态靠人眼评审,不进探针。小字的线是 4.5:1,大字(24px,或 18.66px 加粗)是 3:1;颜色解析不出来、底色采样不到的文字,一律记作问题。凡是不过线的文字,报告都点名到页面、主题、宽度、选择器、前景与底色两个颜色和实测比值:
+
+```bash title="构建之后,两套主题都量"
+node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS 可收窄测量矩阵
+```
+
+<div class="callout system">
+  <div class="callout-title">改样式的固定流程</div>
+  对包内样式表或组件的任何改动,都先过本 demo 的构建,再让 <code>ui_probe</code> 与 <code>contrast_probe</code> 把产物量一遍——全绿才提交。demo 同时就是这个包的试验台。
+</div>

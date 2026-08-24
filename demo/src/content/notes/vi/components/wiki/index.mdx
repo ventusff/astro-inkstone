@@ -1,0 +1,154 @@
+---
+title: "Wiki & duyệt"
+description: "Bộ phân loại — thẻ ghi chú, hàng phân loại, huy hiệu, bảng liên kết ngược và đồ thị cục bộ trên thanh bên — trình bày bằng dữ liệu mẫu, và đang chạy thật khắp khu vườn này."
+part: 2
+navLabel: "Wiki & duyệt"
+---
+
+import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph from 'astro-inkstone/components/LocalGraph.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import DomainChip from 'astro-inkstone/components/wiki/DomainChip.astro';
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import KindBadge from 'astro-inkstone/components/wiki/KindBadge.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import StatusDot from 'astro-inkstone/components/wiki/StatusDot.astro';
+import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<PartHero kicker={props.partLabel} title="Wiki & duyệt">
+  Mọi thứ trong chương này đang chạy **thật** trên site: các kệ trên trang chủ ghép từ `NoteCard`, các hàng phân loại là một `FacetNav`, dải meta ngay phía trên đoạn chữ này là một `TaxonomyLine`, còn chòm sao nhỏ trên thanh bên là một `LocalGraph`. Tất cả đều là thành phần thuần hiển thị — site tự phân giải registry của mình rồi truyền vào dữ liệu đã sẵn sàng hiển thị. Bộ trợ giúp phân giải đi kèm gói dưới tên `createTaxonomy` và `createBacklinks` ([[three-way-split|cơ chế trong gói, ngữ nghĩa ở site]]).
+</PartHero>
+
+## Ba dòng nối dây
+
+```ts title="src/lib/taxonomy.ts (toàn bộ phần nối dây của site này)"
+import { createTaxonomy } from 'astro-inkstone/lib/taxonomy';
+import { DOMAINS, KINDS, STATUSES } from '../content/notes/_meta/taxonomy';
+
+export const { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, tagIndex, resolveTaxonomy } =
+  createTaxonomy({ kinds: KINDS, domains: DOMAINS, statuses: STATUSES },
+    { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' });
+```
+
+Registry (`_meta/taxonomy.ts`) là dữ liệu thuần nằm trong cây nội dung: kind, domain kèm màu sắc thái, status kèm màu chấm, mỗi giá trị mang nhãn hiển thị cả tiếng Anh lẫn tiếng Trung. Thêm một giá trị ở đó, gắn nó cho một ghi chú, mọi trang duyệt tự đón lấy — các route vốn được tham số hóa theo giá trị.
+
+## Kệ sách và token của nó
+
+Trang duyệt đứng trên một mặt nền thứ hai: `browse.css` cấp cho chúng nền giấy ấm, tiêu đề đầu trang bằng serif, nét kẻ kệ hai điểm và lưới thẻ, tất cả qua các token `--wb-*` — nửa kệ duyệt của [[design-tokens|bảng màu hai ngữ cảnh]]. Trang bước vào ngữ cảnh này chỉ bằng một class, `wb-root`, gắn trên body; bên trong đó các token chrome được ánh xạ lại, nên cùng một thanh điều hướng đặt lên nền nào cũng đứng vững.
+
+## NoteCard
+
+Thẻ nhận dữ liệu đã phân giải xong, sẵn sàng hiển thị — nhãn thành phẩm, màu sắc thái, ngày đã định dạng, liên kết bản dịch. Thẻ vốn sống trên kệ, nên mẫu được đặt vào một khoảnh ngữ cảnh duyệt (`.wb-root.wb-inset`) lồng ngay trong cột đọc này:
+
+<div class="wb-root wb-inset">
+<ul class="wb-grid">
+  <NoteCard
+    note={{
+      id: 'sample-note',
+      href: `${base}/vi/kitchen-sink/`,
+      title: 'Trình diễn tổng hợp',
+      description: 'Từng yếu tố của pipeline Markdown lên sân khấu đúng một lần trên trang này.',
+      kind: { id: 'reference', label: 'Tham khảo' },
+      domains: [{ id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' }, href: `${base}/vi/domain/pipeline/` }],
+      status: { id: 'evergreen', label: 'Thường xanh', dot: '#1f5e46' },
+      updated: '2026.08',
+      mirrors: [{ label: 'EN', href: `${base}/kitchen-sink/` }],
+    }}
+  />
+  <NoteCard
+    note={{
+      id: 'sample-hub',
+      href: `${base}/vi/components/`,
+      title: 'Bộ thành phần',
+      description: 'Dạo một vòng ba chương qua toàn bộ thành phần đi kèm — kiêm màn trình diễn sống của một hub.',
+      kind: { id: 'reference', label: 'Tham khảo' },
+      domains: [{ id: 'components', label: 'Thành phần', tone: { bg: '#f7e9dc', fg: '#98511a' }, href: `${base}/vi/domain/components/` }],
+      status: { id: 'evergreen', label: 'Thường xanh', dot: '#1f5e46' },
+      updated: '2026.08',
+      chapterCount: 3,
+      sourceLine: 'Hero · HubCard · Stats — phụ kiện của hub, dùng ngay trên chính hub',
+    }}
+  />
+</ul>
+</div>
+
+## FacetNav
+
+Chỉ mục duyệt nhiều chiều — kind, domain (kèm màu sắc thái riêng), các thẻ nổi bật, tất cả prerender thành từng viên liên kết dạng viên nang:
+
+<FacetNav
+  base={`${base}/vi`}
+  kinds={[
+    { def: { id: 'guide', label: 'Hướng dẫn' }, count: 2 },
+    { def: { id: 'reference', label: 'Tham khảo' }, count: 4 },
+    { def: { id: 'pattern', label: 'Khuôn mẫu' }, count: 1 },
+  ]}
+  domains={[
+    { def: { id: 'design', label: 'Thiết kế', tone: { bg: '#ece7f2', fg: '#5b4a8a' } }, count: 3 },
+    { def: { id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' } }, count: 2 },
+  ]}
+  tags={[
+    { tag: 'tokens', count: 1 },
+    { tag: 'markdown', count: 1 },
+  ]}
+  active={{ dim: 'kind', value: 'reference' }}
+  labels={{ kind: 'Thể loại', domain: 'Lĩnh vực', tag: 'Thẻ', all: 'Tất cả →' }}
+/>
+
+Chuỗi nhãn của các hàng cũng là props, mặc định tiếng Anh — bộ phía trên truyền `labels={{ kind: 'Thể loại', domain: 'Lĩnh vực', tag: 'Thẻ', all: 'Tất cả →' }}`, đúng bộ mà các trang phân loại tiếng Việt của site này truyền; ngoài ra không phải đổi gì thêm.
+
+## TaxonomyLine, KindBadge, StatusDot, DomainChip
+
+Dải meta một dòng ở đầu mỗi ghi chú chính là ba nguyên tử huy hiệu ghép lại; từng nguyên tử cũng dùng riêng được:
+
+<TaxonomyLine
+  kind={{ id: 'pattern', label: 'Khuôn mẫu' }}
+  domains={[{ id: 'design', label: 'Thiết kế', tone: { bg: '#ece7f2', fg: '#5b4a8a' }, href: `${base}/vi/domain/design/` }]}
+  status={{ id: 'growing', label: 'Đang lớn', dot: '#5c8a3c' }}
+  updated="2026.08"
+/>
+
+Các nguyên tử tách riêng, xếp vào một dòng văn chạy: một huy hiệu thể loại <KindBadge def={{ id: 'guide', label: 'Hướng dẫn' }} />, một chip lĩnh vực <DomainChip def={{ id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' } }} href={`${base}/vi/domain/pipeline/`} />, một chấm trạng thái <StatusDot def={{ id: 'evergreen', label: 'Thường xanh', dot: '#1f5e46' }} />.
+
+## Backlinks
+
+Bảng "liên kết ngược" dưới mỗi ghi chú trong khu vườn này do `createBacklinks` của gói tính ra — lật bộ phân giải wikilink của chính engine thành chỉ mục "đích ← nguồn", kèm luôn mẩu ngữ cảnh. Dưới đây là bản chạy bằng dữ liệu mẫu nội tuyến:
+
+<Backlinks
+  items={[
+    {
+      href: `${base}/vi/kitchen-sink/`,
+      title: 'Trình diễn tổng hợp',
+      before: 'bảng bảy cột vừa là ',
+      label: 'bảng tra nhanh biến thể callout',
+      after: ' vừa là phép thử xếp thẻ ngay tại chỗ…',
+    },
+    {
+      href: `${base}/vi/design-tokens/`,
+      title: 'Bảng màu hai tầng và chủ đề giao diện',
+      before: 'thành phần chỉ tiêu thụ ',
+      label: 'tầng ngữ nghĩa',
+      after: ', nên tùy biến bản sắc không bao giờ chạm tới chúng.',
+    },
+  ]}
+/>
+
+Cuộn xuống chân trang này để gặp bảng thật — chính chương này cũng là đích của wikilink.
+
+## LocalGraph
+
+Cùng một chỉ mục còn trả lời câu hỏi thứ hai — *cách đây một bước nhảy có những ai?* — và `index.localGraph(id, titleOf)` trả về danh sách hàng xóm, chiều vào xếp trước. Thành phần vẽ họ trên một quỹ đạo elip quanh ghi chú: chiều vào nét liền, chiều ra nét đứt; hàng xóm có thể mang `color` riêng (chẳng hạn thuộc một bộ nội dung khác). Dưới đây vẽ bằng dữ liệu mẫu ở bề rộng của cột đọc; bản thật nằm trên thanh bên của mọi ghi chú có liên kết:
+
+<div style="max-width: 300px">
+  <LocalGraph
+    centerTitle="Wiki & duyệt"
+    neighbors={[
+      { id: 'kitchen-sink', title: 'Trình diễn tổng hợp', href: `${base}/vi/kitchen-sink/`, dir: 'in' },
+      { id: 'design-tokens', title: 'Bảng màu hai tầng', href: `${base}/vi/design-tokens/`, dir: 'out' },
+      { id: 'three-way-split', title: 'Ranh giới ba bên', href: `${base}/vi/three-way-split/`, dir: 'out' },
+      { id: 'checks', title: 'Các phép kiểm tra', href: `${base}/vi/checks/`, dir: 'in', color: 'var(--color-accent4)' },
+    ]}
+  />
+</div>

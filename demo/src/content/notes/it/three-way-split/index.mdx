@@ -1,0 +1,47 @@
+---
+title: La divisione in tre
+brand: La divisione in tre
+subtitle: "il motore modifica, la carta veste,\nil sito sei tu"
+description: Il motore modifica, la carta veste, il sito sei tu — chi possiede cosa, e perché i confini passano proprio lì.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Guida · architettura" title="La divisione in tre" meta="tre repo · tre proprietari · una riga da ricordare">
+  Un sito di documentazione o wiki costruito con questi strumenti si monta da tre parti, ognuna proprietaria di esattamente uno strato. I confini fra loro non sono questione di gusto — dietro ciascuno c’è un vincolo che morde quando lo si attraversa.
+</Hero>
+
+## Tre strati, tre proprietari
+
+- **astro-inkbrush (il motore)**: un CMS minimale — modifica dei blocchi sul posto, nel browser; cronologia delle revisioni a livello di blocco con ripristino; commenti; domande, riscrittura e traduzione con l’AI; importazione dalla inbox. Possiede anche una cosa che a un CMS parrebbe non spettare: **il dialetto Markdown e il guardiano dei contenuti**. La ragione è dura: la grammatica che l’editor accetta e la grammatica che la pagina rende devono essere la stessa, altrimenti «nell’editor si salva, sulla pagina si rompe» è solo questione di tempo. Le regole del parser sono quindi scritte una volta, nel motore, e consumate in tre posti — resa del sito, validazione al salvataggio del CMS, controlli in CI.
+- **astro-inkstone (la carta — questo pacchetto)**: lo strato condiviso di aspetto e pipeline — token di design a due livelli in due contesti, il foglio di stile dei contenuti `base.css` e lo scaffale `browse.css`, la libreria di componenti, il preset di pipeline `siteMarkdown`, gli helper di tassonomia e menzioni collegate su cui gira questo giardino, il sottoinsieme del carattere per codice Maple Mono CN e le sonde del livello di resa. **Non** fa identità di sito: colori del marchio, chrome del layout, rotte e deployment non sono affar suo.
+- **Il sito (come il giardino che stai leggendo)**: sovrascrive i token del primo livello per il proprio colore d’identità; possiede la propria Sidebar e il proprio chrome di navigazione (l’implementazione di questo sito è la risposta di riferimento); decide come si organizzano i contenuti, che aspetto hanno le rotte e dove si pubblica.
+
+Una riga da ricordare: **il motore modifica, la carta veste, il sito sei tu.**
+
+## Perché i confini passano proprio qui
+
+Dietro ogni taglio c’è un vincolo reale:
+
+**Il dialetto appartiene al motore**, perché un controllore col set di plugin diverso da quello del sito è peggio di nessun controllore — uno a cui manca il plugin della matematica scambia le graffe delle formule per espressioni JSX, uno senza GFM lascia passare i pipe delle tabelle. La grammatica è scritta una volta e consumata in tre posti, così non può divergere mai.
+
+**Gli stili appartengono alla carta**, perché quando più siti mantengono ciascuno il proprio foglio di stile dei contenuti, una correzione di contrasto va applicata una volta per sito — dimenticane uno, e il testo piccolo di quel sito scende sotto l’AA. In uno strato condiviso, una correzione atterra ovunque.
+
+**L’identità appartiene al sito**, perché nel momento in cui uno strato condiviso assorbe il colore di marca di un sito, tutti gli altri devono combatterlo a colpi di override. Da qui i token a due livelli: un sito sovrascrive la tavolozza grezza del primo livello (`--p-*`) e gli strati semantico e dei componenti seguono intatti — vedi [[design-tokens|la tavolozza a due livelli]].
+
+## Dove sta la meccanica di navigazione
+
+La stessa disciplina vale per ciò in cui ti stai muovendo in questo momento. Il pacchetto consegna la **meccanica** — `createTaxonomy` (risoluzione di tipi, ambiti e tag, ereditarietà degli hub, mirror di lingua), `createBacklinks` (l’indice delle menzioni collegate) e componenti presentazionali come le carte delle note e le righe a faccette della pagina principale. Il sito possiede il **vocabolario e le rotte**: i tipi e gli ambiti di questo giardino vivono nel suo file di registro, e le sue pagine `/kind/…`, `/domain/…`, `/tag/…` sono normali pagine Astro che un sito consumatore copia e rimodella. Stesso taglio, un piano più su: la meccanica nel pacchetto, il significato nel sito.
+
+## Che cosa ottiene un sito
+
+Dal punto di vista del sito, consumare questo pacchetto più il motore compra:
+
+- `astro-inkstone/styles/tokens.css` + `base.css` + `browse.css`: prima i token, poi la colonna di lettura, poi lo scaffale di navigazione — tre righe di `@import` per l’intero aspetto;
+- `siteMarkdown(...)`: l’intera pipeline Markdown in una riga, con gli interruttori descritti nei [[getting-started|primi passi]];
+- i componenti sotto `astro-inkstone/components/`, importati per percorso secondo necessità;
+- la fabbrica di tassonomia e il costruttore di menzioni collegate sotto `astro-inkstone/lib/`, legati al registro del sito stesso;
+- in modalità WIKI, il CMS completo del motore (provalo su questo sito con `npm run wiki`);
+- cinque controlli: `check-content`, `check-wikilinks` e `check-dist` (consegnati col motore), `ui_probe` e `contrast_probe` (consegnati qui) — vedi [[checks|i controlli]].
+
+Ogni effetto di resa su ogni pagina di questo giardino è il prodotto di quel taglio — le note sono il manuale, e il manuale è la demo.

@@ -19,8 +19,8 @@ import type { DomainDisplay, KindDisplay, StatusDisplay } from 'astro-inkstone/l
 import type { BacklinkItem } from 'astro-inkstone/lib/backlinks';
 import type { TocData } from 'astro-inkstone/lib/toc-types';
 import Base from './Base.astro';
-import Sidebar, { type HubNav, type LangNav } from '../components/Sidebar.astro';
-import { UI, type Locale } from '../lib/i18n';
+import Sidebar, { type HubNav } from '../components/Sidebar.astro';
+import { DEFAULT_LOCALE, UI, type Alternate, type Locale } from '../lib/i18n';
 
 interface Crumb {
   label: string;
@@ -55,13 +55,13 @@ interface Props {
   brandHref: string;
   subtitle?: string | undefined;
   noteId?: string | undefined;
-  translateRoute?: string | undefined;
+  /** this page's routes in the locales it exists in */
+  alternates: Alternate[];
   toc: TocData;
   tocDepth?: 2 | 3;
   taxonomy?: TaxonomyStrip | undefined;
   hub?: HubNav | undefined;
   hubPage?: HubPageChrome | undefined;
-  lang?: LangNav | undefined;
   backlinks?: BacklinkItem[] | undefined;
   /** one-hop link neighbourhood for the sidebar graph; empty = no panel */
   graph?: LocalGraphNeighbor[] | undefined;
@@ -75,18 +75,16 @@ const {
   brandHref,
   subtitle,
   noteId,
-  translateRoute,
+  alternates,
   toc,
   tocDepth = 2,
   taxonomy,
   hub,
   hubPage,
-  lang,
   backlinks = [],
   graph = [],
 } = Astro.props;
 const t = UI[locale];
-const zh = locale === 'zh';
 ---
 
 <Base
@@ -94,12 +92,12 @@ const zh = locale === 'zh';
   description={description}
   locale={locale}
   crumbs={crumbs}
-  translateRoute={translateRoute}
+  alternates={alternates}
   noteId={noteId}
   hasSidebar
 >
   <div class="layout">
-    <Sidebar brand={brand} brandHref={brandHref} subtitle={subtitle} toc={toc} tocDepth={tocDepth} hub={hub} lang={lang} labels={{ contents: t.contents, languages: t.languages }}>
+    <Sidebar brand={brand} brandHref={brandHref} subtitle={subtitle} toc={toc} tocDepth={tocDepth} hub={hub} labels={{ contents: t.contents }}>
       {graph.length > 0 && <LocalGraph centerTitle={title} neighbors={graph} label={t.localGraph} />}
     </Sidebar>
     <main class="note-main" id="main">
@@ -129,7 +127,11 @@ const zh = locale === 'zh';
         <slot />
         {
           backlinks.length > 0 && (
-            <Backlinks items={backlinks} heading={t.backlinks} sub={zh ? 'Linked mentions' : ''} />
+            <Backlinks
+              items={backlinks}
+              heading={t.backlinks}
+              sub={locale !== DEFAULT_LOCALE ? UI[DEFAULT_LOCALE].backlinks : ''}
+            />
           )
         }
         {

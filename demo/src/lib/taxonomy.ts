@@ -10,6 +10,7 @@
 import type { CollectionEntry } from 'astro:content';
 import { createTaxonomy, fmtMonth } from 'astro-inkstone/lib/taxonomy';
 
+import { DEFAULT_LOCALE, LOCALE_DEFS } from '../content/notes/_meta/locales';
 import { DOMAINS, KINDS, STATUSES } from '../content/notes/_meta/taxonomy';
 
 export type NoteEntry = CollectionEntry<'notes'>;
@@ -32,7 +33,11 @@ export const {
   NoteEntry
 >(
   { kinds: KINDS, domains: DOMAINS, statuses: STATUSES },
-  { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' },
+  {
+    collection: 'notes',
+    locales: LOCALE_DEFS.filter((l) => l.prefix !== '').map(({ code, prefix }) => ({ code, prefix })),
+    primary: DEFAULT_LOCALE,
+  },
 );
 
 export type ResolvedNote = ReturnType<typeof resolveTaxonomy>;

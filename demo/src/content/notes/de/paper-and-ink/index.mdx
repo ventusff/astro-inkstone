@@ -1,0 +1,28 @@
+---
+title: Papier und Tusche, mit Absicht
+brand: "Papier & Tusche"
+subtitle: "die Haltung hinter den Tokens"
+description: Warum sich dieses Designsystem auf einen warmen Papiergrund, echte Serifen, zwei Gründe für zwei Seitenarten und ein von Hand gesetztes dunkles Theme festlegt – eine Notiz über die Haltung hinter den Tokens.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Muster · eine Design-Haltung" title="Papier und Tusche, mit Absicht" meta="ein warmer Grund · Serifen im Fließtext · zwei Gründe · eine zweite Auflage für das Dunkel">
+  Die meisten Doku-Themes greifen zu denselben Defaults: Weiß `#fff`, eine Grotesk, Text in gray-800, Dark Mode vom System. Sie lesen sich in Ordnung und sehen nach nichts aus. Dieses System beginnt mit einer anderen Prämisse – **ein langes technisches Dokument ist etwas, das man eine Stunde lang liest** – und die Tokens folgen daraus.
+</Hero>
+
+## Die Haltung
+
+Eine Stunde Lesen verlangt, was der Buchdruck vor Jahrhunderten herausgefunden hat: einen warmen Grund, der nicht blendet, eine Textschrift mit echtem Kontrast zwischen den Strichen und einen Satzrhythmus, der in em des Fließtexts gemessen wird statt in Pixeln des Chromes. Daher das Vokabular, in dem die [[design-tokens|Token-Schicht]] geschrieben ist: Papiere (纸 der Bogen, 页 die Seite, 素 der schlichte Grund, 帛 die Seide) statt gray-50 bis gray-200; Tuschen und Pigmente aus einem Malkasten – 朱 Wein, 石 Brandorange, 赭 Ocker, 黛 Petrol, 紫 Violett – statt primary/secondary/accent. Die Namen sind kein Schmuck: Sie verankern jede neue Farbentscheidung in derselben physischen Metapher, und genau deshalb lesen sich fünf verschiedene Flächen immer noch als ein Blatt Papier.
+
+## Zwei Gründe, weil zwei Seitenarten
+
+Ein Wiki wird auf zwei Weisen gelesen. Du **liest** eine Notiz – eine Spalte, eine Stunde, die Augen wollen Ruhe: ein leicht kühles Papier, eine neutrale Tusche, ein Akzent für Links und Nummern. Du **stöberst** in einem Regal – ein Raster aus Karten, ein Blick, eine Wahl: Das Papier darf wärmer sein, die Titel dürfen eine Display-Serife tragen, der Akzent darf ein tiefer Wein sein, der als Zeichen liest statt als Link. Beiden Situationen dieselbe Palette zu verordnen, hieße beide zu verbiegen. Also hat die semantische Stufe zwei Kontexte – die Lesespalte (`--color-*`) und das Stöberregal (`--wb-*`) –, geschöpft aus einem Malkasten, und jede Seite erklärt, welcher sie angehört. Das Ergebnis ist eine Site, die sich anfühlt wie ein Gegenstand mit zwei Zimmern.
+
+## Dunkel ist eine zweite Auflage, keine Invertierung
+
+Algorithmische Dark Modes drehen die Helligkeit um und nennen es fertig; der Text wird zu Kreide auf Schiefer, und jede getönte Fläche versinkt im Schlamm. Hier ist das dunkle Theme eine **zweite, von Hand gesetzte Auflage**: Dämmerungsgründe und mondweiße Tuschen, eigens gewählt, Akzentpigmente gerade so weit aufgehellt, dass sie ihren AA-Kontrast auf den dunkleren Papieren halten. Das kostet einen zweiten Satz Entscheidungen – genau darum geht es. Der Schalter gehorcht allein der ausdrücklichen Wahl des Lesers ([[design-tokens|nie der Systemeinstellung]]), denn eine Seite, die mitten im Lesen ihr eigenes Theme kippt, ist eine Seite, die erschreckt.
+
+## CJK ist tragend
+
+Gemischt chinesisch-lateinischer Text ist der Ort, an dem die meisten Themes leise auseinanderfallen: Hervorhebung, die sich an einem Vollbreiten-Punkt nicht schließen lässt, Code-Diagramme, die scheren, weil ein Hanzi 1.7 Zellen breit ist. Beides gilt hier als Korrektheitsfehler, nicht als typografische Geschmacksfrage – [[kitchen-sink|der Dialekt parst CJK-Hervorhebung korrekt]], und das Code-Schrift-Subset nagelt ein Hanzi auf exakt zwei Zellen fest, sodass Diagramme aus Rahmenzeichen die Übersetzung überleben. Ein Theme, das nur auf Englisch funktioniert, ist ein halbes Theme.

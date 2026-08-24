@@ -1,0 +1,30 @@
+---
+title: Blok blok düzenleme
+description: "✎ akışı — okumakta olduğunuz bloğun yerinde CodeMirror, sitenin kendi işlem hattından geçen canlı bir ön izleme ve diske hiçbir şey dokunmadan önce iki güvenlik ağı."
+navLabel: Düzenleme
+part: 1
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Blok blok düzenleme">
+  Düzenleme, Wikipedia’da bir yazım hatasını düzeltmek nasıl işliyorsa öyle işler: bütün sayfayı tutan dev bir metin kutusunu değil, o an baktığınız paragrafı düzenlersiniz. Düzenleme kipinde (`npm run wiki`) oturum açın, herhangi bir nottaki herhangi bir bloğun — bu blok dahil — üzerine gelin ve ✎ simgesine tıklayın.
+</PartHero>
+
+## Döngü
+
+Çizilmiş blok gizlenir ve yerinde, o bloğun Markdown kaynağını tutan bir [CodeMirror](https://codemirror.net/) editörü açılır. Siz yazdıkça altında canlı bir ön izleme çizilir — motorun lehçesi artı sitenin `inkbrush({ markdown })`’a verdiği eklentilerle, yani sayfa işlem hattının bağladığı kural takımının birebir aynısıyla; ön izleme ile sayfanın birbirinden ayrı düşmesi bu yüzden mümkün değildir. `⌘/Ctrl + Enter` kaydeder; `Esc` vazgeçer.
+
+Frontmatter da bir bloktur: buradaki her notun tepesindeki taksonomi şeridi kendi ✎ simgesini taşır ve notun YAML’ını açar — bir durumu ya da tarihi değiştirin, başlık şeridi güncellenen frontmatter’dan yeniden çizilir.
+
+## İki güvenlik ağı
+
+**İyimser kilitleme.** Her blok, kesildiği kaynağın bir özetini (hash) taşır. Dosyayı sizden habersiz bir başkası değiştirdiyse kayıt, onun emeğinin üzerine sessizce yazmak yerine bir çakışmayla reddedilir — sayfayı yenileyip yeniden deneyin.
+
+**Bir derleme kapısı.** Diske herhangi bir şey yazılmadan önce dosyanın tamamı sitenin Markdown işlem hattından geçer — lehçe, içerik bekçisi, sitenin kendi eklentileri ve `.mdx` için MDX derleyicisi. Sayfayı bozacak bir kayıt — eşi olmayan bir `**`, kapatılmamış bir bileşen etiketi, bozuk bir ifade — hatanın ta kendisiyle birlikte reddedilir ve diskteki dosyaya dokunulmaz. Bekçinin tam ret listesi [[kitchen-sink|hepsi bir arada]] sayfasının sonunda sergilenir.
+
+## Kayıtlar nereye gider
+
+Bir kayıt Markdown dosyasını yazar ve `autocommit` açıksa, oturum açmış kullanıcının imzasını taşıyan bir git commit’ine dönüşür. Hiçbir yerde veritabanı yoktur: tek doğruluk kaynağı içerik dosyalarıdır, kalıcı geçmiş ise git’tir. [[inkbrush/revisions|Sürüm geçmişini]] besleyen ince taneli, blok başına günlük bunun üstünde yol alır.
+
+Lehçenin kendisi — CJK dostu vurgu kuralıyla GFM, artı sessizce bozan Markdown’ı reddeden bir içerik bekçisi — motorda bir kez tanımlanır ve sayfa çizimi, bu editörün ön izlemesi ve `check-content` CLI’si tarafından paylaşılır ([[checks|beş denetim]]). Tek dil bilgisi, üç tüketici, sıfır sapma.

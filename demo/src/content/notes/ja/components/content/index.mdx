@@ -1,0 +1,106 @@
+---
+title: コンテンツと組版
+description: コールアウト、チップ、グリッド、ステップ、統計行、ペーパーカード、参考文献リスト——本文を組み立てる部品たち。
+part: 1
+navLabel: コンテンツと組版
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="コンテンツと組版">
+  本文を組み立てる部品たちです。どれもトークンの意味層だけを消費します——パレットを着せ替えれば、全部がそれに従います。
+</PartHero>
+
+## Callout
+
+バリアントは五つ。`title` はバリアント既定のラベル(Note / Intuition / Warning / Important / Abstract——引用構文と同じ既定で、`labels` でローカライズできます)を置き換えます。同じマークアップの引用構文版と生 HTML 版は[[kitchen-sink|全部入りデモ]]に。
+
+<Callout variant="intuition" title="コンポーネント版を選ぶ場面">
+  MDX で、内容をその場に書くとき。純 Markdown ファイルは引用構文で——どちらも同一のマークアップを描画します。
+</Callout>
+
+## Chip
+
+ステータスやカテゴリのためのインラインバッジ。`PaperCard` のタグと `HubCard` のチップが共有する四つのバリアントで:<Chip variant="teal">安定</Chip> <Chip variant="mustard">ベータ</Chip> <Chip variant="violet">研究</Chip> <Chip variant="orange">新着</Chip>——トピック用パレットにはカスタムトーンも:<Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>カスタムトーン</Chip>
+
+## Grid
+
+ひとつのグリッドに三つの皮(`plain`、`card`、`cmp`)。まずカード:
+
+<Grid cols={2} kind="card">
+  <div>
+    **トークンが先。** インポートの順序は契約の一部です:トークン、本文レイヤー、サイトのクロームの順。
+  </div>
+  <div>
+    **意味層だけ。** コンポーネントは生の色に触れません——パレットを着せ替えれば全部が従います。
+  </div>
+</Grid>
+
+そして before/after のパネルのための比較スキン:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **ガードなし**——閉じ忘れた `**` が、二つの生アスタリスクのまま本番に出ます。
+  </div>
+  <div>
+    **ガードあり**——ビルドが file:line:column で落ち、マーカーの下にキャレットが付きます。
+  </div>
+</Grid>
+
+## Steps
+
+markdown のリストを縦のレールに:
+
+<Steps>
+1. サブモジュールを二つ足し、`file:` 依存を書く。
+2. グローバルスタイルシートに `tokens.css`、`base.css`、(wiki なら)`browse.css` をインポートする。
+3. `siteMarkdown()` を `astro.config` に配線する。
+4. 第一層パレットを自分のアイデンティティ顔料で上書きする。
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: 'トークンの層' },
+    { value: '24', label: 'コンポーネント' },
+    { value: '4', label: 'プローブのビューポート' },
+    { value: '0', label: 'ビルド手順' },
+  ]}
+/>
+
+## PaperCard
+
+サーベイの主力——別名、正式タイトル、会議タグ、著者メタ、リンク、そして専用スロット二つ:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar, et al."
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">再帰型モデルはトークンを一つずつ処理します——長距離の依存は薄れ、何も並列化できません。</Fragment>
+  **キーアイデア**:アテンションのみ、再帰なし——全トークンが一段で互いを参照し、系列全体を並列に学習できます。
+  <Fragment slot="diff">以後のほぼすべての大規模言語モデルが、この構造の上に建っています。</Fragment>
+</PaperCard>
+
+深掘りの見出しの下では、一行の平文グロス(`.speak`)が、仕組みの説明に入る前に「このモジュールが何を*する*のか」を先に伝えます:
+
+<p class="speak">アテンションは柔らかい参照表です。各トークンが「自分に関係あるのは誰?」と尋ね、答えの重み付き混合を受け取ります。</p>
+
+## References
+
+<References>
+- Vaswani et al., *Attention Is All You Need*, NeurIPS 2017.
+- Knuth, *The TeXbook*——数式の地に専用の紙色が与えられている理由。
+- W3C, *Web Content Accessibility Guidelines 2.2*——トークンが監査で照らされる AA コントラスト基準。
+</References>

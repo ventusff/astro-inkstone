@@ -1,0 +1,28 @@
+---
+title: Carta e inchiostro, per scelta
+brand: Carta e inchiostro
+subtitle: "la presa di posizione dietro i token"
+description: Perché questo sistema di design si impegna su un fondo di carta calda, serif veri, due fondi per due tipi di pagina e un tema scuro composto a mano — una nota sulla presa di posizione dietro i token.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Pattern · una presa di posizione" title="Carta e inchiostro, per scelta" meta="un fondo caldo · un corpo serif · due fondi · una seconda edizione per il buio">
+  Quasi tutti i temi per documentazione allungano la mano verso gli stessi default: bianco `#fff`, un sans grottesco, testo gray-800, tema scuro di sistema. Si leggono senza fatica e non somigliano a niente. Questo sistema parte da una premessa diversa — **un documento tecnico lungo è una cosa che si legge per un’ora** — e i token ne discendono.
+</Hero>
+
+## La presa di posizione
+
+Un’ora di lettura chiede ciò che la stampa ha capito secoli fa: un fondo caldo che non abbaglia, un carattere di testo con vero contrasto tra i tratti, un ritmo d’impaginazione misurato in em di corpo del testo e non in pixel di chrome. Da qui il vocabolario in cui è scritto il [[design-tokens|livello dei token]]: carte (纸 il foglio, 页 la pagina, 素 il fondo piano, 帛 la seta) invece che da gray-50 a gray-200; inchiostri e pigmenti da cassetta di pittore — 朱 vinaccia, 石 arancio bruciato, 赭 ocra, 黛 verde acqua, 紫 violetto — invece di primary/secondary/accent. I nomi non sono decorazione: ancorano ogni nuova decisione di colore alla stessa metafora fisica, ed è per questo che cinque superfici diverse continuano a leggersi come un unico foglio di carta.
+
+## Due fondi, perché due tipi di pagina
+
+Un wiki si legge in due modi. Una nota la **leggi** — una colonna, un’ora, gli occhi chiedono calma: una carta appena fredda, un inchiostro neutro, un solo accento per link e numeri. Uno scaffale lo **sfogli** — una griglia di carte, un’occhiata, una scelta: la carta può farsi più calda, i titoli possono essere un serif da titolazione, l’accento può essere un vinaccia profondo che si legge come un marchio più che come un link. Dare a queste due situazioni una tavolozza sola vorrebbe dire comprometterle entrambe. Così il livello semantico ha due contesti — la colonna di lettura (`--color-*`) e lo scaffale di navigazione (`--wb-*`) — attinti da un’unica cassetta di pigmenti, e ogni pagina dichiara quale dei due è. Il risultato è un sito che sembra un oggetto solo, con due stanze.
+
+## Il buio è una seconda edizione, non un’inversione
+
+I temi scuri algoritmici invertono la luminosità e si dicono a posto; il testo diventa gesso su lavagna e ogni superficie velata si fa fango. Qui il tema scuro è una **seconda edizione composta a mano**: fondi crepuscolari e inchiostri bianco luna scelti per conto loro, pigmenti d’accento ravvivati quel tanto che basta a tenere il contrasto AA sulle carte più scure. Costa una seconda serie di decisioni — ed è proprio il punto. L’interruttore onora soltanto la scelta esplicita di chi legge ([[design-tokens|mai la preferenza del sistema operativo]]), perché una pagina che si capovolge il tema da sola a metà lettura è una pagina che fa sobbalzare.
+
+## Il CJK è portante
+
+Il testo misto cinese/latino è il punto in cui la maggior parte dei temi si sfalda in silenzio: enfasi che si rifiuta di chiudersi contro un punto fermo a larghezza piena, diagrammi nel codice che si sfilacciano perché un hanzi è largo 1.7 celle. Qui entrambe le cose sono trattate come bug di correttezza, non come gusto tipografico — [[kitchen-sink|il dialetto interpreta correttamente l’enfasi CJK]], e il sottoinsieme del carattere per il codice inchioda un hanzi a esattamente due celle, così i diagrammi a caratteri di riquadro sopravvivono alla traduzione. Un tema che funziona solo in inglese è mezzo tema.

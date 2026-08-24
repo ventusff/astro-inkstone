@@ -1,0 +1,90 @@
+---
+title: Interaktiv
+description: DemoMount und der Loader-Vertrag, den die Site besitzt, dazu das Seitenmobiliar – Heros, Teil-Trenner, Hub-Karten, Sprunglisten und Fußzeilen.
+part: 3
+navLabel: Interaktiv & Mobiliar
+---
+
+import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import LocalToc from 'astro-inkstone/components/LocalToc.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Interaktiv & Mobiliar">
+  Eine live laufende Canvas-Demo und der Vertrag dahinter, dann die stillen Komponenten, die jede Notiz rahmen – die, die du seit der ersten Seite vor dir hast.
+</PartHero>
+
+## DemoMount – live
+
+Die Arbeitsteilung ist die übliche des Pakets: Das **Mount-Markup** (Bühne, Controls-Slot, Bildunterschrift-Slot) kommt aus dem Paket; **Demo-Modul und Loader** gehören der Site. Diese Site hält ihren Loader in `src/lib/demo-loader.ts` und ruft `mountAllDemos()` einmal aus dem Layout auf; der Aufruf läuft auf jeder Seite, aber der Chunk eines Demo-Moduls wird nur für eine Seite geladen, die einen `[data-demo]`-Mount trägt.
+
+Eine Demo, die Zeigereingaben auf ihrem Canvas entgegennimmt, übergibt `interactive` – die Bühne beansprucht dann Touch-Gesten und zeigt ein Fadenkreuz. Diese hier ist passiv (nur Rendern), lässt das Flag also weg, und ein Wisch über den Canvas scrollt weiterhin die Seite. Sie zeichnet die Interferenz zweier Wellenquellen mit dem Tusche-Token der Seite selbst und folgt damit dem Theme:
+
+<DemoMount demo="waves/interference" title="Demo · Interferenz zweier Wellenquellen" canvas={{ w: 640, h: 300 }}>
+  <Fragment slot="caption">
+    Zwei Punktquellen senden Kreiswellen aus; wo Berg auf Berg trifft, sammelt sich die Tusche, wo Berg auf Tal trifft, scheint das Papier durch. Schalte das Theme um – die Demo tuscht sich aus den lebenden Tokens neu ein.
+  </Fragment>
+</DemoMount>
+
+Der Modulvertrag ist ein einziger Default-Export, `mount(ctx)`, der eine Aufräumfunktion zurückgibt; wie der Loader Modul-ids wie `waves/interference` auflöst, ist Sache der Site (hier: `import.meta.glob`).
+
+## Seitenmobiliar
+
+Die übrigen Komponenten rahmen eine Notiz, statt sie zu füllen:
+
+- `Hero` eröffnet eine Notiz: Kicker, Display-Titel, eine Einleitung, die durch die volle Markdown-Pipeline geht, eine Meta-Zeile und ein optionales `tocLabel`, das der Seitenleiste eine unnummerierte „Intro“-Zeile hinzufügt. Das Frontmatter-`title` der Notiz bleibt der kurze kanonische Name für `<title>` und Karten; der Titel des Heros darf lang sein.
+- `PartHero` eröffnet ein Kapitel eines Hubs – der Kopf dieser Seite. Sein Kicker wird nie getippt: Die Route reicht die Kapitelbeschriftung „Teil III · …“ als `props.partLabel` herein.
+- `Part` teilt eine lange einseitige Notiz in Teile; das Nummerierungspreset macht daraus die Gruppenzeilen „PART II · …“ der Seitenleiste. [[kitchen-sink|Das volle Programm]] ist so geschnitten.
+- `HubCard` und `.hub-grid` sind die Startkarten eines Hubs, `.path` sein Lesepfad-Kasten – beide auf [[components|der Übersicht dieser Galerie]].
+- `LocalToc` rendert eine Sprungliste in der Seite; es akzeptiert beide ToC-Formen, die die zwei Nummerierungspresets erzeugen, und versteckt sich unterhalb eines konfigurierbaren Minimums. Unten live, am ToC dieses Kapitels.
+- `SidebarMemory` hält eine scrollende Seitenleiste über Seitenwechsel hinweg dort, wo der Leser sie gelassen hat, und zentriert den aktuellen Eintrag (per Default `[aria-current="page"]`), wann immer er sonst aus dem Blick geriete. In die Scrollbox der Seitenleiste legen, nach dem Navigations-Markup; es läuft vor dem ersten Paint, die Leiste blitzt also nie oben auf. Die Seitenleiste dieser Demo trägt es.
+- `LineageSvg` rahmt eine handgezeichnete SVG (eine Methoden-Ahnentafel, ein Taxonomiebaum) als Karte – eine steht unten.
+- `PageFooter` ist das Kleingedruckte am Fuß einer Notiz – die Zeile unter jeder Notiz hier.
+- Die Stöber-Bausteine stehen im [[components/wiki|Wiki-Kapitel]]; die Markdown-Seite der Galerie ist [[kitchen-sink|Das volle Programm]].
+
+## LocalToc und LineageSvg, live
+
+`LocalToc`, gefüttert mit dem Build-Zeit-ToC dieser Seite – dieselben Daten, die die Seitenleiste konsumiert, der Notiz als `props.toc` übergeben:
+
+<LocalToc toc={props.toc} label="In diesem Kapitel" />
+
+Und `LineageSvg` um ein handgesetztes Diagramm, vollständig in semantischen Tokens getuscht, sodass es auf beiden Themes sitzt:
+
+<LineageSvg title="Abb. – wo die Erscheinungsschicht sitzt">
+  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css speist base.css und browse.css, die jede Komponente speisen" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
+    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
+      <rect x="20" y="55" width="150" height="40" rx="6" />
+      <rect x="245" y="15" width="150" height="40" rx="6" />
+      <rect x="245" y="95" width="150" height="40" rx="6" />
+      <rect x="470" y="55" width="150" height="40" rx="6" />
+    </g>
+    <g fill="none" stroke="var(--color-ink-faint)">
+      <path d="M170 68 C 210 60, 210 42, 245 37" />
+      <path d="M170 82 C 210 90, 210 108, 245 113" />
+      <path d="M395 37 C 430 42, 430 60, 470 68" />
+      <path d="M395 113 C 430 108, 430 90, 470 82" />
+    </g>
+    <g fill="var(--color-ink)" text-anchor="middle">
+      <text x="95" y="80">tokens.css</text>
+      <text x="320" y="40">base.css</text>
+      <text x="320" y="120">browse.css</text>
+      <text x="545" y="80">components</text>
+    </g>
+  </svg>
+</LineageSvg>
+
+## Mobiliar ohne Komponente
+
+Ein paar Stücke sind schlichte Klassen in `base.css`, für Sites, die sie aus dem eigenen Layout rendern oder als HTML in den Fließtext schreiben:
+
+| Klasse | Was es ist |
+| --- | --- |
+| `.page-head` + `.kicker`, `.page-desc`, `.page-date` | ein vom Frontmatter getriebener Seitenkopf (Kicker, h1, Beschreibung, Datum), gerendert von einem Layout statt von einem `<Hero>` |
+| `.banner`, `.banner-fallback` | ein einzeiliger Hinweis unter dem Kopf; die Fallback-Variante ist die gedämpfte |
+| `.page-foot` | eine zweispaltige Kleingedruckt-Fußzeile (Slot links, Slot rechts) |
+| `.speak` | die Klartext-Glosse unter einer Tiefgang-Überschrift; ihr Label ist `--speak-label` |
+| `.path` + `.title`, `.route`, `.arrow` | ein Lesepfad-Kasten auf einem Hub |
+| `.ref-tag` | ein kleines Monospace-Tag in einer Literaturliste (eine Venue, ein Jahr) |
+| `.tag`, `.tag.teal / .mustard / .violet` | die Abzeichen der Papierkarten, überall verwendbar |
+| `.measured` + `.measured-head`, `.measured-body`, `.measured-pane` (`.doc`), `.measured-tag` | die Vergleichskarte „dokumentiert vs. gemessen“: eine massive Petrol-Titelleiste über zwei Feldern, das `.doc`-Feld trägt die Behauptung, das andere die Messung – eine Silhouette, die sich von jedem Callout unterscheidet |
+| `.paper .idea-label` | das kleine Kernidee-Label in Versalien im Rumpf einer `PaperCard`, z. B. `<span class="idea-label">Kernidee</span>` |

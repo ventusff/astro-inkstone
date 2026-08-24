@@ -1,0 +1,53 @@
+---
+title: เครื่องมือแก้ไข
+description: "พาชม astro-inkbrush ในห้าบท — เอนจิน CMS หนุนหลังด้วย git ที่สวนนี้จับคู่อยู่ และไซต์นี้เองคือเดโมของมัน: ในโหมดแก้ไข ทุกหน้าในนี้แก้ได้ตรงที่"
+brand: inkbrush
+subtitle: "เอนจิน CMS บนคู่มือของตัวเอง\nห้าบท · หนึ่งฮับ"
+navLabel: ภาพรวม
+chapters: false
+nav:
+  - group: เอนจิน
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="อ้างอิง · เอนจิน CMS" title="เครื่องมือแก้ไข" meta="ห้าบท · ศูนย์ไบต์ในบิลด์โปรดักชัน · ไซต์นี้คือเดโม">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone) คือกระดาษ ส่วน [astro-inkbrush](https://github.com/ventusff/astro-inkbrush) คือปากกา เอนจินเปลี่ยนไซต์เนื้อหา Astro ไซต์ไหนก็ได้ให้กลายเป็นตัวแก้ไขของตัวเอง: ในโหมดแก้ไข เอาเมาส์ชี้ที่ย่อหน้าหนึ่ง แล้วปุ่มจับเล็ก ๆ จะเสนอ ✎ แก้ไข ✦ ถาม Claude ⟲ ประวัติ ไม่ต้องไปตามหาไซต์เดโมที่ไหนอีกแล้ว — **สวนที่คุณกำลังอ่านอยู่นี่แหละคือเดโม** รันด้วย `npm run wiki` แล้วบันทึกทุกเรื่องในนี้ รวมถึงหน้านี้ด้วย จะเปิดให้แก้ไขได้ตรงที่ ส่วนบิลด์สแตติกอย่างฉบับที่คุณกำลังอ่าน ไม่มีโค้ด CMS ปนอยู่แม้แต่ไบต์เดียว
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: 'ฐานข้อมูลเพียงหนึ่งเดียว' },
+    { value: '2', label: 'ตาข่ายนิรภัยในทุกการเซฟ' },
+    { value: '0 B', label: 'โค้ด CMS ในบิลด์สแตติก' },
+  ]}
+/>
+
+## ห้าบท `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/th/inkbrush/editing/`} num="ภาค I" title="แก้ไขทีละบล็อก" count="✎"
+    desc="CodeMirror เข้ามาแทนที่บล็อกที่คุณกำลังอ่าน พรีวิวสดผ่านไปป์ไลน์ของไซต์เอง และตาข่ายนิรภัยสองผืนก่อนที่อะไรจะแตะถึงดิสก์" />
+  <HubCard href={`${base}/th/inkbrush/revisions/`} num="ภาค II" title="ประวัติการแก้ไขและการย้อนคืน" count="⟲"
+    desc="ทุกการเซฟถูกจดลงปูมรายบล็อก — ใคร เมื่อไร ข้อความก่อนและหลังแบบเป๊ะ ๆ — พร้อมการย้อนคืนคลิกเดียว ที่ตัวมันเองก็ย้อนคืนได้อีกที" />
+  <HubCard href={`${base}/th/inkbrush/ai-assist/`} num="ภาค III" title="ผู้ช่วย AI" count="✦"
+    desc="เขียนบล็อกใหม่ แชตที่รู้จักบันทึก และการแปลทั้งบันทึกผ่าน claude CLI โดยถูกกักไว้ในสำเนาใช้แล้วทิ้ง" />
+  <HubCard href={`${base}/th/inkbrush/inbox/`} num="ภาค IV" title="กล่องขาเข้าจาก Obsidian" count="📥"
+    desc="ชี้ตัวเฝ้าดูไปที่โฟลเดอร์ใน vault แล้วบันทึกใหม่จะแปลงร่างและนำเข้าตัวเอง — รูปฝัง วิกิลิงก์ ไฮไลต์ มาครบ" />
+  <HubCard href={`${base}/th/inkbrush/wikilinks/`} num="ภาค V" title="วิกิลิงก์แก้ปลายทางอย่างไร" count="[[ ]]"
+    desc="ตัวแก้ปลายทางตัวเดียวสำหรับหน้าเว็บ พรีวิวของตัวแก้ไข ตัวนำเข้า และ lint ใน CI — มิเรอร์ภาษาก่อน แล้วจึง id นามแฝง brand และชื่อเรื่อง" />
+</div>
+
+## เอนจินอยู่ตรงไหน
+
+เอนจินเป็นเจ้าของฟีเจอร์ CMS **และ**ไวยากรณ์เฉพาะของ Markdown พร้อมตัวตรวจเนื้อหา — ไวยากรณ์ที่ตัวแก้ไขยอมรับ กับไวยากรณ์ที่หน้าเว็บเรนเดอร์ ต้องเป็นไวยากรณ์ชุดเดียวกัน มันจึงถูกเขียนครั้งเดียวแล้วถูกใช้ทุกที่ ([[three-way-split|แบ่งงานสามฝ่าย]]อธิบายว่าทำไมเส้นแบ่งจึงลากไว้ตรงนั้น) สไตล์เป็นของชั้นกระดาษ เอกลักษณ์เป็นของไซต์คุณ ทุกอย่างที่*เรนเดอร์*บนหน้าเหล่านี้ — รวมถึงแถบหมวดหมู่เหนือข้อความนี้ — คือกระดาษกำลังทำงาน ส่วนทุกอย่างที่*แก้ไข*หน้าเหล่านี้คือเอนจิน
+
+<div class="path">
+  <strong>เส้นทางการอ่าน</strong>
+  เพิ่งรู้จักเอนจิน → <a href={`${base}/th/inkbrush/editing/`}>ภาค I</a><span class="arrow">→</span><a href={`${base}/th/inkbrush/revisions/`}>ภาค II</a>; จะต่อมันเข้ากับไซต์ → เริ่มที่<a href={`${base}/th/getting-started/`}>บทแนะนำเริ่มต้นใช้งาน</a>ก่อน; ไวยากรณ์เฉพาะที่ด่านเซฟบังคับใช้ → <a href={`${base}/th/kitchen-sink/`}>รวมทุกองค์ประกอบ</a>; บันทึกว่าด้วยการเก็บบันทึก → <a href={`${base}/th/garden-craft/`}>บทความดูแลสวน</a>
+</div>

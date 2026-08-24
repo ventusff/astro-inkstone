@@ -1,0 +1,27 @@
+---
+title: Cronologia delle revisioni e ripristino
+description: Ogni salvataggio è annotato nel registro, blocco per blocco — chi, quando, quali righe, l’esatto prima e dopo. Sfoglialo con ⟲, annullalo in un clic.
+navLabel: Revisioni
+part: 2
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Cronologia delle revisioni e ripristino">
+  Ogni salvataggio — battuto a mano, prodotto da Claude o importato dalla inbox — viene accodato a un registro delle revisioni accanto ai contenuti: chi, quando, quali righe, e l’esatto testo prima/dopo. Passa il mouse su un blocco, fai clic su ⟲, e la cronologia di quel blocco si apre.
+</PartHero>
+
+## Il registro
+
+Ogni voce mostra come è stata fatta la modifica (modifica manuale, modifica di Claude, traduzione IA, importazione dalla inbox o un ripristino precedente), da chi, e un diff prima/dopo ripiegabile. Le voci a file intero — una traduzione, un’importazione — sono elencate a verbale ma non portano il pulsante di ripristino: annullarle è compito di git.
+
+## Il ripristino
+
+Un clic sul pulsante di ripristino di una voce sostituisce il testo *dopo* di quella revisione col suo testo *prima* — come nuova modifica annotata nel registro, così anche un ripristino si può ripristinare. Due dettagli che vale la pena sapere:
+
+- Il ripristino si applica per corrispondenza esatta del contenuto. Se nel frattempo il blocco è stato modificato e il vecchio testo non compare più alla lettera, il ripristino viene rifiutato invece che indovinato — nulla viene mai rattoppato per approssimazione.
+- Il risultato passa per lo stesso cancello di build di qualunque altro salvataggio ([[inkbrush/editing|le due reti di sicurezza]]). Un ripristino che romperebbe la pagina viene respinto.
+
+## Perché sia il registro sia git?
+
+Git (via `autocommit`) è la storia durevole, a file intero — la cosa che spingi, di cui fai backup e su cui fai diff. Il registro è il livello a grana fine che rende ⟲ istantaneo e per blocco. Rispondono a domande diverse: *«che cosa è successo a questo file?»* contro *«che cosa è successo a questo paragrafo?»*

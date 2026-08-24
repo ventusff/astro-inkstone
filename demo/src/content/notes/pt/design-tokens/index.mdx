@@ -1,0 +1,71 @@
+---
+title: Paleta em duas camadas e temas
+brand: "Paleta e temas"
+subtitle: "duas camadas, dois contextos\nos pigmentos e o papel"
+description: A paleta bruta de pigmentos e os dois contextos semânticos construídos sobre ela — coluna de leitura e estante de navegação —, a disciplina claro/escuro, o contraste auditado e o ponto único de entrada para a identidade do site.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Referência · a camada de tokens" title="Paleta em duas camadas e temas" meta="uma paleta · dois contextos · os dois temas ajustados à mão · cada valor de texto medido para AA">
+  `styles/tokens.css` guarda todas as cores que as folhas de estilo e os componentes usam — a única exceção é o par de tons de um domínio, que o registro do site fornece como dado. O arquivo é escrito em duas camadas — uma **paleta bruta** de pigmentos de papel e tinta, e **tokens semânticos** construídos sobre ela — e a camada semântica vem em dois contextos, porque um wiki tem dois tipos de página: a coluna que você lê e a estante em que você garimpa.
+</Hero>
+
+<Part title="As camadas" />
+
+## Camada 1: os pigmentos
+
+A paleta bruta é uma caixa de pintor, invariante ao tema, nomeada `--p-*`. **Papéis**: o fundo de navegação 纸 e a face de cartão 页, o fundo de leitura 素 (um ponto mais frio, mais confortável ao longo de uma hora) e a superfície macia 帛, o cartão branco, os fundos de código e de fórmula. **Tintas**: um conjunto quente para a estante e um neutro para a coluna, cada um em três intensidades. **Encadernação**: a régua da estante, a borda das pílulas, os dois fios finos. E os **pigmentos**, as cores que carregam significado:
+
+```css title="tokens.css (camada 1, os pigmentos)"
+--p-zhu: #7d3a3a; /* 朱 · vermelho-vinho — acento da navegação, a marca do site */
+--p-shi: #b6552e; /* 石 · laranja-queimado — acento de leitura: links, números, kickers */
+--p-shi-text: #8f3f1f; /* 石 · degrau para texto pequeno (AA sobre o próprio matiz) */
+--p-zhe: #c08a2c; /* 赭 · ocre — linhas e bordas */
+--p-dai: #2a6f6b; /* 黛 · verde-azulado — acento secundário de conteúdo */
+--p-zi: #6b4ec4; /* 紫 · violeta — semântica de "sistema" */
+```
+
+Mais um conjunto **noturno** para a edição escura: fundos de crepúsculo, tintas branco-lua e um gêmeo clareado de cada pigmento.
+
+## Dois contextos, uma paleta
+
+A camada 2 é o que a camada de componentes consome, e ela tem duas faces:
+
+| Contexto | Tokens | Fundo | Tinta | Acento | Onde |
+| --- | --- | --- | --- | --- | --- |
+| coluna de leitura | `--color-*` | 素 `#fbf9f4` | neutra `#1f2024` | 石 laranja-queimado | páginas de nota, todos os componentes de conteúdo, `base.css` |
+| estante de navegação | `--wb-*` | 纸 `#faf6ec` | quente `#2b2622` | 朱 vermelho-vinho | landing e páginas de faceta, os componentes wiki, `browse.css` |
+
+A coluna é a mais quieta das duas — você fica nela por uma hora. A estante é mais quente e composta em serifa display — você bate o olho e escolhe. Uma página entra no contexto da estante com uma única classe, `wb-root`, no body; dentro dela os tokens de chrome (`--color-bg`, `--color-accent`, …) são remapeados para os da estante, de modo que uma barra de navegação escrita uma vez assenta corretamente nos dois fundos — e os átomos de taxonomia (selo de tipo, ponto de status, chip de domínio), escritos contra `--color-*`, lêem-se como parte da coluna numa página de nota e como parte da estante numa página de navegação. **A camada de componentes só pode consumir a camada 2** — `base.css`, `browse.css` e cada componente; nenhuma regra contém um valor de cor cru, e nada usa um como fallback. Essa é a disciplina dura do pacote.
+
+<Part title="Identidade e disciplina" />
+
+## Como um site personaliza a identidade
+
+Sobrescreva a camada 1. Troque os pigmentos pelos seus e os dois contextos e a camada de componentes inteira acompanham. Cada pigmento é um **par dia/noite**: o tema claro lê `--p-shi` e `--p-zhu`, o escuro lê os gêmeos noturnos `--p-shi-n` e `--p-zhu-n` — uma identidade própria define os dois membros, ou o escuro fica com os pigmentos padrão:
+
+```css title="seu site.css"
+:root {
+  --p-shi: #b03a48; /* seu acento de leitura */
+  --p-shi-text: #93303c; /* o degrau de texto pequeno é escurecido à parte, veja abaixo */
+  --p-zhu: #3b4a7a; /* seu acento de estante e a marca */
+  --p-shi-n: #e0919b; /* os gêmeos noturnos, clareados para os fundos de crepúsculo */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Remapear a camada 2 para a sua própria paleta é um caminho igualmente suportado quando seu design system já tem uma — aponte `--color-*` e `--wb-*` para as suas variáveis. Este jardim, de propósito, não sobrescreve nada: o que você está lendo é a cara nua do pacote, a mesma que [[paper-and-ink]] defende.
+
+## O contraste é auditado
+
+Cada valor de texto é conferido contra o WCAG AA em cada superfície onde de fato assenta: texto pequeno parte de 4.5:1; um acento usado como texto pequeno ganha um **degrau de texto** escurecido de forma independente (`--p-shi-text`, `--p-zhe-text`), porque um rótulo de 12px na cor do acento costuma sentar sobre o matiz do próprio acento; as tintas apagadas são fixadas na tonalidade mais escura que ainda se lê como apagada — `#6a6d74` sobre o fundo de leitura dá 4.9:1, e ainda 4.5:1 sobre a superfície macia; o fundo de código é um ponto mais claro que o papel para que o token mais fraco do tema de sintaxe (os comentários) passe de 4.5:1; a edição escura carrega seu próprio conjunto clareado, medido contra os fundos noturnos. O pacote entrega a medição como ferramenta: `scripts/contrast_probe.mjs` renderiza a demo num navegador real, nos dois temas e em duas larguras, amostra o fundo sob cada trecho de texto a partir dos pixels e relata cada trecho abaixo da barra ([[checks|a sonda de contraste]]). Antes de mudar qualquer valor, conheça cada superfície em que ele assenta.
+
+## O claro é a identidade
+
+O tema deliberadamente **não** lê `prefers-color-scheme`: uma página jamais deve virar o próprio tema debaixo do leitor. O escuro só ativa via `[data-theme='dark']`, acionado pelo interruptor do próprio site (o botão sol/lua à direita da barra de navegação deste site; a escolha fica guardada sob a chave `inkstone-theme` no `localStorage` e é reaplicada pelo script inline ThemeInit antes da primeira pintura, para que quem lê no escuro nunca veja um clarão creme). O escuro não é uma inversão, mas uma segunda edição composta à mão: fundos de crepúsculo, tintas branco-lua, pigmentos reclareados — [[paper-and-ink|o escuro é uma segunda edição, não uma inversão]].
+
+## As fontes também moram aqui
+
+Quatro pilhas. `--font-display` é a face da estante — uma serifa de tamanho óptico (Source Serif 4, com Noto Serif SC para os hanzi) para cabeçalhos e títulos de estante; esta demo a hospeda via `@fontsource`, e um site que não o faça cai na face de leitura. `--font-body` é a da coluna de leitura — uma pilha de serifas de sistema liderada por Charter e Iowan Old Style, com a face display entrando onde elas faltam. `--font-ui` é Inter (Noto Sans SC para os hanzi) para títulos, chrome e letra miúda. `--font-mono` é um subconjunto de charset fixo da Maple Mono CN (ASCII + caracteres de desenho de caixa + os 3500 hanzi comuns + a união do conteúdo existente): latim a 0.6em, hanzi a 1.2em — **um hanzi ocupa exatamente duas células de caractere**, então diagramas de caixa continuam alinhados mesmo em texto misto chinês/latim. A receita do subconjunto e o script de regeneração vêm com o pacote (`fonts/build_font_subset.py`); quando o conteúdo precisa de glifos além da cobertura, rode-o de novo e faça commit do woff2. As [[kitchen-sink|molduras de código]] são compostas inteiramente no subconjunto.

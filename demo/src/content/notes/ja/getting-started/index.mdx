@@ -1,0 +1,127 @@
+---
+title: はじめに
+brand: はじめに
+subtitle: "サブモジュール二つ、インポート三行\nパイプラインは一行"
+description: サイトのリポジトリにサブモジュールを一対、スタイルシートのインポートを三行、そして siteMarkdown の一行で Markdown パイプライン全体——それだけで庭がひとつ立ち上がります。
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="ガイド · ゼロから庭ができるまで" title="はじめに" meta="サブモジュール二つ · スタイルシート三枚 · siteMarkdown() ひとつ · コマンド三つ">
+  紙面もエンジンも npm には公開されていません——どちらもビルド不要で、TS/CSS のソースをそのまま公開しています。サイトは二つのリポジトリを git submodule として取り込み、スタイルシートを三枚インポートし、関数をひとつ `astro.config` につなぐだけ。このサイトのすべてが、その方法で組み上がっています。
+</Hero>
+
+<Part title="インストール" />
+
+## サブモジュールの一対
+
+二つのリポジトリを取り込み、`file:` 依存で指し示します:
+
+```bash title="サイトリポジトリのルート"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json(dependencies 部分)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] このデモのレイアウトは少しだけ違います
+> デモはパッケージリポジトリの中(`demo/`)で育っているため、その `astro-inkstone` は `file:..` を指し、エンジンは `demo/vendor/` の下にぶら下がっています。独立したサイトなら上の `packages/` レイアウトで——両者は等価です。
+
+## スタイルの取り込み
+
+グローバルのスタイルシートには、まずトークン、次に本文レイヤー、ブラウズページを持つサイトならさらに書架、その後はサイト自身のクロームだけを書きます:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* ランディング / 分類ページ用。body.wb-root に掛かる */
+
+/* アイデンティティ:第一層の顔料だけを上書きする。二つの意味文脈もコンポーネント層もそれに従う */
+:root {
+  --p-shi: #b03a48; /* 読書側のアクセント */
+  --p-zhu: #3b4a7a; /* 書架のアクセントとサイトの印 */
+  --p-shi-n: #e0919b; /* 夜の対:ダークテーマは --p-*-n を読む */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+書架のセリフ体は `--font-display`(Source Serif 4 + Noto Serif SC)。このデモと同じようにセルフホストすれば、マストヘッドはここと寸分違わぬ姿になります:
+
+```css title="src/styles/site.css(フォント、任意)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+数式を使うサイトは、レイアウトに KaTeX のスタイルシートを一行足します(これがないと数式の組版は崩れます):
+
+```ts title="src/layouts/Base.astro(frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="配線" />
+
+## Markdown パイプラインは一行
+
+このサイトと同じ形の最小構成——章番号、数式、コールアウト、図、そしてノート集に対して解決される `[[ウィキリンク]]`(このサイトが結線している全フック入りの完全版は、リポジトリの `astro.config.mjs` です):
+
+```js title="astro.config.mjs(最小構成)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs' でも '/docs/' でも可
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // 部・章番号 + ToC(remarkPluginFrontmatter 経由)
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // コードフレーム:タイトルバー / コピー / 折りたたみ / 行アノテーション
+    mermaid: true, // mermaid フェンスをクライアント側で描画
+    callouts: true, // Obsidian 流の > [!note] 構文
+    wikiBlocks: WIKI_MODE, // 編集モード:ブロック↔ソース行の対応付け。常にパイプラインの最後
+    guard: { autoNumberedHeadings: true }, // コンテンツガード:手書きの見出し番号を拒否
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown` の土台はエンジンの方言(GFM、CJK に強い強調解析、コンテンツガード)で、プリセット自身はサイト側プラグインの組み立てと順序付けだけを受け持ちます——**パイプラインの順序こそが契約**なので、誰が誰より先に走るかをサイトが気にする必要はありません。各スイッチの効き目は[[kitchen-sink|全部入りデモ]]のページが一つずつ実演していますし、パッケージを三つに分けた理由は [[boundaries|三者の分業]] にあります。コールアウトのラベルを日本語にしたいときは `calloutLabels` を渡すだけです——既定は英語です。
+
+## 実行
+
+スクリプトはこのデモの `package.json` に定義されているとおりです(`build` は postbuild でエンジンの check-dist を回します。`wiki` は `WIKI=1 astro dev` の別名です):
+
+```bash
+npm install
+npm run dev        # 庭そのもの
+npm run build      # 静的ビルド + エンジンの check-dist(postbuild)
+npm run wiki       # WIKI=1 astro dev——CMS 編集モード
+```
+
+静的ビルドにエンジン由来のバイトは一つも含まれません。WIKI モードの外ではエンジンの統合コードは import すらされず(動的 import)、編集用メタデータも出力されません。出力の中で CMS の形をして残るのは、サイト自身の不活性なドッキング用マークアップ——ナビバーの空の `data-inkbrush-slot` span とその CSS——だけで、CMS が接続されるまでは何もしません。

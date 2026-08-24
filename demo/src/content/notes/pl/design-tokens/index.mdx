@@ -1,0 +1,71 @@
+---
+title: Dwuwarstwowa paleta i motywy
+brand: "Paleta i motywy"
+subtitle: "dwie warstwy, dwa konteksty\npigmenty i papier"
+description: Surowa paleta pigmentów i dwa zbudowane na niej konteksty semantyczne — kolumna lektury i półka przeglądania — dyscyplina motywu jasnego i ciemnego, audytowany kontrast oraz jedno wejście dla tożsamości witryny.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Referencja · warstwa tokenów" title="Dwuwarstwowa paleta i motywy" meta="jedna paleta · dwa konteksty · oba motywy ustawione ręcznie · każda wartość tekstu zmierzona pod AA">
+  `styles/tokens.css` zawiera każdy kolor, którego używają arkusze stylów i komponenty — jedynym wyjątkiem jest para odcieni obszaru, którą rejestr witryny dostarcza jako dane. Plik jest napisany w dwóch warstwach — **surowa paleta** pigmentów papieru i tuszu oraz zbudowane na niej **tokeny semantyczne** — a warstwa semantyczna występuje w dwóch kontekstach, bo wiki ma dwa rodzaje stron: kolumnę, którą czytasz, i półkę, którą przeglądasz.
+</Hero>
+
+<Part title="Warstwy" />
+
+## Warstwa pierwsza: pigmenty
+
+Surowa paleta to pudełko malarza, niezależne od motywu, nazwane `--p-*`. **Papiery**: podłoże przeglądania 纸 i lico jego kart 页, podłoże lektury 素 (o ton chłodniejsze, łaskawsze dla oczu po godzinie) i jego miękka powierzchnia 帛, biała karta oraz podłoża kodu i matematyki. **Tusze**: ciepły zestaw dla półki i neutralny dla kolumny, każdy w trzech natężeniach. **Oprawa**: linia półki, obwódka pastylek, dwie cienkie kreski. I **pigmenty** — kolory, które niosą znaczenie:
+
+```css title="tokens.css (warstwa pierwsza, pigmenty)"
+--p-zhu: #7d3a3a; /* 朱 · winna czerwień — akcent przeglądania, znak witryny */
+--p-shi: #b6552e; /* 石 · palona pomarańcz — akcent lektury: linki, numery, kickery */
+--p-shi-text: #8f3f1f; /* 石 · stopień dla drobnego tekstu (AA na własnym tincie) */
+--p-zhe: #c08a2c; /* 赭 · ochra — linie i obramowania */
+--p-dai: #2a6f6b; /* 黛 · morska zieleń — drugi akcent treści */
+--p-zi: #6b4ec4; /* 紫 · fiolet — semantyka „systemowa” */
+```
+
+Do tego zestaw **nocny** dla wydania ciemnego: zmierzchowe podłoża, księżycowo-białe tusze i rozjaśniony bliźniak każdego pigmentu.
+
+## Dwa konteksty, jedna paleta
+
+Warstwę drugą konsumuje warstwa komponentów — i ma ona dwa oblicza:
+
+| Kontekst | Tokeny | Podłoże | Tusz | Akcent | Gdzie |
+| --- | --- | --- | --- | --- | --- |
+| kolumna lektury | `--color-*` | 素 `#fbf9f4` | neutralny `#1f2024` | 石 palona pomarańcz | strony notatek, każdy komponent treści, `base.css` |
+| półka przeglądania | `--wb-*` | 纸 `#faf6ec` | ciepły `#2b2622` | 朱 winna czerwień | strona główna i strony kategorii, komponenty wiki, `browse.css` |
+
+Kolumna jest z tych dwóch tą cichszą — czytasz ją godzinę. Półka jest cieplejsza i złożona szeryfem tytułowym — rzucasz na nią okiem i wybierasz. Strona wchodzi w kontekst półki jedną klasą, `wb-root`, na swoim body; wewnątrz niej tokeny chrome’u (`--color-bg`, `--color-accent`, …) są przemapowane na tokeny półki, więc pasek nawigacji napisany raz leży poprawnie na obu podłożach — a atomy taksonomii (odznaka rodzaju, kropka statusu, chip obszaru), pisane przeciwko `--color-*`, na stronie notatki czytają się jak część kolumny, a na stronie przeglądania jak część półki. **Warstwa komponentów może konsumować wyłącznie warstwę drugą** — `base.css`, `browse.css` i każdy komponent; żadna reguła nie zawiera surowej wartości koloru i nic do takiej nie sięga awaryjnie. To twarda dyscyplina tego pakietu.
+
+<Part title="Tożsamość i dyscyplina" />
+
+## Jak witryna definiuje tożsamość
+
+Nadpisz warstwę pierwszą. Podmień pigmenty na własne, a oba konteksty i cała warstwa komponentów pójdą w ślad. Każdy pigment to **para dzień/noc**: motyw jasny czyta `--p-shi` i `--p-zhu`, ciemny — ich nocne bliźniaki `--p-shi-n` i `--p-zhu-n`; nadpisanie tożsamości ustawia oboje członków pary albo zostawia ciemnemu domyślne pigmenty:
+
+```css title="twój site.css"
+:root {
+  --p-shi: #b03a48; /* twój akcent lektury */
+  --p-shi-text: #93303c; /* jego stopień dla drobnego tekstu przyciemnia się osobno, patrz niżej */
+  --p-zhu: #3b4a7a; /* twój akcent półki i znak witryny */
+  --p-shi-n: #e0919b; /* nocne bliźniaki, rozjaśnione pod zmierzchowe podłoża */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Równie wspieraną drogą jest przemapowanie warstwy drugiej na własną paletę, gdy twój system projektowy już jakąś ma — skieruj `--color-*` i `--wb-*` na swoje zmienne. Ten ogród celowo nie nadpisuje niczego: czytasz właśnie surową twarz pakietu, tę samą, za którą argumentuje [[paper-and-ink|Papier i tusz]].
+
+## Kontrast przechodzi audyt
+
+Każda wartość warstwy tekstowej jest sprawdzona pod WCAG AA na każdej powierzchni, na której leży: drobny tekst zaczyna od 4,5:1; akcent użyty jako drobny tekst dostaje niezależnie przyciemniony **stopień tekstowy** (`--p-shi-text`, `--p-zhe-text`), bo dwunastopikselowa etykieta w kolorze akcentu zwykle leży na tincie tego samego akcentu; wyblakłe tusze są ustawione na najciemniejszy odcień, który wciąż czyta się jako wyblakły — `#6a6d74` na podłożu lektury daje 4,9:1, a na miękkiej powierzchni wciąż 4,5:1; podłoże kodu jest o ton jaśniejsze od papieru, żeby najbledszy token motywu składni (komentarze) przekraczał 4,5:1; wydanie ciemne niesie własny, rozjaśniony zestaw, mierzony względem nocnych podłoży. Pakiet dostarcza ten pomiar jako narzędzie: `scripts/contrast_probe.mjs` renderuje demo w prawdziwej przeglądarce, w obu motywach i dwóch szerokościach, próbkuje z pikseli podłoże pod każdym przebiegiem tekstu i raportuje każdy przebieg poniżej poprzeczki ([[checks|sonda kontrastu]]). Zanim zmienisz jakąkolwiek wartość, poznaj każdą powierzchnię, na której ona leży.
+
+## Tożsamością jest światło
+
+Motyw celowo **nie** czyta `prefers-color-scheme`: strona nigdy nie może sama przełączyć motywu pod czytelnikiem. Ciemny aktywuje się wyłącznie przez `[data-theme='dark']`, przełączany własnym przełącznikiem witryny (przycisk słońce/księżyc po prawej stronie paska nawigacji; wybór ląduje pod kluczem `inkstone-theme` w `localStorage` i jest odtwarzany przez wbudowany skrypt ThemeInit jeszcze przed pierwszym malowaniem, więc czytelnicy ciemnego motywu nigdy nie widzą kremowego błysku). Ciemny nie jest inwersją, lecz drugim, ręcznie złożonym wydaniem: zmierzchowe podłoża, księżycowo-białe tusze, na nowo rozjaśnione pigmenty — [[paper-and-ink|ciemny motyw to drugie wydanie, nie inwersja]].
+
+## Tu mieszkają też fonty
+
+Cztery stosy. `--font-display` to twarz półki — szeryf o zmiennym rozmiarze optycznym (Source Serif 4, z Noto Serif SC dla znaków han) do winiet i tytułów na półce; to demo hostuje go przez `@fontsource`, a witryna, która tego nie robi, spada na krój lektury. `--font-body` należy do kolumny lektury — systemowy stos szeryfowy prowadzony przez Charter i Iowan Old Style, z krojem tytułowym wchodzącym tam, gdzie ich brak. `--font-ui` to Inter (Noto Sans SC dla znaków han) do nagłówków, chrome’u i drobnego druku. `--font-mono` to podzbiór Maple Mono CN o zamrożonym zestawie znaków (ASCII + znaki ramek + 3500 najczęstszych znaków han + suma znaków istniejącej treści): łacina na 0.6em, znaki han na 1.2em — **znak han jest szeroki dokładnie na dwie komórki**, więc diagramy ze znaków ramek trzymają pion nawet w tekście mieszającym chiński z łaciną. Przepis na podzbiór i skrypt regeneracji jadą z pakietem (`fonts/build_font_subset.py`); gdy treść potrzebuje glifów spoza pokrycia, uruchom go ponownie i scommituj woff2. [[kitchen-sink|Ramki kodu]] są złożone w całości tym podzbiorem.

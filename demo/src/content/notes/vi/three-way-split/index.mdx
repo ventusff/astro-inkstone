@@ -1,0 +1,47 @@
+---
+title: Ranh giới ba bên
+brand: Ranh giới ba bên
+subtitle: "engine lo biên tập, giấy lo dáng vẻ\ncòn site chính là bạn"
+description: "Engine lo biên tập, giấy lo dáng vẻ, site chính là bạn — ai sở hữu thứ gì, và vì sao các đường ranh nằm đúng chỗ chúng đang nằm."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Hướng dẫn · kiến trúc" title="Ranh giới ba bên" meta="ba repo · ba chủ sở hữu · một câu để nhớ">
+  Một site tài liệu/wiki dựng bằng bộ công cụ này được lắp từ ba phần, mỗi phần sở hữu đúng một lớp. Các đường ranh giữa chúng không phải chuyện khẩu vị — mỗi đường đều được chống lưng bởi một ràng buộc sẽ cắn ngay khi bị vượt qua.
+</Hero>
+
+## Ba lớp, ba chủ sở hữu
+
+- **astro-inkbrush (engine)**: một CMS tối giản — sửa từng khối ngay trên trình duyệt, lịch sử chỉnh sửa và hoàn tác ở cấp khối, bình luận, hỏi đáp / viết lại / dịch bằng AI, nhập từ hộp thư nháp. Nó còn sở hữu một thứ trông như không thuộc về CMS: **phương ngữ Markdown và lớp kiểm soát nội dung**. Lý do rất cứng: ngữ pháp trình soạn chấp nhận và ngữ pháp trang render ra buộc phải là một, bằng không "lưu trong trình soạn thì êm, lên trang thì render sai" chỉ là chuyện sớm muộn. Vậy nên luật phân tích cú pháp được viết đúng một lần, trong engine, và được tiêu thụ ở ba nơi — render phía site, kiểm tra lúc CMS lưu, và các phép kiểm trong CI.
+- **astro-inkstone (lớp giấy — gói này)**: tầng dáng vẻ và pipeline dùng chung — token thiết kế hai tầng trong hai ngữ cảnh, stylesheet nội dung `base.css` và kệ duyệt `browse.css`, thư viện thành phần, preset pipeline `siteMarkdown`, bộ trợ giúp phân loại và liên kết ngược mà khu vườn này đang chạy trên đó, bản trích font mã Maple Mono CN, cùng các phép dò tầng kết xuất. Nó **không** đụng vào bản sắc của site: màu thương hiệu, khung bố cục, định tuyến và triển khai không phải việc của nó.
+- **Site (như khu vườn bạn đang đọc)**: ghi đè token tầng một để lấy màu bản sắc; tự sở hữu thanh bên và chrome điều hướng của mình (bản của site này chính là lời giải tham chiếu); tự quyết nội dung tổ chức ra sao, route trông thế nào, và triển khai ở đâu.
+
+Một câu để nhớ: **engine lo biên tập, giấy lo dáng vẻ, còn site chính là bạn.**
+
+## Vì sao đường ranh nằm đúng đây
+
+Mỗi nhát cắt đều có một ràng buộc thật chống lưng:
+
+**Phương ngữ thuộc về engine**, vì một bộ kiểm tra dùng bộ plugin lệch với site còn tệ hơn không kiểm tra gì — thiếu plugin toán thì nó đọc nhầm ngoặc nhọn trong công thức thành biểu thức JSX, thiếu GFM thì nó vẫy tay cho dấu sổ dọc của bảng đi qua. Ngữ pháp được viết một lần và tiêu thụ ở ba nơi, nên không bao giờ trôi lệch được.
+
+**Style thuộc về lớp giấy**, vì khi vài site mỗi nơi tự nuôi một stylesheet nội dung riêng, một bản vá tương phản phải đánh lại từng site một — sót một nơi là chữ nhỏ nơi đó tụt dưới AA. Đặt trong tầng dùng chung, một bản vá phủ tất cả.
+
+**Bản sắc thuộc về site**, vì khoảnh khắc tầng dùng chung nuốt màu thương hiệu của một site, mọi site khác phải vật lộn ghi đè lại nó. Từ đó mà có token hai tầng: site ghi đè bảng màu gốc tầng một (`--p-*`), còn tầng ngữ nghĩa và tầng thành phần đi theo mà không cần chạm tới — xem [[design-tokens]].
+
+## Bộ máy duyệt nằm ở đâu
+
+Kỷ luật ấy áp luôn cho thứ bạn đang điều hướng ngay lúc này. Gói giao **phần cơ chế** — `createTaxonomy` (phân giải thể loại/lĩnh vực/thẻ, kế thừa từ hub, bản dịch theo ngôn ngữ), `createBacklinks` (chỉ mục liên kết ngược), và các thành phần thuần hiển thị như thẻ ghi chú với hàng phân loại trên trang chủ. Site sở hữu **bộ từ vựng và các route**: thể loại với lĩnh vực của khu vườn này nằm trong tệp registry của chính nó, còn các trang `/kind/…`, `/domain/…`, `/tag/…` là trang Astro bình thường mà site tiêu thụ chép về rồi nắn lại theo ý mình. Vẫn phép chia ấy, nâng lên một tầng: cơ chế trong gói, ngữ nghĩa ở site.
+
+## Site nhận về những gì
+
+Đứng từ phía site, tiêu thụ gói này cộng với engine mua được:
+
+- `astro-inkstone/styles/tokens.css` + `base.css` + `browse.css`: token trước, rồi cột đọc, rồi kệ duyệt — ba dòng `@import` cho trọn bộ dáng vẻ;
+- `siteMarkdown(...)`: cả pipeline Markdown trong một dòng, các công tắc mô tả ở [[getting-started|bài bắt đầu sử dụng]];
+- các thành phần dưới `astro-inkstone/components/`, cần cái nào import theo đường dẫn cái đó;
+- factory phân loại và trình dựng liên kết ngược dưới `astro-inkstone/lib/`, buộc vào registry của chính site;
+- ở chế độ WIKI, trọn bộ CMS của engine (thử ngay trên site này bằng `npm run wiki`);
+- năm phép kiểm: `check-content`, `check-wikilinks` và `check-dist` (đi kèm engine), `ui_probe` và `contrast_probe` (đi kèm gói này) — xem [[checks|các phép kiểm tra]].
+
+Mọi hiệu ứng hiển thị trên từng trang của khu vườn này đều là sản phẩm của phép chia ấy — ghi chú chính là tài liệu, và tài liệu chính là bản demo.

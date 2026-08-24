@@ -1,0 +1,37 @@
+---
+title: Het postvak IN voor Obsidian
+description: Richt de watcher op een kluismap; nieuwe notities converteren en importeren zichzelf — embeds naast de notitie gekopieerd, wikilinks opgelost, highlights behouden.
+navLabel: Postvak IN
+part: 4
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Het postvak IN voor Obsidian">
+  Veel schrijfwerk begint ergens anders — op een telefoon, in een clipper, in een Obsidian-kluis (vault). Het postvak IN sluit die lus: richt het op een map, en notities die daar neerstrijken importeren zichzelf de site in.
+</PartHero>
+
+## Aanzetten
+
+Het postvak IN staat standaard uit. Zet het aan in `inkbrush.config.ts`:
+
+```ts title="inkbrush.config.ts"
+inbox: {
+  dir: '~/vault/inbox',        // de map om in de gaten te houden (ondersteunt ~/)
+  ignore: ['daily-'],          // optioneel: bestandsnaamvoorvoegsels om over te slaan
+},
+```
+
+Bestanden die bij het opstarten al in de map staan, worden als gezien gemarkeerd, niet geïmporteerd — alleen notities die er *daarna* bijkomen, synchroniseren automatisch. Alles van eerder kan expliciet via de API worden ingehaald, dus het postvak IN aanzetten kiept nooit onverwacht tien jaar kluisgeschiedenis over je site heen.
+
+## Wat de importeur doet
+
+Elke binnenkomende notitie wordt geconverteerd, niet gekopieerd:
+
+- afbeeldings-embeds worden opgelost tegen de assetmappen van de kluis, de bestanden worden **naast de geïmporteerde notitie gekopieerd**, en de embeds worden standaard afbeeldingssyntaxis — wie de notitie later verwijdert, verwijdert haar assets mee
+- `[[wikilinks]]` die een echte notitie op de site treffen, overleven als links, opgelost met [[inkbrush/wikilinks|dezelfde regels als overal]]; de rest wordt platgeslagen tot gewone nadruk, met een waarschuwing
+- highlights worden echte `<mark>`-elementen, frontmatter-metadata wordt een bronregel onder de titel, en uit de eerste inhoudelijke alinea wordt een beschrijving afgeleid
+
+De geconverteerde notitie moet daarna door dezelfde bouwpoort als een handmatige opslag — een notitie die de pagina zou breken, wordt geweigerd in plaats van geïmporteerd.
+
+Elke import landt in het revisiejournaal (via: inbox) als een record van het hele bestand: [[inkbrush/revisions|⟲]] toont hem als auditregel, en een import ongedaan maken is een git-operatie. Met `autocommit` aan wordt elke import bovendien een git-commit als elke andere bewerking; staat het uit, dan komen geïmporteerde bestanden binnen als gewone wijzigingen in de werkboom, om zelf na te kijken en te committen.

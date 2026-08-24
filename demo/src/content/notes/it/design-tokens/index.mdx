@@ -1,0 +1,71 @@
+---
+title: Tavolozza a due livelli e temi
+brand: Tavolozza e temi
+subtitle: "due livelli, due contesti\ni pigmenti e la carta"
+description: La tavolozza dei pigmenti grezzi e i due contesti semantici che vi poggiano sopra — colonna di lettura e scaffale di navigazione — la disciplina chiaro/scuro, il contrasto verificato con misure e l’unico punto d’ingresso per l’identità di un sito.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Riferimento · il livello dei token" title="Tavolozza a due livelli e temi" meta="una tavolozza · due contesti · entrambi i temi composti a mano · ogni valore di testo misurato per l’AA">
+  `styles/tokens.css` contiene ogni colore che i fogli di stile e i componenti usano — l’unica eccezione è la coppia di toni di un ambito, che il registro del sito fornisce come dato. È scritto su due livelli — una **tavolozza grezza** di pigmenti di carta e inchiostro, e i **token semantici** costruiti sopra — e il livello semantico esiste in due contesti, perché un wiki ha due tipi di pagina: la colonna che leggi e lo scaffale che sfogli.
+</Hero>
+
+<Part title="I livelli" />
+
+## Primo livello: i pigmenti
+
+La tavolozza grezza è la cassetta dei colori di un pittore, indifferente al tema, chiamata `--p-*`. **Carte**: il fondo di navigazione 纸 e la faccia delle sue carte 页, il fondo di lettura 素 (un punto più freddo, più riposante dopo un’ora) e la sua superficie morbida 帛, la carta bianca, i fondi per codice e formule. **Inchiostri**: una serie calda per lo scaffale e una neutra per la colonna, ciascuna in tre gradazioni. **Legatura**: la riga dello scaffale, il bordo delle pillole, i due filetti. **Pigmenti**, i colori che portano significato:
+
+```css title="tokens.css (primo livello, i pigmenti)"
+--p-zhu: #7d3a3a; /* 朱 · rosso vinaccia — accento di navigazione, il marchio del sito */
+--p-shi: #b6552e; /* 石 · arancio bruciato — accento di lettura: link, numeri, kicker */
+--p-shi-text: #8f3f1f; /* 石 · gradino per testo piccolo (AA sulla sua stessa velatura) */
+--p-zhe: #c08a2c; /* 赭 · ocra — righe e bordi */
+--p-dai: #2a6f6b; /* 黛 · verde acqua — accento secondario dei contenuti */
+--p-zi: #6b4ec4; /* 紫 · violetto — semantica "di sistema" */
+```
+
+Più una serie **notturna** per l’edizione scura: fondi crepuscolari, inchiostri bianco luna e un gemello ravvivato di ogni pigmento.
+
+## Due contesti, una tavolozza
+
+Il secondo livello è ciò che il livello dei componenti consuma, e ha due volti:
+
+| Contesto | Token | Fondo | Inchiostro | Accento | Dove |
+| --- | --- | --- | --- | --- | --- |
+| colonna di lettura | `--color-*` | 素 `#fbf9f4` | neutro `#1f2024` | 石 arancio bruciato | pagine delle note, ogni componente di contenuto, `base.css` |
+| scaffale di navigazione | `--wb-*` | 纸 `#faf6ec` | caldo `#2b2622` | 朱 rosso vinaccia | pagine di landing e faccette, i componenti wiki, `browse.css` |
+
+La colonna è la più quieta delle due — la leggi per un’ora. Lo scaffale è più caldo e composto in un serif da titolazione — gli dai un’occhiata e scegli. Una pagina entra nel contesto dello scaffale con una sola classe, `wb-root`, sul body; al suo interno i token del chrome (`--color-bg`, `--color-accent`, …) vengono rimappati su quelli dello scaffale, così una barra di navigazione scritta una volta sola siede correttamente su entrambi i fondi — e così gli atomi della tassonomia (badge del tipo, punto di stato, chip dell’ambito), scritti contro `--color-*`, appartengono alla colonna su una pagina di nota e allo scaffale su una pagina di navigazione. **Il livello dei componenti può consumare solo il secondo livello** — `base.css`, `browse.css` e ogni componente; nessuna regola contiene un valore di colore a crudo, e nulla vi ripiega come fallback. È la disciplina dura del pacchetto.
+
+<Part title="Identità e disciplina" />
+
+## Come un sito definisce la propria identità
+
+Sovrascrivendo il primo livello. Sostituisci i pigmenti con i tuoi e i due contesti, insieme all’intero livello dei componenti, seguono. Ogni pigmento è una **coppia giorno/notte**: il tema chiaro legge `--p-shi` e `--p-zhu`, quello scuro legge i gemelli notturni `--p-shi-n` e `--p-zhu-n` — una sovrascrittura d’identità imposta entrambi i membri, oppure il tema scuro si tiene i pigmenti predefiniti:
+
+```css title="il tuo site.css"
+:root {
+  --p-shi: #b03a48; /* il tuo accento di lettura */
+  --p-shi-text: #93303c; /* il suo gradino per testo piccolo va scurito a parte, vedi sotto */
+  --p-zhu: #3b4a7a; /* il tuo accento da scaffale, e il marchio */
+  --p-shi-n: #e0919b; /* i gemelli notturni, ravvivati per i fondi crepuscolari */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Rimappare il secondo livello sulla tua tavolozza è altrettanto supportato, se il tuo design system ne ha già una — punta `--color-*` e `--wb-*` alle tue variabili. Questo giardino, di proposito, non sovrascrive nulla: quello che stai leggendo è il volto nudo del pacchetto, lo stesso che [[paper-and-ink|carta e inchiostro]] difende.
+
+## Il contrasto si misura
+
+Ogni valore destinato al testo è verificato per la WCAG AA su ogni superficie su cui siede: il testo piccolo parte da 4.5:1; un accento usato come testo piccolo riceve un **gradino testo** scurito per conto suo (`--p-shi-text`, `--p-zhe-text`), perché un’etichetta di 12px nel colore d’accento di solito siede sulla velatura dell’accento stesso; gli inchiostri tenui sono fissati alla tonalità più scura che ancora si legge come tenue — `#6a6d74` sul fondo di lettura dà 4.9:1, e ancora 4.5:1 sulla superficie morbida; il fondo del codice è un punto più chiaro della carta, così il token più tenue del tema di sintassi (i commenti) supera 4.5:1; l’edizione scura porta una serie propria, ravvivata, misurata sui fondi notturni. Il pacchetto consegna la misura come strumento: `scripts/contrast_probe.mjs` rende la demo in un browser reale, entrambi i temi e due larghezze, campiona dai pixel il fondo sotto ogni corsa di testo e riporta ogni corsa sotto la soglia ([[checks|la sonda di contrasto]]). Prima di cambiare un valore, conosci ogni superficie su cui siede.
+
+## La luce è l’identità
+
+Il tema, di proposito, **non** legge `prefers-color-scheme`: una pagina non deve mai capovolgere il proprio tema sotto gli occhi di chi legge. Lo scuro si attiva solo attraverso `[data-theme='dark']`, commutato dall’interruttore del sito stesso (il pulsante sole/luna a destra nella barra di navigazione di questo sito; la scelta è conservata sotto la chiave `inkstone-theme` in `localStorage` e riapplicata dallo script inline ThemeInit prima del primo paint, così chi legge in tema scuro non vede mai un lampo color crema). Lo scuro non è un’inversione ma una seconda edizione composta a mano: fondi crepuscolari, inchiostri bianco luna, pigmenti ravvivati — [[paper-and-ink|il buio è una seconda edizione, non un’inversione]].
+
+## Anche i caratteri abitano qui
+
+Quattro pile. `--font-display` è il volto dello scaffale — un serif a dimensione ottica (Source Serif 4, con Noto Serif SC per gli hanzi) per testate e titoli da scaffale; questa demo lo ospita in proprio via `@fontsource`, e un sito che non lo fa ripiega sul carattere di lettura. `--font-body` è quello della colonna di lettura — una pila di serif di sistema guidata da Charter e Iowan Old Style, con il carattere da titolazione a subentrare dove mancano. `--font-ui` è Inter (Noto Sans SC per gli hanzi) per titoli, chrome e caratteri minuti. `--font-mono` è un sottoinsieme a repertorio fisso di Maple Mono CN (ASCII + caratteri di riquadro + i 3500 hanzi comuni + l’unione dei contenuti esistenti): latino a 0.6em, hanzi a 1.2em — **un hanzi è largo esattamente due celle**, così i diagrammi a caratteri di riquadro restano allineati anche nel testo misto cinese/latino. La ricetta del sottoinsieme e lo script di rigenerazione viaggiano col pacchetto (`fonts/build_font_subset.py`); quando un contenuto ha bisogno di glifi oltre la copertura, rieseguilo e committa il woff2. Le [[kitchen-sink|cornici di codice]] sono composte interamente nel sottoinsieme.

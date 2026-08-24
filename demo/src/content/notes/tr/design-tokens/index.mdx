@@ -1,0 +1,71 @@
+---
+title: İki katmanlı palet ve temalar
+brand: Palet ve temalar
+subtitle: "iki katman, iki bağlam\npigmentler ve kâğıt"
+description: "Ham pigment paleti ve üzerine kurulu iki anlamsal bağlam — okuma sütunu ile göz atma rafı — açık/koyu disiplini, ölçümle denetlenen kontrast ve site kimliği için tek giriş noktası."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Referans · token katmanı" title="İki katmanlı palet ve temalar" meta="tek palet · iki bağlam · iki tema da elle kurulu · her metin rengi AA için ölçülmüş">
+  `styles/tokens.css`, stil sayfalarının ve bileşenlerin kullandığı her rengi barındırır — tek istisna, sitenin kayıt defterinin veri olarak sağladığı alan ton çiftidir. Dosya iki katman hâlinde yazılmıştır: kâğıt-mürekkep pigmentlerinden oluşan bir **ham palet** ve üzerine kurulu **anlamsal token’lar** — anlamsal katman da iki bağlamda gelir, çünkü bir wikinin iki tür sayfası vardır: okuduğunuz sütun ve göz attığınız raf.
+</Hero>
+
+<Part title="Katmanlar" />
+
+## Birinci katman: pigmentler
+
+Ham palet bir ressam kutusudur; temadan bağımsızdır ve `--p-*` adını taşır. **Kâğıtlar**: göz atma zemini 纸 ile onun kart yüzü 页, okuma zemini 素 (bir tık daha serin — bir saatlik okumada gözü daha az yorar) ile yumuşak yüzeyi 帛, beyaz kart, kod ve matematik zeminleri. **Mürekkepler**: raf için sıcak, sütun için nötr birer takım, her biri üç tonda. **Ciltleme**: raf çizgisi, hap kenarlığı ve iki ince çizgi. Bir de anlam taşıyan renkler, yani **pigmentler**:
+
+```css title="tokens.css (birinci katman: pigmentler)"
+--p-zhu: #7d3a3a; /* 朱 · şarap kırmızısı — göz atma vurgusu, sitenin simgesi */
+--p-shi: #b6552e; /* 石 · yanık turuncu — okuma vurgusu: bağlantılar, numaralar, kicker’lar */
+--p-shi-text: #8f3f1f; /* 石 · küçük metin basamağı (kendi zemin tonu üzerinde AA) */
+--p-zhe: #c08a2c; /* 赭 · aşı sarısı — çizgiler ve kenarlıklar */
+--p-dai: #2a6f6b; /* 黛 · petrol yeşili — ikincil içerik vurgusu */
+--p-zi: #6b4ec4; /* 紫 · menekşe — "sistem" anlamını taşır */
+```
+
+Buna bir de koyu basım için bir **gece** takımı eklenir: alacakaranlık zeminleri, ay beyazı mürekkepler ve her pigmentin aydınlatılmış ikizi.
+
+## İki bağlam, tek palet
+
+Bileşen katmanının tükettiği ikinci katmanın iki yüzü vardır:
+
+| Bağlam | Token’lar | Zemin | Mürekkep | Vurgu | Nerede |
+| --- | --- | --- | --- | --- | --- |
+| okuma sütunu | `--color-*` | 素 `#fbf9f4` | nötr `#1f2024` | 石 yanık turuncu | not sayfaları, bütün içerik bileşenleri, `base.css` |
+| göz atma rafı | `--wb-*` | 纸 `#faf6ec` | sıcak `#2b2622` | 朱 şarap kırmızısı | açılış ve dizin sayfaları, wiki bileşenleri, `browse.css` |
+
+Sütun ikisinin sessiz olanıdır — onu bir saat boyunca okursunuz. Raf daha sıcaktır ve vitrin serifiyle dizilir — ona bir bakar, seçersiniz. Bir sayfa, raf bağlamına body’sindeki tek bir sınıfla girer: `wb-root`; bağlamın içinde chrome token’ları (`--color-bg`, `--color-accent`, …) rafın değerlerine yeniden eşlenir. Böylece bir kez yazılmış bir gezinme çubuğu iki zeminde de doğru oturur — ve `--color-*` üzerine yazılmış taksonomi atomları (tür rozeti, durum noktası, alan çipi) bir not sayfasında sütunun, bir göz atma sayfasında rafın parçası gibi okunur. **Bileşen katmanı yalnızca ikinci katmanı tüketebilir** — `base.css`, `browse.css` ve her bileşen; hiçbir kuralda ham renk değeri yoktur, hiçbir şey ham bir değere geri düşmez. Paketin katı disiplini budur.
+
+<Part title="Kimlik ve disiplin" />
+
+## Bir site kimliğini nasıl kurar
+
+Birinci katmanı geçersiz kılarak. Pigmentleri kendinizinkilerle değiştirin; iki bağlam da bütün bileşen katmanı da peşinden gelir. Her pigment bir **gündüz/gece çiftidir**: açık tema `--p-shi` ile `--p-zhu` değerlerini, koyu tema onların gece ikizleri `--p-shi-n` ile `--p-zhu-n` değerlerini okur — bir kimlik geçersiz kılması ya çiftin iki üyesini birden kurar ya da koyu tema varsayılan pigmentlerde kalır:
+
+```css title="sizin site.css’iniz"
+:root {
+  --p-shi: #b03a48; /* okuma vurgunuz */
+  --p-shi-text: #93303c; /* küçük metin basamağı ayrıca koyulaştırılır, aşağıya bakın */
+  --p-zhu: #3b4a7a; /* raf vurgunuz ve site simgeniz */
+  --p-shi-n: #e0919b; /* gece ikizleri, alacakaranlık zeminleri için aydınlatılmış */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Tasarım sisteminizin zaten bir paleti varsa, ikinci katmanı ona yeniden eşlemek de aynı ölçüde desteklenen bir yoldur — `--color-*` ile `--wb-*` token’larını kendi değişkenlerinize yönlendirin. Bu bahçe bilerek hiçbir şeyi geçersiz kılmaz: okuduğunuz, paketin çıplak yüzüdür — [[paper-and-ink]] notunun savunduğu yüzün ta kendisi.
+
+## Kontrast ölçümle denetlenir
+
+Metin katındaki her değer, üzerine oturduğu her yüzeyde WCAG AA için sınanır: küçük metin 4.5:1’den başlar; küçük metin olarak kullanılan bir vurgu rengi, ayrıca koyulaştırılmış bağımsız bir **metin basamağı** alır (`--p-shi-text`, `--p-zhe-text`) — çünkü vurgu renkli 12px’lik bir etiket çoğu zaman o vurgunun kendi zemin tonu üzerinde durur. Soluk mürekkepler, hâlâ soluk okunabilen en koyu tonda kurulur — okuma zemininde `#6a6d74` 4.9:1’dir ve yumuşak yüzeyde bile 4.5:1’i tutturur; kod zemini kâğıttan bir tık daha açıktır, böylece sözdizimi temasının en soluk ögesi (yorumlar) 4.5:1’i aşar; koyu basım, gece zeminlerine karşı ölçülmüş kendi aydınlatılmış takımını taşır. Paket bu ölçümü bir araç olarak da dağıtır: `scripts/contrast_probe.mjs`, demoyu gerçek bir tarayıcıda iki tema ve iki genişlikte çizer, her metin parçasının altındaki zemini piksellerden örnekler ve çıtanın altında kalan her parçayı raporlar ([[checks|kontrast sondası]]). Bir değeri değiştirmeden önce, oturduğu her yüzeyi bilin.
+
+## Kimlik, açık temadır
+
+Tema bilerek `prefers-color-scheme` **okumaz**: bir sayfa, okurun altında kendi temasını asla çevirmemelidir. Koyu tema yalnızca `[data-theme='dark']` üzerinden etkinleşir; onu da sitenin kendi düğmesi açar (bu sitenin gezinme çubuğunun sağındaki güneş/ay düğmesi; seçim `localStorage`’da `inkstone-theme` anahtarı altında saklanır ve ThemeInit satır içi betiği onu ilk boyamadan önce geri oynatır — koyu tema okurları krem rengi bir parlama hiç görmez). Koyu tema bir ters çevirme değil, elle kurulmuş ikinci bir basımdır: alacakaranlık zeminleri, ay beyazı mürekkepler, yeniden aydınlatılmış pigmentler — [[paper-and-ink|koyu tema ikinci bir basımdır]].
+
+## Yazı tipleri de burada yaşar
+
+Dört yığın. `--font-display` rafın yüzüdür — site başlıkları ve raf başlıkları için optik boyutlu bir serif (Source Serif 4, Hanzi için Noto Serif SC); bu demo onu `@fontsource` üzerinden kendisi barındırır, barındırmayan bir site okuma yüzüne geri düşer. `--font-body` okuma sütununundur — başını Charter ile Iowan Old Style’ın çektiği bir sistem serif yığını; ikisi de yoksa vitrin yüzü devreye girer. `--font-ui`, başlıklar, chrome ve küçük puntolar için Inter’dir (Hanzi için Noto Sans SC). `--font-mono`, Maple Mono CN’den sabit karakter takımlı bir alt kümedir (ASCII + kutu çizgileri + en yaygın 3500 Hanzi + mevcut içeriğin birleşimi): Latin 0.6em, Hanzi 1.2em — **bir Hanzi tam iki karakter hücresi genişliğindedir**, bu yüzden kutu çizgisi diyagramları Çince/Latin karışık metinde bile hizasını korur. Alt kümenin tarifi ve yeniden üretme betiği paketle gelir (`fonts/build_font_subset.py`); içerik kapsam dışı glifler istediğinde betiği yeniden çalıştırıp woff2 dosyasını commit’lersiniz. [[kitchen-sink|Kod çerçeveleri]] baştan sona bu alt kümeyle dizilidir.

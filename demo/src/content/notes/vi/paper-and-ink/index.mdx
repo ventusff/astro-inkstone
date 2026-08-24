@@ -1,0 +1,28 @@
+---
+title: "Giấy và mực, có chủ đích"
+brand: "Giấy & mực"
+subtitle: "lập trường đằng sau các token"
+description: "Vì sao hệ thiết kế này chọn nền giấy ấm, serif thứ thiệt, hai mặt nền cho hai loại trang, và một giao diện tối chỉnh tay — ghi chú về lập trường đằng sau các token."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Khuôn mẫu · một lập trường thiết kế" title="Giấy và mực, có chủ đích" meta="nền ấm · thân chữ serif · hai mặt nền · một ấn bản thứ hai cho bóng tối">
+  Phần lớn theme tài liệu với tay lấy cùng một bộ mặc định: trắng `#fff`, chữ sans kiểu grotesque, mực gray-800, dark mode theo hệ điều hành. Đọc thì ổn, nhưng chẳng có gương mặt nào cả. Hệ thống này khởi đi từ một tiền đề khác — **một tài liệu kỹ thuật dài là thứ bạn đọc suốt một giờ liền** — và các token cứ thế mà thành hình.
+</Hero>
+
+## Lập trường
+
+Một giờ đọc liên tục cần đúng những gì ngành in đã nghiệm ra từ nhiều thế kỷ trước: một nền ấm không chói, một bộ chữ có độ tương phản nét thật sự, và nhịp dàn trang đo bằng em của thân chữ chứ không phải pixel của khung giao diện. Từ đó mà có bộ từ vựng [[design-tokens|tầng token]] được viết bằng: các loại giấy (纸 tờ giấy, 页 trang giấy, 素 nền trơn, 帛 lụa) thay cho gray-50 đến gray-200; mực và màu lấy từ hộp màu của người vẽ — 朱 đỏ rượu vang, 石 cam cháy, 赭 đất son, 黛 xanh cổ vịt, 紫 tím — thay cho primary/secondary/accent. Những cái tên ấy không phải để trang trí: chúng neo mọi quyết định màu mới vào cùng một ẩn dụ vật lý, và đó là lý do năm bề mặt khác nhau vẫn đọc ra như một tờ giấy duy nhất.
+
+## Hai mặt nền, vì có hai loại trang
+
+Một wiki được đọc theo hai cách. Bạn **đọc** một ghi chú — một cột chữ, một giờ đồng hồ, đôi mắt cần sự tĩnh: giấy hơi lạnh, mực trung tính, một màu nhấn duy nhất cho liên kết và chữ số. Bạn **duyệt** một kệ sách — một lưới thẻ, một cái liếc mắt, một lựa chọn: giấy được phép ấm hơn, tựa đề được phép dùng serif kiểu display, màu nhấn được phép là sắc rượu vang trầm mang dáng con dấu hơn là đường link. Bắt hai tình huống ấy dùng chung một bảng màu là làm hỏng cả hai. Vì vậy tầng ngữ nghĩa có hai ngữ cảnh — cột đọc (`--color-*`) và kệ duyệt (`--wb-*`) — cùng rót ra từ một hộp màu, và mỗi trang tự khai mình thuộc bên nào. Kết quả là một site mang cảm giác một khối nhà với hai gian phòng.
+
+## Tối là ấn bản thứ hai, không phải phép đảo màu
+
+Dark mode kiểu thuật toán đảo độ sáng rồi coi như xong; chữ hóa phấn trắng trên bảng đá, còn mọi bề mặt pha màu đổ thành bùn. Ở đây giao diện tối là một **ấn bản thứ hai được chỉnh tay**: nền hoàng hôn và mực trắng ánh trăng được chọn riêng từng giá trị, các màu nhấn được làm sáng lại vừa đủ để giữ tương phản AA trên nền giấy sẫm hơn. Cái giá là phải quyết định thêm một lượt nữa — và đó chính là điểm mấu chốt. Công tắc chỉ tôn trọng lựa chọn chủ động của người đọc ([[design-tokens|không bao giờ theo thiết lập của hệ điều hành]]), bởi một trang tự lật giao diện giữa chừng là một trang làm người đọc giật mình.
+
+## CJK là phần chịu lực
+
+Văn bản trộn chữ Hán với chữ Latin là chỗ đa số theme lặng lẽ sụp đổ: dấu nhấn mạnh không chịu đóng khi kề dấu chấm toàn khổ, sơ đồ trong mã xô lệch vì một Hán tự rộng 1.7 ô. Cả hai ở đây đều bị xếp vào lỗi tính đúng đắn, không phải chuyện khẩu vị typography — [[kitchen-sink|phương ngữ phân tích nhấn mạnh CJK chính xác]], và bản trích font mã ghim mỗi Hán tự vào đúng hai ô để sơ đồ vẽ khung sống sót qua bản dịch. Một theme chỉ chạy được với tiếng Anh mới là nửa cái theme.

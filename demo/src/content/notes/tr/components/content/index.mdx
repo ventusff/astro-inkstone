@@ -1,0 +1,106 @@
+---
+title: İçerik ve tipografi
+description: "Callout’lar, çipler, ızgaralar, adımlar, istatistikler, makale kartları ve kaynakça listeleri — düz yazının yapı taşları."
+part: 1
+navLabel: İçerik ve tipografi
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="İçerik ve tipografi">
+  Düz yazının yapı taşları. Her biri token’ların yalnızca anlamsal katmanını tüketir — paleti değiştirin, hepsi peşinden gelir.
+</PartHero>
+
+## Callout
+
+Beş varyant; `title` verilirse varyantın varsayılan etiketinin (Note / Intuition / Warning / Important / Abstract — alıntı sözdiziminin de kullandığı, `labels` ile yerelleştirilebilen varsayılanlar) yerine geçer. Aynı işaretlemenin alıntı sözdizimi ve ham HTML yazımlarını [[kitchen-sink|hepsi bir arada]] gösterir.
+
+<Callout variant="intuition" title="Bileşene ne zaman uzanmalı">
+  MDX’te, içerik satır içinde yazılıyorsa. Alıntı sözdizimi düz Markdown dosyalarını karşılar; ikisi birebir aynı işaretlemeyi üretir.
+</Callout>
+
+## Chip
+
+Durum ve kategoriler için satır içi rozetler; `PaperCard` etiketleriyle `HubCard` çiplerinin paylaştığı dört varyantta: <Chip variant="teal">kararlı</Chip> <Chip variant="mustard">beta</Chip> <Chip variant="violet">araştırma</Chip> <Chip variant="orange">yeni</Chip> — konu paletleri içinse özel bir ton: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>özel ton</Chip>
+
+## Grid
+
+Tek ızgara, üç kaplama (`plain`, `card`, `cmp`). Kartlar:
+
+<Grid cols={2} kind="card">
+  <div>
+    **Önce token’lar.** Import sırası sözleşmenin parçasıdır: token’lar, sonra içerik katmanı, sonra site chrome’u.
+  </div>
+  <div>
+    **Yalnızca anlamsal katman.** Bileşenler ham renklere hiç dokunmaz — paleti değiştirin, hepsi peşinden gelir.
+  </div>
+</Grid>
+
+Bir de önce/sonra panoları için yapılmış karşılaştırma kaplaması:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **Bekçi olmadan** — kapanmamış bir `**`, üretime iki yalın yıldız olarak çıkar.
+  </div>
+  <div>
+    **Bekçiyle** — derleme, imin altına düzeltme işareti koyarak dosya:satır:sütun adresinde düşer.
+  </div>
+</Grid>
+
+## Steps
+
+Dikey bir ray üzerinde bir markdown listesi:
+
+<Steps>
+1. İki submodule’ü ve `file:` bağımlılıklarını ekleyin.
+2. Global stil sayfanızda `tokens.css`, `base.css` ve (bir wiki için) `browse.css` dosyalarını import edin.
+3. `siteMarkdown()` fonksiyonunu `astro.config`’e bağlayın.
+4. Birinci katman paletini kimlik pigmentlerinizle geçersiz kılın.
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: 'token katmanı' },
+    { value: '24', label: 'bileşen' },
+    { value: '4', label: 'sonda görüntü genişliği' },
+    { value: '0', label: 'derleme adımı' },
+  ]}
+/>
+
+## PaperCard
+
+Literatür taramasının yük beygiri — takma ad, tam başlık, mekân etiketleri, yazar bilgisi, bağlantılar ve iki özel yuva:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar, et al."
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">Yinelemeli modeller token’ları teker teker işler — uzun menzilli bağımlılıklar silikleşir, hiçbir şey paralelleşmez.</Fragment>
+  **Ana fikir**: yalnızca dikkat, yineleme yok — her token diğer her token’a tek adımda bakar ve bütün dizi paralel eğitilir.
+  <Fragment slot="diff">O günden bu yana neredeyse her büyük dil modelinin üzerine kurulduğu mimari.</Fragment>
+</PaperCard>
+
+Derin bir inceleme başlığının altında, tek satırlık sade dilli bir açıklama (`.speak`), mekanizmadan önce modülün *ne yaptığını* söyler:
+
+<p class="speak">Dikkat, yumuşak bir arama tablosudur: her token "bana kim ilgili?" diye sorar ve cevapların ağırlıklı bir karışımını alır.</p>
+
+## References
+
+<References>
+- Vaswani et al., *Attention Is All You Need*, NeurIPS 2017.
+- Knuth, *The TeXbook* — matematik zeminlerinin kendi kâğıt tonunu almasının nedeni.
+- W3C, *Web Content Accessibility Guidelines 2.2* — token’ların denetlendiği AA kontrast çıtası.
+</References>

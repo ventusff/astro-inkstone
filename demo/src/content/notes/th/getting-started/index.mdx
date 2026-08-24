@@ -1,0 +1,127 @@
+---
+title: เริ่มต้นใช้งาน
+brand: เริ่มต้นใช้งาน
+subtitle: "submodule สองตัว สามบรรทัดนำเข้า\nไปป์ไลน์อีกหนึ่งบรรทัด"
+description: "วาง submodule คู่หนึ่งลงใน repo ของไซต์ นำเข้าสไตล์ชีตสามไฟล์ แล้วต่อไปป์ไลน์ Markdown ทั้งเส้นด้วย siteMarkdown บรรทัดเดียว — เท่านี้ก็ได้สวนบันทึกหนึ่งแปลง"
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="บทแนะนำ · จากศูนย์สู่สวนหนึ่งแปลง" title="เริ่มต้นใช้งาน" meta="submodule สองตัว · สไตล์ชีตสามไฟล์ · siteMarkdown() หนึ่งบรรทัด · สามคำสั่ง">
+  ทั้งฝั่งกระดาษและตัวเอนจินไม่ได้เผยแพร่ขึ้น npm — ทั้งคู่ไม่ต้องผ่านขั้นตอนบิลด์ และส่งออกซอร์ส TS/CSS ให้ตรง ๆ ไซต์ดึงสอง repo เข้ามาเป็น git submodule นำเข้าสไตล์ชีตสามไฟล์ แล้วต่อฟังก์ชันหนึ่งตัวเข้าไปใน `astro.config` — ทุกสิ่งบนไซต์นี้ก็สร้างขึ้นด้วยวิธีนี้ทั้งหมด
+</Hero>
+
+<Part title="ติดตั้ง" />
+
+## submodule หนึ่งคู่
+
+ดึงสอง repo เข้ามาไว้ในโปรเจกต์ แล้วชี้ dependency แบบ `file:` ไปหา:
+
+```bash title="รากของ repo ไซต์"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (ส่วน dependencies)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] เลย์เอาต์ของเดโมนี้ต่างไปเล็กน้อย
+> ตัวเดโมอาศัยอยู่ใน repo ของแพ็กเกจเอง (`demo/`) ดังนั้น `astro-inkstone` ของมันจึงชี้ไปที่ `file:..` และเอนจินแขวนอยู่ใต้ `demo/vendor/` ส่วนไซต์ที่ตั้งแยกเดี่ยว ๆ ใช้เลย์เอาต์ `packages/` ตามด้านบนได้เลย — สองแบบนี้เทียบเท่ากันทุกประการ
+
+## นำเข้าสไตล์
+
+ในสไตล์ชีตหลักของไซต์ เรียงลำดับให้ถูก: โทเคนมาก่อน ตามด้วยชั้นเนื้อหา แล้ว — สำหรับไซต์ที่มีหน้าเลือกดู — ชั้นหนังสือ หลังจากนั้นจึงเป็น chrome ของคุณเองล้วน ๆ:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* หน้าแรกและหน้าหมวดหมู่ อยู่บน body.wb-root */
+
+/* เอกลักษณ์: โอเวอร์ไรด์เม็ดสีระดับที่หนึ่ง แล้วบริบทเชิงความหมายทั้งสองกับชั้นคอมโพเนนต์จะตามไปเอง */
+:root {
+  --p-shi: #b03a48; /* สีเน้นของคอลัมน์อ่านของคุณ */
+  --p-zhu: #3b4a7a; /* สีเน้นของชั้นหนังสือ และตราของไซต์ */
+  --p-shi-n: #e0919b; /* คู่แฝดยามค่ำ: ธีมมืดอ่านค่าจาก --p-*-n */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+เซอริฟของชั้นหนังสือคือ `--font-display` (Source Serif 4 + Noto Serif SC) โฮสต์ฟอนต์เองแบบเดียวกับเดโมนี้ แล้วแถบหัวเรื่องของคุณจะออกมาเหมือนที่นี่ทุกเส้น:
+
+```css title="src/styles/site.css (ฟอนต์ เลือกใส่ได้)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+ไซต์ที่มีคณิตศาสตร์ต้องเพิ่มสไตล์ชีตของ KaTeX อีกหนึ่งบรรทัดในเลย์เอาต์ (ขาดบรรทัดนี้ การจัดวางสูตรจะกระจัดกระจายทันที):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="เดินสาย" />
+
+## ไปป์ไลน์ Markdown ในบรรทัดเดียว
+
+คอนฟิกฉบับย่อที่สุดตามรูปทรงของไซต์นี้ — เลขบทอัตโนมัติ คณิตศาสตร์ callout ไดอะแกรม และ `[[วิกิลิงก์]]` ที่แก้ปลายทางเทียบกับคอลเลกชันบันทึก (ฉบับเต็มที่ต่อครบทุกฮุกของไซต์นี้ก็คือไฟล์ `astro.config.mjs` ใน repo นี้เอง):
+
+```js title="astro.config.mjs (ฉบับย่อที่สุด)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // ใช้ได้ทั้ง '/docs' และ '/docs/'
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // เลขภาค/บท + ToC ผ่าน remarkPluginFrontmatter
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // กรอบโค้ด: แถบชื่อไฟล์ / ปุ่มคัดลอก / พับเก็บ / บรรทัดกำกับ
+    mermaid: true, // บล็อก mermaid เรนเดอร์ฝั่งไคลเอนต์
+    callouts: true, // ไวยากรณ์ > [!note] สไตล์ Obsidian
+    wikiBlocks: WIKI_MODE, // โหมดแก้ไข: จับคู่บล็อกกับบรรทัดซอร์ส ต้องอยู่ท้ายไปป์ไลน์เสมอ
+    guard: { autoNumberedHeadings: true }, // ตัวตรวจเนื้อหา: ปัดตกหัวข้อที่พิมพ์เลขเอง
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown` ตั้งอยู่บนไวยากรณ์เฉพาะของเอนจิน (GFM, การแยกวิเคราะห์ตัวเน้นที่เป็นมิตรกับอักษร CJK, ตัวตรวจเนื้อหา) ตัวพรีเซ็ตเองรับหน้าที่เพียงประกอบและจัดลำดับปลั๊กอินฝั่งไซต์ — **ลำดับของไปป์ไลน์คือสัญญา** ไซต์จึงไม่ต้องกังวลอีกเลยว่าใครต้องรันก่อนใคร สวิตช์ทุกตัวมีการสาธิตให้ดูครบในหน้า [[kitchen-sink|รวมทุกองค์ประกอบ]] ส่วนเหตุผลเบื้องหลังการแบ่งแพ็กเกจอ่านได้ที่ [[boundaries|แบ่งงานสามฝ่าย]] อยากได้ป้าย callout เป็นภาษาไทย? ส่งออปชัน `calloutLabels` เข้าไปได้เลย — ค่าเริ่มต้นเป็นภาษาอังกฤษ
+
+## รันจริง
+
+สคริปต์ก็คือชุดเดียวกับที่ `package.json` ของเดโมนี้นิยามไว้ (`build` จะรัน check-dist ของเอนจินเป็น postbuild ส่วน `wiki` ก็คือ `WIKI=1 astro dev`):
+
+```bash
+npm install
+npm run dev        # ตัวสวนบันทึก
+npm run build      # บิลด์แบบสถิต + ตรวจเอาต์พุตด้วย check-dist ของเอนจิน (postbuild)
+npm run wiki       # WIKI=1 astro dev — โหมดแก้ไขของ CMS
+```
+
+ผลบิลด์แบบสถิตไม่มีไบต์ของเอนจินปนอยู่แม้แต่ไบต์เดียว: นอกโหมด WIKI โค้ดอินทิเกรชันของเอนจินไม่ถูก import ด้วยซ้ำ (เป็น dynamic import) และไม่มีเมตาดาตาสำหรับการแก้ไขหลุดออกมาเลย สิ่งเดียวในเอาต์พุตที่ยังมีรูปทรงของ CMS คือจุดจอดนิ่ง ๆ ที่ไซต์เป็นเจ้าของเอง — span เปล่า ๆ ที่ติด `data-inkbrush-slot` ในแถบนำทางกับ CSS ของมัน — ซึ่งไม่ทำอะไรทั้งสิ้นจนกว่า CMS จะเข้ามาเทียบท่า

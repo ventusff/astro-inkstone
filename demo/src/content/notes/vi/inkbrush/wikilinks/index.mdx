@@ -1,0 +1,24 @@
+---
+title: Wikilink phân giải thế nào
+description: "Một bộ phân giải dùng chung cho trang, bản xem trước của trình soạn, trình nhập và phép lint trong CI — bản dịch cùng ngôn ngữ trước, rồi mới đến id, bí danh, brand và tiêu đề."
+navLabel: Wikilink
+part: 5
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Wikilink phân giải thế nào">
+  Ghi chú nối nhau bằng cặp ngoặc vuông kép, phân giải vào lúc build trên đúng tập ghi chú thực sự tồn tại. Kết quả render — id, bí danh, nhãn, anchor — đang diễn sống trong [[kitchen-sink|trình diễn tổng hợp]]; chương này nói về bộ luật phân giải đứng đằng sau chúng.
+</PartHero>
+
+## Đích có thể là những gì
+
+Đích không nhất thiết phải là id của một ghi chú. Phép phân giải thử lần lượt: **bản dịch theo ngôn ngữ hiện tại** (liên kết đặt trên một trong mười bảy ấn bản chị em của trang này sẽ đáp vào ấn bản cùng ngôn ngữ của đích, chỉ rơi về bản gốc khi không có bản dịch), rồi đến id chính xác, rồi bí danh, tên brand và tiêu đề, không phân biệt hoa thường. Bài tiểu luận [[garden-craft]] khai `tending` làm bí danh, nên viết `[[tending]]` cũng [[garden-craft|đáp về đúng trang ấy]]. Anchor và nhãn phối với nhau đúng như bạn mong: `[[garden-craft#pruning]]` đi thẳng tới một mục, `[[garden-craft|bài tiểu luận làm vườn]]` render chữ tùy chọn — và hai thứ ghép chung được.
+
+## Liên kết chết không đánh hỏng bản build
+
+Liên kết trỏ tới ghi chú không tồn tại sẽ render thành một liên kết chết nhìn thấy được, kèm lý do trong tooltip, và bản build ghi lại một cảnh báo. Đây là lựa chọn có chủ ý cho các khu vườn: một ghi chú chưa viết là một lời mời, không phải một lỗi. Đích khớp cùng lúc nhiều ghi chú cũng render như vậy, có đánh dấu nhập nhằng. Nhưng liên kết mục nát vẫn thuộc về CI — CLI `check-wikilinks` của engine phân giải từng liên kết bằng chính bộ luật của thư viện và, ở chế độ `--strict`, biến liên kết chết thành mã thoát lỗi; repo này chạy đúng như thế ([[checks|năm phép kiểm]]).
+
+## Một hiện thực, bốn nơi tiêu thụ
+
+Trang, bản xem trước sống của trình soạn, [[inkbrush/inbox|trình nhập của hộp thư đến]] và phép lint trong CI đều phân giải bằng cùng một đoạn mã — nên một liên kết mang cùng một nghĩa ở mọi nơi, và trình soạn được quyền hào phóng: gõ `[[` trong chế độ biên tập là bảng tự hoàn thành bật lên, tra trên id, tiêu đề lẫn bí danh.

@@ -10,8 +10,8 @@
 import { getCollection } from 'astro:content';
 import { buildSearchIndexEndpoint } from 'astro-inkstone/lib/search-index';
 
-import { localeOfId, routeOfId } from '../lib/i18n';
-import { kindDef, resolveTaxonomy } from '../lib/taxonomy';
+import { localeOfId, routeOfId, UI } from '../lib/i18n';
+import { resolveTaxonomy } from '../lib/taxonomy';
 
 export const GET = buildSearchIndexEndpoint({
   loadDocs: async () => {
@@ -19,14 +19,17 @@ export const GET = buildSearchIndexEndpoint({
     const byId = new Map(notes.map((n) => [n.id, n]));
     return notes.map((entry) => {
       // full taxonomy resolution: a chapter inherits its kind from the hub
-      // and a mirror from the primary entry, so every page gets its crumb
+      // and a mirror from the primary entry, so every page gets its crumb.
+      // The crumb is written in the document's own locale — the palette
+      // filters the pool by page locale, so it doubles as the scope key.
+      const locale = localeOfId(entry.id);
       const { kind } = resolveTaxonomy(entry, byId);
       return {
         id: entry.id,
         route: routeOfId(entry.id),
-        locale: localeOfId(entry.id),
+        locale,
         title: entry.data.title,
-        crumb: kind ? kindDef(kind).label : '',
+        crumb: kind ? UI[locale].kinds[kind].label : '',
         body: entry.body ?? '',
       };
     });

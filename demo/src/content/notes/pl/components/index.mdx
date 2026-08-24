@@ -1,0 +1,70 @@
+---
+title: Zestaw komponentów
+description: Trzy rozdziały przez każdy dostarczany komponent — a zarazem żywy pokaz tego, jak działa notatka-hub z rozdziałami.
+brand: Komponenty
+subtitle: "galeria komponentów\ntrzy rozdziały · jeden hub"
+navLabel: Przegląd
+chapters: false
+nav:
+  - group: Galeria
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Galeria w trzech rozdziałach · 2026.08" title="Zestaw komponentów" meta="3 rozdziały · 24 komponenty · każdy importowany po ścieżce z astro-inkstone/components/">
+  Wszystko w tej galerii jest importowane z `astro-inkstone/components/` po ścieżce i renderowane domyślnymi tokenami pakietu. Komponenty są **czysto prezentacyjne**: dane i teksty etykiet przyjmują przez propsy (domyślnie angielskie), więc witryna w dowolnym języku przekazuje własne.
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: 'rozdziały' },
+        { value: '24', label: 'komponenty' },
+        { value: '6', label: 'elementów wiki' },
+        { value: '0', label: 'surowych kolorów' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## Rozdziały `{#chapters notoc}`
+
+Każda karta to jeden rozdział szyny w sidebarze; chipy wymieniają, co dany rozdział pokazuje.
+
+<div class="hub-grid">
+  <HubCard href={`${base}/pl/components/content/`} num="CZĘŚĆ I" title="Treść i typografia" count="7 komponentów"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    Klocki, z których składa się proza — callouty, chipy, siatki, szyny kroków, rzędy statystyk, karty publikacji i listy bibliograficzne.
+  </HubCard>
+
+  <HubCard href={`${base}/pl/components/wiki/`} num="CZĘŚĆ II" title="Wiki i przeglądanie" count="8 komponentów"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    Zestaw taksonomiczny, z którego zbudowane są półki tego ogrodu, oraz dwa panele grafu linków — linki zwrotne i graf lokalny w sidebarze.
+  </HubCard>
+
+  <HubCard href={`${base}/pl/components/interactive/`} num="CZĘŚĆ III" title="Interakcje i wyposażenie" count="9 komponentów"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    Żywe demo na canvasie i należący do witryny kontrakt loadera, a do tego wyposażenie stron — hero, karty huba, listy skoków, stopki.
+  </HubCard>
+</div>
+
+## Hub, na żywo
+
+Ta notatka sama jest pokazem **huba**: notatki najwyższego poziomu, której frontmatter deklaruje `nav` — uporządkowaną listę rozdziałów. Maszyneria, na którą właśnie patrzysz:
+
+- sidebar pokazuje szynę rozdziałów (I/II/III) pod brandem huba, z nawigacją poprzedni/następny u stóp każdego rozdziału;
+- rozdziały dziedziczą taksonomię huba — żaden z trzech rozdziałów galerii nie deklaruje własnego rodzaju, obszaru ani statusu, a każdy pokazuje te z tej notatki; rozdział, który ustawia własne wartości, nadpisuje je w całości ([[three-way-split|ta sama reguła „jawne wygrywa” co wszędzie indziej]]);
+- na stronach przeglądania hub jest **jedną jednostką**: jedna karta z liczbą rozdziałów — rozdziały nigdy nie zaśmiecają półki;
+- numer `part:` każdego rozdziału musi zgadzać się z jego pozycją w `nav`, inaczej build się nie powiedzie — szyna i frontmatter nie mają jak się rozjechać;
+- karty powyżej to komponenty `HubCard` w `.hub-grid`; ramka poniżej to **ścieżka lektury** (`.path`), drugi mebel huba.
+
+<div class="path">
+  <div class="title">Od czego zacząć</div>
+  <div class="route">
+    Pakiet widzisz pierwszy raz → <a href={`${base}/pl/components/content/`}>Część I</a><span class="arrow">→</span><a href={`${base}/pl/components/wiki/`}>Część II</a>; budujesz witrynę z przeglądaniem → prosto do <a href={`${base}/pl/components/wiki/`}>Części II</a><span class="arrow">→</span><a href={`${base}/pl/getting-started/`}>przewodnik pierwszych kroków</a>; markdownowa strona tej samej historii → <a href={`${base}/pl/kitchen-sink/`}>Wszystko naraz</a>.
+  </div>
+</div>

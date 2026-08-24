@@ -1,0 +1,53 @@
+---
+title: 编辑机
+description: "五章走完 astro-inkbrush——这座园地搭配的、以 git 为后端的 CMS 引擎;而这个站本身就是它的演示:编辑模式下,这里每一页都能就地编辑。"
+brand: inkbrush
+subtitle: "CMS 引擎,手册写在自己身上\n五章 · 一个 hub"
+navLabel: 总览
+chapters: false
+nav:
+  - group: 引擎
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="参考 · CMS 引擎" title="编辑机" meta="5 章 · 生产构建零 CMS 字节 · 这个站就是演示">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone) 是纸,[astro-inkbrush](https://github.com/ventusff/astro-inkbrush) 是笔。引擎把任何 Astro 内容站变成它自己的编辑器:编辑模式下把鼠标停在一段文字上,会浮出一枚小手柄——✎ 编辑、✦ 问 Claude、⟲ 历史。不存在一个要另行前往的演示站——**你正在读的这座园地就是演示**。`npm run wiki` 一开,这里的每篇笔记——本页也在内——都能就地编辑;而像你现在读的这份静态构建,连一个字节的 CMS 代码都不含。
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: '唯一的数据库' },
+    { value: '2', label: '道保险,每次保存都过' },
+    { value: '0 B', label: '静态构建里的 CMS 代码' },
+  ]}
+/>
+
+## 五个章节 `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/zh/inkbrush/editing/`} num="第 I 部" title="逐块编辑" count="✎"
+    desc="CodeMirror 原地替换你正读的块,实时预览走站点自己的管线,任何内容碰到硬盘之前先过两道保险。" />
+  <HubCard href={`${base}/zh/inkbrush/revisions/`} num="第 II 部" title="修订历史与回退" count="⟲"
+    desc="每次保存按块记进日志——谁改的、什么时候、改前改后的原文——回退一键完成,回退本身也能再回退。" />
+  <HubCard href={`${base}/zh/inkbrush/ai-assist/`} num="第 III 部" title="AI 辅助" count="✦"
+    desc="改写块、围绕本篇问答、整篇生成另一种语言,都走 claude CLI,关在一份用完即扔的副本里。" />
+  <HubCard href={`${base}/zh/inkbrush/inbox/`} num="第 IV 部" title="Obsidian 收件箱" count="📥"
+    desc="把监听指向 vault 里的一个文件夹,新笔记自己转换、自己导入——内嵌图片、双链、高亮都在。" />
+  <HubCard href={`${base}/zh/inkbrush/wikilinks/`} num="第 V 部" title="双链如何解析" count="[[ ]]"
+    desc="页面、编辑器预览、导入器与 CI lint 共用一个解析器——语言镜像优先,然后才是 id、别名、brand 与标题。" />
+</div>
+
+## 它归哪一层
+
+引擎管 CMS 功能,**也**管 Markdown 方言和它的内容守门——编辑器接受的语法与页面渲染的语法必须是同一套,所以只写一次、处处消费([[three-way-split|三分边界]]讲了这条线为什么恰好画在这里)。观感属于纸面层,身份属于你的站点。这些页面上渲染出来的一切——包括这段文字上方那条分类条——都是纸面在工作;而*编辑*这些页面的一切,是引擎。
+
+<div class="path">
+  <strong>阅读路径。</strong>
+  初次接触引擎 → <a href={`${base}/zh/inkbrush/editing/`}>第 I 部</a><span class="arrow">→</span><a href={`${base}/zh/inkbrush/revisions/`}>第 II 部</a>;要把它接进站点 → 先读<a href={`${base}/zh/getting-started/`}>快速上手</a>;每次保存都要过的那套方言 → <a href={`${base}/zh/kitchen-sink/`}>全要素演示</a>;一篇讲怎么养笔记的随笔 → <a href={`${base}/zh/garden-craft/`}>小园地的手艺</a>。
+</div>

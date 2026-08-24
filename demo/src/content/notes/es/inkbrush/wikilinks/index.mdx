@@ -1,0 +1,24 @@
+---
+title: Cómo se resuelven los wikilinks
+description: "Un solo resolvedor para las páginas, la vista previa del editor, el importador y el lint de CI — primero los espejos de idioma, luego ids, alias, brands y títulos."
+navLabel: Wikilinks
+part: 5
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Cómo se resuelven los wikilinks">
+  Las notas se enlazan entre sí con corchetes dobles, resueltos en tiempo de build contra el conjunto de notas que de verdad existen. Los resultados renderizados — id, alias, rótulo, ancla — actúan en vivo en [[kitchen-sink|el muestrario]]; este capítulo trata de las reglas de resolución que hay detrás.
+</PartHero>
+
+## Qué puede ser un destino
+
+Un destino no tiene por qué ser el id de una nota. La resolución prueba, en orden: **el espejo del idioma actual** (un enlace en cualquiera de las diecisiete ediciones hermanas de esta página aterriza en la edición del mismo idioma de su destino, y solo cae en la nota original donde no existe espejo), luego el id exacto, luego alias, brands y títulos, sin distinguir mayúsculas. El ensayo sobre el oficio del jardín declara `tending` como alias, así que `[[tending]]` aterriza en [[garden-craft|la misma página]]. Las anclas y los rótulos se combinan como uno esperaría: `[[garden-craft#pruning]]` va directo a una sección, `[[garden-craft|el ensayo del jardín]]` renderiza un texto propio — y las dos cosas se combinan.
+
+## Los enlaces muertos no rompen el build
+
+Un enlace a una nota que no existe se renderiza como un enlace visiblemente muerto con la razón en su tooltip, y el build registra una advertencia. Es una elección deliberada para los jardines: una nota sin escribir es una invitación, no un error. Un destino que coincide con varias notas a la vez se renderiza igual, marcado como ambiguo. La podredumbre de enlaces sigue perteneciendo al CI — la CLI `check-wikilinks` del motor resuelve cada enlace con las reglas de la propia biblioteca y, en modo `--strict`, convierte los enlaces muertos en una salida con error; así es como lo ejecuta este repositorio ([[checks|las cinco comprobaciones]]).
+
+## Una implementación, cuatro consumidores
+
+Las páginas, la vista previa en vivo del editor, el [[inkbrush/inbox|importador de la bandeja de entrada]] y el lint de CI resuelven con el mismo código — así un enlace significa lo mismo en todas partes, y el editor puede permitirse ser generoso: teclear `[[` en modo de edición despliega autocompletado sobre ids, títulos y alias.

@@ -1,0 +1,24 @@
+---
+title: Asysta AI
+description: Przepisywanie bloków, czat znający notatkę i tłumaczenie całych notatek — przez CLI claude, w piaskownicy ograniczonej do jednorazowej kopii notatki.
+navLabel: Asysta AI
+part: 3
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Asysta AI">
+  Akcje ✦ są mostem do [CLI claude](https://claude.com/claude-code). Musi być ono zainstalowane i zalogowane na maszynie, na której działa serwer deweloperski — nic innego w silniku go nie potrzebuje, więc bez CLI wszystko poza ✦ działa dalej.
+</PartHero>
+
+## Przepisz blok
+
+Najedź na blok, kliknij ✦ i albo wybierz gotowy zamiar — wygładź, uściślij, skondensuj, popraw wzory — albo wpisz własne polecenie. Zadanie działa po stronie serwera, w jednorazowej kopii katalogu notatki, z narzędziami plikowymi ograniczonymi do tej kopii — bez shella, bez sieci — i na bieżąco strumieniuje swój postęp; przeżywa nawet zamknięcie karty przeglądarki. Gdy się kończy, zmieniony plik musi przejść przez tę samą bramę builda co zapis ręczny, zanim zostanie przeniesiony z powrotem do projektu i zapisany w dzienniku — dzięki czemu [[inkbrush/revisions|⟲]] umie go cofnąć.
+
+## Zapytaj o notatkę
+
+Panel czatu (pływający przycisk w prawym dolnym rogu) odpowiada na pytania o notatkę, którą właśnie czytasz. Claude czyta źródło w kopii roboczej, z zestawem narzędzi tylko do odczytu; pytania uzupełniające wznawiają tę samą rozmowę.
+
+## Przetłumacz całą notatkę
+
+Dla każdego języka, w którym notatki brakuje, panel czatu oferuje jednoklikowe „wygeneruj wersję” — nie dosłowne tłumaczenie, lecz notatkę opowiedzianą na nowo w języku docelowym, z zachowaniem każdej kotwicy, każdego bloku kodu i każdego niezmiennika struktury. Wynik jest zapisywany jako lustrzany plik danego języka, a ostatnie słowo — zanim cokolwiek zostanie — ma brama builda. Ten ogród rośnie w osiemnastu językach; jego menu języków wymienia każde wydanie strony, na której jesteś, a w trybie edycji brakujące wydanie jest o jedno kliknięcie. Tłumaczenie to zmiana całoplikowa: dziennik ją odnotowuje, a jej odkręcenie jest operacją gita, nie kliknięciem ⟲.

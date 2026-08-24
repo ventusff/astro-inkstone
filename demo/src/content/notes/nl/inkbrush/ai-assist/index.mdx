@@ -1,0 +1,24 @@
+---
+title: AI-assistentie
+description: Blokherschrijvingen, een chat die de notitie kent, en vertaling van hele notities — via de claude CLI, in een sandbox met een wegwerpkopie van de notitie.
+navLabel: AI-assistentie
+part: 3
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="AI-assistentie">
+  De ✦-acties slaan een brug naar de [claude CLI](https://claude.com/claude-code). Die moet geïnstalleerd en aangemeld zijn op de machine waar de dev-server draait — niets anders in de engine heeft hem nodig, dus zonder de CLI blijft alles behalve ✦ gewoon werken.
+</PartHero>
+
+## Een blok herschrijven
+
+Ga met de muis over een blok, klik op ✦, en kies een snelle intentie — oppoetsen, strenger maken, indikken, de formules repareren — of typ je eigen instructie. De taak draait serverzijdig in een wegwerpkopie van de map van de notitie, met bestandsgereedschap dat tot die kopie beperkt blijft — geen shell, geen netwerk — en streamt zijn voortgang live; hij overleeft het sluiten van het browsertabblad. Aan het eind moet het gewijzigde bestand door dezelfde bouwpoort als een handmatige opslag voordat het terug het project in wordt gedragen en gejournaliseerd, zodat [[inkbrush/revisions|⟲]] het ongedaan kan maken.
+
+## Vragen over de notitie
+
+Het chatpaneel (de zwevende knop rechtsonder) beantwoordt vragen over de notitie die je aan het lezen bent. Claude leest de bron in een werkkopie met een gereedschapsset die alleen kan lezen; vervolgvragen zetten hetzelfde gesprek voort.
+
+## De hele notitie vertalen
+
+Voor elke taal die een notitie nog mist, biedt het chatpaneel een éénkliks "versie genereren" — geen letterlijke vertaling, maar de notitie opnieuw verteld in de doeltaal, met elk anker, elk codeblok en elke structurele invariant intact. Het resultaat wordt weggeschreven als het spiegelbestand van die taal, en de bouwpoort heeft het laatste woord voordat er iets bewaard blijft. Deze tuin groeit in achttien talen; het taalmenu noemt elke editie van de pagina waar je op staat, en in de bewerkmodus is een ontbrekende editie één klik verwijderd. Een vertaling is een wijziging van het hele bestand: het journaal legt haar vast, en haar ongedaan maken is een git-operatie in plaats van een klik op ⟲.

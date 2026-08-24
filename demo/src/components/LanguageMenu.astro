@@ -1,0 +1,188 @@
+---
+/**
+ * LanguageMenu — the site's ONE language control, rendered in the nav bar of
+ * every page. Registry-driven: the rows are `LOCALES` from
+ * `_meta/locales.ts`, each shown as its own-language name (autonym) with its
+ * English name as the second line — a reader who cannot read the current
+ * page's language must still be able to find their own.
+ *
+ * A native popover: the trigger works without JavaScript (the panel then
+ * centers, the UA's default popover placement); the small script only
+ * anchors it under the trigger. Light dismiss and Esc come from the popover
+ * itself. Each row navigates to this page's twin in that locale, or to that
+ * locale's landing page when the twin does not exist.
+ */
+import { href, landingRoute, LOCALES, localeDef, UI, type Alternate, type Locale } from '../lib/i18n';
+
+interface Props {
+  locale: Locale;
+  /** this page's routes in the locales it exists in */
+  alternates: Alternate[];
+}
+const { locale, alternates } = Astro.props;
+const t = UI[locale];
+const current = localeDef(locale);
+const routeFor = new Map(alternates.map((a) => [a.code, a.route]));
+const items = LOCALES.map((l) => ({
+  def: l,
+  href: href(routeFor.get(l.code) ?? landingRoute(l.code)),
+  here: l.code === locale,
+}));
+---
+
+<button
+  class="lang-btn"
+  type="button"
+  popovertarget="lang-menu"
+  aria-label={`${t.languages} · ${current.label}`}
+  title={t.languages}
+>
+  {/* the 文/A mark: translation, not a flag — flags name countries, not languages */}
+  <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+    <path d="M3 5h7M6.5 3v2M9.3 5c-.8 2.8-2.9 5.2-5.8 6.7M4.6 7.4c1.2 2.3 3.2 4 5.6 4.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M11.5 16.5 14.6 8l3.1 8.5M12.6 13.8h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+  </svg>
+  <span class="cur" lang={current.htmlLang}>{current.label}</span>
+  <svg class="chev" viewBox="0 0 10 10" width="8" height="8" aria-hidden="true">
+    <path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+  </svg>
+</button>
+
+<div class="lang-pop" id="lang-menu" popover data-probe-open>
+  <nav aria-label={t.languages}>
+    <ul>
+      {
+        items.map((item) =>
+          item.here ? (
+            <li>
+              <span class="row here" aria-current="true" lang={item.def.htmlLang}>
+                <span class="name">{item.def.label}</span>
+                <span class="alt" lang="en">
+                  {item.def.englishName}
+                </span>
+                <svg class="check" viewBox="0 0 14 14" width="13" height="13" aria-hidden="true">
+                  <path d="M2.5 7.5 6 11l5.5-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </li>
+          ) : (
+            <li>
+              <a class="row" href={item.href} hreflang={item.def.htmlLang} lang={item.def.htmlLang}>
+                <span class="name">{item.def.label}</span>
+                <span class="alt" lang="en">
+                  {item.def.englishName}
+                </span>
+              </a>
+            </li>
+          ),
+        )
+      }
+    </ul>
+  </nav>
+</div>
+
+<script>
+  // Anchor the panel under its trigger (top-layer popovers position like
+  // fixed elements; without this the UA centers the panel — an acceptable
+  // no-JS fallback, not the design).
+  const btn = document.querySelector<HTMLButtonElement>('button[popovertarget="lang-menu"]');
+  const pop = document.getElementById('lang-menu');
+  if (btn && pop) {
+    pop.addEventListener('beforetoggle', (e) => {
+      if ((e as ToggleEvent).newState !== 'open') return;
+      const r = btn.getBoundingClientRect();
+      pop.style.top = `${Math.round(r.bottom + 8)}px`;
+      pop.style.right = `${Math.max(8, Math.round(window.innerWidth - r.right))}px`;
+      pop.style.left = 'auto';
+      pop.style.bottom = 'auto';
+      pop.style.margin = '0';
+    });
+  }
+</script>
+
+<style>
+  .lang-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    background: none;
+    color: var(--color-ink-soft);
+    font: 500 11.5px/1 var(--font-ui);
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .lang-btn:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  .chev {
+    opacity: 0.7;
+  }
+
+  .lang-pop {
+    /* top-layer panel; the inline script anchors it under the trigger */
+    width: min(92vw, 400px);
+    max-height: min(72vh, 560px);
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background: var(--color-bg-card);
+    color: var(--color-ink);
+    box-shadow: 0 14px 40px color-mix(in srgb, var(--color-ink) 14%, transparent);
+  }
+  .lang-pop ul {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+  }
+  a.row:hover {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
+  .name {
+    grid-column: 1;
+    font: 550 13px/1.5 var(--font-ui);
+    color: var(--color-ink);
+  }
+  .alt {
+    grid-column: 1;
+    font: 400 10.5px/1.4 var(--font-ui);
+    color: var(--color-ink-soft);
+  }
+  .check {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    color: var(--color-accent-text);
+  }
+  .row.here .name {
+    color: var(--color-accent-text);
+  }
+
+  @media (max-width: 720px) {
+    .lang-btn .cur {
+      /* the bar is tight on phones: the mark alone names the control */
+      display: none;
+    }
+  }
+</style>

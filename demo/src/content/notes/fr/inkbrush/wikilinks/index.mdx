@@ -1,0 +1,24 @@
+---
+title: "Comment se résolvent les wikiliens"
+description: "Un seul résolveur pour les pages, l’aperçu de l’éditeur, l’importeur et le lint CI — les miroirs de langue d’abord, puis les ids, alias, brands et titres."
+navLabel: "Wikiliens"
+part: 5
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Comment se résolvent les wikiliens">
+  Les notes se lient entre elles par doubles crochets, résolus au moment du build contre l’ensemble des notes qui existent réellement. Les rendus — id, alias, libellé, ancre — se produisent en direct dans la [[kitchen-sink|démonstration intégrale]] ; ce chapitre porte sur les règles de résolution qui les sous-tendent.
+</PartHero>
+
+## Ce qu’une cible peut être
+
+Une cible n’a pas à être l’id d’une note. La résolution essaie, dans l’ordre : **le miroir de la langue courante** (un lien sur l’une des dix-sept éditions sœurs de cette page atterrit sur l’édition de même langue de sa cible, et ne se replie sur la note canonique que là où aucun miroir n’existe), puis l’id exact, puis les alias, les noms de brand et les titres, sans tenir compte de la casse. L’essai [[garden-craft|sur l’art du jardin]] déclare `tending` comme alias — écrire `[[tending]]` atterrit donc sur la même page (l’alias vit sur la note canonique : un miroir n’en porte jamais, un alias devant désigner exactement une note). Les ancres et les libellés se composent comme on l’espère : `[[garden-craft#pruning]]` va droit à une section, `[[garden-craft|the gardening essay]]` rend un texte sur mesure — et les deux se combinent.
+
+## Les liens morts ne cassent pas le build
+
+Un lien vers une note qui n’existe pas se rend comme un lien visiblement mort, la raison dans son infobulle, et le build consigne un avertissement. C’est un choix délibéré pour les jardins : une note pas encore écrite est une invitation, pas une erreur. Une cible qui correspond à plusieurs notes à la fois se rend de la même façon, marquée ambiguë. La pourriture des liens, elle, relève toujours de la CI — la CLI `check-wikilinks` du moteur résout chaque lien avec les propres règles de la bibliothèque et, en mode `--strict`, transforme les liens morts en sortie d’échec ; c’est ainsi que ce dépôt la lance ([[checks|les cinq vérifications]]).
+
+## Une implémentation, quatre consommateurs
+
+Les pages, l’aperçu en direct de l’éditeur, [[inkbrush/inbox|l’importeur de la boîte de réception]] et le lint CI résolvent avec le même code — un lien veut donc dire la même chose partout, et l’éditeur peut se montrer généreux : taper `[[` en mode édition fait surgir une autocomplétion sur les ids, les titres et les alias.

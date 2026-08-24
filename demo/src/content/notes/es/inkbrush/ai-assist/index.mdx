@@ -1,0 +1,24 @@
+---
+title: Asistencia de IA
+description: "Reescrituras de bloques, un chat que conoce la nota y traducción de notas completas — a través de la CLI claude, confinada a una copia desechable de la nota."
+navLabel: Asistencia de IA
+part: 3
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Asistencia de IA">
+  Las acciones ✦ tienden un puente hacia la [CLI claude](https://claude.com/claude-code). Tiene que estar instalada y con la sesión iniciada en la máquina que ejecuta el servidor de desarrollo — nada más en el motor la necesita, así que sin la CLI todo sigue funcionando salvo ✦.
+</PartHero>
+
+## Reescribir un bloque
+
+Pasa el cursor sobre un bloque, haz clic en ✦, y elige una intención rápida — pulir, hacerlo más riguroso, condensar, arreglar las fórmulas — o teclea tu propia instrucción. El trabajo corre del lado del servidor en una copia desechable del directorio de la nota, con las herramientas de archivos confinadas a esa copia — sin shell, sin red — y transmite su progreso en vivo; sobrevive a que se cierre la pestaña del navegador. Al terminar, el archivo cambiado tiene que pasar la misma puerta de build que un guardado manual antes de llevarse de vuelta al proyecto y registrarse en el diario, de modo que [[inkbrush/revisions|⟲]] puede deshacerlo.
+
+## Preguntar sobre la nota
+
+El panel de chat (el botón flotante, abajo a la derecha) responde preguntas sobre la nota que estás leyendo. Claude lee la fuente en una copia de trabajo con un juego de herramientas de solo lectura; las preguntas de seguimiento retoman la misma conversación.
+
+## Traducir la nota completa
+
+Para cada idioma que a una nota le falta, el panel de chat ofrece un «generar versión» de un clic — no una traducción literal, sino la nota vuelta a contar en el idioma de destino, conservando intactos todas las anclas, los bloques de código y los invariantes estructurales. El resultado se escribe como el archivo espejo de ese idioma, y la puerta de build tiene la última palabra antes de conservar nada. Este jardín crece en dieciocho idiomas; su menú de idiomas lista todas las ediciones de la página en la que estás, y en modo de edición una edición que falta está a un clic. Una traducción es un cambio de archivo completo: el diario lo registra, y deshacerlo es una operación de git en lugar de un clic en ⟲.

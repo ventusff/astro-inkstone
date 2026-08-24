@@ -1,0 +1,47 @@
+---
+title: Pembagian tiga arah
+brand: Pembagian tiga arah
+subtitle: "mesin menyunting, kertas menata rupa,\nsitusnya adalah Anda"
+description: Mesin menyunting, kertas menata rupa, situsnya adalah Anda — siapa memiliki apa, dan mengapa garis batasnya ditarik di situ.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Panduan · arsitektur" title="Pembagian tiga arah" meta="tiga repo · tiga pemilik · satu kalimat untuk diingat">
+  Situs dokumentasi/wiki yang dibangun dengan perangkat ini dirakit dari tiga bagian, masing-masing memiliki tepat satu lapisan. Garis di antara mereka bukan soal selera — tiap garis ditopang oleh sebuah kendala yang menggigit begitu dilanggar.
+</Hero>
+
+## Tiga lapisan, tiga pemilik
+
+- **astro-inkbrush (mesinnya)**: CMS minimal — penyuntingan blok langsung di tempat lewat browser, riwayat revisi per blok berikut pengembaliannya, komentar, tanya-jawab AI / penulisan ulang / penerjemahan, impor kotak masuk. Ia juga memiliki satu hal yang sekilas tak pantas dimiliki sebuah CMS: **dialek Markdown dan penjaga konten**. Alasannya keras: tata bahasa yang diterima editor dan tata bahasa yang dirender halaman harus satu dan sama, atau "aman tersimpan di editor, salah dirender di halaman" tinggal soal waktu. Maka aturan parser ditulis sekali, di mesin, dan dikonsumsi di tiga tempat — perenderan situs, validasi simpan CMS, pemeriksaan CI.
+- **astro-inkstone (kertasnya — paket ini)**: lapisan tampilan dan pipeline bersama — token desain dua tingkat dalam dua konteks, stylesheet konten `base.css` dan rak jelajah `browse.css`, pustaka komponen, preset pipeline `siteMarkdown`, pembantu taksonomi dan tautan balik yang menjalankan taman ini, subset font kode Maple Mono CN, dan probe lapisan render. Ia **tidak** mengurus identitas situs: warna merek, chrome tata letak, perutean, dan deployment bukan urusannya.
+- **Situsnya (seperti taman yang sedang Anda baca)**: menimpa token tingkat satu untuk warna identitasnya; memiliki Sidebar dan chrome navigasinya sendiri (implementasi situs ini adalah jawaban rujukannya); menentukan bagaimana konten diorganisasi, seperti apa rutenya, dan ke mana ia dideploy.
+
+Satu kalimat untuk diingat: **mesin menyunting, kertas menata rupa, situsnya adalah Anda.**
+
+## Mengapa garisnya ditarik di sini
+
+Setiap potongan ditopang kendala yang nyata:
+
+**Dialek milik mesin**, karena pemeriksa yang set plugin-nya berbeda dari milik situs lebih buruk daripada tanpa pemeriksa sama sekali — pemeriksa yang kehilangan plugin matematika salah membaca kurung kurawal rumus sebagai ekspresi JSX, dan yang tanpa GFM meloloskan pipa tabel begitu saja. Tata bahasanya ditulis sekali dan dikonsumsi di tiga tempat, sehingga tak mungkin melenceng.
+
+**Gaya milik kertas**, karena bila beberapa situs masing-masing memelihara stylesheet kontennya sendiri, satu perbaikan kontras harus diterapkan sekali per situs — terlewat satu, dan teks kecil situs itu jatuh di bawah AA. Dalam lapisan bersama, satu perbaikan mendarat di mana-mana.
+
+**Identitas milik situs**, karena begitu lapisan bersama menyerap warna merek satu situs, semua situs lain harus melawannya dengan penimpaan. Dari situlah token dua tingkat: situs menimpa palet mentah tingkat satu (`--p-*`) dan lapisan semantik serta komponen mengikut tanpa disentuh — lihat [[design-tokens|palet dua tingkat]].
+
+## Di mana mesin jelajah berada
+
+Disiplin yang sama berlaku pada apa yang sedang Anda navigasikan sekarang. Paket mengirim **mekanismenya** — `createTaxonomy` (resolusi jenis/bidang/tag, pewarisan hub, cermin lokal), `createBacklinks` (indeks tautan balik), dan komponen presentasional seperti kartu catatan serta baris faset di halaman beranda. Situs memiliki **kosakata dan rutenya**: jenis dan bidang taman ini hidup di berkas registrinya sendiri, dan halaman `/kind/…`, `/domain/…`, `/tag/…` miliknya adalah halaman Astro biasa yang disalin dan dibentuk ulang oleh situs pemakai. Pembagian yang sama, satu tingkat di atasnya: mekanisme di paket, makna di situs.
+
+## Apa yang didapat sebuah situs
+
+Dari sudut pandang situs, memakai paket ini plus mesinnya membeli:
+
+- `astro-inkstone/styles/tokens.css` + `base.css` + `browse.css`: token dulu, lalu kolom baca, lalu rak jelajah — tiga baris `@import` untuk seluruh tampilan;
+- `siteMarkdown(...)`: seluruh pipeline Markdown dalam satu baris, sakelar-sakelarnya dijelaskan di [[getting-started|panduan memulai]];
+- komponen di bawah `astro-inkstone/components/`, diimpor per jalur sesuai kebutuhan;
+- pabrik taksonomi dan pembangun tautan balik di bawah `astro-inkstone/lib/`, diikat ke registri situs sendiri;
+- dalam mode WIKI, CMS lengkap milik mesin (coba di situs ini dengan `npm run wiki`);
+- lima pemeriksaan: `check-content`, `check-wikilinks`, dan `check-dist` (dikirim bersama mesin), `ui_probe` dan `contrast_probe` (dikirim di sini) — lihat [[checks|rangkaian pemeriksaan]].
+
+Setiap efek render di setiap halaman taman ini adalah buah dari pembagian itu — catatannya adalah panduan, dan panduannya adalah demo.

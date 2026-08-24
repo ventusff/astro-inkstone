@@ -1,0 +1,90 @@
+---
+title: Interaktif & perabot halaman
+description: DemoMount dan kontrak pemuat milik situs, plus perabot halaman — hero, pemisah bagian, kartu hub, daftar loncat, dan kaki halaman.
+part: 3
+navLabel: Interaktif & perabot
+---
+
+import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import LocalToc from 'astro-inkstone/components/LocalToc.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Interaktif & perabot halaman">
+  Sebuah demo canvas yang hidup beserta kontrak di baliknya, lalu komponen-komponen pendiam yang membingkai setiap catatan — yang sudah Anda pandangi sejak halaman pertama.
+</PartHero>
+
+## DemoMount — langsung
+
+Pembagian kerjanya khas paket ini: **markup tambatannya** (panggung, slot kontrol, slot keterangan) dikirim di paket; **modul demo dan pemuatnya** milik situs. Situs ini menyimpan pemuatnya di `src/lib/demo-loader.ts` dan memanggil `mountAllDemos()` sekali dari layout; panggilan itu jalan di setiap halaman, tetapi chunk modul demo hanya diambil untuk halaman yang membawa tambatan `[data-demo]`.
+
+Demo yang menerima masukan penunjuk di kanvasnya mengoper `interactive` — panggungnya lantas mengklaim gestur sentuh dan menampilkan bidikan silang. Yang satu ini pasif (hanya merender), jadi ia membiarkan bendera itu mati dan usapan di atas kanvas tetap menggulir halaman. Ia menggambar interferensi gelombang dua sumber dengan token tinta milik halaman ini sendiri, sehingga ikut tema:
+
+<DemoMount demo="waves/interference" title="Demo · Interferensi gelombang dua sumber" canvas={{ w: 640, h: 300 }}>
+  <Fragment slot="caption">
+    Dua sumber titik memancarkan gelombang melingkar; di tempat puncak bertemu puncak, tintanya menggenang, di tempat puncak bertemu lembah, kertasnya tembus pandang. Ganti temanya — demo ini menintai ulang dirinya dari token yang hidup.
+  </Fragment>
+</DemoMount>
+
+Kontrak modulnya satu ekspor default, `mount(ctx)`, yang mengembalikan fungsi pembersih; cara meresolusi id modul seperti `waves/interference` terserah situs sepenuhnya (`import.meta.glob` di sini).
+
+## Perabot halaman
+
+Komponen-komponen selebihnya membingkai catatan, bukan mengisinya:
+
+- `Hero` membuka sebuah catatan: kicker, judul display, lede yang melewati pipeline Markdown penuh, satu baris meta, dan `tocLabel` opsional yang menambahkan baris "pembuka" tak bernomor ke bilah sisi. `title` di frontmatter catatan tetap nama kanonis pendek untuk `<title>` dan kartu; judul hero boleh panjang.
+- `PartHero` membuka satu bab dari sebuah hub — kepala halaman ini sendiri. Kicker-nya tak pernah diketik: rute mengoper label "Bagian III · …" milik bab itu sebagai `props.partLabel`.
+- `Part` membelah catatan satu-halaman yang panjang menjadi beberapa bagian; preset penomoran mengubahnya menjadi baris grup "PART II · …" di bilah sisi. Halaman [[kitchen-sink|serba ada]] dipotong dengan cara itu.
+- `HubCard` dan `.hub-grid` adalah kartu beranda milik hub; `.path` kotak jalur bacanya — keduanya ada di [[components|ikhtisar galeri ini]].
+- `LocalToc` merender daftar loncat dalam-halaman; ia menerima kedua bentuk ToC yang dihasilkan dua preset penomoran, dan menyembunyikan diri di bawah ambang minimum yang dapat diatur. Di bawah, langsung, dengan ToC bab ini sendiri.
+- `SidebarMemory` menjaga bilah sisi yang bisa digulir tetap di posisi terakhir pembaca lintas pemuatan halaman, dan menengahkan butir aktif (bawaannya `[aria-current="page"]`) setiap kali ia bakal keluar pandangan. Letakkan di dalam kotak gulir bilah sisi, setelah markup navigasi; ia berjalan sebelum lukisan pertama, jadi bilah sisi tak pernah berkedip di puncak. Bilah sisi demo ini sendiri membawanya.
+- `LineageSvg` membingkai SVG gambar tangan (silsilah metode, pohon taksonomi) sebagai kartu — satu di bawah.
+- `PageFooter` adalah cetakan kecil di kaki catatan — baris di bawah setiap catatan di sini.
+- Kepingan jelajah ada di [[components/wiki|bab wiki]]; sisi Markdown dari galeri ini adalah [[kitchen-sink|halaman serba ada]].
+
+## LocalToc dan LineageSvg, langsung
+
+`LocalToc` disuapi ToC saat-build milik halaman ini sendiri — data yang sama yang dikonsumsi bilah sisi, dioper ke catatan sebagai `props.toc`:
+
+<LocalToc toc={props.toc} label="Dalam bab ini" />
+
+Dan `LineageSvg` mengelilingi diagram yang ditulis tangan, ditintai seluruhnya dengan token semantik sehingga duduk nyaman di kedua tema:
+
+<LineageSvg title="Gbr. — posisi lapisan tampilan">
+  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css memasok base.css dan browse.css, yang memasok semua komponen" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
+    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
+      <rect x="20" y="55" width="150" height="40" rx="6" />
+      <rect x="245" y="15" width="150" height="40" rx="6" />
+      <rect x="245" y="95" width="150" height="40" rx="6" />
+      <rect x="470" y="55" width="150" height="40" rx="6" />
+    </g>
+    <g fill="none" stroke="var(--color-ink-faint)">
+      <path d="M170 68 C 210 60, 210 42, 245 37" />
+      <path d="M170 82 C 210 90, 210 108, 245 113" />
+      <path d="M395 37 C 430 42, 430 60, 470 68" />
+      <path d="M395 113 C 430 108, 430 90, 470 82" />
+    </g>
+    <g fill="var(--color-ink)" text-anchor="middle">
+      <text x="95" y="80">tokens.css</text>
+      <text x="320" y="40">base.css</text>
+      <text x="320" y="120">browse.css</text>
+      <text x="545" y="80">components</text>
+    </g>
+  </svg>
+</LineageSvg>
+
+## Perabot tanpa komponen
+
+Beberapa kepingan hanyalah kelas biasa di `base.css`, untuk situs yang merendernya dari layout sendiri atau menuliskannya sebagai HTML di tubuh tulisan:
+
+| Kelas | Apa itu |
+| --- | --- |
+| `.page-head` + `.kicker`, `.page-desc`, `.page-date` | kepala halaman berbasis frontmatter (kicker, h1, deskripsi, tanggal) yang dirender layout alih-alih `<Hero>` |
+| `.banner`, `.banner-fallback` | pengumuman satu baris di bawah kepala; varian fallback yang diredam |
+| `.page-foot` | kaki halaman cetakan-kecil dua kolom (slot kiri, slot kanan) |
+| `.speak` | catatan bahasa awam di bawah judul bahasan mendalam; teks labelnya di `--speak-label` |
+| `.path` + `.title`, `.route`, `.arrow` | kotak jalur baca di sebuah hub |
+| `.ref-tag` | tag monospace kecil di daftar pustaka (nama venue, tahun) |
+| `.tag`, `.tag.teal / .mustard / .violet` | lencana ala kartu makalah, bisa dipakai di mana saja |
+| `.measured` + `.measured-head`, `.measured-body`, `.measured-pane` (`.doc`), `.measured-tag` | kartu pembanding "kata dokumen vs hasil ukur": bilah judul teal pekat di atas dua panel, panel `.doc` memuat klaimnya dan panel satunya hasil pengukuran — siluet yang berbeda dari callout mana pun |
+| `.paper .idea-label` | label ide-kunci kecil huruf kapital di tubuh `PaperCard`, mis. `<span class="idea-label">Key idea</span>` |

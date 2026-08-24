@@ -1,0 +1,84 @@
+---
+title: Các phép kiểm tra
+brand: Các phép kiểm tra
+subtitle: "mỗi tầng một cửa kiểm\nnguồn · liên kết · sản phẩm · kết xuất · tương phản"
+description: "check-content, check-wikilinks, check-dist, ui_probe, contrast_probe — mỗi tầng một cửa kiểm, mỗi cửa bắt một lớp hỏng hóc âm thầm vẫn lọt qua được bản build xanh."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Tham khảo · công cụ" title="Các phép kiểm tra" meta="năm phép kiểm · ba từ engine, hai từ gói này · tất cả xanh mới commit">
+  Build báo xanh không có nghĩa là các trang đều ổn. Chuỗi công cụ này đặt một phép kiểm ở từng tầng, mỗi phép bắt một lớp hỏng hóc âm thầm kiểu "build xanh, trang hỏng" — và hai trong số đó nhìn trang theo đúng cách một người đọc nhìn, trong trình duyệt thật.
+</Hero>
+
+## Năm cửa kiểm, năm tầng
+
+| Phép kiểm | Đi kèm với | Nhìn vào | Chạy khi nào |
+| --- | --- | --- | --- |
+| check-content | engine, `scripts/check-content.mjs` | từng tệp nguồn md/mdx | CI của repo nội dung, hoặc sau khi viết |
+| check-wikilinks | engine, `scripts/check-wikilinks.mjs` | đồ thị `[[wikilink]]` | CI của repo nội dung, hoặc sau khi đổi tên ghi chú |
+| check-dist | engine, `scripts/check-dist.mjs` | sản phẩm của `astro build` | sau mỗi lần build (postbuild) |
+| ui_probe | gói này, `scripts/ui_probe.mjs` | trang render trong trình duyệt thật | sau khi đổi style/bố cục |
+| contrast_probe | gói này, `scripts/contrast_probe.mjs` | độ tương phản của từng nút chữ, cả hai giao diện | sau bất kỳ thay đổi token nào |
+
+## check-content: tầng mã nguồn
+
+Biên dịch từng tệp md/mdx sẽ lên trang bằng **đúng cùng một phương ngữ** với site — lỗi cú pháp lẫn các biến dạng âm thầm (dấu nhấn mạnh không ghép nổi cặp, ngoặc nhọn bị MDX nuốt khi tính biểu thức, dấu danh sách sinh ra từ chỗ xuống dòng, `$$` một dòng, công thức KaTeX không render nổi — đúng bộ mà trang [[kitchen-sink|trình diễn tổng hợp]] khép lại bằng nó) đều làm CI đỏ.
+
+Vì sao script này buộc phải đến từ engine: bộ kiểm dùng bộ plugin lệch với site còn **tệ hơn không kiểm** — thiếu plugin toán thì nó đọc nhầm ngoặc nhọn trong công thức thành biểu thức JSX, thiếu GFM thì nó vẫy cho bảng đi qua. Phương ngữ được viết đúng một lần trong engine; render phía site, kiểm tra lúc CMS lưu và script này tiêu thụ cùng một bản, mãi mãi.
+
+```bash title="thư mục gốc repo nội dung"
+node <engine>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
+```
+
+Ngoài chuyện biên dịch, nó còn bắt hai lớp mất mát âm thầm trong frontmatter: dấu `#` không đặt trong ngoặc kép ở một giá trị (YAML coi là chú thích và lặng lẽ cắt cụt phần sau) và YAML không phân tích nổi, báo kèm số dòng.
+
+## check-wikilinks: đồ thị liên kết
+
+`[[wikilink]]` chết cố ý không đánh hỏng bản build — một khu vườn phải được phép trỏ tới những ghi chú nó chưa kịp trồng. Nhưng liên kết mục nát vẫn phải nằm trong CI, nên engine kèm sẵn một phép lint phân giải từng wikilink bằng **chính bộ phân tích và luật phân giải của thư viện** (bí danh, brand, tiêu đề, bản dịch theo ngôn ngữ) rồi báo cáo cái thiếu, cái nhập nhằng và những anchor đáng ngờ. `--strict` biến liên kết chết thành mã thoát lỗi — CI của repo này chạy đúng như thế:
+
+```bash title="phép kiểm liên kết của khu vườn này, đúng như CI chạy"
+node scripts/check-links.mjs
+```
+
+## check-dist: tầng sản phẩm build
+
+Trong thư mục `dist/` đã build, mọi tham chiếu nội bộ mà người đọc bấm được đều phải thực sự tồn tại. Nó bắt những lỗ hổng âm thầm nằm dưới một bản build xanh:
+
+- liên kết/tài nguyên nội bộ trỏ vào tệp không tồn tại (loại lỗi mọc lên hàng tá sau một lần xáo route);
+- anchor trong trang trỏ vào id không tồn tại;
+- đoạn ngôn ngữ lặp đôi trong đường dẫn (`/en/en/` — hậu quả kinh điển khi fallback i18n chồng thêm tiền tố lên route vốn đã có tiền tố);
+- `<a>` lồng trong `<a>` (trình phân tích HTML đóng sớm thẻ ngoài và các nút rơi khỏi thẻ bài của chúng);
+- cặn lỗi KaTeX (công thức thành chữ đỏ trên trang trong khi bản build vẫn xanh).
+
+Bản demo này nối nó vào postbuild: `npm run build` xanh nghĩa là phép kiểm sản phẩm cũng đã qua.
+
+```bash title="thư mục gốc site, sau khi build (truyền --base khi site triển khai dưới đường dẫn con)"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
+```
+
+## Phép dò tầng kết xuất
+
+Nguồn lẫn sản phẩm có thể cùng đúng mà trang vẫn hỏng — ca kinh điển là thẻ trên trang chủ không khớp rule stylesheet nào, render thành một dòng chữ trần chen chúc: phép kiểm liên kết và anchor vẫn xanh vì chúng chưa từng nhìn vào trang đã render. `ui_probe` lái một trình duyệt thật đi qua từng trang trong `dist` ở bốn bề rộng khung nhìn (1440/1024/768/430) và đo: tràn ngang của trang, phần tử rộng hơn khung chứa mà không có hộp cuộn để nương náu, class không rule stylesheet nào chải tới, cấp đề mục bị nhảy, id trùng, ảnh thiếu thuộc tính `alt`, anchor trong trang và `aria-controls` trỏ vào hư không. Nó chỉ báo những gì máy chứng minh được — không phán xét thẩm mỹ.
+
+```bash title="cần Chrome/Chromium cài sẵn trên máy"
+npm run build
+node ../scripts/ui_probe.mjs dist   # tự serve dist; truyền baseUrl để dò một server đang chạy
+```
+
+Nó soi cả tài liệu — gồm luôn chrome, thanh bên và các hộp thoại.
+Xanh nghĩa là dòng cuối báo cáo ghi `SAMPLES WITH FINDINGS: 0` (một
+mẫu là một route ở một bề rộng).
+
+## Phép dò tương phản
+
+Các token tuyên bố đạt AA, nên lời tuyên bố được đem đo chứ không được nói suông. `contrast_probe` mở từng trang của `dist` trong trình duyệt thật — giao diện sáng và tối, bề rộng desktop và điện thoại — và đo mọi đoạn chữ render ở trạng thái mặc định: chữ HTML, chữ SVG và chữ sinh ra từ `::before` / `::after`, với mọi lớp phủ `<dialog data-probe-open>` được dò ở trạng thái mở (kèm một truy vấn gõ vào ô tìm kiếm tìm thấy ở đó) trên một trang đại diện — dấu đánh ấy là lời site tự tuyên bố hộp thoại đã hoàn chỉnh như được soạn. Nền không đọc từ stylesheet: trang được render với mọi glyph hóa trong suốt, chụp lại, và pixel dưới mỗi đoạn chữ chính là nền của nó, nên gradient, sắc pha `color-mix()`, lớp bán trong suốt và bảng màu ban đêm đều được đo đúng như chúng render. Tiền cảnh của mỗi đoạn mang theo `opacity` tích lũy của phần tử và tổ tiên nó, nên chữ bị làm mờ được đo đúng cường độ người đọc thực sự thấy. Trạng thái hover và focus được soát bằng mắt, không dò. Chữ nhỏ giữ ngưỡng 4.5:1, chữ lớn (24px, hoặc 18.66px in đậm) giữ 3:1; đoạn nào không phân tích nổi màu hay không lấy nổi mẫu nền đều tính là một phát hiện. Báo cáo nêu trang, giao diện, bề rộng, selector, hai màu và tỷ số của từng đoạn dưới ngưỡng:
+
+```bash title="sau khi build, cả hai giao diện"
+node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS thu hẹp ma trận
+```
+
+<div class="callout system">
+  <div class="callout-title">Lệ thường khi đổi style</div>
+  Mọi thay đổi vào stylesheet hay thành phần của gói đều đi qua bản build của demo này trước, rồi <code>ui_probe</code> và <code>contrast_probe</code> trên sản phẩm — tất cả xanh mới commit. Bản demo kiêm luôn bãi thử của gói.
+</div>

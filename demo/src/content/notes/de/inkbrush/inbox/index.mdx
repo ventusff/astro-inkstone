@@ -1,0 +1,37 @@
+---
+title: Der Obsidian-Posteingang
+description: Richte den Watcher auf einen Vault-Ordner; neue Notizen konvertieren und importieren sich selbst – Embeds neben die Notiz kopiert, Wikilinks aufgelöst, Markierungen erhalten.
+navLabel: Posteingang
+part: 4
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Der Obsidian-Posteingang">
+  Vieles wird zuerst woanders geschrieben – auf einem Telefon, in einem Clipper, in einem Obsidian-Vault. Der Posteingang schließt diese Schleife: Richte ihn auf einen Ordner, und dort abgelegte Notizen importieren sich selbst in die Site.
+</PartHero>
+
+## Einschalten
+
+Der Posteingang wird ausgeschaltet ausgeliefert. Aktiviert wird er in `inkbrush.config.ts`:
+
+```ts title="inkbrush.config.ts"
+inbox: {
+  dir: '~/vault/inbox',        // der zu beobachtende Ordner (versteht ~/)
+  ignore: ['daily-'],          // optional: zu überspringende Dateinamen-Präfixe
+},
+```
+
+Dateien, die beim Start schon im Ordner liegen, werden als gesehen markiert, nicht importiert – nur *danach* hinzugekommene Notizen synchronisieren sich automatisch. Alles Ältere lässt sich explizit über die API nachimportieren; den Posteingang einzuschalten kippt dir also nie überraschend ein Jahrzehnt Vault-Geschichte auf die Site.
+
+## Was der Importer tut
+
+Jede eingehende Notiz wird konvertiert, nicht kopiert:
+
+- Bild-Embeds werden gegen die Asset-Ordner des Vaults aufgelöst, die Dateien **neben die importierte Notiz kopiert**, und aus den Embeds wird Standard-Bildsyntax – wer die Notiz später löscht, löscht ihre Assets mit
+- `[[Wikilinks]]`, die eine echte Notiz der Site treffen, überleben als Links, aufgelöst mit [[inkbrush/wikilinks|denselben Regeln wie überall sonst]]; der Rest wird mit einer Warnung zu schlichter Hervorhebung geglättet
+- Markierungen werden zu echten `<mark>`-Elementen, Frontmatter-Metadaten zu einer Quellenzeile unter dem Titel, und aus dem ersten substanziellen Absatz wird eine description abgeleitet
+
+Die konvertierte Notiz muss dann dieselbe Build-Schranke passieren wie ein manuelles Speichern – eine Notiz, die die Seite kaputt machen würde, wird abgewiesen statt importiert.
+
+Jeder Import landet als Ganzdatei-Eintrag im Revisionsjournal (via: inbox): [[inkbrush/revisions|⟲]] listet ihn als Protokollzeile, und einen Import rückgängig zu machen ist eine git-Operation. Mit eingeschaltetem `autocommit` wird jeder Import außerdem ein git-Commit wie jede andere Bearbeitung; mit ausgeschaltetem kommen importierte Dateien als gewöhnliche Änderungen im Arbeitsverzeichnis an, zum Selberprüfen und Selbercommitten.

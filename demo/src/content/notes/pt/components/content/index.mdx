@@ -1,0 +1,106 @@
+---
+title: Conteúdo e tipografia
+description: Callouts, chips, grades, passos, estatísticas, cartões de artigo e listas de referências — os componentes de que a prosa é feita.
+part: 1
+navLabel: Conteúdo e tipografia
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="Conteúdo e tipografia">
+  As peças de que a prosa é feita. Cada uma consome apenas a camada semântica dos tokens — troque a paleta e todas acompanham.
+</PartHero>
+
+## Callout
+
+Cinco variantes; `title` substitui o rótulo padrão da variante (Note / Intuition / Warning / Important / Abstract — os mesmos padrões da sintaxe de citação, localizáveis via `labels`). A [[kitchen-sink|vitrine completa]] mostra as grafias em sintaxe de citação e em HTML cru da mesma marcação.
+
+<Callout variant="intuition" title="Quando escolher o componente">
+  Em MDX, quando o conteúdo é escrito ali mesmo. A sintaxe de citação cobre os arquivos de Markdown puro; as duas grafias renderizam marcação idêntica.
+</Callout>
+
+## Chip
+
+Selos inline para status e categorias, nas quatro variantes que as tags do `PaperCard` e os chips do `HubCard` compartilham: <Chip variant="teal">estável</Chip> <Chip variant="mustard">beta</Chip> <Chip variant="violet">pesquisa</Chip> <Chip variant="orange">novo</Chip> — ou um tom próprio para paletas temáticas: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>tom personalizado</Chip>
+
+## Grid
+
+Uma grade, três peles (`plain`, `card`, `cmp`). Cartões:
+
+<Grid cols={2} kind="card">
+  <div>
+    **Tokens primeiro.** A ordem de import faz parte do contrato: tokens, depois a camada de conteúdo, depois o chrome do site.
+  </div>
+  <div>
+    **Só a camada semântica.** Os componentes nunca tocam cores cruas — troque a paleta e todos acompanham.
+  </div>
+</Grid>
+
+E a pele de comparação, feita para painéis de antes/depois:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **Sem guardião** — um `**` sem fechar chega à produção como dois asteriscos literais.
+  </div>
+  <div>
+    **Com o guardião** — o build falha em arquivo:linha:coluna, com um circunflexo sob a marca.
+  </div>
+</Grid>
+
+## Steps
+
+Uma lista de markdown sobre uma trilha vertical:
+
+<Steps>
+1. Adicione os dois submodules e as dependências `file:`.
+2. Importe `tokens.css`, `base.css` e (para um wiki) `browse.css` na sua folha de estilo global.
+3. Ligue `siteMarkdown()` no `astro.config`.
+4. Sobrescreva a paleta da camada um com os pigmentos da sua identidade.
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: 'camadas de tokens' },
+    { value: '24', label: 'componentes' },
+    { value: '4', label: 'viewports da sonda' },
+    { value: '0', label: 'etapas de build' },
+  ]}
+/>
+
+## PaperCard
+
+O burro de carga dos levantamentos bibliográficos — alias, título completo, tags de veículo, meta de autores, links e dois slots dedicados:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar, et al."
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">Modelos recorrentes processam tokens um após o outro — dependências de longo alcance esmaecem, e nada paraleliza.</Fragment>
+  **Ideia central**: só atenção, sem recorrência — cada token atende a todos os outros em um passo, e a sequência inteira treina em paralelo.
+  <Fragment slot="diff">A arquitetura sobre a qual quase todo grande modelo de linguagem desde então foi construído.</Fragment>
+</PaperCard>
+
+Sob um título de mergulho fundo, uma glosa de uma linha em linguagem simples (`.speak`) conta ao leitor o que um módulo *faz* antes do mecanismo:
+
+<p class="speak">Atenção é uma tabela de consulta suave: cada token pergunta "quem é relevante para mim?" e recebe uma mistura ponderada das respostas.</p>
+
+## References
+
+<References>
+- Vaswani et al., *Attention Is All You Need*, NeurIPS 2017.
+- Knuth, *The TeXbook* — a razão de os fundos de fórmula ganharem seu próprio tom de papel.
+- W3C, *Web Content Accessibility Guidelines 2.2* — a barra de contraste AA contra a qual os tokens são auditados.
+</References>

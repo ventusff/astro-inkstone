@@ -1,0 +1,127 @@
+---
+title: शुरुआत करें
+brand: शुरुआत करें
+subtitle: "दो submodule, तीन import,\nपाइपलाइन की एक लाइन"
+description: "साइट रिपॉज़िटरी में submodule की एक जोड़ी, स्टाइलशीट के तीन import, और पूरी Markdown पाइपलाइन के लिए siteMarkdown की एक लाइन — बस, बगीचा तैयार।"
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="गाइड · शून्य से एक बगीचे तक" title="शुरुआत करें" meta="दो submodule · तीन स्टाइलशीट · एक siteMarkdown() · तीन कमांड">
+  न कागज़ npm पर प्रकाशित होता है, न इंजन — दोनों zero-build हैं और सीधे कच्चा TS/CSS सोर्स एक्सपोर्ट करते हैं। साइट इन दोनों रिपॉज़िटरी को git submodule के रूप में अपने भीतर रख लेती है, तीन स्टाइलशीट import करती है, और `astro.config` में एक फ़ंक्शन जोड़ देती है। इस साइट की हर चीज़ इसी तरीक़े से बनी है।
+</Hero>
+
+<Part title="इंस्टॉल" />
+
+## submodule की एक जोड़ी
+
+दोनों रिपॉज़िटरी अपनी साइट में उतार लीजिए और `file:` डिपेंडेंसी उन पर इंगित कर दीजिए:
+
+```bash title="साइट रिपॉज़िटरी की रूट"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (डिपेंडेंसी)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] इस डेमो का लेआउट थोड़ा अलग है
+> डेमो पैकेज रिपॉज़िटरी के भीतर (`demo/`) रहता है, इसलिए इसका `astro-inkstone` `file:..` की ओर इंगित करता है और इंजन `demo/vendor/` के नीचे टँगा है। स्वतंत्र साइट ऊपर वाला `packages/` लेआउट अपनाए — दोनों एक ही बात हैं।
+
+## स्टाइल
+
+अपनी ग्लोबल स्टाइलशीट में पहले टोकन, फिर सामग्री-परत, फिर — जिस साइट में ब्राउज़ पेज हों — शेल्फ़, और उसके बाद सिर्फ़ आपका अपना chrome:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* लैंडिंग / फ़ेसेट पेज, body.wb-root पर */
+
+/* पहचान: टियर-1 पिगमेंट override कीजिए; दोनों semantic संदर्भ और कंपोनेंट-परत अपने-आप साथ चलते हैं */
+:root {
+  --p-shi: #b03a48; /* आपके पढ़ने के कॉलम का accent */
+  --p-zhu: #3b4a7a; /* आपकी शेल्फ़ का accent और साइट-चिह्न */
+  --p-shi-n: #e0919b; /* रात के जुड़वाँ: डार्क थीम --p-*-n पढ़ती है */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+शेल्फ़ की सेरिफ़ `--font-display` है (Source Serif 4 + Noto Serif SC); इस डेमो की तरह उसे self-host कर लीजिए, तो आपकी साइट का शीर्ष-पट्ट हूबहू यहाँ जैसा दिखेगा:
+
+```css title="src/styles/site.css (फ़ॉन्ट, वैकल्पिक)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+गणित वाली साइटें लेआउट में KaTeX की स्टाइलशीट के लिए एक लाइन और जोड़ती हैं (इसके बिना सूत्रों की सजावट बिखर जाती है):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="जोड़-तोड़" />
+
+## Markdown पाइपलाइन, एक लाइन में
+
+इसी साइट के ढाँचे वाला एक न्यूनतम कॉन्फ़िगरेशन — अध्याय-क्रमांकन, गणित, callout, आरेख, और नोट-संग्रह के विरुद्ध हल होने वाले `[[विकीलिंक]]` (पूरा संस्करण — इस साइट का हर हुक समेत — रिपॉज़िटरी की `astro.config.mjs` है):
+
+```js title="astro.config.mjs (न्यूनतम)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs' और '/docs/' दोनों चलते हैं
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // भाग/अध्याय क्रमांक + remarkPluginFrontmatter के ज़रिए ToC
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // कोड फ़्रेम: टाइटल बार / कॉपी / फ़ोल्ड / एनोटेशन
+    mermaid: true, // mermaid फ़ेंस क्लाइंट-साइड रेंडर होते हैं
+    callouts: true, // Obsidian-शैली > [!note] सिंटैक्स
+    wikiBlocks: WIKI_MODE, // संपादन मोड: ब्लॉक ↔ सोर्स-लाइन मैपिंग, हमेशा सबसे आख़िर में
+    guard: { autoNumberedHeadings: true }, // सामग्री-रक्षक: हाथ से लिखे क्रमांक अस्वीकार
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown` इंजन की बोली पर टिका है (GFM, CJK-फ़्रेंडली emphasis-पार्सिंग, सामग्री-रक्षक); प्रीसेट खुद सिर्फ़ साइट-पक्ष के प्लगइनों को जोड़ता और क्रम में रखता है — **पाइपलाइन का क्रम ही अनुबंध है**, इसलिए आपकी साइट को कभी यह चिंता नहीं करनी पड़ती कि कौन किससे पहले चले। हर स्विच का प्रदर्शन [[kitchen-sink|पूरा पिटारा]] पन्ने पर है, और पैकेज-बँटवारे के पीछे का तर्क [[boundaries]] में दर्ज है। callout के लेबल अपनी भाषा में चाहिए? `calloutLabels` पास कर दीजिए — डिफ़ॉल्ट अंग्रेज़ी हैं।
+
+## चलाकर देखिए
+
+स्क्रिप्ट वही हैं जो इस डेमो की `package.json` में परिभाषित हैं (`build` postbuild में इंजन का check-dist चलाता है; `wiki` का मतलब है `WIKI=1 astro dev`):
+
+```bash
+npm install
+npm run dev        # बगीचा
+npm run build      # स्टैटिक बिल्ड + इंजन का check-dist (postbuild)
+npm run wiki       # WIKI=1 astro dev — CMS संपादन मोड
+```
+
+स्टैटिक बिल्ड में इंजन का एक भी बाइट नहीं जाता: WIKI मोड के बाहर इंजन का इंटीग्रेशन-कोड import तक नहीं होता (dynamic import), और संपादन का कोई मेटाडेटा भी नहीं निकलता। आउटपुट में CMS-नुमा जो कुछ बचता है, वह साइट का अपना निष्क्रिय डॉकिंग-मार्कअप है — नेविगेशन बार के ख़ाली `data-inkbrush-slot` span और उनकी CSS — जो तब तक कुछ नहीं करता जब तक CMS उसमें आकर जुड़ न जाए।

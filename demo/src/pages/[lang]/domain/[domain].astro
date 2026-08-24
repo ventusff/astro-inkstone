@@ -1,0 +1,19 @@
+---
+/** /<locale>/domain/<id>/ — browse by domain (only non-empty values
+ *  prerender); one route file for every non-default locale. */
+import FacetPage from '../../../components/browse/FacetPage.astro';
+import { LOCALE_DEFS } from '../../../content/notes/_meta/locales';
+import { getWikiUnits, groupByDomain } from '../../../lib/taxonomy';
+
+export async function getStaticPaths() {
+  const units = await getWikiUnits();
+  return LOCALE_DEFS.filter((l) => l.prefix !== '').flatMap((l) =>
+    groupByDomain(units).map((g) => ({
+      params: { lang: l.code, domain: g.def.id },
+      props: { locale: l.code, def: g.def, notes: g.notes },
+    })),
+  );
+}
+---
+
+<FacetPage dim="domain" {...Astro.props} />

@@ -1,0 +1,154 @@
+---
+title: วิกิและการเลือกดู
+description: "ชุดคอมโพเนนต์หมวดหมู่ — การ์ดบันทึก แถวหมวดหมู่ ตราต่าง ๆ แผงลิงก์ย้อนกลับ และกราฟรอบบันทึกในแถบข้าง — หน้านี้สาธิตด้วยข้อมูลตัวอย่าง และทั้งหมดรันจริงอยู่ทั่วสวนแห่งนี้"
+part: 2
+navLabel: วิกิและการเลือกดู
+---
+
+import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph from 'astro-inkstone/components/LocalGraph.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import DomainChip from 'astro-inkstone/components/wiki/DomainChip.astro';
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import KindBadge from 'astro-inkstone/components/wiki/KindBadge.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import StatusDot from 'astro-inkstone/components/wiki/StatusDot.astro';
+import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<PartHero kicker={props.partLabel} title="วิกิและการเลือกดู">
+  ทุกอย่างในบทนี้**รันจริง**อยู่บนไซต์นี้: ชั้นหนังสือบนหน้าแรกเรียงขึ้นจาก `NoteCard` แถวหมวดหมู่ของมันคือ `FacetNav` หนึ่งตัว แถบเมตาเหนือข้อความนี้คือ `TaxonomyLine` และกลุ่มดาวเล็ก ๆ ในแถบข้างคือ `LocalGraph` ทั้งหมดเป็นคอมโพเนนต์แสดงผลล้วน — ไซต์แก้ค่าจากทะเบียนของตัวเองแล้วส่งข้อมูลที่พร้อมแสดงเข้ามา ตัวช่วยแก้ค่ามากับแพ็กเกจในชื่อ `createTaxonomy` และ `createBacklinks` ([[three-way-split|กลไกอยู่ในแพ็กเกจ ความหมายอยู่ที่ไซต์]])
+</PartHero>
+
+## การเชื่อมต่อ สามบรรทัด
+
+```ts title="src/lib/taxonomy.ts (การเชื่อมต่อทั้งหมดของไซต์นี้)"
+import { createTaxonomy } from 'astro-inkstone/lib/taxonomy';
+import { DOMAINS, KINDS, STATUSES } from '../content/notes/_meta/taxonomy';
+
+export const { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, tagIndex, resolveTaxonomy } =
+  createTaxonomy({ kinds: KINDS, domains: DOMAINS, statuses: STATUSES },
+    { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' });
+```
+
+ทะเบียน (`_meta/taxonomy.ts`) คือข้อมูลล้วน ๆ ในต้นไม้เนื้อหา: kind, domain พร้อมโทนสี, status พร้อมสีจุด แต่ละค่ามีป้ายทั้งภาษาอังกฤษและภาษาจีน เพิ่มค่าใหม่ตรงนั้น ติดให้บันทึกสักเรื่อง แล้วหน้าเลือกดูทุกหน้าจะรับไปเอง — เส้นทาง URL ถูกกำหนดพารามิเตอร์ตามค่าอยู่แล้ว
+
+## ชั้นหนังสือกับโทเคนของมัน
+
+หน้าเลือกดูยืนอยู่บนพื้นผืนที่สอง: `browse.css` ให้กระดาษโทนอุ่น แถบหัวเรื่องเซอริฟ เส้นชั้นหนังสือสองพอยต์ และตารางการ์ด ทั้งหมดผ่านโทเคน `--wb-*` — ครึ่งฝั่งเลือกดูของ[[design-tokens|จานสีสองบริบท]] หน้าเข้าสู่บริบทนี้ด้วยคลาสเดียวคือ `wb-root` บน body ข้างในนั้นโทเคนของ chrome ถูกจับคู่ใหม่ แถบนำทางเดียวกันจึงวางบนพื้นไหนก็ได้
+
+## NoteCard
+
+การ์ดกินข้อมูลที่แก้ค่าเสร็จและพร้อมแสดง — ป้ายสำเร็จรูป โทนสี วันที่จัดรูปแบบแล้ว ลิงก์มิเรอร์ การ์ดโดยกำเนิดอาศัยบนชั้นหนังสือ ตัวอย่างจึงวางในแถบบริบทเลือกดูขนาดย่อม (`.wb-root.wb-inset`) ที่ฝังในคอลัมน์อ่านนี้:
+
+<div class="wb-root wb-inset">
+<ul class="wb-grid">
+  <NoteCard
+    note={{
+      id: 'sample-note',
+      href: `${base}/th/kitchen-sink/`,
+      title: 'รวมทุกองค์ประกอบ',
+      description: 'ทุกองค์ประกอบของไปป์ไลน์ markdown ออกแสดงในหน้านี้อย่างละหนึ่งครั้ง',
+      kind: { id: 'reference', label: 'อ้างอิง' },
+      domains: [{ id: 'pipeline', label: 'ไปป์ไลน์', tone: { bg: '#e3efec', fg: '#2a6f62' }, href: `${base}/th/domain/pipeline/` }],
+      status: { id: 'evergreen', label: 'เอเวอร์กรีน', dot: '#1f5e46' },
+      updated: '2026.08',
+      mirrors: [{ label: 'EN', href: `${base}/kitchen-sink/` }],
+    }}
+  />
+  <NoteCard
+    note={{
+      id: 'sample-hub',
+      href: `${base}/th/components/`,
+      title: 'ชุดคอมโพเนนต์',
+      description: 'พาชมคอมโพเนนต์ครบทุกตัวในสามบท — และเป็นการสาธิตฮับสด ๆ ไปพร้อมกัน',
+      kind: { id: 'reference', label: 'อ้างอิง' },
+      domains: [{ id: 'components', label: 'คอมโพเนนต์', tone: { bg: '#f7e9dc', fg: '#98511a' }, href: `${base}/th/domain/components/` }],
+      status: { id: 'evergreen', label: 'เอเวอร์กรีน', dot: '#1f5e46' },
+      updated: '2026.08',
+      chapterCount: 3,
+      sourceLine: 'Hero · HubCard · Stats — อุปกรณ์ของฮับ ใช้บนตัวฮับเอง',
+    }}
+  />
+</ul>
+</div>
+
+## FacetNav
+
+ดัชนีเลือกดูหลายมิติ — kind, domain (พร้อมโทนสีของแต่ละตัว) และแท็กยอดนิยม ทั้งหมดพรีเรนเดอร์เป็นลิงก์ทรงเม็ดยา:
+
+<FacetNav
+  base={`${base}/th`}
+  kinds={[
+    { def: { id: 'guide', label: 'บทแนะนำ' }, count: 2 },
+    { def: { id: 'reference', label: 'อ้างอิง' }, count: 4 },
+    { def: { id: 'pattern', label: 'แพตเทิร์น' }, count: 1 },
+  ]}
+  domains={[
+    { def: { id: 'design', label: 'การออกแบบ', tone: { bg: '#ece7f2', fg: '#5b4a8a' } }, count: 3 },
+    { def: { id: 'pipeline', label: 'ไปป์ไลน์', tone: { bg: '#e3efec', fg: '#2a6f62' } }, count: 2 },
+  ]}
+  tags={[
+    { tag: 'tokens', count: 1 },
+    { tag: 'markdown', count: 1 },
+  ]}
+  active={{ dim: 'kind', value: 'reference' }}
+  labels={{ kind: 'ประเภท', domain: 'หมวด', tag: 'แท็ก', all: 'ทั้งหมด →' }}
+/>
+
+ป้ายหัวแถวก็เป็น props ที่มีค่าเริ่มต้นภาษาอังกฤษ — ชุดข้างบนส่ง `labels={{ kind: 'ประเภท', domain: 'หมวด', tag: 'แท็ก', all: 'ทั้งหมด →' }}` เข้ามา ชุดเดียวกับที่หน้าหมวดหมู่ภาษาไทยของไซต์นี้ใช้ นอกนั้นไม่ต้องเปลี่ยนอะไรเลย
+
+## TaxonomyLine, KindBadge, StatusDot, DomainChip
+
+แถบเมตาบรรทัดเดียวที่หัวบันทึก คืออะตอมตราสามชิ้นประกอบกัน แต่ละชิ้นก็ใช้เดี่ยว ๆ ได้เช่นกัน:
+
+<TaxonomyLine
+  kind={{ id: 'pattern', label: 'แพตเทิร์น' }}
+  domains={[{ id: 'design', label: 'การออกแบบ', tone: { bg: '#ece7f2', fg: '#5b4a8a' }, href: `${base}/th/domain/design/` }]}
+  status={{ id: 'growing', label: 'กำลังโต', dot: '#5c8a3c' }}
+  updated="2026.08"
+/>
+
+อะตอมแต่ละตัวเมื่อวางเดี่ยวในเนื้อความ: ตราประเภท <KindBadge def={{ id: 'guide', label: 'บทแนะนำ' }} /> หนึ่งอัน ชิป domain <DomainChip def={{ id: 'pipeline', label: 'ไปป์ไลน์', tone: { bg: '#e3efec', fg: '#2a6f62' } }} href={`${base}/th/domain/pipeline/`} /> หนึ่งอัน และจุดสถานะ <StatusDot def={{ id: 'evergreen', label: 'เอเวอร์กรีน', dot: '#1f5e46' }} /> หนึ่งจุด
+
+## Backlinks
+
+แผง "ลิงก์ย้อนกลับ" ใต้ทุกบันทึกในสวนนี้คำนวณโดย `createBacklinks` ของแพ็กเกจ — พลิกตัวแก้ปลายทางวิกิลิงก์ของเอนจินเองให้กลายเป็นดัชนี เป้าหมาย ← ต้นทาง พร้อมข้อความบริบทประกอบ ข้างล่างนี้ใช้ข้อมูลตัวอย่างอินไลน์:
+
+<Backlinks
+  items={[
+    {
+      href: `${base}/th/kitchen-sink/`,
+      title: 'รวมทุกองค์ประกอบ',
+      before: 'ตารางเจ็ดคอลัมน์นั้นเป็นทั้ง ',
+      label: 'ตารางสรุป callout',
+      after: ' และการทดสอบพับตารางเป็นการ์ด…',
+    },
+    {
+      href: `${base}/th/design-tokens/`,
+      title: 'จานสีสองระดับกับธีม',
+      before: 'คอมโพเนนต์ใช้เฉพาะ ',
+      label: 'ระดับเชิงความหมาย',
+      after: ' การปรับเอกลักษณ์จึงไม่มีวันแตะพวกมัน',
+    },
+  ]}
+/>
+
+เลื่อนลงไปท้ายหน้านี้จะเจอแผงของจริง — บทนี้เองก็เป็นเป้าหมายของวิกิลิงก์เหมือนกัน
+
+## LocalGraph
+
+ดัชนีชุดเดียวกันตอบคำถามที่สองได้ด้วย — *ห่างจากตรงนี้หนึ่งก้าวมีใครบ้าง?* — `index.localGraph(id, titleOf)` คืนคำตอบเป็นรายชื่อเพื่อนบ้าน ลิงก์ขาเข้ามาก่อน คอมโพเนนต์วาดพวกมันบนวงรีรอบบันทึก: ขาเข้าเส้นทึบ ขาออกเส้นประ เพื่อนบ้านยังพก `color` ของตัวเองมาได้ (เช่นมาจากอีกคอลเลกชันหนึ่ง) ข้างล่างวาดที่ความกว้างคอลัมน์อ่านด้วยข้อมูลตัวอย่าง ของจริงอยู่ในแถบข้างของทุกบันทึกที่มีลิงก์:
+
+<div style="max-width: 300px">
+  <LocalGraph
+    centerTitle="วิกิและการเลือกดู"
+    neighbors={[
+      { id: 'kitchen-sink', title: 'รวมทุกองค์ประกอบ', href: `${base}/th/kitchen-sink/`, dir: 'in' },
+      { id: 'design-tokens', title: 'จานสีสองระดับ', href: `${base}/th/design-tokens/`, dir: 'out' },
+      { id: 'three-way-split', title: 'แบ่งงานสามฝ่าย', href: `${base}/th/three-way-split/`, dir: 'out' },
+      { id: 'checks', title: 'ชุดการตรวจสอบ', href: `${base}/th/checks/`, dir: 'in', color: 'var(--color-accent4)' },
+    ]}
+  />
+</div>

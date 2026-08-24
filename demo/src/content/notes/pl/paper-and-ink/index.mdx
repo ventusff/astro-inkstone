@@ -1,0 +1,28 @@
+---
+title: Papier i tusz, z rozmysłem
+brand: "Papier i tusz"
+subtitle: "postawa stojąca za tokenami"
+description: Dlaczego ten system projektowy stawia na ciepłe papierowe podłoże, prawdziwe szeryfy, dwa podłoża dla dwóch rodzajów stron i ręcznie złożony motyw ciemny — notatka o postawie, z której wynikają tokeny.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Wzorzec · postawa projektowa" title="Papier i tusz, z rozmysłem" meta="ciepłe podłoże · szeryfowy tekst · dwa podłoża · drugie wydanie na noc">
+  Większość motywów dokumentacji sięga po te same domyślne wybory: biel `#fff`, groteskowy bezszeryf, tekst w gray-800, systemowy tryb ciemny. Czyta się je znośnie, a wyglądają jak nic. Ten system wychodzi z innej przesłanki — **długi dokument techniczny to rzecz, którą czyta się godzinę** — i tokeny z niej wynikają.
+</Hero>
+
+## Postawa
+
+Godzina lektury chce tego, co druk ustalił wieki temu: ciepłego podłoża, które nie razi, kroju tekstowego z prawdziwym kontrastem kresek i rytmu łamania mierzonego w firetach tekstu, a nie w pikselach chrome’u. Stąd słownik, w którym napisana jest [[design-tokens|warstwa tokenów]]: papiery (纸 arkusz, 页 stronica, 素 surowe podłoże, 帛 jedwab) zamiast gray-50 po gray-200; tusze i pigmenty z pudełka malarza — 朱 wino, 石 palona pomarańcz, 赭 ochra, 黛 morska zieleń, 紫 fiolet — zamiast primary/secondary/accent. Te nazwy nie są ozdobą: kotwiczą każdą nową decyzję o kolorze w tej samej fizycznej metaforze i właśnie dlatego pięć różnych powierzchni wciąż czyta się jak jeden arkusz papieru.
+
+## Dwa podłoża, bo dwa rodzaje stron
+
+Wiki czyta się na dwa sposoby. Notatkę **czytasz** — jedna kolumna, godzina, oczy chcą spokoju: lekko chłodny papier, neutralny tusz, jeden akcent na linki i numery. Półkę **przeglądasz** — siatka kart, jedno spojrzenie, wybór: papier może być cieplejszy, tytuły mogą iść szeryfem tytułowym, a akcent może być głębokim winem, które czyta się jak znak, nie jak link. Danie tym dwóm sytuacjom jednej palety skrzywdziłoby obie. Dlatego warstwa semantyczna ma dwa konteksty — kolumnę lektury (`--color-*`) i półkę przeglądania (`--wb-*`) — czerpane z jednego pudełka pigmentów, a strona deklaruje, którym z nich jest. W efekcie witryna czuje się jak jeden przedmiot i dwa pokoje.
+
+## Ciemny to drugie wydanie, nie inwersja
+
+Algorytmiczne tryby ciemne odwracają jasność i ogłaszają koniec pracy; tekst staje się kredą na łupku, a każda tonowana powierzchnia zamienia się w błoto. Tutaj motyw ciemny jest **drugim, ręcznie złożonym wydaniem**: zmierzchowe podłoża i księżycowo-białe tusze dobrane od nowa, pigmenty akcentów rozjaśnione dokładnie na tyle, by utrzymać kontrast AA na ciemniejszych papierach. Kosztuje to drugi komplet decyzji — i o to właśnie chodzi. Przełącznik honoruje wyłącznie jawny wybór czytelnika ([[design-tokens|nigdy preferencji systemu]]), bo strona, która w środku lektury sama odwraca motyw, to strona, która płoszy.
+
+## CJK jest elementem nośnym
+
+Mieszany tekst chińsko-łaciński to miejsce, w którym większość motywów po cichu się rozłazi: wyróżnienie, które nie chce się domknąć przy pełnej szerokości kropki, diagramy w kodzie, które się ścinają, bo znak han ma 1,7 komórki szerokości. Oba przypadki traktujemy tu jako błędy poprawności, nie kwestię typograficznego gustu — [[kitchen-sink|dialekt parsuje wyróżnienia CJK poprawnie]], a podzbiór fontu kodu przybija znak han do dokładnie dwóch komórek, więc znaki ramek przeżywają tłumaczenie. Motyw, który działa tylko po angielsku, to pół motywu.

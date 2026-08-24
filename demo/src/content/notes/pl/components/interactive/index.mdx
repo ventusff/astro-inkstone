@@ -1,0 +1,90 @@
+---
+title: Interakcje i wyposażenie
+description: DemoMount i należący do witryny kontrakt loadera, a do tego wyposażenie stron — hero, przekładki części, karty huba, listy skoków i stopki.
+part: 3
+navLabel: Interakcje i wyposażenie
+---
+
+import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import LocalToc from 'astro-inkstone/components/LocalToc.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Interakcje i wyposażenie">
+  Żywe demo na canvasie i stojący za nim kontrakt, a potem ciche komponenty oprawiające każdą notatkę — te, na które patrzysz od pierwszej strony.
+</PartHero>
+
+## DemoMount — na żywo
+
+Podział pracy jest tu ten sam co zwykle w tym pakiecie: **znacznik montażu** (scena, slot na sterowanie, slot na podpis) jedzie w pakiecie; **moduł dema i jego loader** należą do witryny. Ta witryna trzyma loader w `src/lib/demo-loader.ts` i woła `mountAllDemos()` raz z layoutu; wywołanie biegnie na każdej stronie, ale porcja kodu modułu dema jest pobierana tylko dla strony, która niesie punkt montażu `[data-demo]`.
+
+Demo, które przyjmuje wskaźnik na swoim canvasie, przekazuje `interactive` — scena przejmuje wtedy gesty dotykowe i pokazuje celownik. To poniżej jest bierne (tylko renderuje), więc zostawia flagę wyłączoną i przeciągnięcie palcem po canvasie nadal przewija stronę. Rysuje interferencję fal z dwóch źródeł tokenem tuszu samej strony, więc podąża za motywem:
+
+<DemoMount demo="waves/interference" title="Demo · Interferencja fal z dwóch źródeł" canvas={{ w: 640, h: 300 }}>
+  <Fragment slot="caption">
+    Dwa źródła punktowe emitują fale koliste; gdzie grzbiet spotyka grzbiet, tusz się zbiera, gdzie grzbiet spotyka dolinę, prześwituje papier. Przełącz motyw — demo zamacza pędzel w żywych tokenach od nowa.
+  </Fragment>
+</DemoMount>
+
+Kontrakt modułu to jeden domyślny eksport, `mount(ctx)`, zwracający funkcję sprzątającą; identyfikatory modułów w rodzaju `waves/interference` loader rozwiązuje, jak witrynie wygodnie (tutaj `import.meta.glob`).
+
+## Wyposażenie stron
+
+Pozostałe komponenty notatkę oprawiają, a nie wypełniają:
+
+- `Hero` otwiera notatkę: kicker, tytuł w kroju tytułowym, lid przechodzący przez pełny potok Markdowna, linia metadanych i opcjonalny `tocLabel`, który dodaje do sidebara nienumerowany wiersz „wstępu”. Frontmatterowy `title` notatki pozostaje krótkim kanonicznym tytułem dla `<title>` i kart; ten w hero może być długi.
+- `PartHero` otwiera rozdział huba — to głowa tej właśnie strony. Jego kickera nigdy nie wpisuje się ręcznie: trasa przekazuje etykietę rozdziału „Część III · …” jako `props.partLabel`.
+- `Part` dzieli długą jednostronicową notatkę na części; preset numeracji zamienia go w grupowe wiersze sidebara w rodzaju „CZĘŚĆ II · Fundamenty”. Tak pocięta jest strona [[kitchen-sink|Wszystko naraz]].
+- `HubCard` i `.hub-grid` to karty powitalne huba; `.path` to jego ramka ścieżki lektury — oba na stronie [[components|przeglądu tej galerii]].
+- `LocalToc` renderuje listę skoków w obrębie strony; przyjmuje oba kształty ToC, które produkują dwa presety numeracji, i chowa się poniżej konfigurowalnego minimum. Niżej, na żywo, na ToC tego właśnie rozdziału.
+- `SidebarMemory` trzyma przewijany sidebar tam, gdzie czytelnik go zostawił, między wczytaniami stron, i centruje bieżący element (domyślnie `[aria-current="page"]`), ilekroć wypadłby poza widok. Wrzuć go do pudełka przewijania sidebara, za znacznikami nawigacji; działa przed pierwszym malowaniem, więc sidebar nigdy nie błyska od góry. Nosi go sidebar tego dema.
+- `LineageSvg` oprawia ręcznie rysowane SVG (rodowód metody, drzewo taksonomii) w kartę — jedna poniżej.
+- `PageFooter` to drobny druk u stóp notatki — linia pod każdą notatką tutaj.
+- Elementy przeglądania mieszkają w [[components/wiki|rozdziale wiki]]; markdownową stroną tej galerii jest [[kitchen-sink|Wszystko naraz]].
+
+## LocalToc i LineageSvg, na żywo
+
+`LocalToc` nakarmiony ToC tej strony z czasu budowania — tymi samymi danymi, które konsumuje sidebar, podanymi notatce jako `props.toc`:
+
+<LocalToc toc={props.toc} label="W tym rozdziale" />
+
+I `LineageSvg` wokół ręcznie napisanego diagramu, tuszowanego wyłącznie tokenami semantycznymi, więc leży na obu motywach:
+
+<LineageSvg title="Rys. — gdzie siedzi warstwa wyglądu">
+  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css zasila base.css i browse.css, a te zasilają każdy komponent" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
+    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
+      <rect x="20" y="55" width="150" height="40" rx="6" />
+      <rect x="245" y="15" width="150" height="40" rx="6" />
+      <rect x="245" y="95" width="150" height="40" rx="6" />
+      <rect x="470" y="55" width="150" height="40" rx="6" />
+    </g>
+    <g fill="none" stroke="var(--color-ink-faint)">
+      <path d="M170 68 C 210 60, 210 42, 245 37" />
+      <path d="M170 82 C 210 90, 210 108, 245 113" />
+      <path d="M395 37 C 430 42, 430 60, 470 68" />
+      <path d="M395 113 C 430 108, 430 90, 470 82" />
+    </g>
+    <g fill="var(--color-ink)" text-anchor="middle">
+      <text x="95" y="80">tokens.css</text>
+      <text x="320" y="40">base.css</text>
+      <text x="320" y="120">browse.css</text>
+      <text x="545" y="80">components</text>
+    </g>
+  </svg>
+</LineageSvg>
+
+## Wyposażenie bez komponentu
+
+Kilka elementów to zwykłe klasy w `base.css`, dla witryn, które renderują je z własnego layoutu albo piszą jako HTML w prozie:
+
+| Klasa | Co to jest |
+| --- | --- |
+| `.page-head` + `.kicker`, `.page-desc`, `.page-date` | głowa strony sterowana frontmatterem (kicker, h1, opis, data), renderowana przez layout zamiast `<Hero>` |
+| `.banner`, `.banner-fallback` | jednolinijkowe powiadomienie pod głową; wariant fallback jest tym przygaszonym |
+| `.page-foot` | dwukolumnowa stopka drobnego druku (slot lewy, slot prawy) |
+| `.speak` | przekład na ludzki język pod nagłówkiem sekcji pogłębionej; jego etykieta to `--speak-label` |
+| `.path` + `.title`, `.route`, `.arrow` | ramka ścieżki lektury na hubie |
+| `.ref-tag` | mały tag w kroju maszynowym na liście bibliograficznej (miejsce publikacji, rok) |
+| `.tag`, `.tag.teal / .mustard / .violet` | odznaki kart publikacji, użyteczne wszędzie |
+| `.measured` + `.measured-head`, `.measured-body`, `.measured-pane` (`.doc`), `.measured-tag` | karta porównania „udokumentowane kontra zmierzone”: pełny morski pasek tytułu nad dwoma panelami — panel `.doc` niesie twierdzenie, drugi pomiar — sylwetka odrębna od każdego calloutu |
+| `.paper .idea-label` | mała wersalikowa etykieta kluczowej idei w treści `PaperCard`, np. `<span class="idea-label">Kluczowa idea</span>` |

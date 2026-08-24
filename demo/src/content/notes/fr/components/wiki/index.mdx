@@ -1,0 +1,154 @@
+---
+title: "Wiki & parcours"
+description: "Le jeu de taxonomie — cartes de notes, rangées de facettes, badges, le panneau des mentions liées et le graphe local de la barre latérale — montré sur données d’exemple, et en service partout dans ce jardin."
+part: 2
+navLabel: "Wiki & parcours"
+---
+
+import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph from 'astro-inkstone/components/LocalGraph.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import DomainChip from 'astro-inkstone/components/wiki/DomainChip.astro';
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import KindBadge from 'astro-inkstone/components/wiki/KindBadge.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import StatusDot from 'astro-inkstone/components/wiki/StatusDot.astro';
+import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<PartHero kicker={props.partLabel} title="Wiki & parcours">
+  Tout ce chapitre tourne **en direct** sur ce site : les étagères de la page d’accueil sont faites de `NoteCard`, ses rangées de facettes sont un `FacetNav`, le bandeau de méta au-dessus de ce texte est une `TaxonomyLine`, et la petite constellation de la barre latérale est un `LocalGraph`. Tous sont de purs composants d’affichage — le site résout son registre et passe des données prêtes à afficher. Les assistants de résolution sont livrés dans le paquet sous les noms `createTaxonomy` et `createBacklinks` ([[three-way-split|la mécanique dans le paquet, le sens dans le site]]).
+</PartHero>
+
+## La liaison, en trois lignes
+
+```ts title="src/lib/taxonomy.ts (toute la liaison de ce site)"
+import { createTaxonomy } from 'astro-inkstone/lib/taxonomy';
+import { DOMAINS, KINDS, STATUSES } from '../content/notes/_meta/taxonomy';
+
+export const { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, tagIndex, resolveTaxonomy } =
+  createTaxonomy({ kinds: KINDS, domains: DOMAINS, statuses: STATUSES },
+    { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' });
+```
+
+Le registre (`_meta/taxonomy.ts`) est de la donnée pure dans l’arbre de contenu : les types, les domaines avec leurs tons, les statuts avec la couleur de leur point, chacun avec ses libellés dans chaque langue du site. Ajoutez-y une valeur, étiquetez une note avec, et chaque page de parcours la reprend — les routes sont paramétrées par valeur.
+
+## L’étagère et ses tokens
+
+Les pages de parcours vivent sur un second fond : `browse.css` leur donne le papier chaud, le bandeau en serif, le filet d’étagère de 2 pt et la grille de cartes, le tout par les tokens `--wb-*` — la moitié étagère de la [[design-tokens|palette à deux contextes]]. Une page entre dans ce contexte par une seule classe, `wb-root`, sur son body ; à l’intérieur, les tokens de l’habillage sont re-projetés, si bien que la même barre de navigation se tient sur l’un et l’autre fond.
+
+## NoteCard
+
+Une carte reçoit des données prêtes à afficher — libellés résolus, tons, date déjà mise en forme, liens miroirs. Les cartes vivent sur l’étagère, alors l’échantillon se pose dans un pan du contexte de parcours (`.wb-root.wb-inset`) au milieu de cette colonne de lecture :
+
+<div class="wb-root wb-inset">
+<ul class="wb-grid">
+  <NoteCard
+    note={{
+      id: 'sample-note',
+      href: `${base}/fr/kitchen-sink/`,
+      title: 'La démonstration intégrale',
+      description: 'Chaque élément de la chaîne Markdown se produit une fois sur cette page.',
+      kind: { id: 'reference', label: 'Référence' },
+      domains: [{ id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' }, href: `${base}/fr/domain/pipeline/` }],
+      status: { id: 'evergreen', label: 'Pérenne', dot: '#1f5e46' },
+      updated: '2026.08',
+      mirrors: [{ label: 'EN', href: `${base}/kitchen-sink/` }],
+    }}
+  />
+  <NoteCard
+    note={{
+      id: 'sample-hub',
+      href: `${base}/fr/components/`,
+      title: 'Le jeu de composants',
+      description: 'Tous les composants livrés, en trois chapitres — et une démonstration de hub en direct.',
+      kind: { id: 'reference', label: 'Référence' },
+      domains: [{ id: 'components', label: 'Composants', tone: { bg: '#f7e9dc', fg: '#98511a' }, href: `${base}/fr/domain/components/` }],
+      status: { id: 'evergreen', label: 'Pérenne', dot: '#1f5e46' },
+      updated: '2026.08',
+      chapterCount: 3,
+      sourceLine: 'Hero · HubCard · Stats — le mobilier du hub, sur le hub lui-même',
+    }}
+  />
+</ul>
+</div>
+
+## FacetNav
+
+L’index de parcours multi-dimensions — les types, les domaines (avec leurs tons), les étiquettes de tête, le tout en liens-pastilles prérendus :
+
+<FacetNav
+  base={`${base}/fr`}
+  kinds={[
+    { def: { id: 'guide', label: 'Guide' }, count: 2 },
+    { def: { id: 'reference', label: 'Référence' }, count: 4 },
+    { def: { id: 'pattern', label: 'Patron' }, count: 1 },
+  ]}
+  domains={[
+    { def: { id: 'design', label: 'Design', tone: { bg: '#ece7f2', fg: '#5b4a8a' } }, count: 3 },
+    { def: { id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' } }, count: 2 },
+  ]}
+  tags={[
+    { tag: 'tokens', count: 1 },
+    { tag: 'markdown', count: 1 },
+  ]}
+  active={{ dim: 'kind', value: 'reference' }}
+  labels={{ kind: 'Type', domain: 'Domaine', tag: 'Étiquettes', all: 'Tout →' }}
+/>
+
+Les libellés sont des props, anglais par défaut — la rangée ci-dessus passe `labels={{ kind: 'Type', domain: 'Domaine', tag: 'Étiquettes', all: 'Tout →' }}`, exactement ce que ce site passe à ses pages de facettes françaises ; rien d’autre ne change.
+
+## TaxonomyLine, KindBadge, StatusDot, DomainChip
+
+Le bandeau de méta d’une ligne en tête de note assemble les trois atomes de badge ; chacun s’emploie aussi seul :
+
+<TaxonomyLine
+  kind={{ id: 'pattern', label: 'Patron' }}
+  domains={[{ id: 'design', label: 'Design', tone: { bg: '#ece7f2', fg: '#5b4a8a' }, href: `${base}/fr/domain/design/` }]}
+  status={{ id: 'growing', label: 'En croissance', dot: '#5c8a3c' }}
+  updated="2026.08"
+/>
+
+Les atomes pris seuls, au fil d’une ligne : un badge de type <KindBadge def={{ id: 'guide', label: 'Guide' }} />, une pastille de domaine <DomainChip def={{ id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' } }} href={`${base}/fr/domain/pipeline/`} />, un point de statut <StatusDot def={{ id: 'evergreen', label: 'Pérenne', dot: '#1f5e46' }} />.
+
+## Backlinks
+
+Le panneau « mentions liées » sous chaque note de ce jardin est calculé par le `createBacklinks` du paquet — le propre résolveur de wikiliens du moteur, retourné en un index cible ← sources, extraits de contexte compris. Ici sur des données d’exemple :
+
+<Backlinks
+  items={[
+    {
+      href: `${base}/fr/kitchen-sink/`,
+      title: 'La démonstration intégrale',
+      before: 'le tableau à sept colonnes sert à la fois d’',
+      label: 'aide-mémoire des callouts',
+      after: ' et de test du repli en cartes…',
+    },
+    {
+      href: `${base}/fr/design-tokens/`,
+      title: 'Palette à deux niveaux et thèmes',
+      before: 'les composants ne consomment que le ',
+      label: 'niveau sémantique',
+      after: ' — l’identité peut changer sans jamais les toucher.',
+    },
+  ]}
+/>
+
+Faites défiler jusqu’au pied de cette page pour voir le vrai — ce chapitre est lui-même une cible de wikiliens.
+
+## LocalGraph
+
+Le même index répond à une seconde question — *qu’y a-t-il à un saut d’ici ?* — et `index.localGraph(id, titleOf)` la retourne en liste de voisins, entrants d’abord. Le composant les dessine sur une ellipse autour de la note, entrants en trait plein et sortants en pointillé ; un voisin peut porter sa propre `color` (une seconde collection, par exemple). Ici à la largeur de la colonne, sur des données d’exemple ; le vrai siège dans la barre latérale de chaque note qui a des liens :
+
+<div style="max-width: 300px">
+  <LocalGraph
+    centerTitle="Wiki & parcours"
+    neighbors={[
+      { id: 'kitchen-sink', title: 'Démo intégrale', href: `${base}/fr/kitchen-sink/`, dir: 'in' },
+      { id: 'design-tokens', title: 'Palette à deux niveaux', href: `${base}/fr/design-tokens/`, dir: 'out' },
+      { id: 'three-way-split', title: 'Le découpage en trois', href: `${base}/fr/three-way-split/`, dir: 'out' },
+      { id: 'checks', title: 'Les cinq vérifications', href: `${base}/fr/checks/`, dir: 'in', color: 'var(--color-accent4)' },
+    ]}
+  />
+</div>

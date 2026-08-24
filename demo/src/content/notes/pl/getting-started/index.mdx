@@ -1,0 +1,127 @@
+---
+title: Pierwsze kroki
+brand: Pierwsze kroki
+subtitle: "dwa submoduły, trzy importy,\njedna linia potoku"
+description: Para submodułów w repozytorium witryny, trzy importy arkuszy stylów, jedna linia siteMarkdown na cały potok Markdowna — i ogród stoi.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Przewodnik · od zera do ogrodu" title="Pierwsze kroki" meta="dwa submoduły · trzy arkusze stylów · jeden siteMarkdown() · trzy polecenia">
+  Ani papier, ani silnik nie są publikowane w npm — oba obywają się bez kroku budowania i eksportują surowe źródła TS/CSS. Witryna dołącza oba repozytoria jako submoduły gita, importuje trzy arkusze stylów i wpina jedną funkcję w `astro.config`. Wszystko, co widzisz na tej stronie, powstało dokładnie tą drogą.
+</Hero>
+
+<Part title="Instalacja" />
+
+## Para submodułów
+
+Dołącz oba repozytoria i wskaż je zależnościami `file:`:
+
+```bash title="korzeń repozytorium witryny"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (zależności)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] Układ tego dema jest odrobinę inny
+> Demo mieszka wewnątrz repozytorium pakietu (`demo/`), więc jego `astro-inkstone` wskazuje na `file:..`, a silnik wisi pod `demo/vendor/`. Samodzielna witryna używa powyższego układu `packages/` — oba są równoważne.
+
+## Style
+
+W globalnym arkuszu stylów: najpierw tokeny, potem warstwa treści, następnie — jeśli witryna ma strony przeglądania — półka, a na końcu już tylko twój własny chrome:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* strona główna / strony kategorii, na body.wb-root */
+
+/* tożsamość: nadpisz pigmenty pierwszej warstwy; oba konteksty semantyczne i warstwa komponentów pójdą w ślad */
+:root {
+  --p-shi: #b03a48; /* twój akcent kolumny lektury */
+  --p-zhu: #3b4a7a; /* twój akcent półki i znak witryny */
+  --p-shi-n: #e0919b; /* nocne bliźniaki: motyw ciemny czyta --p-*-n */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Szeryf półki to `--font-display` (Source Serif 4 + Noto Serif SC); hostuj go u siebie tak jak to demo, a winieta będzie wyglądać dokładnie jak tutaj:
+
+```css title="src/styles/site.css (fonty, opcjonalnie)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+Witryna z matematyką dokłada w layoucie jedną linię na arkusz KaTeX-a (bez niej skład wzorów się rozsypuje):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="Okablowanie" />
+
+## Potok Markdowna w jednej linii
+
+Minimalna konfiguracja w kształcie tej witryny — numeracja rozdziałów, matematyka, callouty, diagramy oraz `[[wikilinki]]` rozwiązywane względem kolekcji notatek (pełna wersja, z każdym hakiem, jaki ta witryna wpina, to `astro.config.mjs` w repozytorium):
+
+```js title="astro.config.mjs (wersja minimalna)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs' i '/docs/' działają tak samo
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // numery części i rozdziałów + ToC przez remarkPluginFrontmatter
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // ramki kodu: pasek tytułu / kopiowanie / zwijanie / adnotacje
+    mermaid: true, // bloki mermaid renderują się po stronie klienta
+    callouts: true, // składnia > [!note] w stylu Obsidiana
+    wikiBlocks: WIKI_MODE, // tryb edycji: mapowanie blok ↔ linia źródła, zawsze na końcu
+    guard: { autoNumberedHeadings: true }, // strażnik treści: odrzuca ręcznie wpisane numery
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown` stoi na dialekcie silnika (GFM, wyróżnienia przyjazne CJK, strażnik treści); sam preset jedynie kompletuje wtyczki po stronie witryny i ustawia je we właściwej kolejności — **kolejność potoku jest częścią kontraktu**, więc witryna nigdy nie musi się martwić, kto biegnie przed kim. Każdy przełącznik ma swój pokaz na stronie [[kitchen-sink|Wszystko naraz]], a uzasadnienie podziału na pakiety znajdziesz w notatce [[three-way-split|Trójpodział]]. Chcesz polskich etykiet calloutów? Przekaż `calloutLabels` — domyślne są angielskie.
+
+## Uruchomienie
+
+Skrypty dokładnie takie, jak definiuje je `package.json` tego dema (`build` uruchamia check-dist silnika jako postbuild; `wiki` to `WIKI=1 astro dev`):
+
+```bash
+npm install
+npm run dev        # ogród
+npm run build      # statyczny build + check-dist silnika (postbuild)
+npm run wiki       # WIKI=1 astro dev — tryb edycji CMS
+```
+
+Statyczny build nie zawiera ani bajta silnika: poza trybem WIKI kod integracji silnika nie jest nawet importowany (import dynamiczny) i żadne metadane edycyjne nie trafiają do wyniku. Jedyne, co w wyniku ma kształt CMS-owy, to bezczynne zaczepy samej witryny — puste spany `data-inkbrush-slot` w pasku nawigacji i ich CSS — które nie robią nic, dopóki CMS do nich nie zadokuje.

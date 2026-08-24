@@ -1,0 +1,30 @@
+---
+title: Editar, bloque a bloque
+description: "El flujo ✎ — CodeMirror en el lugar del bloque que estás leyendo, una vista previa en vivo a través del propio pipeline del sitio, y dos redes de seguridad antes de que nada toque el disco."
+navLabel: Edición
+part: 1
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Editar, bloque a bloque">
+  Editar funciona como corregir una errata en Wikipedia: editas el párrafo que tienes delante, no un textarea gigante con la página entera. En modo de edición (`npm run wiki`), inicia sesión, pasa el cursor sobre cualquier bloque de cualquier nota — este incluido — y haz clic en ✎.
+</PartHero>
+
+## El ciclo
+
+El bloque renderizado se oculta y en su lugar se despliega un editor [CodeMirror](https://codemirror.net/) con la fuente Markdown de ese bloque. Debajo, una vista previa en vivo se renderiza mientras escribes — con el dialecto del motor más los plugins que el sitio entrega a `inkbrush({ markdown })`, el mismo juego de reglas que monta el pipeline de la página, así que la vista previa y la página no pueden discrepar jamás. `⌘/Ctrl + Enter` guarda; `Esc` cancela.
+
+El frontmatter también es un bloque: la franja de taxonomía en lo alto de cada nota de aquí lleva su propio ✎, que abre el YAML de la nota — cambia un estado o una fecha y la cabecera se vuelve a renderizar con el frontmatter actualizado.
+
+## Las dos redes de seguridad
+
+**Bloqueo optimista.** Cada bloque lleva un hash de la fuente de la que fue recortado. Si alguien más cambió el archivo por debajo de ti, el guardado se rechaza con un conflicto en lugar de pisar su trabajo en silencio — recarga y vuelve a intentarlo.
+
+**Una puerta de build.** Antes de escribir nada al disco, el archivo entero pasa por el pipeline de Markdown del sitio — el dialecto, el guardián de contenido, los plugins propios del sitio y el compilador de MDX para los `.mdx`. Un guardado que rompería la página — un `**` sin pareja, una etiqueta de componente sin cerrar, una expresión malformada — se rechaza con el error exacto, y el archivo en disco queda intacto. La lista completa de rechazos del guardián está demostrada al final de [[kitchen-sink|el muestrario]].
+
+## A dónde van los guardados
+
+Un guardado escribe el archivo Markdown y, con `autocommit` activado, se convierte en un commit de git cuyo autor es el usuario con la sesión iniciada. No hay base de datos en ninguna parte: los archivos de contenido son la única fuente de verdad y git es el historial duradero. El diario fino por bloque que alimenta el [[inkbrush/revisions|historial de revisiones]] viaja por encima.
+
+El dialecto mismo — GFM con una regla de énfasis amigable con el CJK, más un guardián de contenido que rechaza el Markdown que se deforma en silencio — se define una sola vez en el motor y lo comparten el renderizador de páginas, la vista previa de este editor y la CLI `check-content` ([[checks|las cinco comprobaciones]]). Una gramática, tres consumidores, cero deriva.

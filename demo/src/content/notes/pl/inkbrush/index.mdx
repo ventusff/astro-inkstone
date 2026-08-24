@@ -1,0 +1,53 @@
+---
+title: Maszyna edycyjna
+description: "Pięć rozdziałów o astro-inkbrush — silniku CMS na gicie, z którym ten ogród jest sparowany. Ta witryna sama jest jego demem: w trybie edycji każdą tutejszą stronę można edytować na miejscu."
+brand: inkbrush
+subtitle: "silnik CMS na własnym podręczniku\npięć rozdziałów · jeden hub"
+navLabel: Przegląd
+chapters: false
+nav:
+  - group: Silnik
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Referencja · silnik CMS" title="Maszyna edycyjna" meta="pięć rozdziałów · zero bajtów na produkcji · ta witryna jest demem">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone) to papier; [astro-inkbrush](https://github.com/ventusff/astro-inkbrush) to pióro. Silnik zamienia dowolną witrynę treści na Astro w jej własny edytor: najedź w trybie edycji na akapit, a mały uchwyt zaproponuje ✎ edycję, ✦ pytanie do Claude'a, ⟲ historię. Nie ma osobnej witryny demonstracyjnej, do której trzeba by zajrzeć — **demem jest ogród, który właśnie czytasz**. Uruchom go przez `npm run wiki`, a każda tutejsza notatka, z tą stroną włącznie, otworzy się do edycji na miejscu; statyczny build — taki jak ten, który czytasz — nie zawiera ani jednego bajta kodu CMS.
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: 'jedyna baza danych' },
+    { value: '2', label: 'siatki bezpieczeństwa przy każdym zapisie' },
+    { value: '0 B', label: 'kodu CMS w statycznym buildzie' },
+  ]}
+/>
+
+## Pięć rozdziałów `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/pl/inkbrush/editing/`} num="CZĘŚĆ I" title="Edycja, blok po bloku" count="✎"
+    desc="CodeMirror w miejscu bloku, który właśnie czytasz, podgląd na żywo przez potok samej witryny i dwie siatki bezpieczeństwa, zanim cokolwiek dotknie dysku." />
+  <HubCard href={`${base}/pl/inkbrush/revisions/`} num="CZĘŚĆ II" title="Historia rewizji i cofanie" count="⟲"
+    desc="Każdy zapis dziennikowany na poziomie bloku — kto, kiedy, dokładne przed i po — z cofnięciem jednym kliknięciem, które samo też da się cofnąć." />
+  <HubCard href={`${base}/pl/inkbrush/ai-assist/`} num="CZĘŚĆ III" title="Asysta AI" count="✦"
+    desc="Przepisywanie bloków, czat znający notatkę i tłumaczenie całych notatek przez CLI claude, w piaskownicy na jednorazowej kopii." />
+  <HubCard href={`${base}/pl/inkbrush/inbox/`} num="CZĘŚĆ IV" title="Skrzynka odbiorcza Obsidiana" count="📥"
+    desc="Wskaż obserwatorowi folder sejfu, a nowe notatki same się skonwertują i zaimportują — z osadzeniami, wikilinkami i zakreśleniami włącznie." />
+  <HubCard href={`${base}/pl/inkbrush/wikilinks/`} num="CZĘŚĆ V" title="Jak rozwiązują się wikilinki" count="[[ ]]"
+    desc="Jeden mechanizm rozwiązywania dla stron, podglądu edytora, importera i lintu w CI — najpierw lustrzane wersje językowe, potem id, aliasy, brandy i tytuły." />
+</div>
+
+## Gdzie jest jego miejsce
+
+Silnik jest właścicielem funkcji CMS **i** dialektu Markdowna wraz z jego strażnikiem treści — gramatyka, którą przyjmuje edytor, i gramatyka, którą renderuje strona, muszą być jedną gramatyką, więc jest napisana raz i konsumowana wszędzie ([[three-way-split|trójpodział]] wyjaśnia, czemu granica biegnie właśnie tam). Stylowanie należy do warstwy papieru; tożsamość — do twojej witryny. Wszystko, co się na tych stronach renderuje — z paskiem nad tym tekstem włącznie — to papier przy pracy; wszystko, co te strony *edytuje*, to silnik.
+
+<div class="path">
+  <strong>Ścieżka lektury.</strong>
+  Silnik widzisz pierwszy raz → <a href={`${base}/pl/inkbrush/editing/`}>Część I</a><span class="arrow">→</span><a href={`${base}/pl/inkbrush/revisions/`}>Część II</a>; wpinasz go we własną witrynę → najpierw <a href={`${base}/pl/getting-started/`}>przewodnik pierwszych kroków</a>; dialekt, którego pilnuje brama zapisu → <a href={`${base}/pl/kitchen-sink/`}>Wszystko naraz</a>; notatka o prowadzeniu notatek → <a href={`${base}/pl/garden-craft/`}>esej ogrodniczy</a>.
+</div>

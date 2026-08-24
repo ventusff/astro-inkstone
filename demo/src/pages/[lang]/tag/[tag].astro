@@ -1,0 +1,19 @@
+---
+/** /<locale>/tag/<tag>/ — browse by tag (only non-empty values prerender);
+ *  one route file for every non-default locale. */
+import FacetPage from '../../../components/browse/FacetPage.astro';
+import { LOCALE_DEFS } from '../../../content/notes/_meta/locales';
+import { getWikiUnits, tagIndex } from '../../../lib/taxonomy';
+
+export async function getStaticPaths() {
+  const units = await getWikiUnits();
+  return LOCALE_DEFS.filter((l) => l.prefix !== '').flatMap((l) =>
+    [...tagIndex(units).entries()].map(([tag, notes]) => ({
+      params: { lang: l.code, tag },
+      props: { locale: l.code, tag, notes },
+    })),
+  );
+}
+---
+
+<FacetPage dim="tag" {...Astro.props} />

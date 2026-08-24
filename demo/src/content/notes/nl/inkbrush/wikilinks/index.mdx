@@ -1,0 +1,24 @@
+---
+title: Hoe wikilinks worden opgelost
+description: Eén oplosser voor de pagina's, de editorvoorvertoning, de importeur en de CI-lint — eerst taalspiegels, dan ids, aliassen, brands en titels.
+navLabel: Wikilinks
+part: 5
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Hoe wikilinks worden opgelost">
+  Notities linken naar elkaar met dubbele blokhaken, bij het bouwen opgelost tegen de verzameling notities die werkelijk bestaat. De gerenderde resultaten — id, alias, label, anker — treden live op in de [[kitchen-sink|staalkaart]]; dit hoofdstuk gaat over de oplosregels erachter.
+</PartHero>
+
+## Wat een doel kan zijn
+
+Een doel hoeft niet het id van een notitie te zijn. Het oplossen probeert, in deze volgorde: **de spiegel in de huidige taal** (een link op een van de zeventien zusteredities van deze pagina landt op de editie van haar doel in dezelfde taal, en valt alleen terug op de canonieke notitie waar geen spiegel bestaat), dan het exacte id, dan aliassen, brandnamen en titels, ongevoelig voor hoofdletters. Het essay [[garden-craft]] verklaart `tending` als alias, dus een link geschreven als `[[tending]]` landt op [[garden-craft|dezelfde pagina]]. Ankers en labels combineren zoals je zou hopen: `[[garden-craft#pruning]]` springt rechtstreeks naar een sectie, `[[garden-craft|the gardening essay]]` rendert eigen tekst — en de twee zijn te combineren.
+
+## Dode links breken de build niet
+
+Een link naar een notitie die niet bestaat, rendert als een zichtbaar dode link met de reden in zijn tooltip, en de build logt een waarschuwing. Dat is een bewuste keuze voor tuinen: een ongeschreven notitie is een uitnodiging, geen fout. Een doel dat op meerdere notities tegelijk past, rendert op dezelfde manier, gemarkeerd als dubbelzinnig. Linkrot hoort intussen wél in CI — de CLI `check-wikilinks` van de engine lost elke link op met de eigen regels van de bibliotheek en maakt in `--strict`-modus van dode links een falende exit; zo draait deze repository hem ([[checks|de vijf controles]]).
+
+## Eén implementatie, vier consumenten
+
+De pagina's, de live voorvertoning van de editor, de [[inkbrush/inbox|importeur van het postvak IN]] en de CI-lint lossen op met dezelfde code — een link betekent dus overal hetzelfde, en de editor kan gul zijn: wie in de bewerkmodus `[[` typt, krijgt autoaanvulling over ids, titels en aliassen.

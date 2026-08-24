@@ -1,0 +1,30 @@
+---
+title: Edycja, blok po bloku
+description: Przepływ ✎ — CodeMirror w miejscu bloku, który właśnie czytasz, podgląd na żywo przez potok samej witryny i dwie siatki bezpieczeństwa, zanim cokolwiek dotknie dysku.
+navLabel: Edycja
+part: 1
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Edycja, blok po bloku">
+  Edycja działa tak, jak poprawianie literówki na Wikipedii: edytujesz akapit, na który patrzysz, a nie gigantyczne pole tekstowe z całą stroną. W trybie edycji (`npm run wiki`) zaloguj się, najedź na dowolny blok dowolnej notatki — z tym włącznie — i kliknij ✎.
+</PartHero>
+
+## Pętla
+
+Wyrenderowany blok się chowa, a na jego miejscu rozwija się edytor [CodeMirror](https://codemirror.net/) z markdownowym źródłem tego bloku. Poniżej, w miarę pisania, renderuje się podgląd na żywo — przez dialekt silnika plus wtyczki, które witryna przekazuje do `inkbrush({ markdown })`, czyli ten sam zestaw reguł, który montuje potok stron, więc podgląd i strona nie mają jak się poróżnić. `⌘/Ctrl + Enter` zapisuje; `Esc` anuluje.
+
+Frontmatter też jest blokiem: pasek taksonomii u góry każdej z tutejszych notatek niesie własne ✎, które otwiera YAML notatki — zmień status albo datę, a nagłówek wyrenderuje się od nowa ze zaktualizowanego frontmattera.
+
+## Dwie siatki bezpieczeństwa
+
+**Blokowanie optymistyczne.** Każdy blok niesie hash źródła, z którego został wycięty. Jeśli ktoś inny w międzyczasie zmienił plik, zapis zostaje odrzucony z konfliktem, zamiast po cichu nadpisać jego pracę — odśwież i spróbuj ponownie.
+
+**Brama builda.** Zanim cokolwiek trafi na dysk, cały plik przechodzi przez potok Markdowna witryny — dialekt, strażnika treści, wtyczki samej witryny, a dla `.mdx` także kompilator MDX. Zapis, który zepsułby stronę — `**` bez pary, niedomknięty znacznik komponentu, zniekształcone wyrażenie — zostaje odrzucony z dokładnym błędem, a plik na dysku pozostaje nietknięty. Pełną listę odrzutów strażnika demonstruje końcówka strony [[kitchen-sink|Wszystko naraz]].
+
+## Dokąd idą zapisy
+
+Zapis trafia do pliku Markdowna i — przy włączonym `autocommit` — staje się commitem gita, którego autorem jest zalogowany użytkownik. Nigdzie nie ma bazy danych: pliki treści są jedynym źródłem prawdy, a git — trwałą historią. Drobnoziarnisty, blokowy dziennik, który napędza [[inkbrush/revisions|historię rewizji]], jedzie na wierzchu.
+
+Sam dialekt — GFM z regułą wyróżnień przyjazną CJK plus strażnik treści odrzucający Markdown, który zniekształca się po cichu — jest zdefiniowany raz, w silniku, i współdzielony przez renderer stron, podgląd tego edytora i CLI `check-content` ([[checks|pięć kontroli]]). Jedna gramatyka, trzej konsumenci, zero dryfu.

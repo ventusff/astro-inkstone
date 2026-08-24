@@ -1,0 +1,106 @@
+---
+title: सामग्री और टाइपोग्राफ़ी
+description: "Callout, chip, ग्रिड, स्टेप, आँकड़े, पेपर-कार्ड और संदर्भ-सूचियाँ — वे कंपोनेंट जिनसे गद्य बनता है।"
+part: 1
+navLabel: सामग्री और टाइपोग्राफ़ी
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="सामग्री और टाइपोग्राफ़ी">
+  वे हिस्से जिनसे गद्य बनता है। हर एक टोकनों का सिर्फ़ semantic टियर बरतता है — पैलेट बदल दीजिए, सब अपने-आप पीछे-पीछे चलेंगे।
+</PartHero>
+
+## Callout
+
+पाँच वेरिएंट; `title` वेरिएंट के डिफ़ॉल्ट लेबल की जगह ले लेता है (Note / Intuition / Warning / Important / Abstract — वही डिफ़ॉल्ट जो quote-सिंटैक्स बरतती है, `labels` से स्थानीयकरण-योग्य)। इसी मार्कअप की quote-सिंटैक्स और raw-HTML वर्तनियाँ [[kitchen-sink]] दिखाता है।
+
+<Callout variant="intuition" title="कंपोनेंट की ओर कब हाथ बढ़ाएँ">
+  MDX में, जब सामग्री वहीं inline लिखी जा रही हो। सादे Markdown की फ़ाइलें quote-सिंटैक्स सँभालती है; दोनों एक जैसा मार्कअप रेंडर करते हैं।
+</Callout>
+
+## Chip
+
+स्थिति और श्रेणियों के लिए इनलाइन बैज, उन्हीं चार वेरिएंटों में जो `PaperCard` के टैग और `HubCard` के chip साझा करते हैं: <Chip variant="teal">स्थिर</Chip> <Chip variant="mustard">बीटा</Chip> <Chip variant="violet">शोध</Chip> <Chip variant="orange">नया</Chip> — या विषय-पैलेटों के लिए अपनी टोन के साथ: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>कस्टम टोन</Chip>
+
+## Grid
+
+एक ग्रिड, तीन खालें (`plain`, `card`, `cmp`)। कार्ड:
+
+<Grid cols={2} kind="card">
+  <div>
+    **पहले टोकन।** import का क्रम अनुबंध का हिस्सा है: टोकन, फिर सामग्री-परत, फिर साइट का chrome।
+  </div>
+  <div>
+    **सिर्फ़ semantic परत।** कंपोनेंट नंगे रंग कभी नहीं छूते — पैलेट बदलिए, सब साथ चलेंगे।
+  </div>
+</Grid>
+
+और तुलना वाली खाल, पहले/बाद के पैनलों के लिए बनी:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **रक्षक के बिना** — खुला छूटा `**` दो नंगे तारांकन बनकर production तक पहुँच जाता है।
+  </div>
+  <div>
+    **रक्षक के साथ** — बिल्ड file:line:column पर गिरता है, चिह्न के नीचे caret के साथ।
+  </div>
+</Grid>
+
+## Steps
+
+खड़ी पटरी पर एक markdown-सूची:
+
+<Steps>
+1. दोनों submodule और `file:` डिपेंडेंसी जोड़िए।
+2. अपनी ग्लोबल स्टाइलशीट में `tokens.css`, `base.css` और (विकी के लिए) `browse.css` import कीजिए।
+3. `astro.config` में `siteMarkdown()` जोड़िए।
+4. टियर-1 पैलेट को अपने पहचान-पिगमेंटों से override कीजिए।
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: 'टोकन-टियर' },
+    { value: '24', label: 'कंपोनेंट' },
+    { value: '4', label: 'प्रोब viewport' },
+    { value: '0', label: 'बिल्ड-स्टेप' },
+  ]}
+/>
+
+## PaperCard
+
+सर्वेक्षणों का बोझ ढोने वाला — उपनाम, पूरा शीर्षक, प्रकाशन-टैग, लेखक-मेटा, लिंक, और दो समर्पित slot:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar, et al."
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">Recurrent मॉडल टोकनों को एक-के-बाद-एक चलाते हैं — दूर के रिश्ते धुँधलाते जाते हैं, और कुछ भी समानांतर नहीं चलता।</Fragment>
+  **मुख्य विचार**: सिर्फ़ attention, कोई recurrence नहीं — हर टोकन एक ही क़दम में बाक़ी सबकी ओर ध्यान देता है, और पूरा अनुक्रम समानांतर में प्रशिक्षित होता है।
+  <Fragment slot="diff">वह आर्किटेक्चर जिस पर उसके बाद का लगभग हर बड़ा भाषा-मॉडल खड़ा हुआ।</Fragment>
+</PaperCard>
+
+गहरे विश्लेषण वाले शीर्षक के नीचे, एक पंक्ति की आसान-भाषा टिप्पणी (`.speak`) यंत्र-रचना से पहले बता देती है कि यह हिस्सा *करता क्या है*:
+
+<p class="speak">Attention एक नरम lookup-टेबल है: हर टोकन पूछता है "मेरे मतलब का कौन है?" और जवाबों का भारित घोल पा जाता है।</p>
+
+## References
+
+<References>
+- Vaswani et al., *Attention Is All You Need*, NeurIPS 2017.
+- Knuth, *The TeXbook* — वह वजह जिससे गणित की ज़मीनों को अपना अलग काग़ज़ी रंग मिला।
+- W3C, *Web Content Accessibility Guidelines 2.2* — AA कंट्रास्ट की वह कसौटी जिस पर टोकनों का ऑडिट होता है।
+</References>

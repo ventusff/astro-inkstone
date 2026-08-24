@@ -1,0 +1,47 @@
+---
+title: Die Dreiteilung
+brand: Die Dreiteilung
+subtitle: "die Engine editiert, das Papier gestaltet,\ndie Site bist du"
+description: Die Engine editiert, das Papier gestaltet, die Site bist du – wer was besitzt, und warum die Grenzen genau dort verlaufen, wo sie verlaufen.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Leitfaden · Architektur" title="Die Dreiteilung" meta="drei Repos · drei Besitzer · ein Satz zum Merken">
+  Eine Doku- oder Wiki-Site auf diesem Werkzeugkasten setzt sich aus drei Teilen zusammen, von denen jeder genau eine Schicht besitzt. Die Grenzen dazwischen sind keine Geschmacksfrage – hinter jeder steht eine Randbedingung, die zubeißt, sobald man sie überschreitet.
+</Hero>
+
+## Drei Schichten, drei Besitzer
+
+- **astro-inkbrush (die Engine)**: ein minimales CMS – Block-Bearbeitung direkt im Browser, Revisionshistorie und Revert auf Blockebene, Kommentare, KI-Fragen, -Umschreiben und -Übersetzen, Inbox-Import. Ihr gehört außerdem etwas, das auf den ersten Blick nicht in ein CMS gehört: **der Markdown-Dialekt und der Inhaltswächter**. Der Grund ist hart: Die Grammatik, die der Editor akzeptiert, und die Grammatik, die die Seite rendert, müssen ein und dieselbe sein – sonst ist „speichert sauber im Editor, rendert falsch auf der Seite“ nur eine Frage der Zeit. Also werden die Parser-Regeln einmal geschrieben, in der Engine, und an drei Stellen konsumiert – Site-Rendering, Speicher-Validierung des CMS, CI-Prüfungen.
+- **astro-inkstone (das Papier – dieses Paket)**: die geteilte Erscheinungs- und Pipeline-Schicht – zweistufige Design-Tokens in zwei Kontexten, das Inhalts-Stylesheet `base.css` und das Stöberregal `browse.css`, die Komponentenbibliothek, das Pipeline-Preset `siteMarkdown`, die Taxonomie- und Backlink-Helfer, auf denen dieser Garten läuft, das Code-Schrift-Subset aus Maple Mono CN und die Render-Proben. Site-Identität macht es **nicht**: Markenfarben, Layout-Chrome, Routing und Deployment gehen es nichts an.
+- **Die Site (wie der Garten, den du gerade liest)**: überschreibt die Tokens der ersten Stufe für ihre Identitätsfarbe, besitzt ihre eigene Sidebar und ihr Nav-Chrome (die Implementierung dieser Site ist die Referenzantwort) und entscheidet, wie Inhalte organisiert sind, wie Routen aussehen und wo deployt wird.
+
+Ein Satz zum Merken: **Die Engine editiert, das Papier gestaltet, die Site bist du.**
+
+## Warum die Grenzen genau hier verlaufen
+
+Hinter jedem Schnitt steht eine echte Randbedingung:
+
+**Der Dialekt gehört der Engine**, weil ein Prüfer, dessen Plugin-Satz von dem der Site abweicht, schlimmer ist als gar kein Prüfer – einem Prüfer ohne Mathe-Plugin geraten Formelklammern zu JSX-Ausdrücken, einer ohne GFM winkt Tabellen-Pipes durch. Die Grammatik wird einmal geschrieben und an drei Stellen konsumiert, also kann sie nie auseinanderdriften.
+
+**Die Styles gehören dem Papier**, denn wenn mehrere Sites je ihr eigenes Inhalts-Stylesheet pflegen, muss ein Kontrast-Fix einmal pro Site eingespielt werden – wird eine vergessen, rutscht dort der Kleintext unter AA. In einer geteilten Schicht landet ein Fix überall zugleich.
+
+**Die Identität gehört der Site**, weil in dem Moment, in dem eine geteilte Schicht die Markenfarbe einer einzelnen Site aufsaugt, jede andere Site mit Overrides dagegen ankämpfen muss. Daher die zweistufigen Tokens: Eine Site überschreibt die Rohpalette der ersten Stufe (`--p-*`), und die semantische Schicht wie die Komponentenschicht folgen unangetastet – siehe [[design-tokens]].
+
+## Wo die Stöber-Maschinerie sitzt
+
+Dieselbe Disziplin gilt für das, worin du gerade navigierst. Das Paket liefert die **Mechanik** – `createTaxonomy` (Auflösung von Art, Bereich und Schlagwort, Hub-Vererbung, Locale-Spiegel), `createBacklinks` (der Index der verknüpften Erwähnungen) und Darstellungskomponenten wie die Notizkarten und Facettenzeilen der Startseite. Die Site besitzt **Vokabular und Routen**: Die Arten und Bereiche dieses Gartens leben in seiner eigenen Registry-Datei, und seine Seiten unter `/kind/…`, `/domain/…`, `/tag/…` sind gewöhnliche Astro-Seiten, die eine konsumierende Site kopiert und umformt. Derselbe Schnitt, eine Ebene höher: Mechanik im Paket, Bedeutung in der Site.
+
+## Was eine Site bekommt
+
+Aus Sicht der Site kauft man sich mit diesem Paket plus der Engine:
+
+- `astro-inkstone/styles/tokens.css` + `base.css` + `browse.css`: erst die Tokens, dann die Lesespalte, dann das Stöberregal – drei `@import`-Zeilen für den ganzen Look;
+- `siteMarkdown(...)`: die komplette Markdown-Pipeline in einer Zeile, die Schalter beschreibt [[getting-started]];
+- Komponenten unter `astro-inkstone/components/`, nach Bedarf per Pfad importiert;
+- die Taxonomie-Fabrik und den Backlink-Builder unter `astro-inkstone/lib/`, gebunden an die eigene Registry der Site;
+- im WIKI-Modus das volle CMS der Engine (auf dieser Site mit `npm run wiki` auszuprobieren);
+- fünf Prüfungen: `check-content`, `check-wikilinks` und `check-dist` (mit der Engine ausgeliefert), `ui_probe` und `contrast_probe` (aus diesem Paket) – siehe [[checks]].
+
+Jeder Render-Effekt auf jeder Seite dieses Gartens ist das Produkt genau dieses Schnitts – die Notizen sind das Handbuch, und das Handbuch ist die Demo.

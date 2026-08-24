@@ -1,0 +1,106 @@
+---
+title: 콘텐츠와 타이포그래피
+description: 콜아웃, 칩, 그리드, 단계, 통계, 논문 카드와 참고 문헌 목록 — 본문이 조립되는 컴포넌트들.
+part: 1
+navLabel: 콘텐츠와 타이포그래피
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="콘텐츠와 타이포그래피">
+  본문이 조립되는 부품들입니다. 하나같이 토큰의 시맨틱 계층만 소비합니다 — 팔레트를 갈아입히면 전부 따라옵니다.
+</PartHero>
+
+## Callout
+
+다섯 가지 변형이 있습니다. `title` prop은 변형의 기본 라벨(Note / Intuition / Warning / Important / Abstract — 인용 구문이 쓰는 것과 같은 기본값이며, `labels` prop으로 현지화합니다)을 대체합니다. 같은 마크업의 인용 구문 표기와 원시 HTML 표기는 [[kitchen-sink|전 요소 시연]]에 있습니다.
+
+<Callout variant="intuition" title="컴포넌트에 손이 가야 할 때">
+  MDX에서, 내용을 그 자리에 직접 쓸 때입니다. 순수 Markdown 파일은 인용 구문이 맡습니다. 둘은 동일한 마크업을 렌더링합니다.
+</Callout>
+
+## Chip
+
+상태와 범주를 위한 인라인 배지입니다. `PaperCard` 태그와 `HubCard` 칩이 공유하는 네 가지 변형: <Chip variant="teal">안정</Chip> <Chip variant="mustard">베타</Chip> <Chip variant="violet">연구</Chip> <Chip variant="orange">신규</Chip> — 또는 주제 팔레트를 위한 커스텀 톤: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>커스텀 톤</Chip>
+
+## Grid
+
+그리드 하나에 스킨이 셋(`plain`, `card`, `cmp`)입니다. 카드:
+
+<Grid cols={2} kind="card">
+  <div>
+    **토큰이 먼저.** 임포트 순서도 계약의 일부입니다: 토큰, 그다음 콘텐츠 계층, 그다음 사이트 크롬.
+  </div>
+  <div>
+    **시맨틱 계층만.** 컴포넌트는 원색을 만지지 않습니다 — 팔레트를 갈아입히면 전부 따라옵니다.
+  </div>
+</Grid>
+
+그리고 전/후 패널을 위해 만든 비교 스킨:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **가드 없이** — 닫히지 않은 `**` 표시가 별표 두 글자 그대로 프로덕션에 나갑니다.
+  </div>
+  <div>
+    **가드와 함께** — 빌드가 파일:줄:칸 위치에서, 문제의 표시 밑에 캐럿을 찍으며 실패합니다.
+  </div>
+</Grid>
+
+## Steps
+
+세로 레일 위의 Markdown 목록:
+
+<Steps>
+1. 서브모듈 두 개와 `file:` 의존성을 추가합니다.
+2. 전역 스타일시트에서 `tokens.css`, `base.css`, 그리고 (위키라면) `browse.css` 파일을 임포트합니다.
+3. `siteMarkdown()` 함수를 `astro.config` 파일에 연결합니다.
+4. 1계층 팔레트를 자기 아이덴티티의 안료로 덮어씁니다.
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: '토큰 계층' },
+    { value: '24', label: '컴포넌트' },
+    { value: '4', label: '프로브 뷰포트' },
+    { value: '0', label: '빌드 단계' },
+  ]}
+/>
+
+## PaperCard
+
+서베이의 주력 일꾼입니다 — 별칭, 전체 제목, 학회 태그, 저자 메타, 링크, 그리고 전용 슬롯 둘:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar 외"
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">순환 모델은 토큰을 하나씩 차례로 처리합니다 — 장거리 의존성은 희미해지고, 아무것도 병렬화되지 않습니다.</Fragment>
+  **핵심 아이디어**: 순환 없이 어텐션만으로 — 모든 토큰이 한 단계 만에 서로를 참조하고, 시퀀스 전체가 병렬로 학습됩니다.
+  <Fragment slot="diff">이후 거의 모든 대형 언어 모델이 그 위에 지어 올려진 아키텍처.</Fragment>
+</PaperCard>
+
+깊이 파고드는 제목 밑에서는, 한 줄짜리 쉬운 말 풀이(`.speak`)가 메커니즘에 앞서 이 모듈이 *무엇을 하는지* 먼저 말해 줍니다:
+
+<p class="speak">어텐션은 부드러운 조회 테이블입니다: 모든 토큰이 "누가 나와 관련 있지?" 하고 묻고, 답들의 가중 혼합을 받아 갑니다.</p>
+
+## References
+
+<References>
+- Vaswani 외, *Attention Is All You Need*, NeurIPS 2017.
+- Knuth, *The TeXbook* — 수식 바탕이 자기만의 종이 톤을 얻은 이유.
+- W3C, *Web Content Accessibility Guidelines 2.2* — 토큰을 검증하는 잣대인 AA 대비 기준선.
+</References>

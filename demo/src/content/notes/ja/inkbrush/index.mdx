@@ -1,0 +1,53 @@
+---
+title: 編集の機構
+description: "git を土台にした CMS エンジン astro-inkbrush——この庭が対になっている、あのエンジン——を五つの章で巡るツアー。そしてこのサイト自身がそのデモです:編集モードでは、ここにあるどのページもその場で編集できます。"
+brand: inkbrush
+subtitle: "CMS エンジン、自らのマニュアルの上で\n五つの章 · ひとつのハブ"
+navLabel: 概要
+chapters: false
+nav:
+  - group: エンジン
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="リファレンス · CMS エンジン" title="編集の機構" meta="五つの章 · 本番のバイトはゼロ · このサイトがデモ">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone) が紙で、[astro-inkbrush](https://github.com/ventusff/astro-inkbrush) が筆です。エンジンは任意の Astro コンテンツサイトを、それ自身のエディタに変えます:編集モードで段落にカーソルを載せると、小さなハンドルが ✎ 編集、✦ Claude に訊く、⟲ 履歴を差し出します。見に行くための別のデモサイトはありません——**いま読んでいるこの庭こそがデモです**。`npm run wiki` で立ち上げれば、このページを含むここにあるすべてのノートがその場での編集に開かれます。そして、いままさに読んでいるような静的ビルドには、CMS のコードは 1 バイトも含まれません。
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: '唯一のデータベース' },
+    { value: '2', label: 'すべての保存に掛かる安全網' },
+    { value: '0 B', label: '静的ビルド内の CMS コード' },
+  ]}
+/>
+
+## 五つの章 `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/ja/inkbrush/editing/`} num="第I部" title="編集は、ブロック単位で" count="✎"
+    desc="読んでいるブロックの位置にそのまま開く CodeMirror、サイト自身のパイプラインを通るライブプレビュー、そしてディスクに触れる前の二つの安全網。" />
+  <HubCard href={`${base}/ja/inkbrush/revisions/`} num="第II部" title="変更履歴と巻き戻し" count="⟲"
+    desc="すべての保存をブロック単位でジャーナルに——誰が、いつ、正確な前後とともに。ワンクリックの、それ自体も巻き戻せる巻き戻し付き。" />
+  <HubCard href={`${base}/ja/inkbrush/ai-assist/`} num="第III部" title="AI アシスト" count="✦"
+    desc="ブロックの書き換え、ノートを読んだ上でのチャット、ノート丸ごとの翻訳——claude CLI を通じ、使い捨てのコピーに隔離して。" />
+  <HubCard href={`${base}/ja/inkbrush/inbox/`} num="第IV部" title="Obsidian の受信箱" count="📥"
+    desc="監視対象を vault のフォルダへ。新しいノートは自分で変換されて取り込まれます——埋め込みも、ウィキリンクも、ハイライトも込みで。" />
+  <HubCard href={`${base}/ja/inkbrush/wikilinks/`} num="第V部" title="ウィキリンクはどう解決されるか" count="[[ ]]"
+    desc="ページにも、エディタのプレビューにも、インポータにも、CI の lint にも、解決の実装は同じ一つ——ロケールミラーが最初、その後に id、別名、brand、タイトル。" />
+</div>
+
+## どこに位置するか
+
+エンジンが持つのは CMS の機能**と**、コンテンツガード付きの Markdown 方言です——エディタが受理する文法とページが描画する文法は同じ一つの文法でなければならないので、一度だけ書かれ、あらゆる場所で消費されます(境界線がなぜそこに引かれているかは[[three-way-split|三者の分業]]が説明しています)。装いは紙のレイヤーの持ち物、アイデンティティはあなたのサイトの持ち物です。これらのページに描画されているすべて——この文章の上の帯も含めて——は紙の仕事であり、これらのページを*編集する*すべてがエンジンです。
+
+<div class="path">
+  <strong>読む順番。</strong>
+  エンジンが初めてなら → <a href={`${base}/ja/inkbrush/editing/`}>第I部</a><span class="arrow">→</span><a href={`${base}/ja/inkbrush/revisions/`}>第II部</a>。サイトへ組み込むなら → まず<a href={`${base}/ja/getting-started/`}>はじめにガイド</a>を。保存の関門が強制する方言は → <a href={`${base}/ja/kitchen-sink/`}>全部入りデモ</a>。ノートを育てることについてのノートは → <a href={`${base}/ja/garden-craft/`}>庭のエッセイ</a>へ。
+</div>

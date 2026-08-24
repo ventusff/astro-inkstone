@@ -1,0 +1,90 @@
+---
+title: インタラクティブとページの調度
+description: DemoMount とサイト側が持つローダー契約、そしてページの調度品——ヒーロー、部の区切り、ハブカード、ページ内ジャンプリスト、フッター。
+part: 3
+navLabel: インタラクティブと調度
+---
+
+import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import LocalToc from 'astro-inkstone/components/LocalToc.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="インタラクティブとページの調度">
+  実際に動く canvas デモとその背後の契約を先に。それから、すべてのノートに額縁を与えている静かなコンポーネントたち——最初のページからずっと、あなたが見てきたのは彼らです。
+</PartHero>
+
+## DemoMount の実演
+
+分担はこのパッケージのいつもの分け方です:**マウント用マークアップ**(ステージ、コントロールのスロット、キャプションのスロット)はパッケージが同梱し、**デモモジュールとそのローダー**はサイトのものです。このサイトはローダーを `src/lib/demo-loader.ts` に置き、レイアウトから一度だけ `mountAllDemos()` を呼びます。この呼び出しは全ページで走りますが、デモモジュールのチャンクが取得されるのは、ページが `[data-demo]` マウントを実際に載せているときだけです。
+
+canvas 上でポインタ入力を受け取るデモは `interactive` を渡します——するとステージはタッチジェスチャを引き受け、十字カーソルを表示します。下のデモは受け身(描画のみ)なのでこのフラグを付けておらず、canvas の上をスワイプしてもページは普通にスクロールします。二つの波源の干渉を、ページ自身の墨トークンで描くので、テーマにも追随します:
+
+<DemoMount demo="waves/interference" title="デモ · 二点波源の干渉" canvas={{ w: 640, h: 300 }}>
+  <Fragment slot="caption">
+    二つの点源が円形の波を放ちます。山と山が出会えば墨が溜まり、山と谷が出会えば紙の色が透けます。テーマを切り替えてみてください——デモは生きたトークンから墨を汲み直します。
+  </Fragment>
+</DemoMount>
+
+モジュール契約は一つだけ:デフォルトエクスポートの `mount(ctx)` がクリーンアップ関数を返すこと。`waves/interference` のようなモジュール id の解決方法はサイトの自由です(ここでは `import.meta.glob`)。
+
+## ページの調度品
+
+残りのコンポーネントは、ノートを満たすのではなく、ノートに額縁を与えます:
+
+- `Hero` はノートの開幕:キッカー、飾りのタイトル、Markdown パイプラインを一巡してくる導入文、メタ情報の行、そして任意の `tocLabel`——サイドバーに番号なしの「導入」行を一つ足します。frontmatter の `title` は `<title>` とカードのための短い正式名のまま。hero のタイトルは長くて構いません。
+- `PartHero` はハブの一章の開幕——このページ自身の頭がそれです。キッカーは決して手で打ちません:ルートがこの章の「第III部 · …」ラベルを `props.partLabel` として渡してきます。
+- `Part` は長い単一ページのノートをいくつかの部に切り分けます。番号付けプリセットがそれを、サイドバーの「第II部 · …」というグループ行に変えます。[[kitchen-sink|全部入りデモ]]はそうやって切られています。
+- `HubCard` と `.hub-grid` はハブのランディングカード、`.path` はその順路ボックス——どちらも[[components|このギャラリーの概要]]にあります。
+- `LocalToc` はページ内ジャンプリストを描画します。二つの番号付けプリセットが作る二種類の ToC 形をどちらも受け付け、項目数が設定可能な下限を割ると自分から隠れます。下で、この章自身の ToC を使って実演します。
+- `SidebarMemory` は、スクロールするサイドバーの位置をページをまたいで覚えておき、現在の項目(既定では `[aria-current="page"]`)が視界から外れそうなときに中央へ寄せます。サイドバーのスクロールボックスの中、ナビゲーションのマークアップの後に置いてください。最初の描画より前に走るので、サイドバーが一瞬だけ先頭にフラッシュすることはありません。このデモのサイドバーにも入っています。
+- `LineageSvg` は手描きの SVG(手法の系譜図、分類の樹形図)をカードとして額装します——下に一枚。
+- `PageFooter` はノートの足元の小さな文字——ここの各ノートの下にあるあの一行です。
+- ブラウズ系の部品は[[components/wiki|wiki の章]]に。このギャラリーの Markdown 側は[[kitchen-sink|全部入りデモ]]です。
+
+## LocalToc と LineageSvg の実演
+
+`LocalToc` に、このページ自身のビルド時 ToC を与えたものです——サイドバーが消費するのと同じデータで、`props.toc` としてノートに渡ってきます:
+
+<LocalToc toc={props.toc} label="この章の内容" />
+
+そして `LineageSvg` が手描きの図を額装します。線も文字もすべて意味トークンで引いてあるので、どちらのテーマにも馴染みます:
+
+<LineageSvg title="図 — 外観レイヤーの位置">
+  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css が base.css と browse.css を養い、その二つがすべてのコンポーネントを養う" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
+    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
+      <rect x="20" y="55" width="150" height="40" rx="6" />
+      <rect x="245" y="15" width="150" height="40" rx="6" />
+      <rect x="245" y="95" width="150" height="40" rx="6" />
+      <rect x="470" y="55" width="150" height="40" rx="6" />
+    </g>
+    <g fill="none" stroke="var(--color-ink-faint)">
+      <path d="M170 68 C 210 60, 210 42, 245 37" />
+      <path d="M170 82 C 210 90, 210 108, 245 113" />
+      <path d="M395 37 C 430 42, 430 60, 470 68" />
+      <path d="M395 113 C 430 108, 430 90, 470 82" />
+    </g>
+    <g fill="var(--color-ink)" text-anchor="middle">
+      <text x="95" y="80">tokens.css</text>
+      <text x="320" y="40">base.css</text>
+      <text x="320" y="120">browse.css</text>
+      <text x="545" y="80">components</text>
+    </g>
+  </svg>
+</LineageSvg>
+
+## コンポーネントを持たない調度
+
+いくつかの部品は `base.css` の素のクラスです。自前のレイアウトから描画するサイトや、本文に HTML で直接書くサイトのために:
+
+| クラス | 何者か |
+| --- | --- |
+| `.page-head` + `.kicker`、`.page-desc`、`.page-date` | frontmatter 駆動のページヘッダ(キッカー、h1、説明、日付)。`<Hero>` の代わりにレイアウトが描画する |
+| `.banner`、`.banner-fallback` | ヘッダ直下の一行のお知らせ。fallback は控えめな方の変種 |
+| `.page-foot` | 二段組の小さな文字のフッター(左スロット、右スロット) |
+| `.speak` | 深掘り見出しの下の平文グロス。ラベルは `--speak-label` |
+| `.path` + `.title`、`.route`、`.arrow` | ハブの順路ボックス |
+| `.ref-tag` | 参考文献リストの小さな等幅タグ(会議名、年) |
+| `.tag`、`.tag.teal / .mustard / .violet` | ペーパーカードのバッジ。どこでも使える |
+| `.measured` + `.measured-head`、`.measured-body`、`.measured-pane`(`.doc`)、`.measured-tag` | 「文書の主張 対 実測」の比較カード:ティール一色のタイトルバーの下に二枚のペイン。`.doc` ペインが主張を、もう一方が実測を載せる——どのコールアウトとも違うシルエット |
+| `.paper .idea-label` | `PaperCard` 本文中の小さな大文字のキーアイデアラベル。例:`<span class="idea-label">Key idea</span>` |

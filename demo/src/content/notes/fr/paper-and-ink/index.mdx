@@ -1,0 +1,28 @@
+---
+title: "Papier et encre, à dessein"
+brand: "Papier & encre"
+subtitle: "le parti pris derrière les tokens"
+description: "Pourquoi ce système de design s’engage sur un fond de papier chaud, de vraies serifs, deux fonds pour deux sortes de pages et un thème sombre composé à la main — une note sur le parti pris derrière les tokens."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Patron · un parti pris de design" title="Papier et encre, à dessein" meta="un fond chaud · un corps en serif · deux fonds · une seconde édition pour la nuit">
+  La plupart des thèmes de documentation attrapent les mêmes réglages par défaut : du blanc `#fff`, une sans grotesque, du texte gray-800, le mode sombre du système. Ils se lisent correctement et ne ressemblent à rien. Ce système part d’une autre prémisse — **un long document technique est une chose qu’on lit une heure durant** — et les tokens en découlent.
+</Hero>
+
+## Le parti pris
+
+Une heure de lecture réclame ce que l’imprimé a compris il y a des siècles : un fond chaud qui n’éblouit pas, une police de labeur aux pleins et déliés réels, et un rythme de mise en page mesuré en ems de corps de texte plutôt qu’en pixels d’habillage. D’où le vocabulaire dans lequel la [[design-tokens|couche des tokens]] est écrite : des papiers (纸 la feuille, 页 la page, 素 le fond uni, 帛 la soie) plutôt que gray-50 à gray-200 ; des encres et des pigments sortis d’une boîte de peintre — 朱 lie-de-vin, 石 orange brûlé, 赭 ocre, 黛 bleu-vert, 紫 violet — plutôt que primary/secondary/accent. Ces noms ne sont pas une coquetterie : ils arriment chaque nouvelle décision de couleur à la même métaphore physique, et c’est pourquoi cinq surfaces différentes se lisent toujours comme une seule feuille de papier.
+
+## Deux fonds, parce que deux sortes de pages
+
+Un wiki se lit de deux manières. On **lit** une note — une colonne, une heure, des yeux qui veulent le calme : un papier légèrement froid, une encre neutre, un seul accent pour les liens et les numéros. On **parcourt** une étagère — une grille de cartes, un coup d’œil, un choix : le papier peut être plus chaud, les titres peuvent passer en serif d’affichage, l’accent peut être un lie-de-vin profond qui se lit comme une marque plutôt que comme un lien. Donner une seule palette à ces deux situations reviendrait à les compromettre toutes les deux. Le niveau sémantique a donc deux contextes — la colonne de lecture (`--color-*`) et l’étagère de parcours (`--wb-*`) — tirés d’une même boîte de pigments, et chaque page déclare lequel elle est. Le résultat : un site qui fait l’effet d’un seul objet, et de deux pièces.
+
+## Le sombre est une seconde édition, pas une inversion
+
+Les modes sombres algorithmiques inversent la clarté et s’en tiennent là ; le texte devient de la craie sur de l’ardoise et chaque surface teintée tourne à la boue. Ici, le thème sombre est une **seconde édition composée à la main** : des fonds crépusculaires et des encres blanc-de-lune choisis pour eux-mêmes, des pigments d’accent ravivés juste assez pour tenir leur contraste AA sur les papiers plus sombres. Cela coûte un second jeu de décisions — c’est précisément le but. L’interrupteur n’honore que le choix explicite du lecteur ([[design-tokens|jamais la préférence du système]]), parce qu’une page qui bascule son propre thème en pleine lecture est une page qui fait sursauter.
+
+## La prise en charge CJK est structurelle
+
+Le texte mêlant chinois et latin est l’endroit où la plupart des thèmes se défont sans bruit : une emphase qui refuse de se refermer contre un point à pleine chasse, des schémas dans le code qui se cisaillent parce qu’un sinogramme fait 1,7 cellule de large. Les deux sont traités ici comme des bugs de correction, pas comme une affaire de goût typographique — le [[kitchen-sink|dialecte analyse l’emphase CJK correctement]], et le sous-ensemble de la police de code cale le sinogramme sur exactement deux cellules, pour que les diagrammes box-drawing survivent à la traduction. Un thème qui ne fonctionne qu’en anglais est un demi-thème.

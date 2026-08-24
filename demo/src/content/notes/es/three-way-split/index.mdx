@@ -1,0 +1,47 @@
+---
+title: La división a tres bandas
+brand: La división a tres bandas
+subtitle: "el motor edita, el papel viste,\nel sitio eres tú"
+description: "El motor edita, el papel viste, el sitio eres tú — quién posee qué, y por qué las líneas pasan por donde pasan."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Guía · arquitectura" title="La división a tres bandas" meta="tres repos · tres dueños · una línea para recordar">
+  Un sitio de documentación o wiki construido con este kit se ensambla a partir de tres piezas, cada una dueña de exactamente una capa. Las líneas que las separan no son cuestión de gusto: cada una está respaldada por una restricción que muerde en cuanto se cruza.
+</Hero>
+
+## Tres capas, tres dueños
+
+- **astro-inkbrush (el motor)**: un CMS mínimo — edición de bloques in situ en el navegador, historial de revisiones y reversión a nivel de bloque, comentarios, preguntas/reescritura/traducción con IA, importación desde la bandeja de entrada. También posee algo que parece no corresponderle a un CMS: **el dialecto de Markdown y el guardián de contenido**. La razón es dura: la gramática que el editor acepta y la gramática que la página renderiza tienen que ser la misma, o el «en el editor guarda bien, en la página se ve mal» es solo cuestión de tiempo. Así que las reglas del parser se escriben una sola vez, en el motor, y se consumen en tres lugares — renderizado del sitio, validación al guardar en el CMS, comprobaciones de CI.
+- **astro-inkstone (el papel — este paquete)**: la capa compartida de apariencia y pipeline — tokens de diseño de dos niveles en dos contextos, la hoja de estilos de contenido `base.css` y la estantería `browse.css`, la biblioteca de componentes, el preset de pipeline `siteMarkdown`, los ayudantes de taxonomía y backlinks sobre los que corre este jardín, el subconjunto de la fuente de código Maple Mono CN y las sondas de la capa de render. Lo que **no** hace es identidad de sitio: colores de marca, chrome de layout, rutas y despliegue no son asunto suyo.
+- **El sitio (como el jardín que estás leyendo)**: sobrescribe los tokens del primer nivel con su color de identidad; posee su propio Sidebar y su chrome de navegación (la implementación de este sitio es la respuesta de referencia); decide cómo se organiza el contenido, qué forma tienen las rutas y dónde se despliega.
+
+Una línea para recordar: **el motor edita, el papel viste, el sitio eres tú.**
+
+## Por qué las líneas pasan por aquí
+
+Cada corte responde a una restricción real:
+
+**El dialecto pertenece al motor**, porque un verificador cuyo conjunto de plugins difiere del del sitio es peor que ningún verificador — a uno sin el plugin de matemáticas las llaves de una fórmula le parecen expresiones JSX, y uno sin GFM deja pasar las barras de las tablas sin mirarlas. La gramática se escribe una vez y se consume en tres lugares, así que no puede desviarse jamás.
+
+**Los estilos pertenecen al papel**, porque cuando varios sitios mantienen cada uno su propia hoja de estilos de contenido, un arreglo de contraste hay que aplicarlo una vez por sitio — y si se te escapa uno, el texto pequeño de ese sitio queda por debajo de AA. En una capa compartida, un solo arreglo aterriza en todas partes.
+
+**La identidad pertenece al sitio**, porque en cuanto una capa compartida absorbe el color de marca de un sitio, todos los demás tienen que combatirlo a base de sobrescrituras. De ahí los tokens de dos niveles: un sitio sobrescribe la paleta cruda del primer nivel (`--p-*`) y las capas semántica y de componentes lo siguen sin tocarse — ver [[design-tokens|los tokens de diseño]].
+
+## Dónde se sitúa la maquinaria de exploración
+
+La misma disciplina se aplica a lo que estás navegando ahora mismo. El paquete distribuye la **mecánica** — `createTaxonomy` (resolución de tipo/dominio/etiqueta, herencia del hub, espejos por idioma), `createBacklinks` (el índice de menciones enlazadas) y componentes presentacionales como las tarjetas de nota y las filas de facetas de la portada. El sitio posee el **vocabulario y las rutas**: los tipos y dominios de este jardín viven en su propio archivo de registro, y sus páginas `/kind/…`, `/domain/…`, `/tag/…` son páginas Astro corrientes que un sitio consumidor copia y remodela. La misma división, un nivel más arriba: la mecánica en el paquete, el significado en el sitio.
+
+## Lo que recibe un sitio
+
+Desde el punto de vista del sitio, consumir este paquete junto con el motor te da:
+
+- `astro-inkstone/styles/tokens.css` + `base.css` + `browse.css`: primero los tokens, luego la columna de lectura, después la estantería — tres líneas de `@import` para toda la apariencia;
+- `siteMarkdown(...)`: el pipeline de Markdown entero en una línea, con los interruptores descritos en [[getting-started|primeros pasos]];
+- los componentes bajo `astro-inkstone/components/`, importados por ruta según se necesiten;
+- la fábrica de taxonomía y el constructor de backlinks bajo `astro-inkstone/lib/`, ligados al registro del propio sitio;
+- en modo WIKI, el CMS completo del motor (pruébalo en este sitio con `npm run wiki`);
+- cinco comprobaciones: `check-content`, `check-wikilinks` y `check-dist` (vienen con el motor), `ui_probe` y `contrast_probe` (vienen aquí) — ver [[checks|las comprobaciones]].
+
+Cada efecto de renderizado en cada página de este jardín es producto de esa división — las notas son el manual, y el manual es la demo.

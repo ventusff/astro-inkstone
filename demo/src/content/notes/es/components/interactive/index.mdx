@@ -1,0 +1,90 @@
+---
+title: Interactivos
+description: "DemoMount y el contrato de cargador que posee el sitio, más el mobiliario de página — heros, divisores de parte, tarjetas de hub, listas de salto y pies de página."
+part: 3
+navLabel: Interactivos y mobiliario
+---
+
+import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import LocalToc from 'astro-inkstone/components/LocalToc.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Interactivos y mobiliario">
+  Una demo de canvas en vivo y el contrato que hay detrás, y luego los componentes silenciosos que enmarcan cada nota — los que llevas viendo desde la primera página.
+</PartHero>
+
+## DemoMount, en vivo
+
+El reparto de trabajo es el habitual del paquete: el **marcado del montaje** (escenario, slot de controles, slot de leyenda) viene en el paquete; el **módulo de la demo y su cargador** pertenecen al sitio. Este sitio guarda su cargador en `src/lib/demo-loader.ts` y llama a `mountAllDemos()` una sola vez desde el layout; la llamada corre en cada página, pero el chunk de un módulo de demo solo se descarga en las páginas que llevan un montaje `[data-demo]`.
+
+Una demo que toma entrada de puntero sobre su canvas pasa `interactive` — el escenario reclama entonces los gestos táctiles y muestra una cruz de puntería. Esta es pasiva (solo renderiza), así que deja el flag apagado y deslizar el dedo sobre el canvas sigue desplazando la página. Dibuja la interferencia de ondas de dos fuentes con el token de tinta de la propia página, así que sigue al tema:
+
+<DemoMount demo="waves/interference" title="Demo · Interferencia de ondas de dos fuentes" canvas={{ w: 640, h: 300 }}>
+  <Fragment slot="caption">
+    Dos fuentes puntuales emiten ondas circulares; donde cresta encuentra cresta la tinta se encharca, donde cresta encuentra valle el papel asoma. Cambia el tema — la demo vuelve a entintarse con los tokens vivos.
+  </Fragment>
+</DemoMount>
+
+El contrato del módulo es un único export por defecto, `mount(ctx)`, que devuelve una función de limpieza; el cargador resuelve ids de módulo como `waves/interference` como el sitio prefiera (aquí, con `import.meta.glob`).
+
+## Mobiliario de página
+
+Los componentes restantes enmarcan una nota en lugar de llenarla:
+
+- `Hero` abre una nota: kicker, título de exhibición, una entradilla que pasa por el pipeline de Markdown completo, una línea de meta y un `tocLabel` opcional que añade al sidebar una fila de «introducción» sin numerar. El `title` del frontmatter sigue siendo el canónico corto para el `<title>` y las tarjetas; el del hero puede ser largo.
+- `PartHero` abre un capítulo de un hub — la propia cabecera de esta página. Su kicker nunca se teclea: la ruta le pasa el rótulo «Parte III · …» del capítulo como `props.partLabel`.
+- `Part` divide una nota larga de una sola página en partes; el preset de numeración lo convierte en las filas de grupo tipo «PARTE II · Fundamentos» del sidebar. [[kitchen-sink|El muestrario]] está cortado así.
+- `HubCard` y `.hub-grid` son las tarjetas de portada de un hub; `.path` es su caja de ruta de lectura — ambas cosas en [[components|la visión general de esta galería]].
+- `LocalToc` renderiza una lista de saltos dentro de la página; acepta las dos formas de ToC que producen los dos presets de numeración y se oculta por debajo de un mínimo configurable. Abajo, en vivo, sobre el ToC de este mismo capítulo.
+- `SidebarMemory` mantiene un sidebar con scroll donde el lector lo dejó entre cargas de página, y centra el elemento actual (`[aria-current="page"]` por defecto) siempre que fuera a quedar fuera de la vista. Colócalo dentro de la caja de scroll del sidebar, después del marcado de navegación; corre antes del primer pintado, así que el sidebar nunca parpadea arriba del todo. El sidebar de esta demo lo lleva.
+- `LineageSvg` enmarca como tarjeta un SVG dibujado a mano (un linaje de métodos, un árbol taxonómico) — hay uno más abajo.
+- `PageFooter` es la letra pequeña al pie de una nota — la línea bajo cada nota de aquí.
+- Las piezas de exploración viven en [[components/wiki|el capítulo de wiki]]; el lado Markdown de la galería es [[kitchen-sink|el muestrario]].
+
+## LocalToc y LineageSvg, en vivo
+
+`LocalToc` alimentado con el ToC de build de esta misma página — los mismos datos que consume el sidebar, entregados a la nota como `props.toc`:
+
+<LocalToc toc={props.toc} label="En este capítulo" />
+
+Y `LineageSvg` alrededor de un diagrama escrito a mano, entintado por completo en tokens semánticos para que se asiente sobre ambos temas:
+
+<LineageSvg title="Fig. — dónde se sitúa la capa de apariencia">
+  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css alimenta base.css y browse.css, que alimentan todos los componentes" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
+    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
+      <rect x="20" y="55" width="150" height="40" rx="6" />
+      <rect x="245" y="15" width="150" height="40" rx="6" />
+      <rect x="245" y="95" width="150" height="40" rx="6" />
+      <rect x="470" y="55" width="150" height="40" rx="6" />
+    </g>
+    <g fill="none" stroke="var(--color-ink-faint)">
+      <path d="M170 68 C 210 60, 210 42, 245 37" />
+      <path d="M170 82 C 210 90, 210 108, 245 113" />
+      <path d="M395 37 C 430 42, 430 60, 470 68" />
+      <path d="M395 113 C 430 108, 430 90, 470 82" />
+    </g>
+    <g fill="var(--color-ink)" text-anchor="middle">
+      <text x="95" y="80">tokens.css</text>
+      <text x="320" y="40">base.css</text>
+      <text x="320" y="120">browse.css</text>
+      <text x="545" y="80">components</text>
+    </g>
+  </svg>
+</LineageSvg>
+
+## Mobiliario sin componente
+
+Unas cuantas piezas son clases planas de `base.css`, para sitios que las renderizan desde su propio layout o las escriben como HTML dentro de la prosa:
+
+| Clase | Qué es |
+| --- | --- |
+| `.page-head` + `.kicker`, `.page-desc`, `.page-date` | una cabecera de página movida por el frontmatter (kicker, h1, descripción, fecha) que renderiza un layout en lugar de un `<Hero>` |
+| `.banner`, `.banner-fallback` | un aviso de una línea bajo la cabecera; la variante fallback es la apagada |
+| `.page-foot` | un pie de letra pequeña a dos columnas (slot izquierdo, slot derecho) |
+| `.speak` | la glosa en lenguaje llano bajo un título de análisis profundo; su rótulo es `--speak-label` |
+| `.path` + `.title`, `.route`, `.arrow` | una caja de ruta de lectura en un hub |
+| `.ref-tag` | una pequeña etiqueta monoespaciada en una lista de referencias (un venue, un año) |
+| `.tag`, `.tag.teal / .mustard / .violet` | las insignias de las tarjetas de artículos, usables en cualquier parte |
+| `.measured` + `.measured-head`, `.measured-body`, `.measured-pane` (`.doc`), `.measured-tag` | la tarjeta de comparación entre lo documentado y lo medido: una barra de título verde azulado maciza sobre dos paneles, el panel `.doc` con la afirmación y el otro con la medición — una silueta distinta de la de cualquier callout |
+| `.paper .idea-label` | el pequeño rótulo en mayúsculas de la idea clave dentro del cuerpo de una `PaperCard`, p. ej. `<span class="idea-label">Idea clave</span>` |

@@ -1,0 +1,47 @@
+---
+title: Trójpodział
+brand: Trójpodział
+subtitle: "silnik edytuje, papier ubiera,\na witryna to ty"
+description: Silnik edytuje, papier ubiera, a witryna to ty — kto jest właścicielem czego i dlaczego granice biegną właśnie tam, gdzie biegną.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Przewodnik · architektura" title="Trójpodział" meta="trzy repozytoria · trzej właściciele · jedno zdanie do zapamiętania">
+  Witryna dokumentacji lub wiki zbudowana tym zestawem składa się z trzech części, z których każda jest właścicielem dokładnie jednej warstwy. Granice między nimi nie są kwestią gustu — za każdą stoi ograniczenie, które gryzie, gdy się ją przekroczy.
+</Hero>
+
+## Trzy warstwy, trzej właściciele
+
+- **astro-inkbrush (silnik)**: minimalny CMS — edycja bloków w miejscu, w przeglądarce, historia rewizji i przywracanie na poziomie bloku, komentarze, AI do pytań / przeredagowań / tłumaczeń, import ze skrzynki. Jest też właścicielem jednej rzeczy, która na pozór do CMS-a nie należy: **dialektu Markdowna i strażnika treści**. Powód jest twardy: gramatyka, którą przyjmuje edytor, i gramatyka, którą renderuje strona, muszą być jedną i tą samą — inaczej „w edytorze zapisuje się dobrze, na stronie renderuje się źle” jest tylko kwestią czasu. Reguły parsera są więc napisane raz, w silniku, i konsumowane w trzech miejscach — renderowanie witryny, walidacja zapisu w CMS, kontrole w CI.
+- **astro-inkstone (papier — ten pakiet)**: wspólna warstwa wyglądu i potoku — dwuwarstwowe tokeny projektowe w dwóch kontekstach, arkusz treści `base.css` i półka przeglądania `browse.css`, biblioteka komponentów, preset potoku `siteMarkdown`, pomocniki taksonomii i linków zwrotnych, na których jeździ ten ogród, podzbiór fontu kodu Maple Mono CN oraz sondy warstwy renderowania. **Nie** zajmuje się tożsamością witryny: kolory marki, chrome layoutu, routing i wdrożenie to nie jego sprawa.
+- **Witryna (taka jak ogród, który czytasz)**: nadpisuje tokeny pierwszej warstwy swoim kolorem tożsamości; jest właścicielem własnego sidebara i chrome’u nawigacji (implementacja tej witryny to odpowiedź wzorcowa); decyduje, jak zorganizowana jest treść, jak wyglądają trasy i gdzie się wdraża.
+
+Jedno zdanie do zapamiętania: **silnik edytuje, papier ubiera, a witryna to ty.**
+
+## Dlaczego granice biegną tutaj
+
+Za każdym cięciem stoi realne ograniczenie:
+
+**Dialekt należy do silnika**, bo walidator, którego zestaw wtyczek różni się od zestawu witryny, jest gorszy niż brak walidatora — walidator bez wtyczki matematycznej odczytuje klamry wzorów jako wyrażenia JSX, a bez GFM przepuszcza kreski tabel bez słowa. Gramatyka jest napisana raz i konsumowana w trzech miejscach, więc nie ma jak się rozjechać.
+
+**Style należą do papieru**, bo gdy kilka witryn utrzymuje każda własny arkusz treści, jedną poprawkę kontrastu trzeba nanosić raz na witrynę — pomiń jedną, a drobny tekst tej witryny spada poniżej AA. We wspólnej warstwie jedna poprawka ląduje wszędzie.
+
+**Tożsamość należy do witryny**, bo w chwili, gdy wspólna warstwa wchłonie kolor marki jednej witryny, każda inna musi z nim walczyć nadpisaniami. Stąd dwuwarstwowe tokeny: witryna nadpisuje surową paletę pierwszej warstwy (`--p-*`), a warstwy semantyczna i komponentowa idą w ślad nietknięte — patrz [[design-tokens]].
+
+## Gdzie siedzi maszyneria przeglądania
+
+Ta sama dyscyplina obejmuje to, po czym właśnie nawigujesz. Pakiet dostarcza **mechanikę** — `createTaxonomy` (rozwiązywanie rodzajów, obszarów i tagów, dziedziczenie po hubie, lustrzane wersje językowe), `createBacklinks` (indeks linków zwrotnych) oraz komponenty czysto prezentacyjne, takie jak karty notatek i wiersze kategorii na stronie głównej. Witryna jest właścicielem **słownika i tras**: rodzaje i obszary tego ogrodu mieszkają w jego własnym pliku rejestru, a jego strony `/kind/…`, `/domain/…`, `/tag/…` to zwykłe strony Astro, które konsumująca witryna kopiuje i przykrawa po swojemu. Ten sam podział, piętro wyżej: mechanika w pakiecie, znaczenie w witrynie.
+
+## Co dostaje witryna
+
+Z punktu widzenia witryny konsumpcja tego pakietu plus silnika kupuje:
+
+- `astro-inkstone/styles/tokens.css` + `base.css` + `browse.css`: najpierw tokeny, potem kolumna lektury, potem półka przeglądania — trzy linie `@import` na cały wygląd;
+- `siteMarkdown(...)`: cały potok Markdowna w jednej linii, przełączniki opisane w [[getting-started]];
+- komponenty pod `astro-inkstone/components/`, importowane po ścieżce wedle potrzeby;
+- fabrykę taksonomii i budowniczego linków zwrotnych pod `astro-inkstone/lib/`, wiązane z własnym rejestrem witryny;
+- w trybie WIKI pełny CMS silnika (wypróbuj na tej witrynie przez `npm run wiki`);
+- pięć kontroli: `check-content`, `check-wikilinks` i `check-dist` (dostarczane z silnikiem) oraz `ui_probe` i `contrast_probe` (dostarczane tutaj) — patrz [[checks]].
+
+Każdy efekt renderowania na każdej stronie tego ogrodu jest owocem tego podziału — notatki są podręcznikiem, a podręcznik jest demem.

@@ -5,7 +5,7 @@
  * their own navigation.
  */
 import Base from './Base.astro';
-import type { Locale } from '../lib/i18n';
+import { DEFAULT_LOCALE, type Alternate, type Locale } from '../lib/i18n';
 
 interface Crumb {
   label: string;
@@ -17,13 +17,14 @@ interface Props {
   description?: string | undefined;
   locale?: Locale;
   crumbs?: Crumb[];
-  /** this page's route in the other locale (every browse page has one) */
-  translateRoute?: string | undefined;
+  /** this page's routes in every locale (browse trees are complete by
+   *  construction) */
+  alternates: Alternate[];
 }
-const { title, description, locale = 'en', crumbs = [], translateRoute } = Astro.props;
+const { title, description, locale = DEFAULT_LOCALE, crumbs = [], alternates } = Astro.props;
 ---
 
-<Base title={title} description={description} locale={locale} crumbs={crumbs} translateRoute={translateRoute} bodyClass="wb-root">
+<Base title={title} description={description} locale={locale} crumbs={crumbs} alternates={alternates} bodyClass="wb-root">
   <main id="main">
     <slot />
   </main>

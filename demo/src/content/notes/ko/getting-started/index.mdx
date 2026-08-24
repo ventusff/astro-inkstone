@@ -1,0 +1,127 @@
+---
+title: 시작하기
+brand: 시작하기
+subtitle: "서브모듈 두 개, 스타일 임포트 세 줄\n파이프라인 한 줄"
+description: 사이트 저장소에 서브모듈 한 쌍, 스타일시트 임포트 세 줄, 그리고 siteMarkdown 한 줄로 Markdown 파이프라인 전체가 연결됩니다 — 그것으로 정원 하나가 섭니다.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="가이드 · 제로에서 정원까지" title="시작하기" meta="서브모듈 2개 · 스타일시트 3장 · siteMarkdown() 하나 · 명령 3개">
+  종이도 엔진도 npm에 올라가 있지 않습니다 — 둘 다 빌드 과정 없이 TS/CSS 소스를 그대로 내보냅니다. 사이트는 두 저장소를 git 서브모듈로 들여오고, 스타일시트 세 장을 임포트한 뒤, 함수 하나를 `astro.config` 파일에 연결합니다. 이 사이트의 모든 것이 그렇게 지어졌습니다.
+</Hero>
+
+<Part title="설치" />
+
+## 서브모듈 한 쌍
+
+두 저장소를 들여오고 `file:` 의존성으로 가리킵니다:
+
+```bash title="사이트 저장소 루트"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (dependencies 부분)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] 이 데모의 배치는 조금 다릅니다
+> 데모는 패키지 저장소 안(`demo/`)에 살고 있어서, `astro-inkstone` 의존성은 `file:..` 경로를 가리키고 엔진은 `demo/vendor/` 아래에 매달려 있습니다. 독립된 사이트라면 위의 `packages/` 배치를 쓰면 됩니다 — 두 방식은 동등합니다.
+
+## 스타일
+
+전역 스타일시트에서 토큰을 먼저, 그다음 콘텐츠 계층을, 둘러보기 페이지가 있는 사이트라면 서가까지, 그 뒤에야 사이트 자신의 크롬을 얹습니다:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* 랜딩 / 분류 페이지 — body.wb-root 위에서 동작합니다 */
+
+/* 아이덴티티: 1계층 안료만 덮어쓰면 두 시맨틱 문맥과 컴포넌트 계층이 함께 따라옵니다 */
+:root {
+  --p-shi: #b03a48; /* 읽기 열의 강조색 */
+  --p-zhu: #3b4a7a; /* 서가의 강조색이자 마크 색 */
+  --p-shi-n: #e0919b; /* 야간 짝: 다크 테마는 --p-*-n 토큰을 읽습니다 */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+서가의 세리프는 `--font-display` 토큰입니다(Source Serif 4 + Noto Serif SC). 이 데모처럼 직접 호스팅하면 마스트헤드가 여기와 똑같아집니다:
+
+```css title="src/styles/site.css (폰트, 선택 사항)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+수식을 쓰는 사이트는 레이아웃에 KaTeX 스타일시트 한 줄을 보탭니다(없으면 수식 조판이 무너집니다):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="배선" />
+
+## Markdown 파이프라인, 한 줄
+
+이 사이트와 같은 모양의 최소 구성입니다 — 장 번호 매기기, 수식, 콜아웃, 다이어그램, 그리고 노트 컬렉션을 상대로 해석되는 `[[위키링크]]`까지(이 사이트가 거는 훅을 전부 갖춘 완전판은 저장소의 `astro.config.mjs` 파일입니다):
+
+```js title="astro.config.mjs (최소 구성)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs'든 '/docs/'든 모두 동작합니다
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // 부/장 번호 + remarkPluginFrontmatter로 꺼내 쓰는 ToC
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // 코드 프레임: 제목 표시줄 / 복사 / 접기 / 줄 주석
+    mermaid: true, // mermaid 펜스는 클라이언트에서 렌더링됩니다
+    callouts: true, // Obsidian 스타일 > [!note] 구문
+    wikiBlocks: WIKI_MODE, // 편집 모드: 블록 ↔ 소스 줄 매핑, 항상 맨 마지막
+    guard: { autoNumberedHeadings: true }, // 콘텐츠 가드: 손으로 쓴 번호를 거부합니다
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown` 프리셋은 엔진의 방언(GFM, CJK 친화적 강조 해석, 콘텐츠 가드) 위에 앉아 있고, 프리셋 자신은 사이트 쪽 플러그인의 조립과 순서만 책임집니다 — **파이프라인 순서가 곧 계약**이라, 누가 먼저 도는지 사이트가 신경 쓸 일이 없습니다. 스위치 하나하나의 효과는 [[kitchen-sink|전 요소 시연]] 페이지가 전부 보여 주고, 패키지를 이렇게 나눈 이유는 [[boundaries|세 갈래 분할]]에 있습니다. 한국어 라벨의 콜아웃이 필요하면 `calloutLabels` 옵션을 넘기면 됩니다 — 기본값은 영어입니다.
+
+## 실행
+
+스크립트는 이 데모의 `package.json` 파일이 정의한 그대로입니다(`build` 스크립트는 postbuild 단계로 엔진의 check-dist 검사를 돌리고, `wiki` 스크립트는 `WIKI=1 astro dev` 명령 그대로입니다):
+
+```bash
+npm install
+npm run dev        # 정원 본체
+npm run build      # 정적 빌드 + 엔진의 check-dist (postbuild)
+npm run wiki       # WIKI=1 astro dev — CMS 편집 모드
+```
+
+정적 빌드에는 엔진의 바이트가 한 개도 실리지 않습니다: WIKI 모드가 아니면 엔진의 통합 코드는 아예 import조차 되지 않고(동적 import), 편집용 메타데이터도 나가지 않습니다. 산출물에서 CMS 모양으로 남는 것은 사이트 자신의 불활성 도킹 마크업뿐입니다 — 내비게이션 바의 빈 `data-inkbrush-slot` span과 그 CSS — CMS가 도킹해 들어오기 전까지는 아무 일도 하지 않습니다.

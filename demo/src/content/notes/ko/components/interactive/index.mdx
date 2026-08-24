@@ -1,0 +1,90 @@
+---
+title: 인터랙티브
+description: DemoMount와 사이트 소유의 로더 계약, 그리고 페이지 부속 — 히어로, 부 구분선, 허브 카드, 점프 목록과 푸터.
+part: 3
+navLabel: 인터랙티브와 부속
+---
+
+import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import LocalToc from 'astro-inkstone/components/LocalToc.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="인터랙티브와 페이지 부속">
+  실제로 도는 캔버스 데모와 그 뒤의 계약, 그리고 모든 노트에 틀을 둘러 온 조용한 컴포넌트들 — 첫 페이지부터 지금까지 줄곧 보고 계셨던 바로 그것들입니다.
+</PartHero>
+
+## DemoMount — 라이브
+
+분업은 이 패키지의 평소 방식 그대로입니다: **마운트 마크업**(무대, 컨트롤 슬롯, 캡션 슬롯)은 패키지가 싣고, **데모 모듈과 그 로더**는 사이트의 것입니다. 이 사이트는 로더를 `src/lib/demo-loader.ts` 파일에 두고 레이아웃에서 `mountAllDemos()` 함수를 한 번 호출합니다. 호출은 모든 페이지에서 일어나지만, 데모 모듈 청크는 `[data-demo]` 마운트를 실은 페이지에서만 내려받습니다.
+
+캔버스에서 포인터 입력을 받는 데모는 `interactive` prop을 넘깁니다 — 그러면 무대가 터치 제스처를 가져가고 십자선을 보여 줍니다. 아래 데모는 수동적(렌더링 전용)이라 그 플래그를 꺼 둔 채이고, 캔버스 위를 스와이프해도 페이지는 그대로 스크롤됩니다. 페이지 자신의 먹 토큰으로 두 파원의 파동 간섭을 그리므로, 테마를 따라갑니다:
+
+<DemoMount demo="waves/interference" title="데모 · 두 파원의 파동 간섭" canvas={{ w: 640, h: 300 }}>
+  <Fragment slot="caption">
+    두 점파원이 원형 파동을 내보냅니다. 마루와 마루가 만나는 곳에는 먹이 고이고, 마루와 골이 만나는 곳에는 종이가 비쳐 보입니다. 테마를 바꿔 보십시오 — 데모가 라이브 토큰에서 먹을 다시 찍습니다.
+  </Fragment>
+</DemoMount>
+
+모듈 계약은 기본 내보내기 하나입니다: 정리 함수를 반환하는 `mount(ctx)`. `waves/interference` 같은 모듈 id는 로더가 사이트 마음대로 해석합니다(여기서는 `import.meta.glob`).
+
+## 페이지 부속
+
+나머지 컴포넌트는 노트를 채우는 대신 노트에 틀을 두릅니다:
+
+- `Hero` 컴포넌트는 노트를 엽니다: 키커, 디스플레이 제목, 전체 Markdown 파이프라인을 통과하는 리드문, 메타 줄, 그리고 사이드바에 번호 없는 "도입" 행을 더하는 선택적 `tocLabel` prop. frontmatter의 `title` 값은 `<title>` 태그와 카드를 위한 짧은 정식 이름으로 남습니다 — 히어로의 제목은 길어도 됩니다.
+- `PartHero` 컴포넌트는 허브의 한 장을 엽니다 — 이 페이지의 머리가 바로 그것입니다. 키커는 손으로 치지 않습니다: 라우트가 장의 "제III부 · …" 라벨을 `props.partLabel` 값으로 넘겨 줍니다.
+- `Part` 컴포넌트는 긴 단일 페이지 노트를 부로 나눕니다. 번호 매기기 프리셋이 이를 사이드바의 "제II부 · …" 그룹 행으로 바꿉니다. [[kitchen-sink|전 요소 시연]]이 그렇게 잘려 있습니다.
+- `HubCard` 컴포넌트와 `.hub-grid` 클래스는 허브의 랜딩 카드이고, `.path` 클래스는 허브의 읽기 경로 상자입니다 — 둘 다 [[components|이 갤러리의 개요]]에 있습니다.
+- `LocalToc` 컴포넌트는 페이지 내 점프 목록을 렌더링합니다. 두 번호 매기기 프리셋이 만드는 두 가지 ToC 모양을 모두 받아들이고, 설정 가능한 최소 개수 아래에서는 스스로 숨습니다. 아래에, 이 장 자신의 ToC로 라이브 시연이 있습니다.
+- `SidebarMemory` 컴포넌트는 스크롤되는 사이드바를 페이지를 오가도 독자가 떠난 자리에 붙들어 두고, 현재 항목(기본값은 `[aria-current="page"]` 선택자)이 시야 밖으로 벗어날 참이면 가운데로 데려옵니다. 사이드바의 스크롤 상자 안, 내비게이션 마크업 뒤에 놓으십시오. 첫 페인트 전에 실행되므로 사이드바가 맨 위에서 번쩍이는 일이 없습니다. 이 데모의 사이드바가 싣고 있습니다.
+- `LineageSvg` 컴포넌트는 손으로 그린 SVG(방법론 계보, 분류 트리)를 카드로 감쌉니다 — 하나가 아래에 있습니다.
+- `PageFooter` 컴포넌트는 노트 발치의 작은 활자입니다 — 여기 모든 노트 밑에 깔린 그 줄.
+- 둘러보기 부품들은 [[components/wiki|위키 장]]에 살고, 갤러리의 Markdown 쪽은 [[kitchen-sink|전 요소 시연]]입니다.
+
+## LocalToc와 LineageSvg, 라이브
+
+`LocalToc` 컴포넌트에 이 페이지 자신의 빌드 타임 ToC를 먹였습니다 — 사이드바가 소비하는 것과 같은 데이터가 `props.toc` 값으로 노트에 건네집니다:
+
+<LocalToc toc={props.toc} label="이 장의 목차" />
+
+그리고 손으로 쓴 다이어그램을 두른 `LineageSvg` — 먹을 전부 시맨틱 토큰으로만 찍어, 두 테마 어디에나 앉습니다:
+
+<LineageSvg title="그림 — 외관 계층이 앉는 자리">
+  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css가 base.css와 browse.css를 먹이고, 그 둘이 모든 컴포넌트를 먹입니다" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
+    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
+      <rect x="20" y="55" width="150" height="40" rx="6" />
+      <rect x="245" y="15" width="150" height="40" rx="6" />
+      <rect x="245" y="95" width="150" height="40" rx="6" />
+      <rect x="470" y="55" width="150" height="40" rx="6" />
+    </g>
+    <g fill="none" stroke="var(--color-ink-faint)">
+      <path d="M170 68 C 210 60, 210 42, 245 37" />
+      <path d="M170 82 C 210 90, 210 108, 245 113" />
+      <path d="M395 37 C 430 42, 430 60, 470 68" />
+      <path d="M395 113 C 430 108, 430 90, 470 82" />
+    </g>
+    <g fill="var(--color-ink)" text-anchor="middle">
+      <text x="95" y="80">tokens.css</text>
+      <text x="320" y="40">base.css</text>
+      <text x="320" y="120">browse.css</text>
+      <text x="545" y="80">components</text>
+    </g>
+  </svg>
+</LineageSvg>
+
+## 컴포넌트 없는 부속
+
+몇몇 부품은 `base.css` 안의 순수 클래스입니다 — 레이아웃에서 직접 렌더링하거나 본문에 HTML로 써 넣는 사이트를 위한 것입니다:
+
+| 클래스 | 무엇인가 |
+| --- | --- |
+| `.page-head` + `.kicker`, `.page-desc`, `.page-date` | `<Hero>` 대신 레이아웃이 frontmatter로 렌더링하는 페이지 머리(키커, h1, 설명, 날짜) |
+| `.banner`, `.banner-fallback` | 머리 밑의 한 줄 공지. fallback 변형이 옅은 쪽입니다 |
+| `.page-foot` | 2열짜리 작은 활자 푸터(왼쪽 슬롯, 오른쪽 슬롯) |
+| `.speak` | 깊이 파는 제목 밑의 쉬운 말 풀이. 라벨은 `--speak-label` 토큰입니다 |
+| `.path` + `.title`, `.route`, `.arrow` | 허브의 읽기 경로 상자 |
+| `.ref-tag` | 참고 문헌 목록의 작은 고정폭 태그(학회, 연도) |
+| `.tag`, `.tag.teal / .mustard / .violet` | 논문 카드의 배지, 어디서든 사용 가능 |
+| `.measured` + `.measured-head`, `.measured-body`, `.measured-pane` (`.doc`), `.measured-tag` | 문서상 주장 대 실측의 비교 카드: 두 패널 위에 진한 틸색 제목 바 — `.doc` 패널이 주장을, 다른 쪽이 측정을 싣습니다. 어떤 콜아웃과도 다른 실루엣입니다 |
+| `.paper .idea-label` | `PaperCard` 본문 안의 작은 대문자 핵심 아이디어 라벨, 예: `<span class="idea-label">Key idea</span>` |

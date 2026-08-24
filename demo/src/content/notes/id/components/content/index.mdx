@@ -1,0 +1,106 @@
+---
+title: Konten & tipografi
+description: Callout, chip, kisi, langkah, statistik, kartu makalah, dan daftar pustaka — kepingan-kepingan penyusun tubuh tulisan.
+part: 1
+navLabel: Konten & tipografi
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="Konten & tipografi">
+  Kepingan-kepingan penyusun tubuh tulisan. Masing-masing hanya mengonsumsi tingkat semantik token — ganti kulit paletnya dan semuanya ikut.
+</PartHero>
+
+## Callout
+
+Lima varian; `title` menggantikan label bawaan variannya (Note / Intuition / Warning / Important / Abstract — bawaan yang sama dengan yang dipakai sintaks kutip, dapat dilokalkan lewat `labels`). Halaman [[kitchen-sink|serba ada]] memperlihatkan ejaan sintaks-kutip dan HTML-mentah dari markup yang sama.
+
+<Callout variant="intuition" title="Kapan meraih komponennya">
+  Di MDX, saat isinya ditulis langsung di tempat. Sintaks kutip melayani berkas Markdown polos; keduanya merender markup yang identik.
+</Callout>
+
+## Chip
+
+Lencana sebaris untuk status dan kategori, dalam empat varian yang sama dengan tag `PaperCard` dan chip `HubCard`: <Chip variant="teal">stabil</Chip> <Chip variant="mustard">beta</Chip> <Chip variant="violet">riset</Chip> <Chip variant="orange">baru</Chip> — atau rona kustom untuk palet topik: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>rona kustom</Chip>
+
+## Grid
+
+Satu kisi, tiga kulit (`plain`, `card`, `cmp`). Kartu:
+
+<Grid cols={2} kind="card">
+  <div>
+    **Token duluan.** Urutan impor adalah bagian dari kontrak: token, lalu lapisan konten, lalu chrome situs.
+  </div>
+  <div>
+    **Hanya lapisan semantik.** Komponen tak pernah menyentuh warna mentah — ganti kulit paletnya dan semuanya ikut.
+  </div>
+</Grid>
+
+Dan kulit pembanding, dibuat untuk panel sebelum/sesudah:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **Tanpa penjaga** — `**` yang tak tertutup terkirim ke produksi sebagai dua asterisk mentah.
+  </div>
+  <div>
+    **Dengan penjaga** — build gagal pada berkas:baris:kolom dengan tanda sisipan di bawah penandanya.
+  </div>
+</Grid>
+
+## Steps
+
+Daftar markdown di atas rel vertikal:
+
+<Steps>
+1. Tambahkan kedua submodule dan dependensi `file:`-nya.
+2. Impor `tokens.css`, `base.css`, dan (untuk wiki) `browse.css` di stylesheet global Anda.
+3. Sambungkan `siteMarkdown()` ke `astro.config`.
+4. Timpa palet tingkat satu dengan pigmen identitas Anda.
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: 'tingkat token' },
+    { value: '24', label: 'komponen' },
+    { value: '4', label: 'viewport probe' },
+    { value: '0', label: 'langkah build' },
+  ]}
+/>
+
+## PaperCard
+
+Kuda beban untuk survei literatur — alias, judul lengkap, tag venue, meta penulis, tautan, dan dua slot khusus:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar, et al."
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">Model rekuren memproses token satu demi satu — dependensi jarak jauh memudar, dan tak ada yang bisa diparalelkan.</Fragment>
+  **Ide kunci**: cukup atensi, tanpa rekurensi — setiap token memperhatikan semua token lain dalam satu langkah, dan seluruh sekuens dilatih paralel.
+  <Fragment slot="diff">Arsitektur yang menjadi fondasi hampir setiap model bahasa besar sesudahnya.</Fragment>
+</PaperCard>
+
+Di bawah judul bahasan mendalam, satu baris bahasa awam (`.speak`) memberi tahu pembaca apa yang *dilakukan* sebuah modul sebelum mekanismenya:
+
+<p class="speak">Atensi adalah tabel pencarian yang lunak: setiap token bertanya "siapa yang relevan bagiku?" dan menerima campuran berbobot dari jawaban-jawabannya.</p>
+
+## References
+
+<References>
+- Vaswani et al., *Attention Is All You Need*, NeurIPS 2017.
+- Knuth, *The TeXbook* — alasan dasar matematika mendapat rona kertasnya sendiri.
+- W3C, *Web Content Accessibility Guidelines 2.2* — ambang kontras AA yang menjadi tolok audit token.
+</References>

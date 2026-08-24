@@ -1,0 +1,53 @@
+---
+title: De bewerkingsmachine
+description: "Een rondgang in vijf hoofdstukken door astro-inkbrush, de git-gedreven CMS-engine waar deze tuin mee samengaat — en deze site zelf is zijn demo: in de bewerkmodus is elke pagina hier ter plekke te bewerken."
+brand: inkbrush
+subtitle: "de CMS-engine, op zijn eigen handleiding\nvijf hoofdstukken · één hub"
+navLabel: Overzicht
+chapters: false
+nav:
+  - group: De engine
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Naslag · de CMS-engine" title="De bewerkingsmachine" meta="vijf hoofdstukken · nul productiebytes · deze site is de demo">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone) is het papier; [astro-inkbrush](https://github.com/ventusff/astro-inkbrush) is de pen. De engine maakt van elke Astro-inhoudssite haar eigen editor: ga in de bewerkmodus met de muis over een alinea en een klein handvat biedt ✎ bewerken, ✦ vraag Claude, ⟲ geschiedenis. Er is geen aparte demosite om te gaan bekijken — **de tuin die je nu leest ís de demo**. Start hem met `npm run wiki` en elke notitie hier, deze pagina inbegrepen, gaat ter plekke open voor bewerking; een statische build zoals die je nu leest bevat geen enkele byte CMS-code.
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: 'de enige database' },
+    { value: '2', label: 'vangnetten bij elke opslag' },
+    { value: '0 B', label: 'CMS-code in een statische build' },
+  ]}
+/>
+
+## Vijf hoofdstukken `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/nl/inkbrush/editing/`} num="DEEL I" title="Bewerken, blok voor blok" count="✎"
+    desc="CodeMirror op de plek van het blok dat je leest, een live voorvertoning door de eigen pipeline van de site, en twee vangnetten voordat iets de schijf raakt." />
+  <HubCard href={`${base}/nl/inkbrush/revisions/`} num="DEEL II" title="Revisiegeschiedenis en terugdraaien" count="⟲"
+    desc="Elke opslag per blok gejournaliseerd — wie, wanneer, de exacte tekst voor en na — met terugdraaien in één klik, zelf ook weer terug te draaien." />
+  <HubCard href={`${base}/nl/inkbrush/ai-assist/`} num="DEEL III" title="AI-assistentie" count="✦"
+    desc="Blokherschrijvingen, een chat die de notitie kent en vertaling van hele notities via de claude CLI, in een sandbox met een wegwerpkopie." />
+  <HubCard href={`${base}/nl/inkbrush/inbox/`} num="DEEL IV" title="Het postvak IN voor Obsidian" count="📥"
+    desc="Richt de watcher op een kluismap; nieuwe notities converteren en importeren zichzelf — embeds, wikilinks en highlights inbegrepen." />
+  <HubCard href={`${base}/nl/inkbrush/wikilinks/`} num="DEEL V" title="Hoe wikilinks worden opgelost" count="[[ ]]"
+    desc="Eén oplosser voor de pagina's, de editorvoorvertoning, de importeur en de CI-lint — eerst taalspiegels, dan ids, aliassen, brands en titels." />
+</div>
+
+## Waar de engine zit
+
+De engine bezit de CMS-functies **én** het Markdown-dialect met zijn poortwachter — de grammatica die de editor accepteert en de grammatica die de pagina rendert moeten één grammatica zijn, dus wordt ze één keer geschreven en overal geconsumeerd ([[three-way-split|de driedeling]] legt uit waarom de grens dáár ligt). Stijl hoort bij de papierlaag; identiteit hoort bij jouw site. Alles wat op deze pagina's rendert — de strook boven deze tekst inbegrepen — is het papier aan het werk; alles wat deze pagina's *bewerkt*, is de engine.
+
+<div class="path">
+  <strong>Leesroute.</strong>
+  Nieuw met de engine → <a href={`${base}/nl/inkbrush/editing/`}>Deel I</a><span class="arrow">→</span><a href={`${base}/nl/inkbrush/revisions/`}>Deel II</a>; hem in een site aansluiten → eerst de <a href={`${base}/nl/getting-started/`}>aan-de-slag-gids</a>; het dialect dat de bouwpoort bij elke opslag afdwingt → de <a href={`${base}/nl/kitchen-sink/`}>staalkaart</a>; een notitie over het bijhouden van notities → <a href={`${base}/nl/garden-craft/`}>het essay over tuinieren</a>.
+</div>

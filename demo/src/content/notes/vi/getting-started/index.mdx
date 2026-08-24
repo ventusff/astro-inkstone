@@ -1,0 +1,127 @@
+---
+title: Bắt đầu sử dụng
+brand: Bắt đầu sử dụng
+subtitle: "hai submodule, ba dòng import\nmột dòng pipeline"
+description: Một cặp submodule đưa vào repo của site, ba dòng import stylesheet, một dòng siteMarkdown nối trọn pipeline Markdown — thế là bạn có một khu vườn.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Hướng dẫn · từ con số không đến một khu vườn" title="Bắt đầu sử dụng" meta="hai submodule · ba stylesheet · một siteMarkdown() · ba câu lệnh">
+  Cả lớp giấy lẫn engine đều không phát hành lên npm — cả hai đều zero-build và xuất thẳng mã nguồn TS/CSS. Site đưa hai repo vào dưới dạng git submodule, import ba stylesheet, rồi nối một hàm duy nhất vào `astro.config`. Toàn bộ site bạn đang đọc được dựng đúng theo cách đó.
+</Hero>
+
+<Part title="Cài đặt" />
+
+## Một cặp submodule
+
+Đưa hai repo vào rồi trỏ dependency `file:` tới chúng:
+
+```bash title="thư mục gốc repo của site"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (phần dependencies)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] Bố cục của bản demo này hơi khác một chút
+> Bản demo sống ngay trong repo của gói (`demo/`), nên `astro-inkstone` của nó trỏ về `file:..` và engine nằm dưới `demo/vendor/`. Site độc lập cứ dùng bố cục `packages/` như trên — hai cách tương đương nhau.
+
+## Nhập stylesheet
+
+Trong stylesheet toàn cục của site: token trước, kế đến lớp nội dung, site nào có trang duyệt thì thêm kệ sách, sau cùng mới tới phần chrome của riêng bạn:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* trang chủ / trang phân loại, gắn trên body.wb-root */
+
+/* bản sắc riêng: chỉ ghi đè màu gốc tầng một — hai ngữ cảnh ngữ nghĩa và tầng thành phần tự khắc theo */
+:root {
+  --p-shi: #b03a48; /* màu nhấn cột đọc của bạn */
+  --p-zhu: #3b4a7a; /* màu nhấn kệ sách kiêm dấu ấn của site */
+  --p-shi-n: #e0919b; /* cặp ban đêm: giao diện tối đọc --p-*-n */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Chữ serif của kệ sách là `--font-display` (Source Serif 4 + Noto Serif SC); tự host nó như bản demo này làm, phần tiêu đề đầu trang của bạn sẽ trông giống hệt ở đây:
+
+```css title="src/styles/site.css (font, tùy chọn)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+Site có công thức toán thêm một dòng nạp stylesheet của KaTeX trong layout (thiếu nó, phần trình bày công thức vỡ ngay):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="Nối dây" />
+
+## Pipeline Markdown trong một dòng
+
+Cấu hình tối giản theo đúng dáng của site này — đánh số chương, toán, callout, sơ đồ, cùng `[[wikilink]]` phân giải trên tập ghi chú (bản đầy đủ với mọi hook site này nối chính là `astro.config.mjs` trong repo):
+
+```js title="astro.config.mjs (bản tối giản)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs' hay '/docs/' đều được
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // đánh số phần/chương + ToC lấy qua remarkPluginFrontmatter
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // khung mã: thanh tiêu đề / nút sao chép / thu gọn / chú thích dòng
+    mermaid: true, // khối mermaid render phía client
+    callouts: true, // cú pháp > [!note] kiểu Obsidian
+    wikiBlocks: WIKI_MODE, // chế độ biên tập: ánh xạ khối ↔ dòng nguồn, luôn đứng cuối
+    guard: { autoNumberedHeadings: true }, // lớp kiểm soát nội dung: chặn đề mục đánh số tay
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown` đứng trên phương ngữ của engine (GFM, phép phân tích nhấn mạnh thân thiện với văn bản CJK, lớp kiểm soát nội dung); bản thân preset chỉ lo lắp ráp và sắp thứ tự các plugin phía site — **thứ tự pipeline chính là bản hợp đồng**, site của bạn không bao giờ phải bận tâm plugin nào chạy trước plugin nào. Từng công tắc đều được biểu diễn một lượt trên trang [[kitchen-sink|trình diễn tổng hợp]]; còn lý lẽ đằng sau cách chia ba gói nằm ở [[boundaries|ranh giới ba bên]]. Muốn nhãn callout bằng tiếng Việt? Truyền `calloutLabels` — mặc định là tiếng Anh.
+
+## Chạy thử
+
+Các script đúng như `package.json` của bản demo này định nghĩa (`build` chạy check-dist của engine ở bước postbuild; `wiki` là `WIKI=1 astro dev`):
+
+```bash
+npm install
+npm run dev        # khu vườn
+npm run build      # build tĩnh + kiểm tra sản phẩm check-dist của engine (postbuild)
+npm run wiki       # WIKI=1 astro dev — chế độ biên tập CMS
+```
+
+Bản build tĩnh không mang theo một byte nào của engine: ngoài chế độ WIKI, mã tích hợp của engine thậm chí không được import (import động), và không một mẩu siêu dữ liệu biên tập nào được xuất ra. Dấu vết duy nhất mang dáng CMS trong sản phẩm là chỗ neo bất động của chính site — mấy span `data-inkbrush-slot` rỗng trên thanh điều hướng cùng phần CSS đi kèm — chúng không làm gì cả cho tới khi CMS cập bến.

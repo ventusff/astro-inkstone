@@ -1,0 +1,53 @@
+---
+title: संपादन मशीन
+description: "git-आधारित CMS इंजन astro-inkbrush की पाँच-अध्याय सैर — वही इंजन जिसके साथ यह बगीचा जोड़ी बनाता है; और यह साइट खुद उसका डेमो है: संपादन मोड में यहाँ का हर पन्ना अपनी जगह पर ही संपादित हो सकता है।"
+brand: inkbrush
+subtitle: "CMS इंजन, अपने ही मैनुअल पर\nपाँच अध्याय · एक हब"
+navLabel: अवलोकन
+chapters: false
+nav:
+  - group: इंजन
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="संदर्भ · CMS इंजन" title="संपादन मशीन" meta="पाँच अध्याय · प्रोडक्शन में शून्य बाइट · यह साइट ही डेमो है">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone) कागज़ है; [astro-inkbrush](https://github.com/ventusff/astro-inkbrush) क़लम। यह इंजन किसी भी Astro सामग्री-साइट को उसका अपना संपादक बना देता है: संपादन मोड में किसी अनुच्छेद पर होवर कीजिए, और एक छोटा हैंडल ✎ संपादन, ✦ Claude से पूछना और ⟲ इतिहास पेश करता है। देखने जाने के लिए कोई अलग डेमो-साइट नहीं है — **जो बगीचा आप पढ़ रहे हैं, वही डेमो है**। `npm run wiki` से चलाइए, तो यहाँ का हर नोट — यह पन्ना भी — अपनी जगह पर संपादन के लिए खुल जाता है; और जैसा स्टैटिक बिल्ड आप अभी पढ़ रहे हैं, उसमें CMS कोड की एक बाइट तक नहीं होती।
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: 'इकलौता डेटाबेस' },
+    { value: '2', label: 'हर बार सहेजने पर सुरक्षा-जाल' },
+    { value: '0 B', label: 'स्टैटिक बिल्ड में CMS कोड' },
+  ]}
+/>
+
+## पाँच अध्याय `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/hi/inkbrush/editing/`} num="भाग I" title="संपादन, ब्लॉक-दर-ब्लॉक" count="✎"
+    desc="आप जो ब्लॉक पढ़ रहे हैं, ठीक उसकी जगह CodeMirror; साइट की अपनी पाइपलाइन से गुज़रता जीवंत प्रीव्यू; और डिस्क छूने से पहले दो सुरक्षा-जाल।" />
+  <HubCard href={`${base}/hi/inkbrush/revisions/`} num="भाग II" title="संशोधन-इतिहास और revert" count="⟲"
+    desc="हर सहेज ब्लॉक-दर-ब्लॉक जर्नल में — किसने, कब, हूबहू पहले और बाद — और एक-क्लिक revert, जो खुद भी revert हो सकता है।" />
+  <HubCard href={`${base}/hi/inkbrush/ai-assist/`} num="भाग III" title="AI सहायता" count="✦"
+    desc="claude CLI के ज़रिये ब्लॉक का पुनर्लेखन, नोट-जानकार चैट और पूरे नोट का अनुवाद — सब एक फेंक देने लायक़ प्रति में क़ैद।" />
+  <HubCard href={`${base}/hi/inkbrush/inbox/`} num="भाग IV" title="Obsidian इनबॉक्स" count="📥"
+    desc="निगरानी को vault के किसी फ़ोल्डर पर तान दीजिए; नए नोट खुद रूपांतरित होकर आयात हो जाते हैं — embeds, विकीलिंक और highlights समेत।" />
+  <HubCard href={`${base}/hi/inkbrush/wikilinks/`} num="भाग V" title="विकीलिंक कैसे हल होते हैं" count="[[ ]]"
+    desc="पन्नों, संपादक-प्रीव्यू, आयातक और CI-lint — सबके लिए एक ही resolver: पहले भाषाई मिरर, फिर id, उपनाम, brand और शीर्षक।" />
+</div>
+
+## यह कहाँ बैठता है
+
+CMS की सुविधाएँ **और** सामग्री-रक्षक समेत Markdown की बोली — दोनों इंजन के हिस्से हैं: जो व्याकरण संपादक स्वीकारता है और जो व्याकरण पन्ना रेंडर करता है, वे एक ही व्याकरण होने चाहिए, इसलिए वह एक बार लिखा जाता है और हर जगह बरता जाता है ([[three-way-split|तीन हिस्सों का बँटवारा]] बताता है कि रेखा ठीक वहीं क्यों खिंची है)। स्टाइल कागज़-परत की है; पहचान आपकी साइट की। इन पन्नों पर जो कुछ रेंडर होता है — इस पाठ के ऊपर की पट्टी समेत — वह काम पर लगा कागज़ है; जो कुछ इन पन्नों को *संपादित* करता है, वह इंजन है।
+
+<div class="path">
+  <strong>पढ़ने का रास्ता।</strong>
+  इंजन से नई-नई पहचान → <a href={`${base}/hi/inkbrush/editing/`}>भाग I</a><span class="arrow">→</span><a href={`${base}/hi/inkbrush/revisions/`}>भाग II</a>; साइट में जोड़ना है → पहले <a href={`${base}/hi/getting-started/`}>शुरुआती गाइड</a>; जो बोली सहेजते वक़्त का द्वार लागू करता है → <a href={`${base}/hi/kitchen-sink/`}>पूरा पिटारा</a>; नोट रखने के बारे में एक नोट → <a href={`${base}/hi/garden-craft/`}>बागवानी-निबंध</a>।
+</div>

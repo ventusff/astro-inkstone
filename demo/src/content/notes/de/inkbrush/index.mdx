@@ -1,0 +1,53 @@
+---
+title: Die Bearbeitungsmaschine
+description: "Ein Rundgang in fünf Kapiteln durch astro-inkbrush, die git-gestützte CMS-Engine, mit der dieser Garten gepaart ist – und diese Site selbst ist ihre Demo: Im Bearbeitungsmodus lässt sich hier jede Seite an Ort und Stelle bearbeiten."
+brand: inkbrush
+subtitle: "die CMS-Engine, auf ihrem eigenen Handbuch\nfünf Kapitel · ein Hub"
+navLabel: Übersicht
+chapters: false
+nav:
+  - group: Die Engine
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Referenz · die CMS-Engine" title="Die Bearbeitungsmaschine" meta="fünf Kapitel · null Bytes im Produktions-Build · diese Site ist die Demo">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone) ist das Papier; [astro-inkbrush](https://github.com/ventusff/astro-inkbrush) ist der Stift. Die Engine macht jede Astro-Inhalts-Site zu ihrem eigenen Editor: Fahr im Bearbeitungsmodus über einen Absatz, und ein kleiner Griff bietet ✎ Bearbeiten, ✦ Claude fragen, ⟲ Historie an. Es gibt keine separate Demo-Site, die man sich ansehen müsste – **der Garten, den du gerade liest, ist die Demo**. Starte ihn mit `npm run wiki`, und jede Notiz hier, diese Seite eingeschlossen, öffnet sich zum Bearbeiten an Ort und Stelle; ein statischer Build wie der, den du gerade liest, enthält kein einziges Byte CMS-Code.
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: 'die einzige Datenbank' },
+    { value: '2', label: 'Sicherheitsnetze bei jedem Speichern' },
+    { value: '0 B', label: 'CMS-Code im statischen Build' },
+  ]}
+/>
+
+## Fünf Kapitel `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/de/inkbrush/editing/`} num="Teil I" title="Bearbeiten, Block für Block" count="✎"
+    desc="CodeMirror an der Stelle des Blocks, den du gerade liest, eine Live-Vorschau durch die Pipeline der Site selbst, und zwei Sicherheitsnetze, bevor irgendetwas die Festplatte berührt." />
+  <HubCard href={`${base}/de/inkbrush/revisions/`} num="Teil II" title="Revisionshistorie und Revert" count="⟲"
+    desc="Jedes Speichern blockweise journaliert – wer, wann, das exakte Vorher und Nachher – mit Ein-Klick-Revert, der selbst wieder revertierbar ist." />
+  <HubCard href={`${base}/de/inkbrush/ai-assist/`} num="Teil III" title="KI-Assistenz" count="✦"
+    desc="Block-Umformulierungen, ein Chat, der die Notiz kennt, und Ganznotiz-Übersetzung über das claude-CLI, eingesperrt in eine Wegwerfkopie." />
+  <HubCard href={`${base}/de/inkbrush/inbox/`} num="Teil IV" title="Der Obsidian-Posteingang" count="📥"
+    desc="Richte den Watcher auf einen Vault-Ordner; neue Notizen konvertieren und importieren sich selbst – Embeds, Wikilinks, Markierungen inklusive." />
+  <HubCard href={`${base}/de/inkbrush/wikilinks/`} num="Teil V" title="Wie Wikilinks sich auflösen" count="[[ ]]"
+    desc="Ein Resolver für die Seiten, die Editor-Vorschau, den Importer und den CI-Lint – Locale-Spiegel zuerst, dann ids, Aliasse, Brands und Titel." />
+</div>
+
+## Wo die Engine sitzt
+
+Die Engine besitzt die CMS-Funktionen **und** den Markdown-Dialekt samt seinem Inhaltswächter – die Grammatik, die der Editor akzeptiert, und die Grammatik, die die Seite rendert, müssen eine Grammatik sein, also wird sie einmal geschrieben und überall konsumiert ([[three-way-split|die Dreiteilung]] erklärt, warum die Grenze genau dort verläuft). Das Styling gehört der Papierschicht; die Identität gehört deiner Site. Alles, was auf diesen Seiten gerendert wird – die Leiste über diesem Text eingeschlossen –, ist das Papier bei der Arbeit; alles, was diese Seiten *bearbeitet*, ist die Engine.
+
+<div class="path">
+  <strong>Lesepfad.</strong>
+  Neu an der Engine → <a href={`${base}/de/inkbrush/editing/`}>Teil I</a><span class="arrow">→</span><a href={`${base}/de/inkbrush/revisions/`}>Teil II</a>; die Engine in eine Site einbauen → zuerst der Leitfaden <a href={`${base}/de/getting-started/`}>Erste Schritte</a>; der Dialekt, den die Schranke beim Speichern durchsetzt → <a href={`${base}/de/kitchen-sink/`}>Das volle Programm</a>; eine Notiz übers Notizenführen → <a href={`${base}/de/garden-craft/`}>der Garten-Essay</a>.
+</div>

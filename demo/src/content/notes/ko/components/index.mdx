@@ -1,0 +1,70 @@
+---
+title: 컴포넌트 모음
+description: 배포되는 모든 컴포넌트를 세 개 장으로 도는 투어 — 동시에, 이 노트 자체가 장을 거느린 허브 노트가 어떻게 작동하는지의 라이브 시연입니다.
+brand: 컴포넌트 모음
+subtitle: "컴포넌트 갤러리\n3개 장 · 하나의 허브"
+navLabel: 개요
+chapters: false
+nav:
+  - group: 갤러리
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="세 개 장의 갤러리 · 2026.08" title="컴포넌트 모음" meta="3개 장 · 컴포넌트 24개 · 전부 astro-inkstone/components/ 경로에서 임포트">
+  갤러리의 모든 것은 `astro-inkstone/components/` 경로에서 임포트되어, 패키지의 기본 토큰으로 렌더링됩니다. 컴포넌트는 **표시 전용**입니다: 데이터와 라벨 문자열을 prop으로 받으므로(기본값은 영어), 어떤 언어의 사이트든 자기 것을 넘기면 됩니다.
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: '장' },
+        { value: '24', label: '컴포넌트' },
+        { value: '6', label: '위키 부품' },
+        { value: '0', label: '하드코딩된 색' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## 장 구성 `{#chapters notoc}`
+
+카드 한 장이 사이드바 장 레일의 한 장에 대응합니다. 칩은 그 장이 무엇을 보여 주는지 알려 줍니다.
+
+<div class="hub-grid">
+  <HubCard href={`${base}/ko/components/content/`} num="제I부" title="콘텐츠와 타이포그래피" count="컴포넌트 7개"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    본문이 조립되는 부품들 — 콜아웃, 칩, 그리드, 단계 레일, 통계 행, 논문 카드와 참고 문헌 목록.
+  </HubCard>
+
+  <HubCard href={`${base}/ko/components/wiki/`} num="제II부" title="위키와 둘러보기" count="컴포넌트 8개"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    이 정원의 서가가 조립되는 분류 세트, 그리고 링크 그래프 패널 둘 — 연결된 언급과 사이드바의 로컬 그래프.
+  </HubCard>
+
+  <HubCard href={`${base}/ko/components/interactive/`} num="제III부" title="인터랙티브와 페이지 부속" count="컴포넌트 9개"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    실제로 도는 캔버스 데모와 사이트 소유의 로더 계약, 그리고 페이지 부속 — 히어로, 허브 카드, 점프 목록, 푸터.
+  </HubCard>
+</div>
+
+## 허브, 라이브로
+
+이 노트 자체가 **허브**의 시연입니다: frontmatter에 `nav` — 순서가 있는 장 목록 — 를 선언한 최상위 노트. 지금 눈앞에서 돌아가는 장치는 이렇습니다:
+
+- 사이드바는 허브의 브랜드 아래에 장 레일(I/II/III)을 걸고, 각 장의 발치에 이전/다음 페이지네이션을 붙입니다;
+- 장은 허브의 분류를 상속합니다 — 갤러리 세 장 가운데 자기 종류, 분야, 상태를 선언한 장은 하나도 없지만, 모두 이 노트의 것을 내보입니다. 자기 값을 쓴 장은 그 필드를 통째로 대체합니다([[three-way-split|어디서나 같은 규칙: 명시한 쪽이 이깁니다]]);
+- 둘러보기 페이지에서 허브는 **한 단위**입니다: 카드 한 장에 장 수가 적힙니다 — 장이 서가에 흩어지는 일은 없습니다;
+- 각 장의 `part:` 번호는 `nav` 안의 위치와 일치해야 하며, 어긋나면 빌드가 실패합니다 — 장 레일과 frontmatter는 서로 딴소리를 할 수 없습니다;
+- 위의 카드는 `.hub-grid` 안에 놓인 `HubCard` 컴포넌트이고, 아래 상자는 허브의 또 다른 부속인 **읽기 경로**(`.path`)입니다.
+
+<div class="path">
+  <div class="title">어디서 시작할까</div>
+  <div class="route">
+    패키지가 처음이라면 → <a href={`${base}/ko/components/content/`}>제I부</a><span class="arrow">→</span><a href={`${base}/ko/components/wiki/`}>제II부</a>; 둘러보기 사이트를 만든다면 → 곧장 <a href={`${base}/ko/components/wiki/`}>제II부</a><span class="arrow">→</span><a href={`${base}/ko/getting-started/`}>시작하기</a>; 같은 이야기의 Markdown 쪽 → <a href={`${base}/ko/kitchen-sink/`}>전 요소 시연</a>.
+  </div>
+</div>

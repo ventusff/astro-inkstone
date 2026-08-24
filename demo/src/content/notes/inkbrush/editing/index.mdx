@@ -1,0 +1,30 @@
+---
+title: Editing, block by block
+description: The ✎ flow — CodeMirror in place of the block you are reading, a live preview through the site's own pipeline, and two safety nets before anything touches disk.
+navLabel: Editing
+part: 1
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Editing, block by block">
+  Editing works the way fixing a typo on Wikipedia does: you edit the paragraph you are looking at, not a giant textarea holding the whole page. In editing mode (`npm run wiki`), sign in, hover any block on any note — this one included — and click ✎.
+</PartHero>
+
+## The loop
+
+The rendered block hides and a [CodeMirror](https://codemirror.net/) editor expands in its place, holding that block's Markdown source. A live preview renders below it as you type — through the engine's dialect plus the plugins the site hands to `inkbrush({ markdown })`, the same rule set the page pipeline mounts, so the preview and the page can never disagree. `⌘/Ctrl + Enter` saves; `Esc` cancels.
+
+The frontmatter is a block too: the taxonomy strip at the top of every note here carries its own ✎, which opens the note's YAML — change a status or a date and the header re-renders from the updated frontmatter.
+
+## The two safety nets
+
+**Optimistic locking.** Each block carries a hash of the source it was cut from. If someone else changed the file under you, the save is rejected with a conflict instead of silently overwriting their work — refresh and retry.
+
+**A build gate.** Before anything is written to disk, the whole file runs through the site's Markdown pipeline — the dialect, the content guard, the site's own plugins, and the MDX compiler for `.mdx`. A save that would break the page — an unpaired `**`, an unclosed component tag, a malformed expression — is refused with the exact error, and the file on disk stays untouched. The guard's full refusal list is demonstrated at the end of the [[kitchen-sink|kitchen sink]].
+
+## Where saves go
+
+A save writes the Markdown file and, with `autocommit` enabled, becomes a git commit authored by the signed-in user. There is no database anywhere: the content files are the single source of truth and git is the durable history. The fine-grained per-block journal that powers [[inkbrush/revisions|revision history]] rides on top.
+
+The dialect itself — GFM with a CJK-friendly emphasis rule, plus a content guard that refuses silently-deforming Markdown — is defined once in the engine and shared by the page renderer, this editor's preview and the `check-content` CLI ([[checks|the five checks]]). One grammar, three consumers, zero drift.

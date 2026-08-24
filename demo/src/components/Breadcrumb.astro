@@ -22,8 +22,9 @@
  * The fourth surface, the comment section, needs `main.note-main > .col` —
  * see layouts/NoteLayout.astro.
  */
+import LanguageMenu from './LanguageMenu.astro';
 import ThemeToggle from './ThemeToggle.astro';
-import { href, landingRoute, otherLocale, UI, type Locale } from '../lib/i18n';
+import { href, landingRoute, SITE_NAME, UI, type Alternate, type Locale } from '../lib/i18n';
 
 interface Crumb {
   label: string;
@@ -32,19 +33,15 @@ interface Crumb {
 interface Props {
   locale: Locale;
   crumbs: Crumb[];
-  /** this page's route in the other locale; a page with no twin sends the
-   *  language switch to the other locale's landing page instead */
-  translateRoute?: string | undefined;
+  /** this page's routes in the locales it exists in — the language menu's rows */
+  alternates: Alternate[];
   /** render the menu button — only pages that have a sidebar drawer */
   hasSidebar?: boolean;
 }
-const { locale, crumbs, translateRoute, hasSidebar = false } = Astro.props;
+const { locale, crumbs, alternates, hasSidebar = false } = Astro.props;
 const t = UI[locale];
-const other = otherLocale(locale);
 // the garden's landing page in this locale — the mark and the trail's root
 const home = landingRoute(locale);
-const switchRoute = translateRoute ?? landingRoute(other);
-const switchTitle = translateRoute !== undefined ? t.langButton : t.langHome;
 ---
 
 <header class="site-nav">
@@ -55,7 +52,7 @@ const switchTitle = translateRoute !== undefined ? t.langButton : t.langHome;
       </button>
     )
   }
-  <a class="hub-btn" href={href(home)} aria-label={t.home} title={t.home}>
+  <a class="hub-btn" href={href(home)} aria-label={SITE_NAME} title={SITE_NAME}>
     <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
       <path d="M10 2.2 17.8 10 10 17.8 2.2 10Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
       <path d="M10 6.4 13.6 10 10 13.6 6.4 10Z" fill="currentColor"></path>
@@ -67,7 +64,7 @@ const switchTitle = translateRoute !== undefined ? t.langButton : t.langHome;
   <nav class="trail-nav" aria-label={t.breadcrumb}>
     <ol class="trail">
       {/* each locale has its own landing page and browse tree */}
-      <li><a class="gw" href={href(home)}>{t.home}</a></li>
+      <li><a class="gw" href={href(home)}>{SITE_NAME}</a></li>
       {
         crumbs.map((c) => (
           <li>{c.route !== undefined ? <a href={href(c.route)}>{c.label}</a> : <span class="here" aria-current="page">{c.label}</span>}</li>
@@ -83,9 +80,7 @@ const switchTitle = translateRoute !== undefined ? t.langButton : t.langHome;
       <path d="M13.2 13.2 17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
     </svg>
   </button>
-  <a class="lang-btn" href={href(switchRoute)} title={switchTitle} hreflang={other === 'zh' ? 'zh-CN' : 'en'}>
-    {t.langSwitch}
-  </a>
+  <LanguageMenu locale={locale} alternates={alternates} />
   <span class="cms-slot" data-inkbrush-slot="share"></span>
   <span class="cms-slot" data-inkbrush-slot="account"></span>
   <ThemeToggle label={t.theme} />
@@ -222,20 +217,6 @@ const switchTitle = translateRoute !== undefined ? t.langButton : t.langHome;
   .search-btn:hover {
     opacity: 1;
     border-color: currentColor;
-  }
-
-  .lang-btn {
-    flex-shrink: 0;
-    padding: 4px 10px;
-    border: 1px solid var(--color-line);
-    border-radius: 999px;
-    color: var(--color-ink-soft);
-    text-decoration: none;
-    font-size: 11.5px;
-  }
-  .lang-btn:hover {
-    color: var(--color-accent);
-    border-color: var(--color-accent);
   }
 
   /* `display: contents` keeps the slot itself out of the flex layout, so the

@@ -82,6 +82,20 @@ const findings = [];
 try {
 const page = await browser.newPage();
 
+// Quiet-period wait keyed on request ARRIVALS, not on the in-flight count:
+// puppeteer's waitForNetworkIdle can be poisoned by a request a navigation
+// interrupted (it stays "in flight" forever), after which every later page
+// pays the full cap. A request that never settles must cost its own page at
+// most once — never the whole run.
+let lastRequest = Date.now();
+page.on('request', () => { lastRequest = Date.now(); });
+const quiet = async (idleMs, capMs) => {
+  const t0 = Date.now();
+  while (Date.now() - lastRequest < idleMs && Date.now() - t0 < capMs) {
+    await new Promise((res) => setTimeout(res, 50));
+  }
+};
+
 const routeList = routes(DIST);
 for (const r of routeList) {
   for (const w of WIDTHS) {
@@ -90,7 +104,7 @@ for (const r of routeList) {
     // forever on environments where some request never settles, and a probe
     // must never be the flaky part of CI.
     await page.goto(BASE + r, { waitUntil: 'load', timeout: 60_000 });
-    await page.waitForNetworkIdle({ idleTime: 400, timeout: 5_000 }).catch(() => {});
+    await quiet(400, 5_000);
     const res = await page.evaluate(() => {
       const out = { hOverflow: null, wide: [], unstyled: [], headingJump: [], noAlt: [], dupId: [], deadAnchor: [], deadControl: [] };
       const de = document.documentElement;
@@ -230,7 +244,7 @@ for (const r of routeList) {
         return dialogs.length;
       });
       if (dlg > 0) {
-        await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
+        await quiet(300, 5000);
         const res2 = await page.evaluate(() => {
           const out = { wide: [] };
           const sel = (el) => {

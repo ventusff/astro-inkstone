@@ -1,0 +1,30 @@
+---
+title: Bewerken, blok voor blok
+description: De ✎-stroom — CodeMirror op de plek van het blok dat je leest, een live voorvertoning door de eigen pipeline van de site, en twee vangnetten voordat iets de schijf raakt.
+navLabel: Bewerken
+part: 1
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Bewerken, blok voor blok">
+  Bewerken werkt zoals een typefout verbeteren op Wikipedia: je bewerkt de alinea waar je naar kijkt, niet één reusachtige textarea met de hele pagina erin. Meld je in de bewerkmodus (`npm run wiki`) aan, ga met de muis over een willekeurig blok op een willekeurige notitie — dit blok inbegrepen — en klik op ✎.
+</PartHero>
+
+## De lus
+
+Het gerenderde blok verdwijnt en op zijn plek klapt een [CodeMirror](https://codemirror.net/)-editor open, met de Markdown-bron van precies dat blok erin. Terwijl je typt rendert eronder een live voorvertoning — door het dialect van de engine plus de plugins die de site aan `inkbrush({ markdown })` meegeeft, dezelfde regelset die de paginapipeline monteert, zodat de voorvertoning en de pagina elkaar nooit kunnen tegenspreken. `⌘/Ctrl + Enter` slaat op; `Esc` annuleert.
+
+Ook de frontmatter is een blok: de taxonomiestrook boven aan elke notitie hier draagt haar eigen ✎, die de YAML van de notitie opent — verander een status of een datum en de kop rendert opnieuw vanuit de bijgewerkte frontmatter.
+
+## De twee vangnetten
+
+**Optimistische vergrendeling.** Elk blok draagt een hash van de bron waaruit het is gesneden. Heeft iemand anders het bestand onder je handen gewijzigd, dan wordt de opslag afgewezen met een conflict in plaats van diens werk stilletjes te overschrijven — ververs en probeer opnieuw.
+
+**Een bouwpoort.** Voordat er iets naar de schijf gaat, loopt het hele bestand door de Markdown-pipeline van de site — het dialect, de poortwachter, de eigen plugins van de site, en voor `.mdx` ook de MDX-compiler. Een opslag die de pagina zou breken — een ongepaarde `**`, een niet-gesloten componenttag, een misvormde expressie — wordt geweigerd mét de exacte fout, en het bestand op schijf blijft onaangeroerd. De volledige afwijzingslijst van de poortwachter wordt gedemonstreerd aan het slot van de [[kitchen-sink|staalkaart]].
+
+## Waar een opslag terechtkomt
+
+Een opslag schrijft het Markdown-bestand en wordt, met `autocommit` aan, een git-commit op naam van de aangemelde gebruiker. Er is nergens een database: de inhoudsbestanden zijn de enige bron van waarheid en git is de duurzame geschiedenis. Het fijnmazige journaal per blok waar [[inkbrush/revisions|de revisiegeschiedenis]] op draait, rijdt daar bovenop.
+
+Het dialect zelf — GFM met een CJK-vriendelijke nadrukregel, plus een poortwachter die geruisloos vervormend Markdown afwijst — wordt één keer gedefinieerd in de engine en gedeeld door de paginarenderer, de voorvertoning van deze editor en de CLI `check-content` ([[checks|de vijf controles]]). Eén grammatica, drie consumenten, nul drift.

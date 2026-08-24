@@ -1,0 +1,37 @@
+---
+title: Kotak masuk Obsidian
+description: "Arahkan pengawasnya ke sebuah folder vault; catatan baru mengonversi dan mengimpor dirinya sendiri — embed disalin ke sebelah catatannya, tautan wiki diresolusi, sorotan dipertahankan."
+navLabel: Kotak masuk
+part: 4
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Kotak masuk Obsidian">
+  Banyak tulisan bermula di tempat lain — di ponsel, di sebuah clipper, di sebuah vault Obsidian. Kotak masuk menutup putaran itu: arahkan ia ke sebuah folder, dan catatan yang dijatuhkan di sana mengimpor dirinya sendiri ke situs.
+</PartHero>
+
+## Menyalakannya
+
+Kotak masuk dikirim dalam keadaan mati. Nyalakan di `inkbrush.config.ts`:
+
+```ts title="inkbrush.config.ts"
+inbox: {
+  dir: '~/vault/inbox',        // folder yang diawasi (mendukung ~/)
+  ignore: ['daily-'],          // opsional: prefiks nama berkas yang dilewati
+},
+```
+
+Berkas yang sudah ada di folder saat pengawasnya menyala ditandai sebagai sudah terlihat, bukan diimpor — hanya catatan yang ditambahkan *sesudahnya* yang tersinkron otomatis. Yang lebih lama bisa diimpor susulan secara eksplisit lewat API, sehingga menyalakan kotak masuk tak pernah tiba-tiba menumpahkan riwayat vault sepuluh tahun ke situs Anda.
+
+## Apa yang dikerjakan pengimpor
+
+Setiap catatan yang masuk dikonversi, bukan disalin:
+
+- embed gambar diresolusi terhadap folder aset milik vault, berkasnya **disalin ke sebelah catatan hasil impor**, dan embed-nya menjadi sintaks gambar standar — menghapus catatannya kelak menghapus asetnya sekalian
+- `[[tautan wiki]]` yang cocok dengan catatan sungguhan di situs bertahan sebagai tautan, diresolusi dengan [[inkbrush/wikilinks|aturan yang sama seperti di mana-mana]]; sisanya diratakan menjadi emphasis polos dengan sebuah peringatan
+- sorotan menjadi elemen `<mark>` sungguhan, metadata frontmatter menjadi baris sumber di bawah judul, dan deskripsi diturunkan dari paragraf substantif pertama
+
+Catatan hasil konversi lalu harus lolos gerbang build yang sama dengan simpanan manual — catatan yang akan merusak halaman ditolak, bukan diimpor.
+
+Setiap impor mendarat di jurnal revisi (via: inbox) sebagai rekaman seutuh berkas: [[inkbrush/revisions|⟲]] mendaftarnya sebagai baris audit, dan membatalkan sebuah impor adalah operasi git. Dengan `autocommit` menyala, setiap impor juga menjadi commit git seperti suntingan lainnya; dengan ia mati, berkas hasil impor tiba sebagai perubahan working tree biasa untuk Anda tinjau dan commit sendiri.

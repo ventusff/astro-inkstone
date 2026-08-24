@@ -1,0 +1,82 @@
+---
+title: Die Prüfungen
+brand: Die Prüfungen
+subtitle: "eine Schranke pro Schicht\nQuelltext · Links · Ausgabe · Rendering · Kontrast"
+description: check-content, check-wikilinks, check-dist, ui_probe, contrast_probe – eine Schranke pro Schicht, und jede fängt eine Klasse stiller Fehler, die unter einem grünen Build sonst mit ausgeliefert würden.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Referenz · Werkzeuge" title="Die Prüfungen" meta="fünf Prüfungen · drei aus der Engine, zwei aus diesem Paket · alles grün vor einem Commit">
+  Ein grüner Build heißt nicht, dass die Seiten in Ordnung sind. Diese Werkzeugkette stellt an jede Schicht eine Prüfung, und jede fängt eine eigene Klasse der stillen Fehler nach dem Muster „Build grün, Seite kaputt“ – zwei von ihnen betrachten Seiten außerdem so, wie ein Leser es tut: in einem echten Browser.
+</Hero>
+
+## Fünf Schranken, fünf Schichten
+
+| Prüfung | Kommt mit | Schaut auf | Wann ausführen |
+| --- | --- | --- | --- |
+| check-content | Engine, `scripts/check-content.mjs` | jede md/mdx-Quelldatei | CI des Inhalts-Repos, oder nach dem Schreiben |
+| check-wikilinks | Engine, `scripts/check-wikilinks.mjs` | den `[[Wikilink]]`-Graphen | CI des Inhalts-Repos, oder nach dem Umbenennen einer Notiz |
+| check-dist | Engine, `scripts/check-dist.mjs` | die Ausgabe von `astro build` | nach jedem Build (postbuild) |
+| ui_probe | dieses Paket, `scripts/ui_probe.mjs` | Seiten, gerendert in einem echten Browser | nach Style- und Layoutänderungen |
+| contrast_probe | dieses Paket, `scripts/contrast_probe.mjs` | den Kontrast jedes Textknotens, beide Themes | nach jeder Token-Änderung |
+
+## check-content: die Quelltextschicht
+
+Kompiliert jede md/mdx, die eine Seite werden soll, mit **exakt demselben Dialekt** wie die Site – Syntaxfehler und stille Verformungen (Hervorhebungsmarken ohne Paar, von der MDX-Auswertung verschluckte Klammern, aus Zeilenumbrüchen geborene Listenmarken, einzeiliges `$$`, Formeln, die KaTeX nicht rendern kann – dieselbe Liste, mit der [[kitchen-sink|Das volle Programm]] schließt) machen die CI allesamt rot.
+
+Warum dieses Skript aus der Engine kommen muss: Ein Prüfer, dessen Plugin-Satz von dem der Site abweicht, ist **schlimmer als gar kein Prüfer** – einer ohne Mathe-Plugin liest Formelklammern als JSX-Ausdrücke, einer ohne GFM winkt Tabellen durch. Der Dialekt wird einmal geschrieben, in der Engine; Site-Rendering, Speicher-Validierung des CMS und dieses Skript konsumieren immer denselben.
+
+```bash title="Wurzel des Inhalts-Repos"
+node <engine>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
+```
+
+Über das Kompilieren hinaus fängt es zwei Frontmatter-Klassen stillen Verlusts: ein unzitiertes `#` in einem Wert (YAML liest es als Kommentar und schneidet den Rest stumm ab) und YAML, das gar nicht parst – gemeldet mit Zeilennummer.
+
+## check-wikilinks: der Link-Graph
+
+Tote `[[Wikilinks]]` lassen den Build mit Absicht nicht scheitern – ein Garten muss auf Notizen verlinken dürfen, die noch nicht gewachsen sind. In die CI gehört Linkfäule trotzdem, also liefert die Engine einen Lint mit, der jeden Wikilink mit **dem Parser und den Auflösungsregeln der Bibliothek selbst** auflöst (Alias, Brand, Titel, Locale-Spiegel) und die fehlenden, die mehrdeutigen und die zweifelhaften Anker meldet. `--strict` macht aus toten Links einen scheiternden Exit – genau so führt die CI dieses Repositorys ihn aus:
+
+```bash title="der Link-Check dieses Gartens, wie ihn die CI ausführt"
+node scripts/check-links.mjs
+```
+
+## check-dist: die Ausgabeschicht
+
+Im gebauten `dist/` muss jede interne Referenz, die ein Leser anklicken kann, auch wirklich existieren. Die Prüfung fängt die stillen Lücken unter einem grünen Build:
+
+- interne Links und Assets auf Dateien, die es nicht gibt (die Sorte, die nach einem Routen-Umbau dutzendweise auftaucht);
+- Seitenanker auf ids, die es nicht gibt;
+- verdoppelte Locale-Segmente in Pfaden (`/en/en/` – das klassische Ergebnis von i18n-Fallbacks, die ein Präfix auf schon präfixierte Routen stapeln);
+- `<a>` in `<a>` verschachtelt (der HTML-Parser schließt das äußere vorzeitig, und Buttons fallen aus ihren Karten);
+- KaTeX-Fehlerreste (die Formel steht als roter Text auf der Seite, während der Build grün bleibt).
+
+Diese Demo hängt die Prüfung in den Postbuild: Ein grünes `npm run build` heißt, auch die Ausgabeprüfung hat bestanden.
+
+```bash title="Site-Wurzel, nach einem Build (deployt die Site unter einem Unterpfad, gib --base mit)"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
+```
+
+## Die Render-Probe
+
+Quelltext und Ausgabe können beide stimmen, und die Seite ist trotzdem kaputt – der Klassiker sind Startseitenkarten, auf die keine Stylesheet-Regel mehr passt und die als eine einzige gequetschte Zeile nackten Texts rendern: Link- und Ankerprüfungen bleiben grün, weil sie nie eine gerenderte Seite ansehen. `ui_probe` fährt einen echten Browser über jede Seite in `dist`, bei vier Viewport-Breiten (1440/1024/768/430), und misst: horizontales Überlaufen der Seite, Elemente breiter als ihr Container ohne Scrollbox, in der sie wohnen könnten, Klassen, die keine Stylesheet-Regel stylt, übersprungene Überschriftenebenen, doppelte ids, Bilder ohne `alt`-Attribut, Seitenanker und `aria-controls`, die ins Leere zeigen. Gemeldet wird nur, was eine Maschine beweisen kann – kein ästhetisches Urteil.
+
+```bash title="braucht ein lokales Chrome/Chromium"
+npm run build
+node ../scripts/ui_probe.mjs dist   # serviert dist selbst; übergib eine baseUrl, um einen laufenden Server zu proben
+```
+
+Untersucht wird das ganze Dokument – Chrome, Seitenleiste und Dialoge eingeschlossen. Grün heißt, die letzte Zeile des Berichts lautet `SAMPLES WITH FINDINGS: 0` (ein Sample ist eine Route bei einer Breite).
+
+## Die Kontrastprobe
+
+Die Tokens behaupten AA, also wird die Behauptung gemessen statt beteuert. `contrast_probe` lädt jede Seite aus `dist` in einem echten Browser – helles und dunkles Theme, Desktop- und Handybreite – und vermisst jeden Textlauf, der im Default-Zustand rendert: HTML-Text, SVG-Text und den generierten Text von `::before` / `::after`, wobei auf einer repräsentativen Seite jedes `<dialog data-probe-open>`-Overlay geöffnet geprobt wird (samt einer Suchanfrage, die in ein dort gefundenes Suchfeld getippt wird) – die Marke ist die Erklärung der Site, dass der Dialog fertig verfasst ist. Der Grund wird nicht aus einem Stylesheet gelesen: Die Seite wird mit durchweg transparent gestellten Glyphen gerendert und geschossen, und das Pixel unter jedem Lauf ist sein Grund – Verläufe, `color-mix()`-Tönungen, durchscheinende Schichten und die Nachtpalette werden also so gemessen, wie sie rendern. Der Vordergrund eines Laufs trägt die akkumulierte `opacity` seines Elements und seiner Vorfahren, gedimmter Text wird also in der Stärke gemessen, die ein Leser wirklich sieht. Hover- und Fokuszustände werden begutachtet, nicht geprobt. Kleintext muss 4.5:1 halten, großer Text (24px, oder 18.66px fett) 3:1; ein Lauf, dessen Farbe sich nicht parsen oder dessen Grund sich nicht sampeln lässt, zählt als Befund. Der Bericht nennt Seite, Theme, Breite, Selektor, die beiden Farben und das Verhältnis für jeden Lauf unter der Latte:
+
+```bash title="nach einem Build, beide Themes"
+node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS engen die Matrix ein
+```
+
+<div class="callout system">
+  <div class="callout-title">Die Routine bei Style-Änderungen</div>
+  Jede Änderung an den Stylesheets oder Komponenten des Pakets geht zuerst durch den Build dieser Demo, dann über die Ausgabe durch <code>ui_probe</code> und <code>contrast_probe</code> – alles grün, bevor committet wird. Die Demo ist zugleich der Prüfstand des Pakets.
+</div>

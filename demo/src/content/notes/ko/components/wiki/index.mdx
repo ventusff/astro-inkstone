@@ -1,0 +1,154 @@
+---
+title: 위키와 둘러보기
+description: 분류 세트 — 노트 카드, 패싯 행, 배지, 연결된 언급 패널과 사이드바의 로컬 그래프 — 를 샘플 데이터로 보여 줍니다. 같은 컴포넌트들이 이 정원 전역에서 실제로 돌고 있습니다.
+part: 2
+navLabel: 위키와 둘러보기
+---
+
+import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph from 'astro-inkstone/components/LocalGraph.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import DomainChip from 'astro-inkstone/components/wiki/DomainChip.astro';
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import KindBadge from 'astro-inkstone/components/wiki/KindBadge.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import StatusDot from 'astro-inkstone/components/wiki/StatusDot.astro';
+import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<PartHero kicker={props.partLabel} title="위키와 둘러보기">
+  이 장의 모든 것은 이 사이트에서 **실제로 돌고 있습니다**: 랜딩 페이지의 서가는 `NoteCard`로 짜였고, 패싯 행은 `FacetNav` 하나이며, 이 글 위의 메타 스트립은 `TaxonomyLine`, 사이드바의 작은 별자리는 `LocalGraph`입니다. 전부 순수 표시 컴포넌트입니다 — 레지스트리는 사이트가 해석하고, 표시할 준비가 끝난 데이터만 넘깁니다. 해석 헬퍼는 `createTaxonomy`와 `createBacklinks`로 패키지에 실려 옵니다([[three-way-split|역학은 패키지에, 의미는 사이트에]]).
+</PartHero>
+
+## 바인딩, 세 줄
+
+```ts title="src/lib/taxonomy.ts (이 사이트의 바인딩 전부)"
+import { createTaxonomy } from 'astro-inkstone/lib/taxonomy';
+import { DOMAINS, KINDS, STATUSES } from '../content/notes/_meta/taxonomy';
+
+export const { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, tagIndex, resolveTaxonomy } =
+  createTaxonomy({ kinds: KINDS, domains: DOMAINS, statuses: STATUSES },
+    { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' });
+```
+
+레지스트리(`_meta/taxonomy.ts`)는 콘텐츠 트리 안의 순수 데이터입니다: 종류, 톤 색을 지닌 분야, 점 색을 지닌 상태 — 각 값이 영어와 중국어 라벨을 함께 갖습니다. 거기에 값 하나를 더하고 노트에 태그를 달면, 모든 둘러보기 페이지가 알아서 받아 냅니다 — 라우트는 처음부터 값으로 매개변수화되어 있으니까요.
+
+## 서가와 그 토큰
+
+둘러보기 페이지는 두 번째 바탕 위에 삽니다: 따뜻한 종이, 세리프 마스트헤드, 2포인트 서가 괘선, 카드 그리드 — 전부 `browse.css` 파일이 `--wb-*` 토큰을 통해 줍니다. [[design-tokens|두 문맥 팔레트]]의 둘러보기 쪽 절반입니다. 페이지는 body의 `wb-root` 클래스 하나로 이 문맥에 들어가고, 그 안에서 크롬 토큰이 다시 매핑되므로 같은 내비게이션 바가 어느 바탕에나 앉습니다.
+
+## NoteCard
+
+카드는 표시할 준비가 끝난 데이터를 받습니다 — 해석된 라벨, 톤, 조판된 날짜, 미러 링크. 카드는 원래 서가에 사는 물건이라, 샘플은 이 읽기 열 안에 끼워 넣은 둘러보기 문맥 한 조각(`.wb-root.wb-inset`)에 앉혔습니다:
+
+<div class="wb-root wb-inset">
+<ul class="wb-grid">
+  <NoteCard
+    note={{
+      id: 'sample-note',
+      href: `${base}/ko/kitchen-sink/`,
+      title: '전 요소 시연',
+      description: 'Markdown 파이프라인의 모든 요소가 이 페이지에서 한 번씩 공연합니다.',
+      kind: { id: 'reference', label: '레퍼런스' },
+      domains: [{ id: 'pipeline', label: '파이프라인', tone: { bg: '#e3efec', fg: '#2a6f62' }, href: `${base}/ko/domain/pipeline/` }],
+      status: { id: 'evergreen', label: '상록', dot: '#1f5e46' },
+      updated: '2026.08',
+      mirrors: [{ label: 'EN', href: `${base}/kitchen-sink/` }],
+    }}
+  />
+  <NoteCard
+    note={{
+      id: 'sample-hub',
+      href: `${base}/ko/components/`,
+      title: '컴포넌트 모음',
+      description: '배포되는 모든 컴포넌트를 세 개 장으로 도는 투어 — 동시에 허브의 라이브 시연.',
+      kind: { id: 'reference', label: '레퍼런스' },
+      domains: [{ id: 'components', label: '컴포넌트', tone: { bg: '#f7e9dc', fg: '#98511a' }, href: `${base}/ko/domain/components/` }],
+      status: { id: 'evergreen', label: '상록', dot: '#1f5e46' },
+      updated: '2026.08',
+      chapterCount: 3,
+      sourceLine: 'Hero · HubCard · Stats — 허브의 부속을 허브 자신에게',
+    }}
+  />
+</ul>
+</div>
+
+## FacetNav
+
+다차원 둘러보기 색인입니다 — 종류, 분야(각자의 톤과 함께), 상위 태그 — 전부 미리 렌더링된 알약 링크로:
+
+<FacetNav
+  base={`${base}/ko`}
+  kinds={[
+    { def: { id: 'guide', label: '가이드' }, count: 2 },
+    { def: { id: 'reference', label: '레퍼런스' }, count: 4 },
+    { def: { id: 'pattern', label: '패턴' }, count: 1 },
+  ]}
+  domains={[
+    { def: { id: 'design', label: '디자인', tone: { bg: '#ece7f2', fg: '#5b4a8a' } }, count: 3 },
+    { def: { id: 'pipeline', label: '파이프라인', tone: { bg: '#e3efec', fg: '#2a6f62' } }, count: 2 },
+  ]}
+  tags={[
+    { tag: 'tokens', count: 1 },
+    { tag: 'markdown', count: 1 },
+  ]}
+  active={{ dim: 'kind', value: 'reference' }}
+  labels={{ kind: '종류', domain: '분야', tag: '태그', all: '전체 →' }}
+/>
+
+행 라벨 문자열도 prop이고 기본값은 영어입니다 — 위 샘플이 넘긴 `labels={{ kind: '종류', domain: '분야', tag: '태그', all: '전체 →' }}` 값은 이 사이트의 한국어 분류 페이지가 넘기는 것과 똑같습니다. 그 밖에는 아무것도 바꿀 것이 없습니다.
+
+## TaxonomyLine, KindBadge, StatusDot, DomainChip
+
+노트 머리의 한 줄짜리 메타 스트립은 배지 원자 셋을 조립한 것입니다. 각 원자는 단독으로도 쓸 수 있습니다:
+
+<TaxonomyLine
+  kind={{ id: 'pattern', label: '패턴' }}
+  domains={[{ id: 'design', label: '디자인', tone: { bg: '#ece7f2', fg: '#5b4a8a' }, href: `${base}/ko/domain/design/` }]}
+  status={{ id: 'growing', label: '자라는 중', dot: '#5c8a3c' }}
+  updated="2026.08"
+/>
+
+원자를 따로 꺼내 본문에 흘리면: <KindBadge def={{ id: 'guide', label: '가이드' }} /> 종류 배지 하나, <DomainChip def={{ id: 'pipeline', label: '파이프라인', tone: { bg: '#e3efec', fg: '#2a6f62' } }} href={`${base}/ko/domain/pipeline/`} /> 분야 칩 하나, <StatusDot def={{ id: 'evergreen', label: '상록', dot: '#1f5e46' }} /> 상태 점 하나가 됩니다.
+
+## Backlinks
+
+이 정원 모든 노트 밑의 "연결된 언급" 패널은 패키지의 `createBacklinks` 함수가 계산합니다 — 엔진 자신의 위키링크 해석기를 대상 ← 출처의 색인으로 뒤집고, 문맥 조각까지 함께 싣습니다. 아래는 인라인 샘플 데이터입니다:
+
+<Backlinks
+  items={[
+    {
+      href: `${base}/ko/kitchen-sink/`,
+      title: '전 요소 시연',
+      before: '일곱 열짜리 표는 ',
+      label: '콜아웃 치트 시트',
+      after: '인 동시에 카드 변환의 라이브 시험이기도 합니다…',
+    },
+    {
+      href: `${base}/ko/design-tokens/`,
+      title: '두 계층 팔레트와 테마',
+      before: '컴포넌트는 ',
+      label: '시맨틱 계층',
+      after: '만 소비하므로, 아이덴티티 변경이 그들을 건드릴 일이 없습니다.',
+    },
+  ]}
+/>
+
+진짜 패널은 이 페이지의 발치로 스크롤하면 보입니다 — 이 장 자신이 위키링크의 대상이니까요.
+
+## LocalGraph
+
+같은 색인이 두 번째 질문에도 답합니다 — *여기서 한 홉 거리에는 무엇이 있는가?* — `index.localGraph(id, titleOf)` 호출이 그 답을 이웃 목록으로 돌려주며, 들어오는 링크가 앞에 옵니다. 컴포넌트는 이들을 노트 둘레의 타원 궤도에 그립니다. 들어오는 쪽은 실선, 나가는 쪽은 점선입니다. 이웃은 자기만의 `color` 값을 지닐 수 있습니다(이를테면 다른 컬렉션에서 온 이웃). 아래는 열 너비에 맞춘 샘플 데이터 버전입니다. 진짜는 링크를 가진 모든 노트의 사이드바에 있습니다:
+
+<div style="max-width: 300px">
+  <LocalGraph
+    centerTitle="위키와 둘러보기"
+    neighbors={[
+      { id: 'kitchen-sink', title: '전 요소 시연', href: `${base}/ko/kitchen-sink/`, dir: 'in' },
+      { id: 'design-tokens', title: '두 계층 팔레트', href: `${base}/ko/design-tokens/`, dir: 'out' },
+      { id: 'three-way-split', title: '세 갈래 분할', href: `${base}/ko/three-way-split/`, dir: 'out' },
+      { id: 'checks', title: '다섯 가지 검사', href: `${base}/ko/checks/`, dir: 'in', color: 'var(--color-accent4)' },
+    ]}
+  />
+</div>

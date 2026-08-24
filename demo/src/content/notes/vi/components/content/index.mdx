@@ -1,0 +1,106 @@
+---
+title: "Nội dung & typography"
+description: "Callout, chip, lưới, thanh bước, hàng thống kê, thẻ bài báo và danh mục tham khảo — những thành phần dựng nên phần văn xuôi."
+part: 1
+navLabel: "Nội dung & typography"
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="Nội dung & typography">
+  Những thành phần dựng nên phần văn xuôi. Mỗi cái chỉ tiêu thụ tầng ngữ nghĩa của token — thay da bảng màu, tất cả cùng đổi theo.
+</PartHero>
+
+## Callout
+
+Năm biến thể; `title` thay cho nhãn mặc định của biến thể (Note / Intuition / Warning / Important / Abstract — đúng bộ mặc định mà cú pháp trích dẫn dùng, bản địa hóa được qua `labels`). Trang [[kitchen-sink|trình diễn tổng hợp]] trưng hai cách viết còn lại của cùng markup này: cú pháp trích dẫn và HTML thô.
+
+<Callout variant="intuition" title="Khi nào nên với tay lấy thành phần">
+  Trong MDX, khi nội dung được soạn ngay tại chỗ. Cú pháp trích dẫn lo phần tệp Markdown thuần; cả hai render ra markup giống hệt nhau.
+</Callout>
+
+## Chip
+
+Huy hiệu trong dòng cho trạng thái và hạng mục, với bốn biến thể mà tag của `PaperCard` và chip của `HubCard` dùng chung: <Chip variant="teal">ổn định</Chip> <Chip variant="mustard">beta</Chip> <Chip variant="violet">nghiên cứu</Chip> <Chip variant="orange">mới</Chip> — hoặc một tông tùy chọn cho bảng màu chủ đề: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>tông tùy chọn</Chip>
+
+## Grid
+
+Một cái lưới, ba lớp da (`plain`, `card`, `cmp`). Dạng thẻ:
+
+<Grid cols={2} kind="card">
+  <div>
+    **Token đi trước.** Thứ tự import là một phần của bản hợp đồng: token, rồi lớp nội dung, rồi chrome của site.
+  </div>
+  <div>
+    **Chỉ tầng ngữ nghĩa.** Thành phần không bao giờ chạm màu thô — thay da bảng màu là tất cả cùng đổi theo.
+  </div>
+</Grid>
+
+Và lớp da so sánh, sinh ra cho các bảng trước/sau:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **Không có lớp kiểm soát** — một `**` bỏ ngỏ trôi thẳng lên production thành hai dấu sao trơ ra.
+  </div>
+  <div>
+    **Có lớp kiểm soát** — build hỏng ngay tại tệp:dòng:cột, kèm dấu mũ chỉ đúng dưới ký tự phạm lỗi.
+  </div>
+</Grid>
+
+## Steps
+
+Một danh sách markdown đặt trên thanh ray dọc:
+
+<Steps>
+1. Thêm hai submodule và các dependency `file:`.
+2. Import `tokens.css`, `base.css` và (với site wiki) `browse.css` trong stylesheet toàn cục.
+3. Nối `siteMarkdown()` vào `astro.config`.
+4. Ghi đè bảng màu tầng một bằng màu bản sắc của bạn.
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: 'tầng token' },
+    { value: '24', label: 'thành phần' },
+    { value: '4', label: 'khung nhìn dò' },
+    { value: '0', label: 'bước build' },
+  ]}
+/>
+
+## PaperCard
+
+Con ngựa thồ của các bài điểm luận — bí danh, tiêu đề đầy đủ, tag hội nghị, dòng tác giả, liên kết, và hai slot chuyên dụng:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar, et al."
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">Mô hình hồi tiếp xử lý token nối đuôi nhau — phụ thuộc tầm xa nhạt dần, và chẳng có gì chạy song song được.</Fragment>
+  **Ý then chốt**: chỉ dùng attention, bỏ hẳn hồi tiếp — mọi token nhìn thấy mọi token khác trong một bước, và cả chuỗi huấn luyện song song.
+  <Fragment slot="diff">Kiến trúc mà gần như mọi mô hình ngôn ngữ lớn về sau đều xây trên nó.</Fragment>
+</PaperCard>
+
+Dưới một đề mục đào sâu, một dòng diễn nôm (`.speak`) nói cho người đọc biết mô-đun ấy *làm gì* trước khi đi vào cơ chế:
+
+<p class="speak">Attention là một bảng tra mềm: mỗi token hỏi "ai liên quan tới mình?" rồi nhận về một hỗn hợp có trọng số của các câu trả lời.</p>
+
+## References
+
+<References>
+- Vaswani et al., *Attention Is All You Need*, NeurIPS 2017.
+- Knuth, *The TeXbook* — lý do nền công thức toán được cấp một tông giấy riêng.
+- W3C, *Web Content Accessibility Guidelines 2.2* — ngưỡng tương phản AA mà các token được soát theo.
+</References>

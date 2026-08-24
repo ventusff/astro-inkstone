@@ -1,0 +1,53 @@
+---
+title: La macchina di editing
+description: "Un giro in cinque capitoli su astro-inkbrush, il motore CMS basato su git a cui questo giardino si affianca — e questo stesso sito è la sua demo: in modalità di editing, ogni pagina qui si modifica sul posto."
+brand: inkbrush
+subtitle: "il motore CMS, sul proprio manuale\ncinque capitoli · un hub"
+navLabel: Panoramica
+chapters: false
+nav:
+  - group: Il motore
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Riferimento · il motore CMS" title="La macchina di editing" meta="cinque capitoli · zero byte in produzione · questo sito è la demo">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone) è la carta; [astro-inkbrush](https://github.com/ventusff/astro-inkbrush) è la penna. Il motore trasforma qualunque sito di contenuti Astro nell’editor di sé stesso: in modalità di editing, passa il mouse su un paragrafo e una piccola maniglia offre ✎ modifica, ✦ chiedi a Claude, ⟲ cronologia. Non c’è nessun sito demo separato da andare a vedere — **il giardino che stai leggendo è la demo**. Avvialo con `npm run wiki` e ogni nota qui, questa pagina compresa, si apre per la modifica sul posto; una build statica come quella che stai leggendo non contiene un solo byte di codice CMS.
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: 'l’unico database' },
+    { value: '2', label: 'reti di sicurezza a ogni salvataggio' },
+    { value: '0 B', label: 'di codice CMS in una build statica' },
+  ]}
+/>
+
+## Cinque capitoli `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/it/inkbrush/editing/`} num="Parte I" title="Modificare, blocco per blocco" count="✎"
+    desc="CodeMirror al posto del blocco che stai leggendo, un’anteprima dal vivo attraverso la pipeline stessa del sito e due reti di sicurezza prima che qualcosa tocchi il disco." />
+  <HubCard href={`${base}/it/inkbrush/revisions/`} num="Parte II" title="Cronologia delle revisioni e ripristino" count="⟲"
+    desc="Ogni salvataggio annotato nel registro, blocco per blocco — chi, quando, l’esatto prima e dopo — con ripristino in un clic, a sua volta ripristinabile." />
+  <HubCard href={`${base}/it/inkbrush/ai-assist/`} num="Parte III" title="Assistenza IA" count="✦"
+    desc="Riscritture di blocco, una chat che conosce la nota e la traduzione dell’intera nota attraverso la CLI claude, in sandbox su una copia usa e getta." />
+  <HubCard href={`${base}/it/inkbrush/inbox/`} num="Parte IV" title="La inbox di Obsidian" count="📥"
+    desc="Punta il watcher su una cartella del vault; le nuove note si convertono e si importano da sole — embed, wikilink ed evidenziazioni compresi." />
+  <HubCard href={`${base}/it/inkbrush/wikilinks/`} num="Parte V" title="Come si risolvono i wikilink" count="[[ ]]"
+    desc="Un solo resolver per le pagine, l’anteprima dell’editor, l’importatore e il lint in CI — prima i mirror di lingua, poi id, alias, brand e titoli." />
+</div>
+
+## Dove si colloca
+
+Il motore possiede le funzioni CMS **e** il dialetto Markdown col suo guardiano dei contenuti — la grammatica che l’editor accetta e la grammatica che la pagina rende devono essere una grammatica sola, quindi è scritta una volta e consumata ovunque ([[three-way-split|la divisione in tre]] spiega perché il confine passa proprio lì). Lo stile appartiene al livello della carta; l’identità appartiene al tuo sito. Tutto ciò che è reso su queste pagine — compresa la striscia sopra questo testo — è la carta all’opera; tutto ciò che queste pagine le *modifica* è il motore.
+
+<div class="path">
+  <strong>Percorso di lettura.</strong>
+  Nuovo al motore → <a href={`${base}/it/inkbrush/editing/`}>Parte I</a><span class="arrow">→</span><a href={`${base}/it/inkbrush/revisions/`}>Parte II</a>; per innestarlo in un sito → prima la <a href={`${base}/it/getting-started/`}>guida dei primi passi</a>; il dialetto che il cancello al salvataggio fa rispettare → il <a href={`${base}/it/kitchen-sink/`}>campionario</a>; una nota sul tenere note → <a href={`${base}/it/garden-craft/`}>il saggio sulla cura del giardino</a>.
+</div>

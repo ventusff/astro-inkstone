@@ -1,0 +1,37 @@
+---
+title: Obsidian 收件箱
+description: 把监听指向 vault 里的一个文件夹,新笔记自己转换、自己导入——图片复制到笔记旁边,双链照常解析,高亮原样保留。
+navLabel: 收件箱
+part: 4
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Obsidian 收件箱">
+  很多文字的第一稿不在网站上——在手机里、剪藏工具里、一座 Obsidian vault(Obsidian 存笔记的库)里。收件箱把这条环补上:指向一个文件夹,丢进去的笔记会自己导入站点。
+</PartHero>
+
+## 打开它
+
+收件箱默认关闭。在 `inkbrush.config.ts` 里打开:
+
+```ts title="inkbrush.config.ts"
+inbox: {
+  dir: '~/vault/inbox',        // 要监听的文件夹(支持 ~/)
+  ignore: ['daily-'],          // 可选:按文件名前缀跳过
+},
+```
+
+启动时文件夹里已有的文件只标记为「已见」,不导入——只有*之后*新放进来的笔记才自动同步。更早的存量可以通过 API 明确补录,所以打开收件箱绝不会冷不丁把十年的 vault 旧账一次倒进站点。
+
+## 导入器做什么
+
+每篇进来的笔记是被转换,不是被复制:
+
+- 内嵌的图片按 vault 的附件目录解析,文件**复制到导入笔记的旁边**,内嵌写法转成标准图片语法——日后删除笔记,它的附件跟着一起删
+- 命中站内真实笔记的 `[[双链]]` 保留为链接,解析规则[[inkbrush/wikilinks|与站内各处同一套]];其余摊平成普通强调并给出警告
+- 高亮变成真正的 `<mark>` 元素,frontmatter 元数据变成标题下方的一行来源标注,description 从第一段实质内容里提炼
+
+转换后的笔记还要过和手工保存同一道构建关——会弄坏页面的笔记被拒收,而不是被导入。
+
+每次导入都以整篇为单位记进修订日志(via: inbox):[[inkbrush/revisions|⟲]] 把它列为一条备查记录,撤销一次导入走 git。开着 `autocommit`,每次导入和任何编辑一样变成一条 git 提交;关着,导入的文件就是普通的工作区改动,自己审阅、自己提交。

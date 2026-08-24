@@ -1,0 +1,71 @@
+---
+title: Bảng màu hai tầng và chủ đề giao diện
+brand: "Bảng màu & chủ đề"
+subtitle: "hai tầng, hai ngữ cảnh\nmàu gốc và mặt giấy"
+description: "Bảng màu gốc và hai ngữ cảnh ngữ nghĩa dựng trên nó — cột đọc và kệ duyệt — kỷ luật sáng/tối, độ tương phản được đo thật, và một điểm vào duy nhất cho bản sắc của site."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Tham khảo · tầng token" title="Bảng màu hai tầng và chủ đề giao diện" meta="một bảng màu · hai ngữ cảnh · hai giao diện đều chỉnh tay · mọi giá trị chữ đều đo AA">
+  `styles/tokens.css` giữ toàn bộ màu mà các stylesheet và thành phần sử dụng — ngoại lệ duy nhất là cặp màu sắc thái của lĩnh vực, thứ registry của site cấp vào như dữ liệu. Tệp được viết thành hai tầng — một **bảng màu gốc** gồm những màu giấy-và-mực, và các **token ngữ nghĩa** dựng bên trên — riêng tầng ngữ nghĩa lại chia đôi thành hai ngữ cảnh, bởi một wiki có hai loại trang: cột bạn ngồi đọc, và kệ bạn đứng duyệt.
+</Hero>
+
+<Part title="Hai tầng" />
+
+## Tầng 1: màu gốc
+
+Bảng màu gốc là hộp màu của người vẽ, không đổi theo giao diện, đặt tên `--p-*`. **Giấy**: nền duyệt 纸 cùng mặt thẻ 页 của nó, nền đọc 素 (lạnh hơn một bậc, đọc suốt một giờ đỡ mỏi mắt) cùng bề mặt mềm 帛, thẻ trắng, nền mã và nền toán. **Mực**: một bộ ấm cho kệ sách và một bộ trung tính cho cột đọc, mỗi bộ ba cấp đậm nhạt. **Đường chỉ đóng sách**: nét kẻ kệ, viền viên nang, hai sợi chỉ mảnh. Và **các màu mang nghĩa**:
+
+```css title="tokens.css (tầng 1, các màu mang nghĩa)"
+--p-zhu: #7d3a3a; /* 朱 · đỏ rượu vang — màu nhấn kệ duyệt, dấu ấn của site */
+--p-shi: #b6552e; /* 石 · cam cháy — màu nhấn cột đọc: liên kết, chữ số, kicker */
+--p-shi-text: #8f3f1f; /* 石 · bậc chữ nhỏ (đạt AA ngay trên nền pha của chính nó) */
+--p-zhe: #c08a2c; /* 赭 · đất son — đường kẻ và viền */
+--p-dai: #2a6f6b; /* 黛 · xanh cổ vịt — màu nhấn phụ cho nội dung */
+--p-zi: #6b4ec4; /* 紫 · tím — ngữ nghĩa "hệ thống" */
+```
+
+Kèm theo là một bộ **ban đêm** cho ấn bản tối: nền hoàng hôn, mực trắng ánh trăng, và phiên bản sáng hơn của từng màu mang nghĩa.
+
+## Hai ngữ cảnh, một bảng màu
+
+Tầng 2 là thứ tầng thành phần tiêu thụ, và nó mang hai gương mặt:
+
+| Ngữ cảnh | Token | Nền | Mực | Màu nhấn | Nơi dùng |
+| --- | --- | --- | --- | --- | --- |
+| cột đọc | `--color-*` | 素 `#fbf9f4` | trung tính `#1f2024` | 石 cam cháy | trang ghi chú, mọi thành phần nội dung, `base.css` |
+| kệ duyệt | `--wb-*` | 纸 `#faf6ec` | ấm `#2b2622` | 朱 đỏ rượu vang | trang chủ và trang phân loại, các thành phần wiki, `browse.css` |
+
+Cột đọc là mặt trầm hơn — bạn đọc nó cả tiếng đồng hồ. Kệ duyệt ấm hơn và dùng serif kiểu display — bạn lướt qua rồi chọn. Trang bước vào ngữ cảnh kệ chỉ bằng một class duy nhất, `wb-root`, gắn trên body; bên trong đó các token chrome (`--color-bg`, `--color-accent`, …) được ánh xạ lại sang bộ của kệ, nên một thanh điều hướng viết đúng một lần vẫn đứng chuẩn trên cả hai nền — và các nguyên tử phân loại (huy hiệu thể loại, chấm trạng thái, chip lĩnh vực), vốn viết trên `--color-*`, hòa vào cột đọc trên trang ghi chú và hòa vào kệ trên trang duyệt. **Tầng thành phần chỉ được phép tiêu thụ tầng 2** — điều này áp cho `base.css`, `browse.css` và mọi thành phần; không rule nào chứa giá trị màu thô, cũng không thứ gì fallback về màu thô. Đó là kỷ luật cứng của gói.
+
+<Part title="Bản sắc và kỷ luật" />
+
+## Site tùy biến bản sắc thế nào
+
+Ghi đè tầng 1. Thay các màu gốc bằng màu của riêng bạn, cả hai ngữ cảnh lẫn toàn bộ tầng thành phần sẽ tự đi theo. Mỗi màu là một **cặp ngày/đêm**: giao diện sáng đọc `--p-shi` và `--p-zhu`, giao diện tối đọc cặp ban đêm `--p-shi-n` và `--p-zhu-n` — ghi đè bản sắc thì đặt cả hai vế, hoặc để giao diện tối giữ nguyên màu mặc định:
+
+```css title="site.css của bạn"
+:root {
+  --p-shi: #b03a48; /* màu nhấn cột đọc của bạn */
+  --p-shi-text: #93303c; /* bậc chữ nhỏ được làm sẫm riêng, xem bên dưới */
+  --p-zhu: #3b4a7a; /* màu nhấn kệ sách kiêm dấu ấn */
+  --p-shi-n: #e0919b; /* cặp ban đêm, làm sáng lên cho nền hoàng hôn */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Ánh xạ lại tầng 2 sang bảng màu sẵn có của bạn cũng là con đường được hỗ trợ ngang hàng, dành cho design system đã có bảng màu riêng — cứ trỏ `--color-*` và `--wb-*` vào biến của bạn. Khu vườn này cố ý không ghi đè gì hết: thứ bạn đang đọc là gương mặt mộc của gói, đúng gương mặt mà [[paper-and-ink|giấy và mực]] đứng ra biện hộ.
+
+## Độ tương phản được đo, không được hứa
+
+Mọi giá trị màu chữ đều được soát theo WCAG AA trên từng bề mặt nó thực sự nằm lên: chữ nhỏ khởi điểm ở 4.5:1; màu nhấn khi dùng làm chữ nhỏ có riêng một **bậc chữ** được làm sẫm độc lập (`--p-shi-text`, `--p-zhe-text`), vì cái nhãn 12px mang màu nhấn thường lại nằm ngay trên nền pha của chính màu nhấn ấy; các sắc mực mờ được đặt ở mức sẫm nhất mà vẫn đọc ra là mờ — `#6a6d74` trên nền đọc đạt 4.9:1, và vẫn giữ 4.5:1 trên bề mặt mềm; nền mã sáng hơn mặt giấy một bậc để token nhạt nhất của theme tô cú pháp (phần chú thích) vượt được 4.5:1; ấn bản tối mang bộ màu sáng hóa của riêng nó, đo trên các nền ban đêm. Gói giao luôn phép đo ấy dưới dạng công cụ: `scripts/contrast_probe.mjs` render bản demo trong trình duyệt thật, cả hai giao diện, lấy mẫu nền ngay dưới từng đoạn chữ từ pixel và báo cáo mọi đoạn tụt dưới ngưỡng ([[checks|phép dò tương phản]]). Trước khi đổi bất kỳ giá trị nào, hãy biết hết mọi bề mặt nó đang nằm lên.
+
+## Giao diện sáng là bản sắc
+
+Chủ đề giao diện cố ý **không** đọc `prefers-color-scheme`: trang không bao giờ được tự lật giao diện ngay dưới mắt người đọc. Giao diện tối chỉ kích hoạt qua `[data-theme='dark']`, do chính công tắc của site bật (nút mặt trời/mặt trăng phía phải thanh điều hướng của site này; lựa chọn được lưu dưới khóa `inkstone-theme` trong `localStorage` và được đoạn script inline ThemeInit phát lại trước lượt vẽ đầu tiên, nên người quen đọc nền tối không bao giờ thấy chớp màu kem). Tối không phải phép đảo màu mà là một ấn bản thứ hai chỉnh tay: nền hoàng hôn, mực trắng ánh trăng, màu mang nghĩa được làm sáng lại — [[paper-and-ink|tối là ấn bản thứ hai, không phải phép đảo màu]].
+
+## Font cũng sống ở đây
+
+Bốn bộ font. `--font-display` là gương mặt của kệ sách — serif có trục cỡ quang học (Source Serif 4, kèm Noto Serif SC cho Hán tự) dành cho tiêu đề đầu trang và tựa trên kệ; bản demo này tự host nó qua `@fontsource`, site nào không host sẽ rơi về font đọc. `--font-body` là của cột đọc — bộ serif hệ thống dẫn đầu bởi Charter và Iowan Old Style, thiếu chúng thì font display vào thế chỗ. `--font-ui` là Inter (Noto Sans SC cho Hán tự) cho đề mục, chrome và chữ in nhỏ. `--font-mono` là bản trích ký tự cố định của Maple Mono CN (ASCII + ký tự vẽ khung + 3500 Hán tự thông dụng + hợp các ký tự nội dung đã dùng): chữ Latin rộng 0.6em, Hán tự 1.2em — **một Hán tự rộng đúng bằng hai ô ký tự**, nên sơ đồ vẽ khung vẫn thẳng hàng ngay cả trong văn bản trộn Trung/Latin. Công thức trích và script tái sinh đi kèm gói (`fonts/build_font_subset.py`); khi nội dung cần glyph ngoài vùng phủ, chạy lại script và commit tệp woff2. Các [[kitchen-sink|khung mã]] được sắp chữ hoàn toàn bằng bản trích này.

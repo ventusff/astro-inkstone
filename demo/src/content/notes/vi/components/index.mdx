@@ -1,0 +1,70 @@
+---
+title: Bộ thành phần
+description: "Dạo một vòng ba chương qua toàn bộ thành phần đi kèm gói — đồng thời chính bài này là màn trình diễn sống của một hub có chương."
+brand: Bộ thành phần
+subtitle: "phòng trưng bày thành phần\nba chương · một hub"
+navLabel: Tổng quan
+chapters: false
+nav:
+  - group: Trưng bày
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Trưng bày ba chương · 2026.08" title="Bộ thành phần" meta="3 chương · 24 thành phần · tất cả import theo đường dẫn từ astro-inkstone/components/">
+  Mọi thứ trong phòng trưng bày đều import từ `astro-inkstone/components/` theo đường dẫn và render bằng token mặc định của gói. Các thành phần là **thuần hiển thị**: dữ liệu lẫn chuỗi nhãn đều đi qua props (mặc định tiếng Anh), site ở ngôn ngữ nào cứ truyền chuỗi của mình.
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: 'chương' },
+        { value: '24', label: 'thành phần' },
+        { value: '6', label: 'mảnh ghép wiki' },
+        { value: '0', label: 'giá trị màu thô' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## Ba chương `{#chapters notoc}`
+
+Mỗi thẻ ứng với một chương trên thanh chương ở thanh bên; các chip trên thẻ điểm danh những gì chương ấy trưng ra.
+
+<div class="hub-grid">
+  <HubCard href={`${base}/vi/components/content/`} num="Phần I" title="Nội dung & typography" count="7 thành phần"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    Những mảnh ghép dựng nên phần văn xuôi — callout, chip, lưới, thanh bước, hàng thống kê, thẻ bài báo và danh mục tham khảo.
+  </HubCard>
+
+  <HubCard href={`${base}/vi/components/wiki/`} num="Phần II" title="Wiki & duyệt" count="8 thành phần"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    Bộ phân loại mà các kệ sách của khu vườn này được dựng từ đó, cộng hai bảng đồ thị liên kết — liên kết ngược và đồ thị cục bộ trên thanh bên.
+  </HubCard>
+
+  <HubCard href={`${base}/vi/components/interactive/`} num="Phần III" title="Tương tác & phụ kiện trang" count="9 thành phần"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    Một demo canvas chạy thật cùng bản hợp đồng loader thuộc về site, cộng các phụ kiện của trang — hero, thẻ hub, danh sách nhảy trang, chân trang.
+  </HubCard>
+</div>
+
+## Một hub, ngay trước mắt
+
+Chính bài này là màn trình diễn sống của một **hub**: một ghi chú cấp cao nhất mà frontmatter khai `nav` — một danh sách chương có thứ tự. Bộ máy đang chạy trước mắt bạn gồm:
+
+- thanh bên treo thanh chương (I/II/III) ngay dưới brand của hub, cuối mỗi chương có nút lật chương trước / chương sau;
+- các chương kế thừa phân loại của hub: cả ba chương trưng bày không chương nào tự khai kind, domain hay status, vậy mà phần meta đầu trang chương nào cũng đủ — tất cả kế thừa từ bài này; chương nào tự đặt giá trị thì trường đó lấy trọn theo nó ([[three-way-split|vẫn quy tắc "đã tự khai là tự sở hữu" như mọi nơi khác]]);
+- trên trang duyệt, hub là **một khối**: một thẻ duy nhất, đề số chương — các chương không bao giờ vãi ra kệ;
+- số `part:` của mỗi chương buộc phải khớp vị trí của nó trong `nav`, lệch là build hỏng ngay — thanh chương và frontmatter không thể mỗi bên nói một đằng;
+- các thẻ phía trên là những `HubCard` xếp trong `.hub-grid`; cái hộp bên dưới là **lộ trình đọc** (`.path`), món phụ kiện còn lại của hub.
+
+<div class="path">
+  <div class="title">Đọc từ đâu</div>
+  <div class="route">
+    Mới làm quen với gói → <a href={`${base}/vi/components/content/`}>Phần I</a><span class="arrow">→</span><a href={`${base}/vi/components/wiki/`}>Phần II</a>; muốn dựng site duyệt → vào thẳng <a href={`${base}/vi/components/wiki/`}>Phần II</a><span class="arrow">→</span><a href={`${base}/vi/getting-started/`}>bài bắt đầu sử dụng</a>; phía Markdown của cùng câu chuyện → <a href={`${base}/vi/kitchen-sink/`}>trình diễn tổng hợp</a>.
+  </div>
+</div>

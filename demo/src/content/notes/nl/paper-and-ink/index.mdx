@@ -1,0 +1,28 @@
+---
+title: Papier en inkt, een bewuste keuze
+brand: "Papier & inkt"
+subtitle: "het standpunt achter de tokens"
+description: Waarom dit ontwerpsysteem kiest voor een warme papieren ondergrond, echte serifs, twee gronden voor twee soorten pagina's en een met de hand gezet donker thema — een notitie over het standpunt achter de tokens.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Patroon · een ontwerpstandpunt" title="Papier en inkt, een bewuste keuze" meta="een warme ondergrond · een serif voor de lopende tekst · twee gronden · een tweede editie voor het donker">
+  De meeste documentatiethema's grijpen naar dezelfde standaardkeuzes: wit `#fff`, een grotesk zonder schreef, gray-800 voor de tekst, dark mode van het besturingssysteem. Ze lezen prima en zien eruit als niets. Dit systeem vertrekt vanuit een andere premisse — **een lang technisch document is iets waar je een uur in leest** — en de tokens volgen daaruit.
+</Hero>
+
+## Het standpunt
+
+Een uur lezen vraagt om wat de drukkunst eeuwen geleden al had uitgevonden: een warme ondergrond die niet verblindt, een tekstletter met echt contrast tussen de halen, en een bladritme gemeten in ems van de lopende tekst in plaats van pixels chrome. Vandaar het vocabulaire waarin de [[design-tokens|tokenlaag]] is geschreven: papieren (纸 het vel, 页 de bladzijde, 素 de effen grond, 帛 de zijde) in plaats van gray-50 tot gray-200; inkten en pigmenten uit een schilderskist — 朱 wijnrood, 石 gebrand oranje, 赭 oker, 黛 teal, 紫 violet — in plaats van primary/secondary/accent. Die namen zijn geen versiering: ze verankeren elke nieuwe kleurbeslissing aan dezelfde fysieke metafoor, en dáárom lezen vijf verschillende oppervlakken nog steeds als één vel papier.
+
+## Twee gronden, want twee soorten pagina's
+
+Een wiki wordt op twee manieren gelezen. Je **leest** een notitie — één kolom, een uur, de ogen willen rust: een licht koel papier, een neutrale inkt, één accent voor links en nummers. Je **bladert** langs een boekenplank — een raster van kaarten, een blik, een keuze: het papier mag warmer, de titels mogen een display-serif, het accent mag een diep wijnrood dat als beeldmerk leest in plaats van als link. Die twee situaties in één palet persen zou beide tekortdoen. Daarom heeft de semantische laag twee contexten — de leeskolom (`--color-*`) en de boekenplank (`--wb-*`) — geput uit één kist pigmenten, en verklaart een pagina zelf welke van de twee ze is. Het resultaat is een site die voelt als één gebouw met twee kamers.
+
+## Donker is een tweede editie, geen inversie
+
+Algoritmische dark modes keren de lichtheid om en noemen het klaar; tekst wordt krijt op leisteen en elk getint oppervlak verandert in modder. Hier is het donkere thema een **tweede, met de hand gezette editie**: schemergronden en maanwitte inkten die op eigen merites zijn gekozen, accentpigmenten net genoeg opgelicht om hun AA-contrast op het donkerdere papier te behouden. Dat kost een tweede reeks beslissingen — en dat is precies de bedoeling. De schakelaar gehoorzaamt uitsluitend de expliciete keuze van de lezer ([[design-tokens|nooit de OS-voorkeur]]), want een pagina die midden in het lezen haar eigen thema omgooit, is een pagina die laat schrikken.
+
+## CJK is een dragende muur
+
+Gemengd Chinees/Latijns schrift is waar de meeste thema's stilletjes doorheen zakken: nadruk die weigert te sluiten tegen een Chinese punt, codediagrammen die scheeftrekken omdat een Hanzi 1,7 cel breed is. Beide gelden hier als correctheidsbugs, niet als typografische smaak — het [[kitchen-sink|dialect parseert CJK-nadruk correct]], en de codelettersubset pint een Hanzi op exact twee cellen, zodat kadertekeningen een vertaling overleven. Een thema dat alleen in het Engels werkt, is een half thema.

@@ -1,0 +1,22 @@
+---
+/** /<locale>/status/<id>/ — browse by maturity status (only non-empty
+ *  values prerender); one route file for every non-default locale. */
+import FacetPage from '../../../components/browse/FacetPage.astro';
+import { LOCALE_DEFS } from '../../../content/notes/_meta/locales';
+import { getWikiUnits } from '../../../lib/taxonomy';
+import { STATUSES } from '../../../content/notes/_meta/taxonomy';
+
+export async function getStaticPaths() {
+  const units = await getWikiUnits();
+  return LOCALE_DEFS.filter((l) => l.prefix !== '').flatMap((l) =>
+    STATUSES.map((def) => ({ def, notes: units.filter((u) => u.status === def.id) }))
+      .filter((s) => s.notes.length > 0)
+      .map((s) => ({
+        params: { lang: l.code, status: s.def.id },
+        props: { locale: l.code, ...s },
+      })),
+  );
+}
+---
+
+<FacetPage dim="status" {...Astro.props} />

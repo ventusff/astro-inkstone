@@ -1,0 +1,70 @@
+---
+title: コンポーネント一式
+description: 同梱コンポーネントのすべてを三つの章で巡るツアー——同時に、このノート自身が「章を持つハブ」がどう動くかの生きた実演です。
+brand: コンポーネント
+subtitle: "コンポーネントの陳列室\n三つの章 · ひとつのハブ"
+navLabel: 概要
+chapters: false
+nav:
+  - group: ギャラリー
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="三章立ての陳列室 · 2026.08" title="コンポーネント一式" meta="3 章 · 24 コンポーネント · すべて astro-inkstone/components/ からパスで import">
+  この陳列室にあるものはすべて `astro-inkstone/components/` からパスで import され、パッケージ既定のトークンで描画されています。コンポーネントは**純表示**です:データもラベル文言も props で受け取ります(既定は英語)。どの言語のサイトも、自分のものを渡すだけです。
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: '章' },
+        { value: '24', label: 'コンポーネント' },
+        { value: '6', label: 'wiki 部品' },
+        { value: '0', label: '生の色値' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## 三つの章 `{#chapters notoc}`
+
+カード一枚が、サイドバーの章レールの一章に対応します。チップは、その章が何を見せるかの名札です。
+
+<div class="hub-grid">
+  <HubCard href={`${base}/ja/components/content/`} num="第I部" title="コンテンツと組版" count="7 個のコンポーネント"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    本文を組み立てる部品たち——コールアウト、チップ、グリッド、ステップレール、統計行、ペーパーカード、参考文献リスト。
+  </HubCard>
+
+  <HubCard href={`${base}/ja/components/wiki/`} num="第II部" title="wiki とブラウズ" count="8 個のコンポーネント"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    この庭の書架を組んでいる分類コンポーネント一式と、二枚のリンクグラフパネル——バックリンクと、サイドバーのローカルグラフ。
+  </HubCard>
+
+  <HubCard href={`${base}/ja/components/interactive/`} num="第III部" title="インタラクティブとページの調度" count="9 個のコンポーネント"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    実際に動く canvas デモとサイト側が持つローダー契約、それにページの調度品——ヒーロー、ハブカード、ジャンプリスト、フッター。
+  </HubCard>
+</div>
+
+## ハブの生きた実演
+
+このノート自身が**ハブ**の実演です:frontmatter に `nav`——順序付きの章リスト——を宣言した最上位のノート。いま目の前で動いている仕掛けはこれだけあります:
+
+- サイドバーはハブの銘の下に章レール(I/II/III)を出し、各章の足元には前章/次章の送りが付きます。
+- 章はハブの分類を継承します——三つの章はどれも自分では kind、domain、status を宣言していないのに、ページ頭のメタ情報は一章も欠けません。出ているのはこのノートのものです。自分で値を宣言した章があれば、そのフィールドは丸ごとその章のものになります([[three-way-split|ほかと同じ「明示が勝つ」ルール]])。
+- ブラウズページの上では、ハブは**一つの単位**です:カード一枚、章数付き——章が書架に散らばることはありません。
+- 各章の `part:` 番号は `nav` の中の位置と一致しなければならず、違えばビルドが失敗します——章レールと frontmatter が別々のことを言う事態は起こり得ません。
+- 上のカードは `.hub-grid` に並べた `HubCard`。下の枠は**順路ボックス**(`.path`)、ハブのもう一つの調度品です。
+
+<div class="path">
+  <div class="title">どこから読み始めるか</div>
+  <div class="route">
+    このパッケージが初めてなら → <a href={`${base}/ja/components/content/`}>第I部</a><span class="arrow">→</span><a href={`${base}/ja/components/wiki/`}>第II部</a>。ブラウズサイトを組むなら → まっすぐ<a href={`${base}/ja/components/wiki/`}>第II部</a><span class="arrow">→</span><a href={`${base}/ja/getting-started/`}>はじめに</a>。同じ話の Markdown 側は → <a href={`${base}/ja/kitchen-sink/`}>全部入りデモ</a>。
+  </div>
+</div>

@@ -1,0 +1,127 @@
+---
+title: Aan de slag
+brand: Aan de slag
+subtitle: "twee submodules, drie imports,\néén regel pipeline"
+description: Twee submodules in je site-repo, drie stylesheet-imports, één regel siteMarkdown voor de complete Markdown-pipeline — en je hebt een tuin.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Gids · van nul naar een tuin" title="Aan de slag" meta="twee submodules · drie stylesheets · één siteMarkdown() · drie commando's">
+  Noch het papier, noch de engine staat op npm — beide zijn zero-build en exporteren rauwe TS/CSS-bron. Een site haalt de twee repo's binnen als git-submodules, importeert drie stylesheets en sluit één functie aan in `astro.config`. Alles wat je op deze site ziet, is precies zo gebouwd.
+</Hero>
+
+<Part title="Installatie" />
+
+## Twee submodules
+
+Haal de twee repo's binnen en wijs er `file:`-dependencies naartoe:
+
+```bash title="root van de site-repo"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (het dependencies-blok)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] De opzet van deze demo wijkt iets af
+> De demo woont binnen de pakket-repo (`demo/`), dus haar `astro-inkstone` wijst naar `file:..` en de engine hangt onder `demo/vendor/`. Een losstaande site gebruikt de `packages/`-indeling hierboven — de twee zijn gelijkwaardig.
+
+## Stijlen
+
+In je globale stylesheet: eerst de tokens, dan de inhoudslaag, dan — voor een site met bladerpagina's — de boekenplank, en daarna alleen nog je eigen chrome:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* landings- en facetpagina's, op body.wb-root */
+
+/* identiteit: overschrijf de pigmenten van laag één; beide semantische contexten en de componentlaag volgen vanzelf */
+:root {
+  --p-shi: #b03a48; /* je leesaccent */
+  --p-zhu: #3b4a7a; /* je plankaccent en beeldmerk */
+  --p-shi-n: #e0919b; /* de nachttegenhangers: het donkere thema leest --p-*-n */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+De serif van de boekenplank is `--font-display` (Source Serif 4 + Noto Serif SC); host die zelf, zoals deze demo doet, en de masthead ziet er precies zo uit als hier:
+
+```css title="src/styles/site.css (lettertypen, optioneel)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+Een site met wiskunde voegt in de layout één regel toe voor de stylesheet van KaTeX (zonder die regel valt de formule-opmaak uit elkaar):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="Aansluiten" />
+
+## De Markdown-pipeline, in één regel
+
+Een minimale configuratie in de vorm van deze site — hoofdstuknummering, wiskunde, callouts, diagrammen en `[[wikilinks]]` die tegen de notitiecollectie worden opgelost (de volledige versie, met elke hook die deze site aansluit, is `astro.config.mjs` in de repository):
+
+```js title="astro.config.mjs (minimaal)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs' en '/docs/' werken allebei
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // deel-/hoofdstuknummers + ToC via remarkPluginFrontmatter
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // codeframes: titelbalk / kopiëren / invouwen / annotaties
+    mermaid: true, // mermaid-blokken renderen client-side
+    callouts: true, // > [!note]-syntaxis in Obsidian-stijl
+    wikiBlocks: WIKI_MODE, // bewerkmodus: koppeling blok ↔ bronregel, altijd als laatste
+    guard: { autoNumberedHeadings: true }, // poortwachter: wijst handgetypte kopnummers af
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown` rust op het dialect van de engine (GFM, CJK-vriendelijke nadruk, de poortwachter voor de inhoud); de preset zelf doet niets anders dan de site-plugins samenstellen en op volgorde zetten — **de pipeline-volgorde is het contract**, dus jouw site hoeft zich nooit af te vragen wie vóór wie draait. Elke schakelaar wordt gedemonstreerd op de [[kitchen-sink|staalkaart]], en waarom het pakket precies zó is opgeknipt lees je in [[boundaries|De driedeling]]. Callouts met Nederlandse labels? Geef `calloutLabels` mee — de standaardwaarden zijn Engels.
+
+## Draaien maar
+
+De scripts zoals de `package.json` van deze demo ze definieert (`build` draait als postbuild de check-dist van de engine; `wiki` is `WIKI=1 astro dev`):
+
+```bash
+npm install
+npm run dev        # de tuin
+npm run build      # statische build + check-dist van de engine (postbuild)
+npm run wiki       # WIKI=1 astro dev — de CMS-bewerkmodus
+```
+
+De statische build bevat nul bytes engine: buiten WIKI-modus wordt de integratiecode van de engine niet eens geïmporteerd (dynamische import), en er wordt geen bewerkmetadata uitgeschreven. Het enige CMS-vormige dat in de output overblijft, is de eigen, inerte aanlegsteiger van de site — de lege `data-inkbrush-slot`-spans in de navigatiebalk en hun CSS — en die doet niets zolang het CMS er niet aan vastklikt.

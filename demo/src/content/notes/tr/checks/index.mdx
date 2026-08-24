@@ -1,0 +1,84 @@
+---
+title: Denetimler
+brand: Denetimler
+subtitle: "her katmana bir kapı\nkaynak · bağlantılar · çıktı · görüntü · kontrast"
+description: "check-content, check-wikilinks, check-dist, ui_probe, contrast_probe — her katmana bir kapı; her biri, derleme yeşilken yayına sızan bir sessiz hata sınıfını yakalar."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Referans · araçlar" title="Denetimler" meta="beş denetim · üçü motordan, ikisi bu paketten · commit’ten önce hepsi yeşil">
+  Derlemenin yeşil olması, sayfaların iyi durumda olduğu anlamına gelmez. Bu araç zinciri her katmana bir denetim yerleştirir; her biri "derleme yeşil, sayfa bozuk" türünden bir sessiz hata sınıfını yakalar — içlerinden ikisi de sayfalara bir okurun baktığı gibi bakar: gerçek bir tarayıcıda.
+</Hero>
+
+## Beş kapı, beş katman
+
+| Denetim | Nereden gelir | Neye bakar | Ne zaman çalıştırılır |
+| --- | --- | --- | --- |
+| check-content | motor, `scripts/check-content.mjs` | her md/mdx kaynak dosyası | içerik deposunun CI’ında ya da yazdıktan sonra |
+| check-wikilinks | motor, `scripts/check-wikilinks.mjs` | `[[wikilink]]` grafı | içerik deposunun CI’ında ya da bir notu yeniden adlandırdıktan sonra |
+| check-dist | motor, `scripts/check-dist.mjs` | `astro build` çıktısı | her derlemeden sonra (postbuild) |
+| ui_probe | bu paket, `scripts/ui_probe.mjs` | gerçek tarayıcıda çizilmiş sayfalar | stil/yerleşim değişikliklerinden sonra |
+| contrast_probe | bu paket, `scripts/contrast_probe.mjs` | her metin düğümünün kontrastı, iki temada | her token değişikliğinden sonra |
+
+## check-content: kaynak katmanı
+
+Sayfaya dönüşecek her md/mdx dosyasını sitenin kullandığı **lehçenin birebir aynısıyla** derler — sözdizimi hataları da sessiz bozulmalar da (eşleşemeyen vurgu imleri, MDX değerlendirmesinin yuttuğu süslü ayraçlar, satır kaydırmadan doğan liste imleri, tek satırlık `$$`, KaTeX’in çizemediği formüller — [[kitchen-sink|hepsi bir arada]] sayfasının sonundaki listenin aynısı) CI’ı kırmızıya çevirir.
+
+Bu betiğin neden motordan gelmek zorunda olduğu: eklenti takımı sitenizkinden farklı bir denetçi, **denetçisizlikten beterdir** — matematik eklentisi eksik olan, formül ayraçlarını JSX ifadesi sanır; GFM’siz olan, tabloları elini kolunu sallayarak geçirir. Lehçe motorda bir kez yazılır; site çizimi, CMS kayıt doğrulaması ve bu betik hep aynı lehçeyi tüketir.
+
+```bash title="içerik deposunun kök dizini"
+node <engine>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
+```
+
+Derlemenin ötesinde, frontmatter’daki iki sessiz kayıp sınıfını da yakalar: bir değerin içindeki tırnaksız `#` (YAML onu yorum sayar ve gerisini sessizce keser) ve hiç ayrıştırılamayan YAML — ikisini de satır numarasıyla raporlar.
+
+## check-wikilinks: bağlantı grafı
+
+Ölü `[[wikilink]]`’ler derlemeyi bilerek düşürmez — bir bahçe, henüz büyütmediği notlara bağlantı verebilmelidir. Ama bağlantı çürümesinin yeri yine de CI’dır; motor bu yüzden her wikilink’i **kitaplığın kendi ayrıştırıcısı ve çözüm kurallarıyla** (takma ad, marka, başlık, yerel ayar aynaları) çözen ve eksikleri, belirsizleri, şüpheli çapaları raporlayan bir lint gönderir. `--strict`, ölü bağlantıları başarısız bir çıkışa çevirir — bu deponun CI’ı onu tam böyle çalıştırır:
+
+```bash title="bu bahçenin bağlantı denetimi, CI’ın çalıştırdığı hâliyle"
+node scripts/check-links.mjs
+```
+
+## check-dist: çıktı katmanı
+
+Derlenmiş `dist/` içinde, okurun tıklayabileceği her iç referans gerçekten var olmalıdır. Yeşil derlemenin altındaki sessiz boşlukları yakalar:
+
+- var olmayan dosyaları gösteren iç bağlantılar/varlıklar (bir rota düzenlemesinden sonra düzinelerle beliren tür);
+- var olmayan id’leri gösteren sayfa içi çapalar;
+- yollarda yinelenen yerel ayar dilimleri (`/en/en/` — i18n yedeklerinin, zaten önekli rotaların üstüne bir önek daha bindirmesinin klasik sonucu);
+- `<a>` içine yuvalanmış `<a>` (HTML ayrıştırıcısı dıştakini erken kapatır ve düğmeler kartlarının dışına dökülür);
+- KaTeX hata kalıntısı (derleme yeşil kalırken formül sayfada kırmızı metindir).
+
+Bu demo onu postbuild’e bağlar: yeşil bir `npm run build`, çıktı denetiminin de geçtiği anlamına gelir.
+
+```bash title="site kökünde, derlemeden sonra (site bir alt yolda yayındaysa --base geçin)"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
+```
+
+## Görüntüleme katmanı sondası
+
+Kaynak da çıktı da doğruyken sayfa yine bozuk olabilir — klasik örnek, hiçbir stil kuralının eşleşmediği açılış kartlarının tek satır çıplak metne yığılmasıdır: bağlantı ve çapa denetimleri yeşil kalır, çünkü çizilmiş bir sayfaya hiç bakmazlar. `ui_probe`, `dist` içindeki her sayfayı dört görüntü genişliğinde (1440/1024/768/430) gerçek bir tarayıcıyla dolaşır ve ölçer: sayfanın yatay taşması, kaydırma kutusu olmadan kabından geniş duran ögeler, hiçbir stil kuralının giydirmediği sınıflar, atlanmış başlık düzeyleri, yinelenen id’ler, `alt` özniteliksiz görseller, boşluğu gösteren sayfa içi çapalar ve `aria-controls` değerleri. Yalnızca bir makinenin kanıtlayabildiğini raporlar — estetik yargı yürütmez.
+
+```bash title="yerel bir Chrome/Chromium gerektirir"
+npm run build
+node ../scripts/ui_probe.mjs dist   # dist’i kendisi servis eder; canlı bir sunucuyu yoklamak için baseUrl geçin
+```
+
+Belgenin tamamını inceler — chrome, kenar çubuğu ve diyaloglar dahil.
+Yeşil demek, raporun son satırının `SAMPLES WITH FINDINGS: 0` demesidir (bir
+örneklem, bir rotanın bir genişlikteki hâlidir).
+
+## Kontrast sondası
+
+Token’lar AA iddiasındadır; iddia da lafla değil ölçümle sınanır. `contrast_probe`, `dist` içindeki her sayfayı gerçek bir tarayıcıda yükler — açık ve koyu tema, masaüstü ve telefon genişliği — ve varsayılan durumda çizilen her metin parçasını ölçer: HTML metni, SVG metni ve `::before` / `::after` üretilmiş metinleri; her `<dialog data-probe-open>` katmanı temsilî bir sayfada açılarak yoklanır (orada bulunan bir arama kutusuna sorgu da yazılır) — bu im, sitenin "diyalog yazıldığı hâliyle tamamdır" beyanıdır. Zemin bir stil sayfasından okunmaz: sayfa, bütün glifler saydamlaştırılarak çizilir, ekran görüntüsü alınır ve her parçanın altındaki piksel onun zeminidir — gradyanlar, `color-mix()` tonları, yarı saydam katmanlar ve gece paleti, çizildikleri hâlleriyle ölçülür. Bir parçanın ön rengi, ögesinin ve atalarının birikmiş `opacity` değerini taşır; soluklaştırılmış metin, okurun gerçekten gördüğü güçte ölçülür. Üzerine gelme ve odak durumları yoklanmaz, gözle gözden geçirilir. Küçük metin 4.5:1’e, büyük metin (24px, ya da 18.66px kalın) 3:1’e tutulur; rengi ayrıştırılamayan ya da zemini örneklenemeyen bir parça bulgu sayılır. Rapor, çıtanın altında kalan her parça için sayfayı, temayı, genişliği, seçiciyi, iki rengi ve oranı adıyla verir:
+
+```bash title="derlemeden sonra, iki temada"
+node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS matrisi daraltır
+```
+
+<div class="callout system">
+  <div class="callout-title">Stil değişikliği rutini</div>
+  Paketin stil sayfalarına ya da bileşenlerine dokunan her değişiklik önce bu demonun derlemesinden, sonra çıktının üzerinde <code>ui_probe</code> ile <code>contrast_probe</code> denetimlerinden geçer — commit’ten önce hepsi yeşil. Demo aynı zamanda paketin deneme alanıdır.
+</div>

@@ -1,0 +1,27 @@
+---
+title: Historial de revisiones y reversión
+description: "Cada guardado queda registrado por bloque — quién, cuándo, qué líneas, el antes y el después exactos. Recórrelo con ⟲, deshazlo con un clic."
+navLabel: Revisiones
+part: 2
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Historial de revisiones y reversión">
+  Cada guardado — tecleado a mano, producido por Claude o importado desde la bandeja de entrada — se añade a un diario de revisiones junto al contenido: quién, cuándo, qué líneas, y el texto exacto de antes y después. Pasa el cursor sobre un bloque, haz clic en ⟲, y el historial de ese bloque se abre.
+</PartHero>
+
+## El diario
+
+Cada entrada muestra cómo se hizo el cambio (edición manual, edición de Claude, traducción por IA, importación desde la bandeja de entrada o una reversión anterior), quién lo hizo, y un diff plegable de antes y después. Las entradas de archivo completo — una traducción, una importación — se listan para que conste, pero no llevan botón de revertir: deshacerlas es trabajo de git.
+
+## Revertir
+
+Un clic en el botón de revertir de una entrada reemplaza el texto *posterior* de esa revisión por su texto *anterior* — como una nueva edición registrada en el diario, de modo que una reversión es a su vez revertible. Dos detalles que conviene saber:
+
+- La reversión se aplica por coincidencia exacta de contenido. Si el bloque se ha editado desde entonces y el texto viejo ya no aparece tal cual, la reversión se rechaza en lugar de adivinarse — nada se parchea jamás a ojo.
+- El resultado pasa por la misma puerta de build que cualquier otro guardado ([[inkbrush/editing|las dos redes de seguridad]]). Una reversión que rompería la página se rechaza.
+
+## ¿Por qué un diario además de git?
+
+Git (vía `autocommit`) es el historial duradero de archivos completos — lo que empujas, respaldas y comparas con diff. El diario es la capa fina que hace a ⟲ instantáneo y por bloque. Responden preguntas distintas: *«¿qué le pasó a este archivo?»* frente a *«¿qué le pasó a este párrafo?»*

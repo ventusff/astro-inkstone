@@ -1,0 +1,28 @@
+---
+title: Kâğıt ve mürekkep, bilinçli bir tercih
+brand: Kâğıt ve mürekkep
+subtitle: "token’ların ardındaki duruş"
+description: "Bu tasarım sistemi neden sıcak bir kâğıt zemine, gerçek seriflere, iki tür sayfa için iki zemine ve elle kurulmuş bir koyu temaya bağlı — token’ların ardındaki duruş üzerine bir not."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Desen · bir tasarım duruşu" title="Kâğıt ve mürekkep, bilinçli bir tercih" meta="sıcak bir zemin · serif bir gövde · iki zemin · karanlık için ikinci bir basım">
+  Belgelendirme temalarının çoğu aynı varsayılanlara uzanır: beyaz `#fff`, grotesk bir sans serif, gray-800 metin, sistemden gelen koyu kip. Okunurlar — ve hiçbir şeye benzemezler. Bu sistem başka bir öncülden yola çıkar: **uzun bir teknik belge, bir saat boyunca okunan bir şeydir** — token’lar bu öncülden türer.
+</Hero>
+
+## Duruş
+
+Bir saatlik okuma, matbaanın yüzyıllar önce çözdüğünü ister: göz almayan sıcak bir zemin, çizgileri arasında gerçek kontrast taşıyan bir metin yüzü ve chrome pikselleriyle değil gövde metninin em’leriyle ölçülen bir yerleşim ritmi. [[design-tokens|Token katmanının]] yazıldığı sözcük dağarcığı buradan gelir: gray-50’den gray-200’e uzanan bir merdiven yerine kâğıtlar (纸 tabaka, 页 sayfa, 素 sade zemin, 帛 ipek); primary/secondary/accent yerine bir ressam kutusundan mürekkepler ve pigmentler — 朱 şarap, 石 yanık turuncu, 赭 aşı sarısı, 黛 petrol yeşili, 紫 menekşe. Bu adlar süs değildir: her yeni renk kararını aynı fiziksel eğretilemeye bağlı tutarlar — beş ayrı yüzeyin hâlâ tek bir kâğıt tabakası gibi okunması bundandır.
+
+## İki zemin — çünkü iki tür sayfa
+
+Bir wiki iki biçimde okunur. Bir notu **okursunuz** — tek sütun, bir saat; göz dinginlik ister: hafifçe serin bir kâğıt, nötr bir mürekkep, bağlantılarla numaralar için tek bir vurgu. Bir rafa **göz atarsınız** — bir kart ızgarası, bir bakış, bir seçim: kâğıt daha sıcak olabilir, başlıklar vitrin serifine geçebilir, vurgu da bağlantıdan çok mühür gibi duran derin bir şarap kırmızısı olabilir. Bu iki durumu tek bir palete sıkıştırmak ikisini de sakatlar. Bu yüzden anlamsal katmanın iki bağlamı vardır — okuma sütunu (`--color-*`) ve göz atma rafı (`--wb-*`) — ikisi de aynı pigment kutusundan çekilir ve her sayfa hangisi olduğunu kendisi bildirir. Sonuç, tek bir nesne ama iki oda gibi duran bir sitedir.
+
+## Koyu tema bir ters çevirme değil, ikinci bir basımdır
+
+Algoritmik koyu kipler açıklık değerlerini ters çevirir ve işi bitmiş sayar; metin arduvaz üstünde tebeşire döner, tonlu her yüzey çamura bulanır. Buradaki koyu tema ise **elle kurulmuş ikinci bir basımdır**: kendi başlarına seçilmiş alacakaranlık zeminleri ve ay beyazı mürekkepler; vurgu pigmentleri, daha koyu kâğıtlarda AA kontrastını koruyacak kadar — yalnızca o kadar — yeniden aydınlatılır. Bedeli ikinci bir karar takımıdır; mesele de zaten budur. Düğme yalnızca okurun açık seçimine uyar ([[design-tokens|asla işletim sistemi tercihine değil]]), çünkü okumanın ortasında kendi temasını çeviren sayfa, okuru irkilten sayfadır.
+
+## CJK yük taşıyıcıdır
+
+Çince/Latin karışık metin, çoğu temanın sessizce dağıldığı yerdir: tam genişlikli bir noktaya yaslanınca kapanmayı reddeden vurgu; bir Hanzi 1.7 hücre genişliğinde diye makaslanan kod diyagramları. Burada ikisi de tipografik zevk meselesi değil, doğruluk hatası sayılır — [[kitchen-sink|lehçe, CJK vurgusunu doğru ayrıştırır]]; kod yazı tipi alt kümesi de bir Hanzi’yi tam iki hücreye sabitler, kutu çizgisi diyagramları çeviriden sağ çıkar. Yalnızca İngilizcede çalışan bir tema, yarım temadır.

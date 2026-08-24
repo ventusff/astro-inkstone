@@ -1,0 +1,37 @@
+---
+title: "La boîte de réception Obsidian"
+description: "Désignez un dossier du coffre à surveiller ; les nouvelles notes se convertissent et s’importent d’elles-mêmes — images intégrées copiées à côté de la note, wikiliens résolus, surlignages préservés."
+navLabel: "Boîte de réception"
+part: 4
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="La boîte de réception Obsidian">
+  Beaucoup d’écriture commence ailleurs — un téléphone, un clipper web, un coffre Obsidian. La boîte de réception referme cette boucle : désignez-lui un dossier, et les notes qui y sont déposées s’importent d’elles-mêmes dans le site.
+</PartHero>
+
+## L’activer
+
+La boîte de réception est livrée éteinte. Activez-la dans `inkbrush.config.ts` :
+
+```ts title="inkbrush.config.ts"
+inbox: {
+  dir: '~/vault/inbox',        // le dossier à surveiller (accepte ~/)
+  ignore: ['daily-'],          // facultatif : préfixes de noms de fichiers à ignorer
+},
+```
+
+Les fichiers déjà présents dans le dossier au démarrage sont marqués comme vus, pas importés — seules les notes ajoutées *ensuite* se synchronisent automatiquement. Tout ce qui est plus ancien peut être rattrapé explicitement par l’API : activer la boîte de réception ne déverse donc jamais par surprise dix ans d’historique de coffre sur votre site.
+
+## Ce que fait l’importeur
+
+Chaque note entrante est convertie, pas copiée :
+
+- les images intégrées sont résolues contre les dossiers de ressources du coffre, les fichiers sont **copiés à côté de la note importée**, et les intégrations deviennent de la syntaxe d’image standard — supprimer la note plus tard supprime ses ressources avec elle ;
+- les `[[wikilinks]]` qui correspondent à une vraie note du site survivent comme liens, résolus avec [[inkbrush/wikilinks|les mêmes règles que partout ailleurs]] ; les autres sont aplatis en simple emphase, avec un avertissement ;
+- les surlignages deviennent de vrais éléments `<mark>`, les métadonnées du frontmatter deviennent une ligne de provenance sous le titre, et une description est dérivée du premier paragraphe substantiel.
+
+La note convertie doit ensuite passer la même porte de build qu’un enregistrement manuel — une note qui casserait la page est refusée au lieu d’être importée.
+
+Chaque import atterrit dans le journal des révisions (via: inbox) comme une entrée portant sur le fichier entier : [[inkbrush/revisions|⟲]] la liste comme ligne d’audit, et défaire un import est une opération git. Avec `autocommit` activé, chaque import devient aussi un commit git comme n’importe quelle autre édition ; désactivé, les fichiers importés arrivent comme des changements ordinaires de l’arbre de travail, à relire et committer vous-même.

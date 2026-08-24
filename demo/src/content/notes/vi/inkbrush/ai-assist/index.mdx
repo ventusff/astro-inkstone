@@ -1,0 +1,24 @@
+---
+title: Trợ lý AI
+description: "Viết lại từng khối, trò chuyện hiểu ghi chú, và dịch trọn bài — qua CLI claude, nhốt trong một bản sao dùng xong vứt của ghi chú."
+navLabel: Trợ lý AI
+part: 3
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Trợ lý AI">
+  Các thao tác ✦ bắc cầu sang [CLI claude](https://claude.com/claude-code). CLI phải được cài và đăng nhập trên chính chiếc máy đang chạy dev server — ngoài nó ra, không thứ gì khác trong engine cần đến, nên thiếu CLI thì mọi thứ trừ ✦ vẫn chạy bình thường.
+</PartHero>
+
+## Viết lại một khối
+
+Rê chuột lên một khối, bấm ✦, rồi hoặc chọn một ý định soạn sẵn — trau chuốt, chặt chẽ hơn, cô đọng lại, sửa công thức — hoặc tự gõ chỉ dẫn của riêng bạn. Tác vụ chạy phía server trong một bản sao dùng xong vứt của thư mục ghi chú, công cụ thao tác tệp bị nhốt trong bản sao ấy — không shell, không mạng — và truyền tiến độ về trực tiếp; đóng tab trình duyệt nó vẫn chạy tiếp. Khi xong việc, tệp đã đổi phải qua được đúng cửa kiểm build như một lần lưu tay rồi mới được đưa về dự án và ghi nhật ký, để [[inkbrush/revisions|⟲]] gỡ lại được.
+
+## Hỏi về ghi chú
+
+Bảng trò chuyện (nút nổi, góc dưới bên phải) trả lời các câu hỏi về ghi chú bạn đang đọc. Claude đọc phần nguồn trong một bản sao làm việc với bộ công cụ chỉ đọc; câu hỏi nối tiếp sẽ tiếp tục đúng cuộc trò chuyện ấy.
+
+## Dịch trọn ghi chú
+
+Với mỗi ngôn ngữ mà ghi chú còn thiếu, bảng trò chuyện chìa ra nút "tạo phiên bản" một cú bấm — không phải bản dịch từng chữ, mà là ghi chú được kể lại bằng ngôn ngữ đích, giữ nguyên vẹn từng anchor, từng khung mã và từng bất biến cấu trúc. Kết quả được ghi thành tệp bản dịch của ngôn ngữ ấy, và cửa kiểm build nắm tiếng nói cuối cùng trước khi bất cứ thứ gì được giữ lại. Khu vườn này lớn lên trong mười tám ngôn ngữ; menu ngôn ngữ của nó liệt kê mọi ấn bản của trang bạn đang đứng, và trong chế độ biên tập, một ấn bản còn thiếu chỉ cách đúng một cú bấm. Bản dịch là một thay đổi trọn tệp: nhật ký ghi nhận nó, còn gỡ nó là một thao tác git chứ không phải một cú ⟲.

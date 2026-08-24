@@ -1,0 +1,82 @@
+---
+title: I controlli
+brand: I controlli
+subtitle: "un cancello per strato\nsorgenti · link · output · resa · contrasto"
+description: check-content, check-wikilinks, check-dist, ui_probe, contrast_probe — un cancello per ogni strato, ciascuno a catturare una classe di guasti silenziosi che salpano sotto una build verde.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Riferimento · strumenti" title="I controlli" meta="cinque controlli · tre dal motore, due da questo pacchetto · tutto verde prima di un commit">
+  Una build verde non significa che le pagine stiano bene. Questa catena di strumenti mette un controllo su ogni strato, ciascuno a catturare una classe di guasti silenziosi del tipo «build verde, pagina rotta» — e due di loro guardano le pagine come fa chi legge: in un browser reale.
+</Hero>
+
+## Cinque cancelli, cinque strati
+
+| Controllo | Arriva con | Guarda | Quando eseguirlo |
+| --- | --- | --- | --- |
+| check-content | il motore, `scripts/check-content.mjs` | ogni file sorgente md/mdx | nella CI del repo dei contenuti, o dopo aver scritto |
+| check-wikilinks | il motore, `scripts/check-wikilinks.mjs` | il grafo dei `[[wikilink]]` | nella CI del repo dei contenuti, o dopo aver rinominato una nota |
+| check-dist | il motore, `scripts/check-dist.mjs` | l’output di `astro build` | dopo ogni build (postbuild) |
+| ui_probe | questo pacchetto, `scripts/ui_probe.mjs` | le pagine rese in un browser reale | dopo modifiche a stili o layout |
+| contrast_probe | questo pacchetto, `scripts/contrast_probe.mjs` | il contrasto di ogni nodo di testo, entrambi i temi | dopo qualunque modifica ai token |
+
+## check-content: lo strato delle sorgenti
+
+Compila ogni md/mdx destinato a una pagina con **esattamente lo stesso dialetto** del sito — errori di sintassi e deformazioni silenziose (segni di enfasi che non possono accoppiarsi, graffe inghiottite dalla valutazione MDX, marcatori di elenco nati da un a-capo, `$$` su riga singola, formule che KaTeX non sa rendere — la stessa serie con cui si chiude il [[kitchen-sink|campionario]]) fanno tutti scattare il rosso in CI.
+
+Perché questo script deve venire dal motore: un controllore col set di plugin diverso da quello del sito è **peggio di nessun controllore** — uno a cui manca il plugin della matematica scambia le graffe delle formule per espressioni JSX, uno senza GFM lascia passare le tabelle. Il dialetto è scritto una volta nel motore; la resa del sito, la validazione al salvataggio del CMS e questo script consumano sempre lo stesso.
+
+```bash title="radice del repo dei contenuti"
+node <engine>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
+```
+
+Oltre a compilare, cattura due classi di perdita silenziosa nel frontmatter: un `#` senza virgolette in un valore (YAML lo legge come commento e tronca in silenzio tutto il resto) e uno YAML che non si analizza affatto, riportato con la sua riga.
+
+## check-wikilinks: il grafo dei link
+
+I `[[wikilink]]` morti, di proposito, non fanno fallire la build — a un giardino dev’essere permesso di puntare a note non ancora cresciute. Ma la ruggine dei link appartiene comunque alla CI, quindi il motore consegna un lint che risolve ogni wikilink con **le regole di analisi e risoluzione della libreria stessa** (alias, brand, titolo, mirror di lingua) e riporta i mancanti, gli ambigui e le ancore dubbie. `--strict` trasforma i link morti in un’uscita fallita — così lo esegue la CI di questo repository:
+
+```bash title="il controllo dei link di questo giardino, come lo esegue la CI"
+node scripts/check-links.mjs
+```
+
+## check-dist: lo strato dell’output
+
+Nella `dist/` costruita, ogni riferimento interno su cui chi legge può fare clic deve esistere davvero. Cattura i buchi silenziosi sotto una build verde:
+
+- link e risorse interne che puntano a file inesistenti (la specie che spunta a dozzine dopo un rimpasto delle rotte);
+- ancore in pagina che puntano a id inesistenti;
+- segmenti di lingua raddoppiati nei percorsi (`/en/en/` — il classico risultato dei fallback i18n che impilano un prefisso su rotte già prefissate);
+- `<a>` annidati dentro `<a>` (il parser HTML chiude in anticipo quello esterno e i pulsanti cascano fuori dalle loro carte);
+- residui d’errore KaTeX (la formula è testo rosso sulla pagina mentre la build resta verde).
+
+Questa demo lo aggancia al postbuild: un `npm run build` verde significa che anche il controllo dell’output è passato.
+
+```bash title="radice del sito, dopo una build (passa --base quando il sito è pubblicato sotto un sottopercorso)"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
+```
+
+## La sonda del livello di resa
+
+Sorgenti e output possono essere entrambi giusti mentre la pagina è comunque rotta — il caso classico sono le carte della pagina principale che nessuna regola di stile aggancia più, rese come un’unica riga fitta di testo nudo: i controlli su link e ancore restano verdi perché non guardano mai una pagina resa. `ui_probe` guida un browser reale su ogni pagina di `dist` a quattro larghezze di viewport (1440/1024/768/430) e misura: overflow orizzontale della pagina, elementi più larghi del loro contenitore senza una scatola di scorrimento in cui vivere, classi che nessuna regola di stile veste, livelli di titolo saltati, id duplicati, immagini senza attributo `alt`, ancore in pagina e `aria-controls` che puntano nel vuoto. Riporta soltanto ciò che una macchina può provare — nessun giudizio estetico.
+
+```bash title="serve un Chrome/Chromium locale"
+npm run build
+node ../scripts/ui_probe.mjs dist   # serve dist da sé; passa un baseUrl per sondare un server vivo
+```
+
+Ispeziona l’intero documento — chrome, sidebar e dialoghi compresi. Verde significa che l’ultima riga del rapporto recita `SAMPLES WITH FINDINGS: 0` (un campione è una rotta a una larghezza).
+
+## La sonda di contrasto
+
+I token dichiarano l’AA, quindi la dichiarazione si misura invece di asserirla. `contrast_probe` carica ogni pagina di `dist` in un browser reale — tema chiaro e scuro, larghezza desktop e telefono — e misura ogni corsa di testo resa nello stato predefinito: testo HTML, testo SVG e il testo generato di `::before` / `::after`, con ogni overlay `<dialog data-probe-open>` sondato da aperto (e una query digitata nella casella di ricerca che vi si trova) su una pagina rappresentativa — il marcatore è la dichiarazione del sito che quel dialogo è completo così com’è scritto. Il fondo non si legge da un foglio di stile: la pagina viene resa con ogni glifo fatto trasparente, fotografata, e il pixel sotto ogni corsa è il suo fondo — così gradienti, velature `color-mix()`, strati traslucidi e la tavolozza notturna si misurano tutti come rendono davvero. Il colore di primo piano di una corsa porta con sé l’`opacity` accumulata dell’elemento e dei suoi antenati, quindi il testo attenuato si misura alla forza a cui chi legge lo vede davvero. Gli stati di hover e focus si rivedono a occhio, non si sondano. Il testo piccolo è tenuto a 4.5:1, quello grande (24px, oppure 18.66px in grassetto) a 3:1; una corsa il cui colore non si può analizzare, o il cui fondo non si può campionare, conta come rilievo. Il rapporto nomina pagina, tema, larghezza, selettore, i due colori e il rapporto di contrasto di ogni corsa sotto la soglia:
+
+```bash title="dopo una build, entrambi i temi"
+node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS restringono la matrice
+```
+
+<div class="callout system">
+  <div class="callout-title">La routine per le modifiche di stile</div>
+  Qualunque modifica ai fogli di stile o ai componenti del pacchetto passa prima dalla build di questa demo, poi da <code>ui_probe</code> e <code>contrast_probe</code> sull’output — tutto verde prima del commit. La demo fa anche da banco di prova del pacchetto.
+</div>

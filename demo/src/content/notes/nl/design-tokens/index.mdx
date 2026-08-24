@@ -1,0 +1,71 @@
+---
+title: "Tweelaags palet en thema's"
+brand: "Palet & thema's"
+subtitle: "twee lagen, twee contexten\nde pigmenten en het papier"
+description: Het rauwe pigmentpalet en de twee semantische contexten die erop rusten — leeskolom en boekenplank — plus de licht/donker-discipline, het nagemeten contrast en het ene aangrijpingspunt voor site-identiteit.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Naslag · de tokenlaag" title="Tweelaags palet en thema's" meta="één palet · twee contexten · beide thema's met de hand gezet · elke tekstkleur gemeten op AA">
+  `styles/tokens.css` bevat elke kleur die de stylesheets en componenten gebruiken — de enige uitzondering is het toonpaar van een domein, dat de registry van een site als data aanlevert. Het bestand is in twee lagen geschreven — een **rauw palet** van papier-en-inktpigmenten en **semantische tokens** die erop bouwen — en de semantische laag bestaat in twee contexten, want een wiki heeft twee soorten pagina's: de kolom die je leest en de plank waarlangs je bladert.
+</Hero>
+
+<Part title="De lagen" />
+
+## Laag één: de pigmenten
+
+Het rauwe palet is een schilderskist, thema-onafhankelijk, met namen als `--p-*`. **Papieren**: de bladerondergrond 纸 en zijn kaartvlak 页, de leesondergrond 素 (een tikje koeler, prettiger voor de ogen na een uur) en zijn zachte oppervlak 帛, de witte kaart, de gronden voor code en wiskunde. **Inkten**: een warme set voor de plank en een neutrale voor de kolom, elk in drie sterktes. **Bindwerk**: de planklijn, de pilrand, de twee haarlijnen. En de **pigmenten**, de kleuren die betekenis dragen:
+
+```css title="tokens.css (laag één, de pigmenten)"
+--p-zhu: #7d3a3a; /* 朱 · wijnrood — bladeraccent, het beeldmerk van de site */
+--p-shi: #b6552e; /* 石 · gebrand oranje — leesaccent: links, nummers, kickers */
+--p-shi-text: #8f3f1f; /* 石 · trap voor kleine tekst (AA op zijn eigen tint) */
+--p-zhe: #c08a2c; /* 赭 · oker — lijnen en randen */
+--p-dai: #2a6f6b; /* 黛 · teal — tweede inhoudsaccent */
+--p-zi: #6b4ec4; /* 紫 · violet — "systeem"-semantiek */
+```
+
+Daarbovenop komt een **nachtset** voor de donkere editie: schemergronden, maanwitte inkten en van elk pigment een opgelichte tegenhanger.
+
+## Twee contexten, één palet
+
+Laag twee is wat de componentlaag consumeert, en die heeft twee gezichten:
+
+| Context | Tokens | Ondergrond | Inkt | Accent | Waar |
+| --- | --- | --- | --- | --- | --- |
+| leeskolom | `--color-*` | 素 `#fbf9f4` | neutraal `#1f2024` | 石 gebrand oranje | notitiepagina's, elk inhoudscomponent, `base.css` |
+| boekenplank | `--wb-*` | 纸 `#faf6ec` | warm `#2b2622` | 朱 wijnrood | landings- en facetpagina's, de wiki-componenten, `browse.css` |
+
+De kolom is de stillere van de twee — daar lees je een uur in. De plank is warmer en gezet in een display-serif — daar werp je een blik op en kies je. Een pagina stapt de plankcontext binnen met één class, `wb-root`, op haar body; daarbinnen worden de chrome-tokens (`--color-bg`, `--color-accent`, …) opnieuw gekoppeld aan die van de plank, zodat een navigatiebalk die één keer is geschreven op beide gronden goed staat — en zodat de taxonomie-atomen (soortbadge, statuspunt, domeinchip), die tegen `--color-*` zijn geschreven, op een notitiepagina bij de kolom horen en op een bladerpagina bij de plank. **De componentlaag mag uitsluitend laag twee consumeren** — `base.css`, `browse.css` en elk component; geen enkele regel bevat een rauwe kleurwaarde, en niets valt erop terug. Dat is de harde discipline van het pakket.
+
+<Part title="Identiteit en discipline" />
+
+## Hoe een site zijn identiteit instelt
+
+Overschrijf laag één. Ruil de pigmenten in voor je eigen kleuren en beide contexten plus de hele componentlaag volgen vanzelf. Elk pigment is een **dag/nacht-paar**: het lichte thema leest `--p-shi` en `--p-zhu`, het donkere leest hun nachttegenhangers `--p-shi-n` en `--p-zhu-n` — een identiteitsoverride zet beide leden, of laat donker de standaardpigmenten houden:
+
+```css title="jouw site.css"
+:root {
+  --p-shi: #b03a48; /* je leesaccent */
+  --p-shi-text: #93303c; /* zijn stap voor kleine tekst wordt apart verdonkerd, zie hieronder */
+  --p-zhu: #3b4a7a; /* je plankaccent en beeldmerk */
+  --p-shi-n: #e0919b; /* de nachttegenhangers, opgelicht voor de schemergronden */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Laag twee rechtstreeks op je eigen palet leggen wordt evengoed ondersteund, voor wie al een designsysteem heeft — wijs `--color-*` en `--wb-*` naar je eigen variabelen. Deze tuin overschrijft bewust niets: wat je nu leest is het kale gezicht van het pakket, hetzelfde gezicht waar [[paper-and-ink|Papier en inkt]] voor pleit.
+
+## Contrast wordt nagemeten
+
+Elke tekstkleur is getoetst aan WCAG AA op elk oppervlak waar hij daadwerkelijk op staat: kleine tekst begint bij 4,5:1; een accent dat als kleine tekst dient krijgt een apart verdonkerde **teksttrap** (`--p-shi-text`, `--p-zhe-text`), omdat een 12px-label in de accentkleur meestal op de eigen tint van dat accent staat; de vale inkten staan op de donkerste toon die nog als vaal leest — `#6a6d74` op de leesondergrond is 4,9:1, en op het zachte oppervlak nog altijd 4,5:1; de codegrond is een tikje lichter dan het papier, zodat het vaagste token van het syntaxthema (commentaar) 4,5:1 haalt; de donkere editie draagt haar eigen opgelichte set, gemeten tegen de nachtgronden. Het pakket levert de meting mee als gereedschap: `scripts/contrast_probe.mjs` rendert de demo in een echte browser, beide thema's en twee breedtes, leest de grond onder elke tekstregel uit pixels af en rapporteert elke regel onder de lat ([[checks|de contrastprobe]]). Ken van elke waarde eerst alle oppervlakken waarop hij staat, voordat je hem verandert.
+
+## Licht is de identiteit
+
+Het thema leest bewust **niet** `prefers-color-scheme`: een pagina mag onder de lezer nooit uit zichzelf van thema wisselen. Donker wordt uitsluitend actief via `[data-theme='dark']`, omgezet door de eigen schakelaar van de site (de zon/maan-knop rechts in de navigatiebalk van deze site; de keuze wordt onder de sleutel `inkstone-theme` in `localStorage` bewaard en door het inline ThemeInit-script vóór de eerste paint teruggespeeld, zodat lezers van het donkere thema nooit een crèmekleurige flits zien). Donker is geen inversie maar een tweede, met de hand gezette editie: schemergronden, maanwitte inkten, opnieuw opgelichte pigmenten — [[paper-and-ink|donker is een tweede editie, geen inversie]].
+
+## Ook de lettertypen wonen hier
+
+Vier stapels. `--font-display` is het gezicht van de plank — een serif met optische maten (Source Serif 4, met Noto Serif SC voor Hanzi) voor mastheads en planktitels; deze demo host hem zelf via `@fontsource`, en een site die dat niet doet valt terug op het leeslettertype. `--font-body` is dat van de leeskolom — een systeemserif-stapel aangevoerd door Charter en Iowan Old Style, met het display-lettertype als invaller waar die ontbreken. `--font-ui` is Inter (Noto Sans SC voor Hanzi) voor koppen, chrome en de kleine lettertjes. `--font-mono` is een subset met vaste tekenset van Maple Mono CN (ASCII + kaderteken-symbolen + de 3500 gangbaarste Hanzi + de vereniging van alle bestaande inhoud): Latijn op 0.6em, Hanzi op 1.2em — **een Hanzi is exact twee tekencellen breed**, dus kadertekeningen blijven uitgelijnd, ook in gemengd Chinees/Latijns schrift. Het subsetrecept en het regeneratiescript reizen met het pakket mee (`fonts/build_font_subset.py`); heeft je inhoud glyphs buiten de dekking nodig, draai het dan opnieuw en commit de woff2. De [[kitchen-sink|codeframes]] zijn volledig in de subset gezet.

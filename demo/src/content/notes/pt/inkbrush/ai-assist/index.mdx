@@ -1,0 +1,24 @@
+---
+title: Assistência de IA
+description: Reescritas de bloco, um chat que conhece a nota e tradução da nota inteira — pelo CLI claude, confinado a uma cópia descartável da nota.
+navLabel: Assistência de IA
+part: 3
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Assistência de IA">
+  As ações ✦ fazem a ponte com o [CLI claude](https://claude.com/claude-code). Ele precisa estar instalado, com sessão aberta, na máquina que roda o servidor de desenvolvimento — nada mais no motor precisa dele, então sem o CLI tudo continua funcionando, menos o ✦.
+</PartHero>
+
+## Reescrever um bloco
+
+Passe o mouse sobre um bloco, clique em ✦ e escolha uma intenção rápida — polir, deixar mais rigoroso, condensar, consertar as fórmulas — ou digite a sua própria instrução. O trabalho roda do lado do servidor, numa cópia descartável do diretório da nota, com as ferramentas de arquivo confinadas a essa cópia — sem shell, sem rede — e transmite o progresso ao vivo; ele sobrevive ao fechamento da aba do navegador. Quando termina, o arquivo alterado tem de passar pelo mesmo portão de build de um salvamento manual antes de ser levado de volta ao projeto e registrado no diário, para que o [[inkbrush/revisions|⟲]] possa desfazê-lo.
+
+## Perguntar sobre a nota
+
+O painel de chat (o botão flutuante, no canto inferior direito) responde a perguntas sobre a nota que você está lendo. O Claude lê o fonte numa cópia de trabalho, com um conjunto de ferramentas somente leitura; perguntas seguintes retomam a mesma conversa.
+
+## Traduzir a nota inteira
+
+Para cada idioma que falta a uma nota, o painel de chat oferece um "gerar versão" de um clique — não uma tradução literal, mas a nota recontada no idioma de destino, mantendo intactos cada âncora, cada bloco de código e cada invariante estrutural. O resultado é escrito como o arquivo espelho daquele idioma, e o portão de build dá a palavra final antes de qualquer coisa ficar. Este jardim cresce em dezoito idiomas; o menu de idiomas lista todas as edições da página em que você está, e em modo de edição uma edição que falta está a um clique de distância. Uma tradução é uma mudança de arquivo inteiro: o diário a registra, e desfazê-la é uma operação de git, não um clique em ⟲.

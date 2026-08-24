@@ -1,0 +1,27 @@
+---
+title: Revisiegeschiedenis en terugdraaien
+description: Elke opslag wordt per blok gejournaliseerd — wie, wanneer, welke regels, de exacte tekst voor en na. Blader erdoor met ⟲, maak hem met één klik ongedaan.
+navLabel: Revisies
+part: 2
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Revisiegeschiedenis en terugdraaien">
+  Elke opslag — met de hand getypt, door Claude geproduceerd of geïmporteerd uit het postvak IN — wordt naast de inhoud aan een revisiejournaal toegevoegd: wie, wanneer, welke regels, en de exacte tekst voor en na. Ga met de muis over een blok, klik op ⟲, en de geschiedenis van dat blok gaat open.
+</PartHero>
+
+## Het journaal
+
+Elke vermelding toont hoe de wijziging tot stand kwam (handmatige bewerking, Claude-bewerking, AI-vertaling, import uit het postvak IN of een eerdere terugdraaiing), door wie, en een uitklapbare voor/na-diff. Vermeldingen die het hele bestand beslaan — een vertaling, een import — staan er voor de volledigheid bij, maar dragen geen terugdraaiknop: die ongedaan maken is het werk van git.
+
+## Terugdraaien
+
+Eén klik op de terugdraaiknop van een vermelding vervangt de *na*-tekst van die revisie door haar *voor*-tekst — als een nieuwe gejournaliseerde bewerking, zodat een terugdraaiing zelf weer terug te draaien is. Twee details die het weten waard zijn:
+
+- Het terugdraaien wordt toegepast op exacte tekstovereenkomst. Is het blok sindsdien zo bewerkt dat de oude tekst niet meer letterlijk voorkomt, dan wordt het terugdraaien geweigerd in plaats van gegokt — er wordt nooit vaag gepatcht.
+- Het resultaat gaat door dezelfde bouwpoort als elke andere opslag ([[inkbrush/editing|de twee vangnetten]]). Een terugdraaiing die de pagina zou breken, wordt afgewezen.
+
+## Waarom én een journaal én git?
+
+Git (via `autocommit`) is de duurzame geschiedenis per heel bestand — het ding dat je pusht, back-upt en dift. Het journaal is de fijnmazige laag die ⟲ ogenblikkelijk en per blok maakt. Ze beantwoorden verschillende vragen: *"wat is er met dit bestand gebeurd?"* tegenover *"wat is er met deze alinea gebeurd?"*

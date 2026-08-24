@@ -1,0 +1,24 @@
+---
+title: Wikilink’ler nasıl çözülür
+description: "Sayfalar, editör ön izlemesi, içe aktarıcı ve CI lint’i için tek çözücü — önce yerel ayar aynaları, sonra id’ler, takma adlar, markalar ve başlıklar."
+navLabel: Wikilink’ler
+part: 5
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Wikilink’ler nasıl çözülür">
+  Notlar birbirine çift köşeli ayraçlarla bağlanır; bağlantılar derleme zamanında, gerçekten var olan not kümesine karşı çözülür. Çizilmiş sonuçlar — id, takma ad, etiket, çapa — [[kitchen-sink|hepsi bir arada]] sayfasında canlı sahnededir; bu bölüm, onların ardındaki çözüm kurallarını anlatır.
+</PartHero>
+
+## Hedef ne olabilir
+
+Hedefin bir notun id’si olması gerekmez. Çözüm sırasıyla şunları dener: **geçerli yerel ayarın aynası** (bu sayfanın on yedi kardeş sürümünden birindeki bağlantı, hedefinin aynı dildeki sürümüne çıkar; ayna hiç yoksa İngilizce asıl nota düşülür), sonra id’nin birebir kendisi, sonra takma adlar, marka adları ve başlıklar — büyük/küçük harfe bakılmaksızın. [[garden-craft|Bahçe denemesi]] `tending` diye bir takma ad bildirir; İngilizce asıl notta `[[tending]]` yazmak bu yüzden aynı sayfaya çıkar (aynalar takma ad taşımaz — takma ad, tam olarak tek bir notu adlandırmalıdır). Çapalar ve etiketler umduğunuz gibi birleşir: `[[garden-craft#pruning]]` doğruca bir bölüme gider, `[[garden-craft|the gardening essay]]` özel metin çizer — ve ikisi bir arada da kullanılabilir.
+
+## Ölü bağlantılar derlemeyi düşürmez
+
+Var olmayan bir nota verilen bağlantı, gerekçesi araç ipucunda yazan, gözle görülür bir ölü bağlantı olarak çizilir ve derleme bir uyarı günlükler. Bu, bahçeler için bilinçli bir tercihtir: yazılmamış bir not bir davettir, bir hata değil. Aynı anda birden çok nota denk gelen bir hedef de aynı biçimde, belirsiz diye imlenerek çizilir. Bağlantı çürümesinin yeri yine de CI’dır — motorun `check-wikilinks` CLI’si her bağlantıyı kitaplığın kendi kurallarıyla çözer ve `--strict` kipinde ölü bağlantıları başarısız bir çıkışa çevirir; bu depo onu tam böyle çalıştırır ([[checks|beş denetim]]).
+
+## Tek gerçekleştirim, dört tüketici
+
+Sayfalar, editörün canlı ön izlemesi, [[inkbrush/inbox|gelen kutusunun içe aktarıcısı]] ve CI lint’i aynı kodla çözer — bir bağlantı böylece her yerde aynı anlama gelir ve editör cömert davranabilir: düzenleme kipinde `[[` yazmak, id’ler, başlıklar ve takma adlar üzerinde otomatik tamamlama açar.

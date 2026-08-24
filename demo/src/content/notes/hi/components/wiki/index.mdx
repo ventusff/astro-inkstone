@@ -1,0 +1,154 @@
+---
+title: विकी और ब्राउज़
+description: "वर्गीकरण-सेट — नोट-कार्ड, फ़ेसेट-पंक्तियाँ, बैज, बैकलिंक-पैनल और साइडबार का लोकल ग्राफ़ — यहाँ सैंपल डेटा के साथ, और पूरे बगीचे में जीवंत।"
+part: 2
+navLabel: विकी और ब्राउज़
+---
+
+import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph from 'astro-inkstone/components/LocalGraph.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import DomainChip from 'astro-inkstone/components/wiki/DomainChip.astro';
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import KindBadge from 'astro-inkstone/components/wiki/KindBadge.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import StatusDot from 'astro-inkstone/components/wiki/StatusDot.astro';
+import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<PartHero kicker={props.partLabel} title="विकी और ब्राउज़">
+  इस अध्याय की हर चीज़ इस साइट पर **जीवंत** चलती है: लैंडिंग-पेज की शेल्फ़ें `NoteCard` से बनी हैं, उसकी फ़ेसेट-पंक्तियाँ एक `FacetNav` हैं, इस पाठ के ऊपर की मेटा-पट्टी एक `TaxonomyLine` है, और साइडबार का वह छोटा तारामंडल एक `LocalGraph`। सब-के-सब विशुद्ध प्रदर्शन-कंपोनेंट हैं — साइट अपनी रजिस्ट्री खुद हल करती है और सीधे दिखाने-लायक़ डेटा भेजती है। हल करने वाले सहायक पैकेज के साथ आते हैं: `createTaxonomy` और `createBacklinks` ([[three-way-split|यांत्रिकी पैकेज में, अर्थ साइट में]])।
+</PartHero>
+
+## बाइंडिंग, तीन लाइनें
+
+```ts title="src/lib/taxonomy.ts (इस साइट की पूरी बाइंडिंग)"
+import { createTaxonomy } from 'astro-inkstone/lib/taxonomy';
+import { DOMAINS, KINDS, STATUSES } from '../content/notes/_meta/taxonomy';
+
+export const { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, tagIndex, resolveTaxonomy } =
+  createTaxonomy({ kinds: KINDS, domains: DOMAINS, statuses: STATUSES },
+    { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' });
+```
+
+रजिस्ट्री (`_meta/taxonomy.ts`) सामग्री-वृक्ष में विशुद्ध डेटा है: प्रकार, टोन-रंगों वाले क्षेत्र, बिंदु-रंगों वाली स्थितियाँ — हर मान के साथ अंग्रेज़ी और चीनी डिस्प्ले-लेबल। वहाँ एक मान जोड़िए, किसी नोट पर टाँकिए, और हर ब्राउज़-पन्ना उसे थाम लेगा — रूट वैसे भी मानों पर पैरामीटर-बद्ध हैं।
+
+## शेल्फ़ और उसके टोकन
+
+ब्राउज़-पन्ने दूसरी ज़मीन पर बसते हैं: `browse.css` उन्हें गरम काग़ज़, सेरिफ़ वाला शीर्ष-पट्ट, शेल्फ़ की मोटी रेखा और कार्ड-ग्रिड देती है, सब `--wb-*` टोकनों से — [[design-tokens|दो-संदर्भ पैलेट]] का ब्राउज़ वाला आधा। पन्ना इस संदर्भ में एक क्लास से दाख़िल होता है — body पर `wb-root`; भीतर chrome के टोकन फिर से मैप हो जाते हैं, इसलिए एक ही नेविगेशन-पट्टी दोनों ज़मीनों पर बैठती है।
+
+## NoteCard
+
+कार्ड सीधे दिखाने-लायक़ डेटा लेता है — हल किए हुए लेबल, टोन, सजी हुई तारीख़, मिरर-लिंक। कार्डों का घर शेल्फ़ है, इसलिए सैंपल इस पढ़ने के कॉलम के भीतर ब्राउज़-संदर्भ की एक छोटी क्यारी (`.wb-root.wb-inset`) में बैठा है:
+
+<div class="wb-root wb-inset">
+<ul class="wb-grid">
+  <NoteCard
+    note={{
+      id: 'sample-note',
+      href: `${base}/hi/kitchen-sink/`,
+      title: 'पूरा पिटारा',
+      description: 'Markdown पाइपलाइन का हर तत्व इस पन्ने पर एक-एक बार प्रदर्शन करता है।',
+      kind: { id: 'reference', label: 'संदर्भ' },
+      domains: [{ id: 'pipeline', label: 'पाइपलाइन', tone: { bg: '#e3efec', fg: '#2a6f62' }, href: `${base}/hi/domain/pipeline/` }],
+      status: { id: 'evergreen', label: 'सदाबहार', dot: '#1f5e46' },
+      updated: '2026.08',
+      mirrors: [{ label: 'EN', href: `${base}/kitchen-sink/` }],
+    }}
+  />
+  <NoteCard
+    note={{
+      id: 'sample-hub',
+      href: `${base}/hi/components/`,
+      title: 'कंपोनेंट संग्रह',
+      description: 'हर शिप होने वाले कंपोनेंट की तीन-अध्याय सैर — और हब का जीवंत प्रदर्शन।',
+      kind: { id: 'reference', label: 'संदर्भ' },
+      domains: [{ id: 'components', label: 'कंपोनेंट', tone: { bg: '#f7e9dc', fg: '#98511a' }, href: `${base}/hi/domain/components/` }],
+      status: { id: 'evergreen', label: 'सदाबहार', dot: '#1f5e46' },
+      updated: '2026.08',
+      chapterCount: 3,
+      sourceLine: 'Hero · HubCard · Stats — हब का साज़ो-सामान, खुद हब पर',
+    }}
+  />
+</ul>
+</div>
+
+## FacetNav
+
+बहु-आयामी ब्राउज़-इंडेक्स — प्रकार, क्षेत्र (अपनी-अपनी टोन के साथ), शीर्ष टैग, सब प्रीरेंडर हुई गोली-नुमा कड़ियों के रूप में:
+
+<FacetNav
+  base={`${base}/hi`}
+  kinds={[
+    { def: { id: 'guide', label: 'गाइड' }, count: 2 },
+    { def: { id: 'reference', label: 'संदर्भ' }, count: 4 },
+    { def: { id: 'pattern', label: 'पैटर्न' }, count: 1 },
+  ]}
+  domains={[
+    { def: { id: 'design', label: 'डिज़ाइन', tone: { bg: '#ece7f2', fg: '#5b4a8a' } }, count: 3 },
+    { def: { id: 'pipeline', label: 'पाइपलाइन', tone: { bg: '#e3efec', fg: '#2a6f62' } }, count: 2 },
+  ]}
+  tags={[
+    { tag: 'tokens', count: 1 },
+    { tag: 'markdown', count: 1 },
+  ]}
+  active={{ dim: 'kind', value: 'reference' }}
+  labels={{ kind: 'प्रकार', domain: 'क्षेत्र', tag: 'टैग', all: 'सभी →' }}
+/>
+
+पंक्ति-लेबल भी props हैं, डिफ़ॉल्ट अंग्रेज़ी — ऊपर वाले को `labels={{ kind: 'प्रकार', domain: 'क्षेत्र', tag: 'टैग', all: 'सभी →' }}` भेजा गया है, ठीक वही जो इस साइट के हिन्दी फ़ेसेट-पन्ने भेजते हैं; इसके सिवा कुछ नहीं बदलता।
+
+## TaxonomyLine, KindBadge, StatusDot, DomainChip
+
+नोट के सिर की एक-पंक्ति मेटा-पट्टी तीन बैज-परमाणुओं का जोड़ है; हर परमाणु अकेले भी चलता है:
+
+<TaxonomyLine
+  kind={{ id: 'pattern', label: 'पैटर्न' }}
+  domains={[{ id: 'design', label: 'डिज़ाइन', tone: { bg: '#ece7f2', fg: '#5b4a8a' }, href: `${base}/hi/domain/design/` }]}
+  status={{ id: 'growing', label: 'बढ़ रहा', dot: '#5c8a3c' }}
+  updated="2026.08"
+/>
+
+परमाणु अलग-अलग, चलती पंक्ति में: एक <KindBadge def={{ id: 'guide', label: 'गाइड' }} /> प्रकार-बैज, एक <DomainChip def={{ id: 'pipeline', label: 'पाइपलाइन', tone: { bg: '#e3efec', fg: '#2a6f62' } }} href={`${base}/hi/domain/pipeline/`} /> क्षेत्र-chip, एक <StatusDot def={{ id: 'evergreen', label: 'सदाबहार', dot: '#1f5e46' }} /> स्थिति-बिंदु।
+
+## Backlinks
+
+इस बगीचे में हर नोट के नीचे का "बैकलिंक" पैनल पैकेज के `createBacklinks` से निकलता है — इंजन के अपने विकीलिंक-रिज़ॉल्वर को उलटकर बना "लक्ष्य ← स्रोत" इंडेक्स, संदर्भ के टुकड़े समेत। यहाँ इनलाइन सैंपल डेटा के साथ:
+
+<Backlinks
+  items={[
+    {
+      href: `${base}/hi/kitchen-sink/`,
+      title: 'पूरा पिटारा',
+      before: 'वह सात-कॉलम टेबल एक साथ ',
+      label: 'callout चीट-शीट',
+      after: ' भी है और कार्ड-reflow की परीक्षा भी…',
+    },
+    {
+      href: `${base}/hi/design-tokens/`,
+      title: 'दो-स्तरीय पैलेट और थीम',
+      before: 'कंपोनेंट सिर्फ़ ',
+      label: 'semantic टियर',
+      after: ' बरतते हैं, इसलिए पहचान के बदलाव उन्हें कभी नहीं छूते।',
+    },
+  ]}
+/>
+
+असली पैनल के लिए इस पन्ने के पैर तक चलिए — यह अध्याय खुद विकीलिंकों का लक्ष्य है।
+
+## LocalGraph
+
+वही इंडेक्स एक दूसरा सवाल भी सुलझाता है — *यहाँ से एक छलाँग में कौन-कौन है?* — और `index.localGraph(id, titleOf)` जवाब पड़ोसियों की सूची के रूप में देता है, आने वाले लिंक पहले। कंपोनेंट उन्हें नोट के चारों ओर एक दीर्घवृत्त पर खींचता है — आने वाले ठोस रेखा में, जाने वाले बिंदुदार में; पड़ोसी अपना `color` भी ला सकता है (मसलन कोई दूसरा संग्रह)। यहाँ कॉलम की चौड़ाई पर, सैंपल डेटा के साथ; असली ग्राफ़ हर उस नोट के साइडबार में है जिसके लिंक हैं:
+
+<div style="max-width: 300px">
+  <LocalGraph
+    centerTitle="विकी और ब्राउज़"
+    neighbors={[
+      { id: 'kitchen-sink', title: 'पूरा पिटारा', href: `${base}/hi/kitchen-sink/`, dir: 'in' },
+      { id: 'design-tokens', title: 'दो-स्तरीय पैलेट', href: `${base}/hi/design-tokens/`, dir: 'out' },
+      { id: 'three-way-split', title: 'तीन हिस्सों का बँटवारा', href: `${base}/hi/three-way-split/`, dir: 'out' },
+      { id: 'checks', title: 'जाँचें', href: `${base}/hi/checks/`, dir: 'in', color: 'var(--color-accent4)' },
+    ]}
+  />
+</div>

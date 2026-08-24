@@ -1,0 +1,37 @@
+---
+title: The Obsidian inbox
+description: Point the watcher at a vault folder; new notes convert and import themselves — embeds copied next to the note, wikilinks resolved, highlights preserved.
+navLabel: Inbox
+part: 4
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="The Obsidian inbox">
+  Plenty of writing starts somewhere else — a phone, a clipper, an Obsidian vault. The inbox closes that loop: point it at a folder, and notes dropped there import themselves into the site.
+</PartHero>
+
+## Turning it on
+
+The inbox ships off. Enable it in `inkbrush.config.ts`:
+
+```ts title="inkbrush.config.ts"
+inbox: {
+  dir: '~/vault/inbox',        // the folder to watch (supports ~/)
+  ignore: ['daily-'],          // optional: filename prefixes to skip
+},
+```
+
+Files already in the folder at startup are marked as seen, not imported — only notes added *afterwards* sync automatically. Anything older can be backfilled explicitly through the API, so turning the inbox on never dumps a decade of vault history onto your site by surprise.
+
+## What the importer does
+
+Each incoming note is converted, not copied:
+
+- image embeds are resolved against the vault's asset folders, the files are **copied next to the imported note**, and the embeds become standard image syntax — deleting the note later deletes its assets with it
+- `[[wikilinks]]` that match a real note on the site survive as links, resolved with [[inkbrush/wikilinks|the same rules as everywhere else]]; the rest are flattened to plain emphasis with a warning
+- highlights become real `<mark>` elements, frontmatter metadata becomes a source line under the title, and a description is derived from the first substantive paragraph
+
+The converted note then has to pass the same build gate as a manual save — a note that would break the page is refused instead of imported.
+
+Every import lands in the revision journal (via: inbox) as a whole-file record: [[inkbrush/revisions|⟲]] lists it as an audit row, and undoing an import is a git operation. With `autocommit` on, each import also becomes a git commit like any other edit; with it off, imported files arrive as ordinary working-tree changes to review and commit yourself.

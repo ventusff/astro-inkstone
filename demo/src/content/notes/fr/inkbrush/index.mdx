@@ -1,0 +1,53 @@
+---
+title: "La machine d’édition"
+description: "Une visite en cinq chapitres d’astro-inkbrush, le moteur CMS adossé à git avec lequel ce jardin fait paire — et ce site même en est la démo : en mode édition, chaque page d’ici se modifie sur place."
+brand: inkbrush
+subtitle: "le moteur CMS, sur son propre manuel\ncinq chapitres · un hub"
+navLabel: "Hub · Vue d’ensemble"
+chapters: false
+nav:
+  - group: Le moteur
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Référence · le moteur CMS" title="La machine d’édition" meta="cinq chapitres · zéro octet en production · ce site est la démo">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone) est le papier ; [astro-inkbrush](https://github.com/ventusff/astro-inkbrush) est la plume. Le moteur fait de n’importe quel site de contenu Astro son propre éditeur : survolez un paragraphe en mode édition, et une petite poignée propose ✎ éditer, ✦ demander à Claude, ⟲ l’historique. Il n’y a pas de site de démonstration à aller voir ailleurs — **le jardin que vous êtes en train de lire est la démo**. Lancez-le avec `npm run wiki` et chaque note d’ici, cette page comprise, s’ouvre à l’édition sur place ; un build statique comme celui que vous lisez ne contient pas un seul octet de code CMS.
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: 'la seule base de données' },
+    { value: '2', label: 'filets de sécurité à chaque enregistrement' },
+    { value: '0 o', label: 'de code CMS dans un build statique' },
+  ]}
+/>
+
+## Cinq chapitres `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/fr/inkbrush/editing/`} num="PARTIE I" title="L’édition, bloc par bloc" count="✎"
+    desc="CodeMirror à la place du bloc que vous lisez, un aperçu en direct via le pipeline du site lui-même, et deux filets de sécurité avant que rien ne touche le disque." />
+  <HubCard href={`${base}/fr/inkbrush/revisions/`} num="PARTIE II" title="Historique des révisions et annulation" count="⟲"
+    desc="Chaque enregistrement journalisé bloc par bloc — qui, quand, l’avant et l’après exacts — avec une annulation en un clic, elle-même annulable." />
+  <HubCard href={`${base}/fr/inkbrush/ai-assist/`} num="PARTIE III" title="L’assistance IA" count="✦"
+    desc="Réécritures de blocs, un chat qui connaît la note et la traduction de notes entières via la CLI claude, cantonnée à une copie jetable." />
+  <HubCard href={`${base}/fr/inkbrush/inbox/`} num="PARTIE IV" title="La boîte de réception Obsidian" count="📥"
+    desc="Désignez un dossier du coffre à surveiller ; les nouvelles notes se convertissent et s’importent d’elles-mêmes — intégrations, wikiliens et surlignages compris." />
+  <HubCard href={`${base}/fr/inkbrush/wikilinks/`} num="PARTIE V" title="Comment se résolvent les wikiliens" count="[[ ]]"
+    desc="Un seul résolveur pour les pages, l’aperçu de l’éditeur, l’importeur et le lint CI — les miroirs de langue d’abord, puis les ids, alias, brands et titres." />
+</div>
+
+## Où il se situe
+
+Le moteur possède les fonctions CMS **et** le dialecte Markdown avec son garde-fou du contenu — la grammaire que l’éditeur accepte et la grammaire que la page rend doivent être une seule et même grammaire ; elle s’écrit donc une fois et se consomme partout ([[three-way-split|le découpage en trois]] explique pourquoi la frontière passe là). L’habillage appartient à la couche papier ; l’identité appartient à votre site. Tout ce qui se *rend* sur ces pages — la bande de taxonomie au-dessus de ce texte comprise — c’est le papier à l’œuvre ; tout ce qui *édite* ces pages, c’est le moteur.
+
+<div class="path">
+  <strong>Chemin de lecture.</strong>
+  Vous découvrez le moteur → <a href={`${base}/fr/inkbrush/editing/`}>Partie I</a><span class="arrow">→</span><a href={`${base}/fr/inkbrush/revisions/`}>Partie II</a> ; vous le branchez sur un site → le guide <a href={`${base}/fr/getting-started/`}>Premiers pas</a> d’abord ; le dialecte que la porte de build fait respecter → la <a href={`${base}/fr/kitchen-sink/`}>démo intégrale</a> ; une note sur la tenue des notes → <a href={`${base}/fr/garden-craft/`}>l’essai sur l’art du jardin</a>.
+</div>

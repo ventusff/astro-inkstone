@@ -1,0 +1,24 @@
+---
+title: Jak rozwiązują się wikilinki
+description: Jeden mechanizm rozwiązywania dla stron, podglądu edytora, importera i lintu w CI — najpierw lustrzane wersje językowe, potem id, aliasy, brandy i tytuły.
+navLabel: Wikilinki
+part: 5
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Jak rozwiązują się wikilinki">
+  Notatki linkują do siebie podwójnymi nawiasami, rozwiązywanymi w czasie budowania względem zbioru notatek, które naprawdę istnieją. Wyrenderowane wyniki — id, alias, etykieta, kotwica — występują na żywo na stronie [[kitchen-sink|Wszystko naraz]]; ten rozdział jest o stojących za nimi regułach rozwiązywania.
+</PartHero>
+
+## Czym może być cel
+
+Cel nie musi być id notatki. Rozwiązywanie próbuje, po kolei: **lustrzanej wersji bieżącego języka** (link na jednym z siedemnastu siostrzanych wydań tej strony ląduje na wydaniu celu w tym samym języku, a do notatki kanonicznej cofa się tylko tam, gdzie lustrzanej wersji brak), potem dokładnego id, potem aliasów, nazw brandów i tytułów, bez rozróżniania wielkości liter. Esej [[garden-craft|o rzemiośle małego ogrodu]] deklaruje alias `tending`, więc zapis `[[tending]]` ląduje na tej samej stronie (aliasy niesie notatka kanoniczna — lustrzane wersje ich nie deklarują, dlatego tutaj pokazujemy go dosłownie). Kotwice i etykiety składają się tak, jak byś sobie życzył: `[[garden-craft#pruning]]` prowadzi prosto do sekcji, `[[garden-craft|esej ogrodniczy]]` renderuje własny tekst — a jedno łączy się z drugim.
+
+## Martwe linki nie wywracają builda
+
+Link do notatki, która nie istnieje, renderuje się jako widocznie martwy link z powodem w dymku, a build loguje ostrzeżenie. To celowy wybór na rzecz ogrodów: nienapisana notatka to zaproszenie, nie błąd. Cel pasujący naraz do kilku notatek renderuje się tak samo, oznaczony jako wieloznaczny. Gnicie linków należy jednak do CI — CLI silnika `check-wikilinks` rozwiązuje każdy link własnymi regułami biblioteki i w trybie `--strict` zamienia martwe linki w niezerowy kod wyjścia; tak właśnie uruchamia go to repozytorium ([[checks|pięć kontroli]]).
+
+## Jedna implementacja, czterej konsumenci
+
+Strony, podgląd na żywo w edytorze, [[inkbrush/inbox|importer skrzynki]] i lint w CI rozwiązują linki tym samym kodem — więc link znaczy to samo wszędzie, a edytor może sobie pozwolić na hojność: wpisanie `[[` w trybie edycji otwiera autouzupełnianie po id, tytułach i aliasach.

@@ -1,0 +1,154 @@
+---
+title: wiki とブラウズ
+description: 分類コンポーネント一式——ノートカード、分類ナビ、バッジ、バックリンクのパネル、サイドバーのローカルグラフ——をサンプルデータで見せます。同じものが、この庭のいたるところで実際に動いています。
+part: 2
+navLabel: wiki とブラウズ
+---
+
+import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph from 'astro-inkstone/components/LocalGraph.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import DomainChip from 'astro-inkstone/components/wiki/DomainChip.astro';
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import KindBadge from 'astro-inkstone/components/wiki/KindBadge.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import StatusDot from 'astro-inkstone/components/wiki/StatusDot.astro';
+import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<PartHero kicker={props.partLabel} title="wiki とブラウズ">
+  この章にあるものは、すべてこのサイトで**実際に動いています**:ランディングページの書架は `NoteCard` を並べたもの、その分類の行は `FacetNav`、この文章のすぐ上のメタ情報の帯は `TaxonomyLine`、サイドバーの小さな星座は `LocalGraph`。どれも純粋な表示コンポーネントです——レジストリを解決するのはサイトで、渡ってくるのは表示できる形になったデータだけ。解決のためのヘルパーは `createTaxonomy` と `createBacklinks` としてパッケージに同梱されています([[three-way-split|仕組みはパッケージに、意味はサイトに]])。
+</PartHero>
+
+## 結線は三行
+
+```ts title="src/lib/taxonomy.ts(このサイトの結線の全部)"
+import { createTaxonomy } from 'astro-inkstone/lib/taxonomy';
+import { DOMAINS, KINDS, STATUSES } from '../content/notes/_meta/taxonomy';
+
+export const { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, tagIndex, resolveTaxonomy } =
+  createTaxonomy({ kinds: KINDS, domains: DOMAINS, statuses: STATUSES },
+    { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' });
+```
+
+レジストリ(`_meta/taxonomy.ts`)はコンテンツツリーの中の純データです:種類、トーン色付きの分野、ドット色付きの状態。それぞれが英語と中国語の表示文言を併せ持ちます。そこに値を一つ足してノートに付ければ、すべてのブラウズページが拾い上げます——ルートは最初から値でパラメータ化されています。
+
+## 書架とそのトークン
+
+ブラウズページは第二の地の上に立ちます:温かい紙、セリフのマストヘッド、書架の 2 ポイント罫、カードのグリッド——すべて `browse.css` が `--wb-*` トークン経由で与えます。[[design-tokens|二文脈パレット]]のブラウズ側の半分です。ページは body のクラス一つ、`wb-root` でこの文脈に入ります。その内側ではクロームのトークンが再マップされるので、同じナビバーがどちらの地にも正しく載ります。
+
+## NoteCard
+
+カードが受け取るのは、解決済みで表示できる形のデータ——確定したラベル、トーン、整形済みの日付、ミラーへのリンクです。カードの住まいは書架なので、サンプルはこの読書カラムに埋め込んだ書架文脈の一角(`.wb-root.wb-inset`)に置いてあります:
+
+<div class="wb-root wb-inset">
+<ul class="wb-grid">
+  <NoteCard
+    note={{
+      id: 'sample-note',
+      href: `${base}/ja/kitchen-sink/`,
+      title: '全部入りデモ',
+      description: 'Markdown パイプラインの全要素が、このページで一度ずつ演じられます。',
+      kind: { id: 'reference', label: 'リファレンス' },
+      domains: [{ id: 'pipeline', label: 'パイプライン', tone: { bg: '#e3efec', fg: '#2a6f62' }, href: `${base}/ja/domain/pipeline/` }],
+      status: { id: 'evergreen', label: '常緑', dot: '#1f5e46' },
+      updated: '2026.08',
+      mirrors: [{ label: 'EN', href: `${base}/kitchen-sink/` }],
+    }}
+  />
+  <NoteCard
+    note={{
+      id: 'sample-hub',
+      href: `${base}/ja/components/`,
+      title: 'コンポーネント一式',
+      description: '同梱コンポーネント全部を三章で巡るツアー——ハブの生きた実演でもあります。',
+      kind: { id: 'reference', label: 'リファレンス' },
+      domains: [{ id: 'components', label: 'コンポーネント', tone: { bg: '#f7e9dc', fg: '#98511a' }, href: `${base}/ja/domain/components/` }],
+      status: { id: 'evergreen', label: '常緑', dot: '#1f5e46' },
+      updated: '2026.08',
+      chapterCount: 3,
+      sourceLine: 'Hero · HubCard · Stats——ハブの調度を、ハブ自身の上で',
+    }}
+  />
+</ul>
+</div>
+
+## FacetNav
+
+多次元のブラウズ索引——種類、分野(それぞれのトーン付き)、上位のタグ。すべて事前レンダリングされたピル型リンクです:
+
+<FacetNav
+  base={`${base}/ja`}
+  kinds={[
+    { def: { id: 'guide', label: 'ガイド' }, count: 2 },
+    { def: { id: 'reference', label: 'リファレンス' }, count: 4 },
+    { def: { id: 'pattern', label: 'パターン' }, count: 1 },
+  ]}
+  domains={[
+    { def: { id: 'design', label: 'デザイン', tone: { bg: '#ece7f2', fg: '#5b4a8a' } }, count: 3 },
+    { def: { id: 'pipeline', label: 'パイプライン', tone: { bg: '#e3efec', fg: '#2a6f62' } }, count: 2 },
+  ]}
+  tags={[
+    { tag: 'tokens', count: 1 },
+    { tag: 'markdown', count: 1 },
+  ]}
+  active={{ dim: 'kind', value: 'reference' }}
+  labels={{ kind: '種類', domain: '分野', tag: 'タグ', all: 'すべて →' }}
+/>
+
+行のラベル文字列も props で、既定は英語です——上の例は `labels={{ kind: '種類', domain: '分野', tag: 'タグ', all: 'すべて →' }}` を渡しています。このサイトの日本語の分類ページが渡しているものと同じで、それ以外は何も変わりません。
+
+## TaxonomyLine、KindBadge、StatusDot、DomainChip
+
+ノートの頭のあの一行のメタ情報の帯は、三つのバッジ原子を組んだものです。それぞれ単体でも使えます:
+
+<TaxonomyLine
+  kind={{ id: 'pattern', label: 'パターン' }}
+  domains={[{ id: 'design', label: 'デザイン', tone: { bg: '#ece7f2', fg: '#5b4a8a' }, href: `${base}/ja/domain/design/` }]}
+  status={{ id: 'growing', label: '成長中', dot: '#5c8a3c' }}
+  updated="2026.08"
+/>
+
+原子を単体で本文に流し込むと:<KindBadge def={{ id: 'guide', label: 'ガイド' }} /> の種類バッジ、<DomainChip def={{ id: 'pipeline', label: 'パイプライン', tone: { bg: '#e3efec', fg: '#2a6f62' } }} href={`${base}/ja/domain/pipeline/`} /> の分野チップ、<StatusDot def={{ id: 'evergreen', label: '常緑', dot: '#1f5e46' }} /> の状態ドット。
+
+## Backlinks
+
+この庭の各ノートの下にある「バックリンク」パネルは、パッケージの `createBacklinks` が計算しています——エンジン自身のウィキリンクリゾルバを「ターゲット ← ソース」の索引に反転させたもので、文脈のスニペットも付いてきます。ここではインラインのサンプルデータで:
+
+<Backlinks
+  items={[
+    {
+      href: `${base}/ja/kitchen-sink/`,
+      title: '全部入りデモ',
+      before: 'あの七列のテーブルは ',
+      label: 'コールアウトの早見表',
+      after: ' であると同時に、カード変形の生きたテスト……',
+    },
+    {
+      href: `${base}/ja/design-tokens/`,
+      title: '二層パレットとテーマ',
+      before: 'コンポーネントが消費するのは ',
+      label: '意味トークンの層',
+      after: ' だけ——アイデンティティの変更が触れることはありません。',
+    },
+  ]}
+/>
+
+このページの足元までスクロールすれば本物が見えます——この章自身が、ウィキリンクのターゲットだからです。
+
+## LocalGraph
+
+同じ索引はもう一つの問いにも答えます——*ここから 1 ホップ以内には誰がいる?*——`index.localGraph(id, titleOf)` がその答えを、インバウンドを先頭にした隣人リストで返します。コンポーネントは彼らをノートの周りの楕円の上に描きます:インバウンドは実線、アウトバウンドは破線。隣人は自分の `color` を持てます(たとえば第二のコレクション)。ここではカラム幅でサンプルデータを一枚。本物は、リンクを持つすべてのノートのサイドバーにいます:
+
+<div style="max-width: 300px">
+  <LocalGraph
+    centerTitle="wiki とブラウズ"
+    neighbors={[
+      { id: 'kitchen-sink', title: '全部入りデモ', href: `${base}/ja/kitchen-sink/`, dir: 'in' },
+      { id: 'design-tokens', title: '二層パレット', href: `${base}/ja/design-tokens/`, dir: 'out' },
+      { id: 'three-way-split', title: '三者の分業', href: `${base}/ja/three-way-split/`, dir: 'out' },
+      { id: 'checks', title: '各種チェック', href: `${base}/ja/checks/`, dir: 'in', color: 'var(--color-accent4)' },
+    ]}
+  />
+</div>

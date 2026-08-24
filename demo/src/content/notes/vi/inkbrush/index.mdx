@@ -1,0 +1,53 @@
+---
+title: Cỗ máy biên tập
+description: "Năm chương dạo quanh astro-inkbrush, engine CMS lấy git làm kho lưu mà khu vườn này sánh đôi — và chính site này là bản demo của nó: trong chế độ biên tập, mọi trang ở đây đều sửa được ngay tại chỗ."
+brand: inkbrush
+subtitle: "engine CMS, trên chính tài liệu của nó\nnăm chương · một hub"
+navLabel: Tổng quan
+chapters: false
+nav:
+  - group: Cỗ máy
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Tham khảo · engine CMS" title="Cỗ máy biên tập" meta="năm chương · không một byte CMS trong bản build tĩnh · chính site này là bản demo">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone) là tờ giấy; [astro-inkbrush](https://github.com/ventusff/astro-inkbrush) là ngọn bút. Engine biến bất kỳ site nội dung Astro nào thành trình soạn thảo của chính nó: trong chế độ biên tập, rê chuột lên một đoạn văn là một tay cầm nhỏ hiện ra, mời bạn ✎ sửa, ✦ hỏi Claude, ⟲ xem lịch sử. Không có site demo riêng nào để đi xem cả — **khu vườn bạn đang đọc chính là bản demo**. Chạy `npm run wiki`, mọi ghi chú ở đây, kể cả trang này, đều mở ra cho sửa ngay tại chỗ; còn bản build tĩnh như bản bạn đang đọc thì không chứa lấy một byte mã CMS.
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: 'cơ sở dữ liệu duy nhất' },
+    { value: '2', label: 'tấm lưới an toàn cho mỗi lần lưu' },
+    { value: '0 B', label: 'mã CMS trong bản build tĩnh' },
+  ]}
+/>
+
+## Năm chương `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/vi/inkbrush/editing/`} num="PHẦN I" title="Biên tập từng khối một" count="✎"
+    desc="CodeMirror hiện ra ngay chỗ khối bạn đang đọc, bản xem trước sống chạy qua chính pipeline của site, và hai tấm lưới an toàn trước khi bất cứ thứ gì chạm vào đĩa." />
+  <HubCard href={`${base}/vi/inkbrush/revisions/`} num="PHẦN II" title="Lịch sử sửa đổi và hoàn tác" count="⟲"
+    desc="Mỗi lần lưu được ghi nhật ký theo từng khối — ai, lúc nào, nguyên văn trước và sau — kèm nút hoàn tác một cú bấm, mà chính cú hoàn tác cũng hoàn tác được." />
+  <HubCard href={`${base}/vi/inkbrush/ai-assist/`} num="PHẦN III" title="Trợ lý AI" count="✦"
+    desc="Viết lại từng khối, trò chuyện hiểu ghi chú và dịch trọn bài qua CLI claude, nhốt trong một bản sao dùng xong vứt." />
+  <HubCard href={`${base}/vi/inkbrush/inbox/`} num="PHẦN IV" title="Hộp thư đến Obsidian" count="📥"
+    desc="Trỏ trình canh thư mục vào một thư mục trong vault; ghi chú mới tự chuyển đổi và tự nhập — kèm cả ảnh nhúng, wikilink lẫn phần bôi sáng." />
+  <HubCard href={`${base}/vi/inkbrush/wikilinks/`} num="PHẦN V" title="Wikilink phân giải thế nào" count="[[ ]]"
+    desc="Một bộ phân giải dùng chung cho trang, bản xem trước của trình soạn, trình nhập và phép lint trong CI — bản dịch cùng ngôn ngữ trước, rồi mới đến id, bí danh, brand và tiêu đề." />
+</div>
+
+## Nó đứng ở đâu
+
+Engine sở hữu các tính năng CMS **và** phương ngữ Markdown cùng lớp kiểm soát nội dung của nó — thứ văn phạm trình soạn chấp nhận và thứ văn phạm trang render ra buộc phải là một, nên nó được viết đúng một lần rồi mọi nơi cùng tiêu thụ ([[three-way-split|ranh giới ba bên]] giải thích vì sao đường ranh được vạch ở đó). Style thuộc về lớp giấy; bản sắc thuộc về site của bạn. Mọi thứ render trên những trang này — kể cả dải phân loại ngay trên đoạn chữ này — là lớp giấy đang làm việc; còn mọi thứ *biên tập* những trang này là engine.
+
+<div class="path">
+  <strong>Lộ trình đọc.</strong>
+  Mới đến với engine → <a href={`${base}/vi/inkbrush/editing/`}>Phần I</a><span class="arrow">→</span><a href={`${base}/vi/inkbrush/revisions/`}>Phần II</a>; muốn nối nó vào site → đọc <a href={`${base}/vi/getting-started/`}>bài bắt đầu sử dụng</a> trước đã; phương ngữ mà cửa kiểm lúc lưu thực thi → <a href={`${base}/vi/kitchen-sink/`}>trình diễn tổng hợp</a>; một ghi chú bàn về việc giữ ghi chú → <a href={`${base}/vi/garden-craft/`}>bài tiểu luận làm vườn</a>.
+</div>

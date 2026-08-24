@@ -1,0 +1,18 @@
+---
+/** /<locale>/all/ — every note, newest first, with instant filters; one
+ *  route file for every non-default locale. */
+import AllNotesPage from '../../../components/browse/AllNotesPage.astro';
+import { LOCALE_DEFS, type Locale } from '../../../content/notes/_meta/locales';
+
+export function getStaticPaths() {
+  return LOCALE_DEFS.filter((l) => l.prefix !== '').map((l) => ({
+    params: { lang: l.code },
+    props: { locale: l.code as Locale },
+  }));
+}
+interface Props {
+  locale: Locale;
+}
+---
+
+<AllNotesPage locale={Astro.props.locale} />

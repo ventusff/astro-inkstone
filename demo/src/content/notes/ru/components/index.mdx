@@ -1,0 +1,70 @@
+---
+title: Набор компонентов
+description: Все компоненты пакета за три главы — и одновременно живой показ того, как работает хаб-заметка с главами.
+brand: Компоненты
+subtitle: "галерея компонентов\nтри главы · один хаб"
+navLabel: Обзор
+chapters: false
+nav:
+  - group: Галерея
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Галерея в трёх главах · 2026.08" title="Набор компонентов" meta="3 главы · 24 компонента · каждый импортируется по пути из astro-inkstone/components/">
+  Всё в этой галерее импортировано из `astro-inkstone/components/` по пути и отрисовано токенами пакета по умолчанию. Компоненты **презентационные**: данные и строки подписей приходят через props (умолчания английские), поэтому сайт на любом языке передаёт свои.
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: 'главы' },
+        { value: '24', label: 'компонента' },
+        { value: '6', label: 'вики-деталей' },
+        { value: '0', label: 'сырых цветов' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## Три главы `{#chapters notoc}`
+
+Каждая карточка — одна глава рельса в сайдбаре; чипы называют, что в ней показано.
+
+<div class="hub-grid">
+  <HubCard href={`${base}/ru/components/content/`} num="Часть I" title="Контент и типографика" count="7 компонентов"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    Детали, из которых собирается проза, — callout-блоки, чипы, сетки, рельсы шагов, ряды статистики, карточки статей и списки литературы.
+  </HubCard>
+
+  <HubCard href={`${base}/ru/components/wiki/`} num="Часть II" title="Вики и навигация" count="8 компонентов"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    Таксономический набор, из которого собраны полки этого сада, и две панели графа ссылок — обратные ссылки и локальный граф в сайдбаре.
+  </HubCard>
+
+  <HubCard href={`${base}/ru/components/interactive/`} num="Часть III" title="Интерактив и обрамление" count="9 компонентов"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    Живое canvas-демо и принадлежащий сайту контракт загрузчика, плюс обрамление страницы — hero, карточки хаба, списки переходов, подвалы.
+  </HubCard>
+</div>
+
+## Хаб — вживую
+
+Эта заметка сама демонстрирует, что такое **хаб**: заметка верхнего уровня, чей frontmatter объявляет `nav` — упорядоченный список глав. Механика, на которую вы сейчас смотрите:
+
+- сайдбар показывает рельс глав (I/II/III) под брендом хаба, с перелистыванием вперёд-назад в подвале каждой главы;
+- главы наследуют таксономию хаба: ни одна из трёх глав галереи не объявляет собственных типа, направления или статуса, однако в шапке каждой стоят здешние; глава, задавшая свои значения, перекрывает поле целиком ([[three-way-split|то же правило «явное побеждает», что и всюду]]);
+- на обзорных страницах хаб — **одно целое**: одна карточка со счётчиком глав; главы не рассыпаются по полке;
+- номер `part:` каждой главы обязан совпадать с её позицией в `nav`, иначе сборка падает — рельс и frontmatter не могут разойтись;
+- карточки выше — компоненты `HubCard` в сетке `.hub-grid`; рамка ниже — **читательский маршрут** (`.path`), вторая деталь хабового обрамления.
+
+<div class="path">
+  <div class="title">С чего начать</div>
+  <div class="route">
+    Впервые видите пакет → <a href={`${base}/ru/components/content/`}>Часть I</a><span class="arrow">→</span><a href={`${base}/ru/components/wiki/`}>Часть II</a>; строите сайт с навигацией → сразу в <a href={`${base}/ru/components/wiki/`}>Часть II</a><span class="arrow">→</span><a href={`${base}/ru/getting-started/`}>Быстрый старт</a>; Markdown-сторона той же истории → <a href={`${base}/ru/kitchen-sink/`}>Всё и сразу</a>.
+  </div>
+</div>

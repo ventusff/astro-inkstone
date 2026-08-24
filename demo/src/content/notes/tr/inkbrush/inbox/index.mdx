@@ -1,0 +1,37 @@
+---
+title: Obsidian gelen kutusu
+description: "İzleyiciyi bir kasa (vault) klasörüne yöneltin; yeni notlar kendi kendine dönüşüp içe aktarılır — gömüler notun yanına kopyalanır, wikilink’ler çözülür, vurgulamalar korunur."
+navLabel: Gelen kutusu
+part: 4
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Obsidian gelen kutusu">
+  Yazının epeycesi başka bir yerde başlar — bir telefonda, bir web kırpıcısında, bir Obsidian kasasında (vault). Gelen kutusu bu döngüyü kapatır: onu bir klasöre yöneltin, oraya bırakılan notlar siteye kendi kendine aktarılsın.
+</PartHero>
+
+## Açmak
+
+Gelen kutusu kapalı gelir. `inkbrush.config.ts` içinde açın:
+
+```ts title="inkbrush.config.ts"
+inbox: {
+  dir: '~/vault/inbox',        // izlenecek klasör (~/ desteklenir)
+  ignore: ['daily-'],          // isteğe bağlı: atlanacak dosya adı önekleri
+},
+```
+
+Başlangıçta klasörde zaten duran dosyalar içe aktarılmaz, görülmüş sayılır — yalnızca *sonradan* eklenen notlar kendiliğinden eşitlenir. Daha eski olan her şey API üzerinden açıkça, geriye dönük aktarılabilir; gelen kutusunu açmak böylece on yıllık kasa geçmişini bir anda, sürpriz biçimde sitenize boca etmez.
+
+## İçe aktarıcı ne yapar
+
+Gelen her not kopyalanmaz, dönüştürülür:
+
+- görsel gömüleri kasanın varlık klasörlerine karşı çözülür, dosyalar **içe aktarılan notun yanına kopyalanır** ve gömüler standart görsel sözdizimine dönüşür — notu ileride silmek, varlıklarını da onunla birlikte siler
+- sitedeki gerçek bir nota denk gelen `[[wikilinks]]` bağlantı olarak yaşamaya devam eder, [[inkbrush/wikilinks|her yerdeki kuralların aynısıyla]] çözülür; gerisi bir uyarıyla sade eğik yazıya indirgenir
+- vurgulamalar gerçek `<mark>` ögelerine dönüşür, frontmatter üstverisi başlığın altında bir kaynak satırı olur ve ilk dolu paragraftan bir açıklama türetilir
+
+Dönüştürülen not, ardından elle yapılan bir kaydın geçtiği derleme kapısının aynısından geçmek zorundadır — sayfayı bozacak bir not, içe aktarılmak yerine reddedilir.
+
+Her içe aktarma, sürüm günlüğüne bütün dosyayı kapsayan bir kayıt olarak düşer (via: inbox): [[inkbrush/revisions|⟲]] onu bir denetim satırı olarak listeler; bir içe aktarmayı geri almak git işlemidir. `autocommit` açıkken her içe aktarma da, başka her düzenleme gibi bir git commit’i olur; kapalıyken içe aktarılan dosyalar, kendinizin gözden geçirip commit’leyeceği sıradan çalışma ağacı değişiklikleri olarak gelir.

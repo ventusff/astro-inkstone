@@ -1,0 +1,154 @@
+---
+title: wiki 与导览组件
+description: 一套分类组件——笔记卡、分面导航、徽章、反向链接面板与侧栏的局部关系图——这一页用样例数据演示,它们同时也在整座园地里真实运行。
+navLabel: wiki 与导览
+part: 2
+---
+
+import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph from 'astro-inkstone/components/LocalGraph.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import DomainChip from 'astro-inkstone/components/wiki/DomainChip.astro';
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import KindBadge from 'astro-inkstone/components/wiki/KindBadge.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import StatusDot from 'astro-inkstone/components/wiki/StatusDot.astro';
+import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<PartHero kicker={props.partLabel} title="wiki 与导览组件">
+  本章的每个组件都在本站**真实运行**:落地页的书架由 `NoteCard` 排成,分面导航是一个 `FacetNav`,这段文字上方的元信息条是 `TaxonomyLine`,侧栏那一小簇星图是 `LocalGraph`。它们全是纯展示组件——注册表由站点自己解析,递进来的已经是能直接显示的数据。解析工具随包提供:`createTaxonomy` 与 `createBacklinks`([[three-way-split|机制在包里,语义在站点]])。
+</PartHero>
+
+## 三行接线
+
+```ts title="src/lib/taxonomy.ts(本站的全部接线)"
+import { createTaxonomy } from 'astro-inkstone/lib/taxonomy';
+import { DOMAINS, KINDS, STATUSES } from '../content/notes/_meta/taxonomy';
+
+export const { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, tagIndex, resolveTaxonomy } =
+  createTaxonomy({ kinds: KINDS, domains: DOMAINS, statuses: STATUSES },
+    { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' });
+```
+
+注册表(`_meta/taxonomy.ts`)是内容树里的纯数据:kind、带色调的 domain、带圆点色的 status,每个值都同时有英文与中文的显示文案。在那里加一个值,给笔记标上,所有导览页自动接住——路由本来就是按值参数化的。
+
+## 书架与它的 token
+
+导览页站在另一块地面上:暖纸底、衬线版头、书架那道 2pt 粗线、卡片栅格,全部由 `browse.css` 经 `--wb-*` token 给出——这正是[[design-tokens|双语境色板]]的书架那一半。页面进入这套语境只需在 body 上挂一个类 `wb-root`;语境内部把 chrome token 重新映射了一遍,同一条导航栏放到哪块地面上都成立。
+
+## NoteCard
+
+卡片吃的是解析完毕、能直接显示的数据——现成的标签、色调、排好版的日期、镜像链接。卡片本来住在书架上,所以样例放进了阅读列里内嵌的一小块书架语境(`.wb-root.wb-inset`):
+
+<div class="wb-root wb-inset">
+<ul class="wb-grid">
+  <NoteCard
+    note={{
+      id: 'sample-note',
+      href: `${base}/zh/kitchen-sink/`,
+      title: '全要素演示',
+      description: 'markdown 管线的每个要素在这一页各演一遍。',
+      kind: { id: 'reference', label: '参考' },
+      domains: [{ id: 'pipeline', label: '管线', tone: { bg: '#e3efec', fg: '#2a6f62' }, href: `${base}/zh/domain/pipeline/` }],
+      status: { id: 'evergreen', label: '常青', dot: '#1f5e46' },
+      updated: '2026.08',
+      mirrors: [{ label: 'EN', href: `${base}/kitchen-sink/` }],
+    }}
+  />
+  <NoteCard
+    note={{
+      id: 'sample-hub',
+      href: `${base}/zh/components/`,
+      title: '组件合集',
+      description: '全部随包组件分三章走一遍——同时也是 hub 的现场演示。',
+      kind: { id: 'reference', label: '参考' },
+      domains: [{ id: 'components', label: '组件', tone: { bg: '#f7e9dc', fg: '#98511a' }, href: `${base}/zh/domain/components/` }],
+      status: { id: 'evergreen', label: '常青', dot: '#1f5e46' },
+      updated: '2026.08',
+      chapterCount: 3,
+      sourceLine: 'Hero · HubCard · Stats——hub 的配件,用在 hub 自己身上',
+    }}
+  />
+</ul>
+</div>
+
+## FacetNav
+
+多维度浏览索引——kind、domain(带各自的色调)、热门标签,全部预渲染成一颗颗胶囊式链接:
+
+<FacetNav
+  base={`${base}/zh`}
+  kinds={[
+    { def: { id: 'guide', label: '指南' }, count: 2 },
+    { def: { id: 'reference', label: '参考' }, count: 4 },
+    { def: { id: 'pattern', label: '模式' }, count: 1 },
+  ]}
+  domains={[
+    { def: { id: 'design', label: '设计', tone: { bg: '#ece7f2', fg: '#5b4a8a' } }, count: 3 },
+    { def: { id: 'pipeline', label: '管线', tone: { bg: '#e3efec', fg: '#2a6f62' } }, count: 2 },
+  ]}
+  tags={[
+    { tag: 'tokens', count: 1 },
+    { tag: 'markdown', count: 1 },
+  ]}
+  active={{ dim: 'kind', value: 'reference' }}
+  labels={{ kind: '形式', domain: '方向', tag: '标签', all: '全部 →' }}
+/>
+
+行标签文案也是 props,默认英文——上面这组传的是 `labels={{ kind: '形式', domain: '方向', tag: '标签', all: '全部 →' }}`,和本站中文分类页传的一模一样;除此之外什么都不用改。
+
+## TaxonomyLine、KindBadge、StatusDot、DomainChip
+
+笔记页头那条单行元信息,就是三个徽章原子拼在一起;每个原子也能单独使用:
+
+<TaxonomyLine
+  kind={{ id: 'pattern', label: '模式' }}
+  domains={[{ id: 'design', label: '设计', tone: { bg: '#ece7f2', fg: '#5b4a8a' }, href: `${base}/zh/domain/design/` }]}
+  status={{ id: 'growing', label: '生长中', dot: '#5c8a3c' }}
+  updated="2026.08"
+/>
+
+原子单拎出来排进行文,就是:一枚 <KindBadge def={{ id: 'guide', label: '指南' }} /> 形式徽章、一枚 <DomainChip def={{ id: 'pipeline', label: '管线', tone: { bg: '#e3efec', fg: '#2a6f62' } }} href={`${base}/zh/domain/pipeline/`} /> 方向 chip、一颗 <StatusDot def={{ id: 'evergreen', label: '常青', dot: '#1f5e46' }} /> 状态圆点。
+
+## Backlinks
+
+园地里每篇笔记下方的「反向链接」面板,由包里的 `createBacklinks` 算出——把引擎自己的双链解析器反转成「目标 ← 来源」的索引,上下文片段一并带上。下面用内联样例数据演示:
+
+<Backlinks
+  items={[
+    {
+      href: `${base}/zh/kitchen-sink/`,
+      title: '全要素演示',
+      before: '那张七列表既是 ',
+      label: 'callout 变体速查',
+      after: ',也是表格转卡的现场验证……',
+    },
+    {
+      href: `${base}/design-tokens/`,
+      title: '双层色板与主题',
+      before: '组件只消费 ',
+      label: '语义层',
+      after: ',所以身份定制永远碰不到它们。',
+    },
+  ]}
+/>
+
+翻到本页页脚就能看到真的那一块——本章自己就是双链的目标。
+
+## LocalGraph
+
+同一份索引还能回答第二个问题——*离这里一跳之内都有谁?*——`index.localGraph(id, titleOf)` 把答案整理成邻居列表,入链在前。组件把它们画在笔记四周的椭圆轨道上:入链实线,出链虚线;邻居还可以自带 `color`(比如来自另一个内容集)。下面用样例数据按阅读列宽度画一幅;真的那幅就在每篇有链接的笔记的侧栏里:
+
+<div style="max-width: 300px">
+  <LocalGraph
+    centerTitle="wiki 与导览组件"
+    neighbors={[
+      { id: 'kitchen-sink', title: '全要素演示', href: `${base}/zh/kitchen-sink/`, dir: 'in' },
+      { id: 'design-tokens', title: '双层色板', href: `${base}/design-tokens/`, dir: 'out' },
+      { id: 'three-way-split', title: '三分边界', href: `${base}/three-way-split/`, dir: 'out' },
+      { id: 'checks', title: '各项检查', href: `${base}/checks/`, dir: 'in', color: 'var(--color-accent4)' },
+    ]}
+  />
+</div>

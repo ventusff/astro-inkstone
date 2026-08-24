@@ -1,0 +1,106 @@
+---
+title: "Inhoud & typografie"
+description: Callouts, chips, rasters, stappen, statistieken, papierkaarten en literatuurlijsten — de componenten waar lopende tekst uit wordt opgebouwd.
+part: 1
+navLabel: "Inhoud & typografie"
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="Inhoud & typografie">
+  De onderdelen waar lopende tekst uit wordt opgebouwd. Elk ervan consumeert alleen de semantische laag van de tokens — geef het palet een andere huid en ze volgen allemaal.
+</PartHero>
+
+## Callout
+
+Vijf varianten; `title` vervangt het standaardlabel van de variant (Note / Intuition / Warning / Important / Abstract — dezelfde standaardwaarden als de citaatsyntaxis gebruikt, lokaliseerbaar via `labels`). De [[kitchen-sink|staalkaart]] toont de citaatsyntaxis- en rauwe-HTML-schrijfwijzen van dezelfde markup.
+
+<Callout variant="intuition" title="Wanneer je naar het component grijpt">
+  In MDX, wanneer de inhoud inline wordt geschreven. De citaatsyntaxis dekt kale Markdown-bestanden; beide renderen identieke markup.
+</Callout>
+
+## Chip
+
+Inline badges voor status en categorieën, in de vier varianten die `PaperCard`-tags en `HubCard`-chips delen: <Chip variant="teal">stabiel</Chip> <Chip variant="mustard">bèta</Chip> <Chip variant="violet">onderzoek</Chip> <Chip variant="orange">nieuw</Chip> — of een eigen tint voor themapaletten: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>eigen tint</Chip>
+
+## Grid
+
+Eén raster, drie huiden (`plain`, `card`, `cmp`). Kaarten:
+
+<Grid cols={2} kind="card">
+  <div>
+    **Tokens eerst.** De importvolgorde hoort bij het contract: tokens, dan de inhoudslaag, dan de chrome van de site.
+  </div>
+  <div>
+    **Alleen de semantische laag.** Componenten raken nooit een rauwe kleur aan — geef het palet een andere huid en ze volgen allemaal.
+  </div>
+</Grid>
+
+En de vergelijkingshuid, gemaakt voor voor/na-panelen:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **Zonder poortwachter** — een niet-gesloten `**` gaat als twee letterlijke sterretjes naar productie.
+  </div>
+  <div>
+    **Met poortwachter** — de build faalt op bestand:regel:kolom, met een dakje onder de markering.
+  </div>
+</Grid>
+
+## Steps
+
+Een markdown-lijst op een verticale rail:
+
+<Steps>
+1. Voeg de twee submodules en de `file:`-dependencies toe.
+2. Importeer `tokens.css`, `base.css` en (voor een wiki) `browse.css` in je globale stylesheet.
+3. Sluit `siteMarkdown()` aan in `astro.config`.
+4. Overschrijf het palet van laag één met je identiteitspigmenten.
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: 'tokenlagen' },
+    { value: '24', label: 'componenten' },
+    { value: '4', label: 'probe-viewports' },
+    { value: '0', label: 'buildstappen' },
+  ]}
+/>
+
+## PaperCard
+
+Het werkpaard voor literatuuroverzichten — alias, volledige titel, venue-tags, auteursregel, links en twee eigen slots:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar, et al."
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">Recurrente modellen verwerken tokens één voor één — afhankelijkheden over lange afstand vervagen, en niets loopt parallel.</Fragment>
+  **Kernidee**: alleen attention, geen recurrentie — elk token kijkt in één stap naar elk ander token, en de hele reeks traint parallel.
+  <Fragment slot="diff">De architectuur waarop vrijwel elk groot taalmodel sindsdien voortbouwt.</Fragment>
+</PaperCard>
+
+Onder een verdiepingskop vertelt een éénregelige uitleg in gewone taal (`.speak`) wat een module *doet*, nog vóór het mechanisme:
+
+<p class="speak">Attention is een zachte opzoektabel: elk token vraagt "wie is er relevant voor mij?" en krijgt een gewogen mengsel van de antwoorden terug.</p>
+
+## References
+
+<References>
+- Vaswani et al., *Attention Is All You Need*, NeurIPS 2017.
+- Knuth, *The TeXbook* — de reden dat de wiskundegronden hun eigen papiertint krijgen.
+- W3C, *Web Content Accessibility Guidelines 2.2* — de AA-contrastlat waaraan de tokens worden getoetst.
+</References>

@@ -1,0 +1,82 @@
+---
+title: "Les cinq vérifications"
+brand: "Les vérifications"
+subtitle: "une porte par couche\nsource · liens · sortie · rendu · contraste"
+description: "check-content, check-wikilinks, check-dist, ui_probe, contrast_probe — une porte par couche, chacune attrapant une classe de défaillance silencieuse qui part en ligne sous un build vert."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Référence · outillage" title="Les cinq vérifications" meta="cinq vérifications · trois du moteur, deux de ce paquet · tout au vert avant de committer">
+  Un build vert ne veut pas dire que les pages vont bien. Cette chaîne d’outils pose une vérification à chaque couche, chacune attrapant une classe de défaillance silencieuse du genre « build vert, page cassée » — et deux d’entre elles regardent les pages comme un lecteur le fait, dans un vrai navigateur.
+</Hero>
+
+## Cinq portes, cinq couches
+
+| Vérification | Livrée avec | Regarde | Quand la lancer |
+| --- | --- | --- | --- |
+| check-content | le moteur, `scripts/check-content.mjs` | chaque fichier source md/mdx | CI du dépôt de contenu, ou après écriture |
+| check-wikilinks | le moteur, `scripts/check-wikilinks.mjs` | le graphe des `[[wikiliens]]` | CI du dépôt de contenu, ou après avoir renommé une note |
+| check-dist | le moteur, `scripts/check-dist.mjs` | la sortie d’`astro build` | après chaque build (postbuild) |
+| ui_probe | ce paquet, `scripts/ui_probe.mjs` | les pages rendues dans un vrai navigateur | après un changement de style ou de mise en page |
+| contrast_probe | ce paquet, `scripts/contrast_probe.mjs` | le contraste de chaque nœud de texte, deux thèmes | après tout changement de token |
+
+## check-content : la couche source
+
+Il compile chaque md/mdx destiné à devenir une page avec **exactement le même dialecte** que le site — les erreurs de syntaxe et les déformations silencieuses (marques d’emphase impossibles à apparier, accolades avalées par l’évaluation MDX, marqueurs de liste nés d’un retour à la ligne, `$$` sur une seule ligne, formules que KaTeX ne sait pas rendre — la même série que celle qui clôt la [[kitchen-sink|démonstration intégrale]]) mettent toutes la CI au rouge.
+
+Pourquoi ce script doit venir du moteur : un vérificateur dont le jeu de plugins diffère de celui du site est **pire que pas de vérificateur** — sans le plugin mathématique, il lit les accolades des formules comme des expressions JSX ; sans GFM, il laisse passer les tableaux. Le dialecte s’écrit une fois, dans le moteur ; le rendu du site, la validation à l’enregistrement du CMS et ce script consomment toujours le même.
+
+```bash title="racine du dépôt de contenu"
+node <engine>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
+```
+
+Au-delà de la compilation, il attrape deux classes de pertes silencieuses dans le frontmatter : un `#` non guillemété dans une valeur (YAML le lit comme un commentaire et tronque le reste sans un mot) et un YAML qui ne se parse pas du tout, signalé avec sa ligne.
+
+## check-wikilinks : le graphe de liens
+
+Les `[[wikiliens]]` morts, délibérément, ne font pas échouer le build — un jardin doit pouvoir lier des notes qui n’ont pas encore poussé. Mais la pourriture des liens doit tout de même se voir en CI, alors le moteur livre un lint qui résout chaque wikilien avec **le propre analyseur et les propres règles de résolution de la bibliothèque** (alias, brand, titre, miroirs de langue) et rapporte les introuvables, les ambigus et les ancres douteuses. `--strict` transforme les liens morts en sortie d’échec — c’est ainsi que la CI de ce dépôt le lance :
+
+```bash title="le contrôle de liens de ce jardin, tel que la CI le lance"
+node scripts/check-links.mjs
+```
+
+## check-dist : la couche de sortie
+
+Dans le `dist/` construit, chaque référence interne qu’un lecteur peut cliquer doit réellement exister. Il attrape les trous silencieux sous un build vert :
+
+- les liens et ressources internes pointant vers des fichiers qui n’existent pas (l’espèce qui surgit par dizaines après un remaniement des routes) ;
+- les ancres de page pointant vers des ids qui n’existent pas ;
+- les segments de langue doublés dans les chemins (`/en/en/` — le résultat classique de replis i18n empilant un préfixe sur des routes déjà préfixées) ;
+- les `<a>` imbriqués dans des `<a>` (l’analyseur HTML referme l’extérieur trop tôt et les boutons tombent de leurs cartes) ;
+- les résidus d’erreur KaTeX (la formule est du texte rouge sur la page pendant que le build reste vert).
+
+Cette démo le branche en postbuild : un `npm run build` vert signifie que le contrôle de sortie est passé aussi.
+
+```bash title="racine du site, après un build (passez --base quand le site est déployé sous un sous-chemin)"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
+```
+
+## La sonde de la couche de rendu
+
+La source et la sortie peuvent être justes toutes les deux pendant que la page reste cassée — le cas d’école étant les cartes d’accueil qu’aucune règle de feuille de style n’atteint, rendues comme une seule ligne de texte nu et tassé : les contrôles de liens et d’ancres restent verts, parce qu’ils ne regardent jamais une page rendue. `ui_probe` conduit un vrai navigateur sur chaque page de `dist` à quatre largeurs de viewport (1440/1024/768/430) et mesure : le débordement horizontal de la page, les éléments plus larges que leur conteneur sans boîte de défilement où loger, les classes qu’aucune règle de style n’habille, les niveaux de titre sautés, les ids en double, les images sans attribut `alt`, les ancres de page et `aria-controls` qui ne pointent vers rien. Elle ne rapporte que ce qu’une machine peut prouver — aucun jugement esthétique.
+
+```bash title="nécessite un Chrome/Chromium local"
+npm run build
+node ../scripts/ui_probe.mjs dist   # sert dist lui-même ; passez un baseUrl pour sonder un serveur en ligne
+```
+
+Elle inspecte le document entier — habillage, barre latérale et boîtes de dialogue compris. Le vert n’a qu’un critère : la dernière ligne du rapport dit `SAMPLES WITH FINDINGS: 0` (un sample, c’est une route à une largeur).
+
+## La sonde de contraste
+
+Les tokens revendiquent AA, alors la revendication se mesure au lieu de s’affirmer. `contrast_probe` charge chaque page de `dist` dans un vrai navigateur — thème clair et thème sombre, largeur bureau et largeur téléphone — et mesure chaque segment de texte rendu dans l’état par défaut : texte HTML, texte SVG et texte généré des `::before` / `::after`, chaque surcouche `<dialog data-probe-open>` étant sondée ouverte (et une requête tapée dans le champ de recherche qui s’y trouve) sur une page représentative — le marqueur est la déclaration du site que la boîte de dialogue est complète telle qu’écrite. Le fond n’est pas lu dans une feuille de style : la page est rendue avec tous les glyphes passés en transparent, capturée en image, et le pixel sous chaque segment est son fond — dégradés, teintes `color-mix()`, calques translucides et palette nocturne sont donc tous mesurés tels qu’ils se rendent. Le premier plan d’un segment porte l’`opacity` accumulée de son élément et de ses ancêtres : le texte assourdi est mesuré à la force qu’un lecteur voit réellement. Les états hover et focus sont revus à l’œil, pas sondés. Le petit texte est tenu à 4,5:1, le grand texte (24 px, ou 18,66 px en gras) à 3:1 ; un segment dont la couleur ne se parse pas ou dont le fond ne s’échantillonne pas compte comme un constat. Le rapport nomme la page, le thème, la largeur, le sélecteur, les deux couleurs et le ratio de chaque segment sous le seuil :
+
+```bash title="après un build, dans les deux thèmes"
+node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS resserrent la matrice
+```
+
+<div class="callout system">
+  <div class="callout-title">La routine du changement de style</div>
+  Tout changement aux feuilles de style ou aux composants du paquet passe d’abord par le build de cette démo, puis par <code>ui_probe</code> et <code>contrast_probe</code> sur la sortie — tout au vert avant de committer. La démo fait aussi office de banc d’essai du paquet.
+</div>

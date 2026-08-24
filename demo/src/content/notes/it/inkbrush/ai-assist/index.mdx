@@ -1,0 +1,24 @@
+---
+title: Assistenza IA
+description: Riscritture di blocco, una chat che conosce la nota e la traduzione dell’intera nota — attraverso la CLI claude, in sandbox su una copia usa e getta della nota.
+navLabel: Assistenza IA
+part: 3
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Assistenza IA">
+  Le azioni ✦ fanno da ponte verso la [CLI claude](https://claude.com/claude-code). Deve essere installata e autenticata sulla macchina che esegue il server di sviluppo — nient’altro nel motore ne ha bisogno, quindi senza la CLI tutto continua a funzionare tranne ✦.
+</PartHero>
+
+## Riscrivere un blocco
+
+Passa il mouse su un blocco, fai clic su ✦, e scegli un intento rapido — rifinisci, rendi più rigoroso, condensa, sistema le formule — oppure scrivi un’istruzione tua. Il lavoro gira lato server in una copia usa e getta della cartella della nota, con gli strumenti sui file confinati a quella copia — niente shell, niente rete — e trasmette i suoi progressi in diretta; sopravvive alla chiusura della scheda del browser. Quando finisce, il file modificato deve passare lo stesso cancello di build di un salvataggio manuale prima di essere riportato nel progetto e annotato nel registro, così [[inkbrush/revisions|⟲]] può annullarlo.
+
+## Chiedere della nota
+
+Il pannello di chat (il pulsante flottante, in basso a destra) risponde a domande sulla nota che stai leggendo. Claude legge il sorgente in una copia di lavoro con un set di strumenti in sola lettura; le domande successive riprendono la stessa conversazione.
+
+## Tradurre l’intera nota
+
+Per ogni lingua che a una nota manca, il pannello di chat offre un «genera versione» in un clic — non una traduzione letterale, ma la nota raccontata di nuovo nella lingua di destinazione, tenendo intatti ogni ancora, ogni blocco di codice e ogni invariante strutturale. Il risultato viene scritto come file mirror di quella lingua, e il cancello di build ha l’ultima parola prima che qualcosa venga tenuto. Questo giardino cresce in diciotto lingue; il suo menu delle lingue elenca ogni edizione della pagina su cui ti trovi, e in modalità di editing un’edizione mancante è a un clic di distanza. Una traduzione è una modifica a file intero: il registro la mette a verbale, e annullarla è un’operazione git, non un clic su ⟲.

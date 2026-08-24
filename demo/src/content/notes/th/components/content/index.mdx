@@ -1,0 +1,106 @@
+---
+title: เนื้อหาและไทโปกราฟี
+description: "Callout ชิป grid ขั้นตอน สถิติ การ์ดงานวิจัย และรายการอ้างอิง — คอมโพเนนต์ที่เนื้อความประกอบขึ้นมา"
+part: 1
+navLabel: เนื้อหาและไทโปกราฟี
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="เนื้อหาและไทโปกราฟี">
+  ชิ้นส่วนที่เนื้อความประกอบขึ้นมา แต่ละชิ้นใช้เฉพาะโทเคนระดับเชิงความหมายเท่านั้น — เปลี่ยนจานสีทั้งชุด แล้วทุกชิ้นจะตามไปเอง
+</PartHero>
+
+## Callout
+
+ห้ารูปแบบ prop `title` ใช้แทนป้ายเริ่มต้นของรูปแบบนั้น (Note / Intuition / Warning / Important / Abstract — ชุดเดียวกับที่ไวยากรณ์อ้างอิงใช้ แปลเป็นภาษาอื่นได้ผ่าน `labels`) หน้า[[kitchen-sink|รวมทุกองค์ประกอบ]]แสดงวิธีเขียนแบบไวยากรณ์อ้างอิงและแบบ HTML ดิบของมาร์กอัปชุดเดียวกันนี้
+
+<Callout variant="intuition" title="เมื่อไรควรหยิบคอมโพเนนต์">
+  ใน MDX เมื่อเนื้อหาเขียนอินไลน์อยู่ตรงนั้น ส่วนไวยากรณ์อ้างอิงครอบคลุมไฟล์ Markdown ธรรมดา ทั้งสองแบบเรนเดอร์มาร์กอัปเหมือนกันทุกไบต์
+</Callout>
+
+## Chip
+
+ตราเล็ก ๆ ในบรรทัดสำหรับสถานะและหมวด มีสี่รูปแบบเดียวกับที่แท็กของ `PaperCard` และชิปของ `HubCard` ใช้ร่วมกัน: <Chip variant="teal">เสถียร</Chip> <Chip variant="mustard">เบตา</Chip> <Chip variant="violet">งานวิจัย</Chip> <Chip variant="orange">ใหม่</Chip> — หรือกำหนดโทนเองสำหรับจานสีประจำหัวข้อ: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>โทนกำหนดเอง</Chip>
+
+## Grid
+
+Grid เดียว สามผิว (`plain`, `card`, `cmp`) แบบการ์ด:
+
+<Grid cols={2} kind="card">
+  <div>
+    **โทเคนมาก่อน** ลำดับการนำเข้าเป็นส่วนหนึ่งของสัญญา: โทเคน แล้วชั้นเนื้อหา แล้วจึง chrome ของไซต์
+  </div>
+  <div>
+    **ใช้ชั้นเชิงความหมายเท่านั้น** คอมโพเนนต์ไม่แตะสีดิบเลย — เปลี่ยนจานสีแล้วทุกตัวตามไปเอง
+  </div>
+</Grid>
+
+และผิวแบบเปรียบเทียบ ทำมาเพื่อแผงก่อน/หลังโดยเฉพาะ:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **ไม่มีตัวตรวจ** — `**` ที่ลืมปิดหลุดขึ้นโปรดักชันเป็นดอกจันสองตัวโต้ง ๆ
+  </div>
+  <div>
+    **มีตัวตรวจ** — บิลด์ล้มพร้อมระบุ file:line:column และลูกศรชี้ใต้เครื่องหมายตัวปัญหา
+  </div>
+</Grid>
+
+## Steps
+
+รายการ markdown บนรางแนวตั้ง:
+
+<Steps>
+1. เพิ่ม submodule สองตัว และ dependency แบบ `file:`
+2. นำเข้า `tokens.css`, `base.css` และ (สำหรับวิกิ) `browse.css` ในสไตล์ชีตหลัก
+3. ต่อ `siteMarkdown()` เข้าไปใน `astro.config`
+4. โอเวอร์ไรด์จานสีระดับที่หนึ่งด้วยเม็ดสีเอกลักษณ์ของคุณ
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: 'ระดับโทเคน' },
+    { value: '24', label: 'คอมโพเนนต์' },
+    { value: '4', label: 'ความกว้างจอที่ตัววัดใช้' },
+    { value: '0', label: 'ขั้นตอนบิลด์' },
+  ]}
+/>
+
+## PaperCard
+
+ม้างานของโน้ตสำรวจงานวิจัย — ชื่อเล่น ชื่อเต็ม แท็กงานประชุม บรรทัดผู้เขียน ลิงก์ และช่องเสียบเฉพาะสองช่อง:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar, et al."
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">โมเดลแบบรีเคอร์เรนต์ประมวลผลโทเคนทีละตัวตามลำดับ — ความสัมพันธ์ระยะไกลค่อย ๆ เลือนหาย และไม่มีส่วนไหนขนานกันได้เลย</Fragment>
+  **แนวคิดหลัก**: ใช้ attention ล้วน ๆ ไม่มีรีเคอร์เรนซ์ — ทุกโทเคนมองเห็นโทเคนอื่นทั้งหมดในขั้นเดียว และทั้งลำดับฝึกแบบขนานได้
+  <Fragment slot="diff">สถาปัตยกรรมที่โมเดลภาษาขนาดใหญ่แทบทุกตัวหลังจากนั้นสร้างต่อยอดขึ้นมา</Fragment>
+</PaperCard>
+
+ใต้หัวข้อเชิงลึก บรรทัดอธิบายภาษาชาวบ้าน (`.speak`) บอกผู้อ่านก่อนว่าโมดูลนี้*ทำอะไร* แล้วค่อยว่ากันเรื่องกลไก:
+
+<p class="speak">Attention คือตารางค้นหาแบบนุ่ม: ทุกโทเคนถามว่า "ใครเกี่ยวข้องกับฉันบ้าง" แล้วได้คำตอบกลับมาเป็นส่วนผสมถ่วงน้ำหนัก</p>
+
+## References
+
+<References>
+- Vaswani et al., *Attention Is All You Need*, NeurIPS 2017.
+- Knuth, *The TeXbook* — เหตุผลที่พื้นสูตรคณิตศาสตร์ได้โทนกระดาษเป็นของตัวเอง
+- W3C, *Web Content Accessibility Guidelines 2.2* — เกณฑ์คอนทราสต์ AA ที่โทเคนถูกตรวจวัดเทียบ
+</References>

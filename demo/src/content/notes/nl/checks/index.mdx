@@ -1,0 +1,83 @@
+---
+title: De controles
+brand: De controles
+subtitle: "één poort per laag\nbron · links · output · render · contrast"
+description: check-content, check-wikilinks, check-dist, ui_probe, contrast_probe — één poort per laag, elk gericht op een klasse stille fouten die anders onder een groene build mee de deur uit glipt.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Naslag · tooling" title="De controles" meta="vijf controles · drie uit de engine, twee uit dit pakket · alles groen vóór een commit">
+  Een groene build betekent niet dat de pagina's in orde zijn. Deze gereedschapsketen zet op elke laag één controle, elk gericht op een klasse stille "build groen, pagina kapot"-fouten — en twee ervan bekijken pagina's zoals een lezer dat doet, in een echte browser.
+</Hero>
+
+## Vijf poorten, vijf lagen
+
+| Controle | Zit bij | Kijkt naar | Wanneer draaien |
+| --- | --- | --- | --- |
+| check-content | engine, `scripts/check-content.mjs` | elk md/mdx-bronbestand | CI van de inhoudsrepo, of na het schrijven |
+| check-wikilinks | engine, `scripts/check-wikilinks.mjs` | de graaf van `[[wikilinks]]` | CI van de inhoudsrepo, of na het hernoemen van een notitie |
+| check-dist | engine, `scripts/check-dist.mjs` | de output van `astro build` | na elke build (postbuild) |
+| ui_probe | dit pakket, `scripts/ui_probe.mjs` | pagina's gerenderd in een echte browser | na stijl- of layoutwijzigingen |
+| contrast_probe | dit pakket, `scripts/contrast_probe.mjs` | het contrast van elke tekstnode, beide thema's | na elke tokenwijziging |
+
+## check-content: de bronlaag
+
+Compileert elk md/mdx-bestand dat een pagina gaat worden met **exact hetzelfde dialect** als de site — syntaxfouten en stille misvormingen (nadrukmarkeringen die geen paar kunnen vormen, accolades die door MDX-evaluatie worden opgeslokt, lijstmarkeringen die uit regelafbreking ontstaan, éénregelig `$$`, formules die KaTeX niet kan renderen — dezelfde lijst waarmee de [[kitchen-sink|staalkaart]] afsluit) kleuren allemaal de CI rood.
+
+Waarom dit script uit de engine móét komen: een controle waarvan de pluginset afwijkt van die van de site is **erger dan geen controle** — één zonder de wiskundeplugin leest formule-accolades als JSX-expressies, één zonder GFM wuift tabellen door. Het dialect wordt één keer geschreven, in de engine; site-rendering, opslagvalidatie in het CMS en dit script consumeren altijd hetzelfde.
+
+```bash title="root van de inhoudsrepo"
+node <engine>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
+```
+
+Naast het compileren vangt het twee frontmatter-klassen van stil verlies: een niet-gequote `#` in een waarde (YAML leest hem als commentaar en kapt de rest geruisloos af) en YAML die helemaal niet parseert, gerapporteerd met regelnummer.
+
+## check-wikilinks: de linkgraaf
+
+Dode `[[wikilinks]]` breken de build met opzet niet — een tuin moet mogen linken naar notities die er nog niet staan. Maar linkrot hoort wél in CI, dus de engine levert een lint mee die elke wikilink oplost met **de parser en oplosregels van de bibliotheek zelf** (alias, brand, titel, taalspiegels) en de ontbrekende, de dubbelzinnige en de twijfelachtige ankers rapporteert. `--strict` maakt van dode links een falende exit — zo draait de CI van deze repository hem:
+
+```bash title="de linkcontrole van deze tuin, zoals CI hem draait"
+node scripts/check-links.mjs
+```
+
+## check-dist: de outputlaag
+
+In de gebouwde `dist/` moet elke interne verwijzing waar een lezer op kan klikken ook echt bestaan. Deze controle vangt de stille gaten onder een groene build:
+
+- interne links en assets die naar niet-bestaande bestanden wijzen (het soort dat na een route-verhuizing bij tientallen tegelijk opduikt);
+- ankers binnen een pagina die naar niet-bestaande ids wijzen;
+- verdubbelde taalsegmenten in paden (`/en/en/` — het klassieke gevolg van i18n-fallbacks die een prefix op al geprefixte routes stapelen);
+- een `<a>` genest in een `<a>` (de HTML-parser sluit de buitenste te vroeg en knoppen vallen uit hun kaarten);
+- KaTeX-foutresidu (de formule staat als rode tekst op de pagina terwijl de build groen blijft).
+
+Deze demo hangt hem aan postbuild: een groene `npm run build` betekent dat ook de outputcontrole is geslaagd.
+
+```bash title="site-root, na een build (geef --base mee als de site onder een subpad draait)"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
+```
+
+## De renderprobe
+
+Bron en output kunnen allebei kloppen terwijl de pagina toch stuk is — het klassieke geval: landingskaarten waar geen enkele stylesheetregel op past, gerenderd als één samengeperste regel kale tekst; link- en ankercontroles blijven groen omdat ze nooit naar een gerenderde pagina kijken. `ui_probe` stuurt een echte browser over elke pagina in `dist` op vier viewport-breedtes (1440/1024/768/430) en meet: horizontale overloop van de pagina, elementen breder dan hun container zonder scrollbak om in te wonen, classes waar geen stylesheetregel iets mee doet, overgeslagen kopniveaus, dubbele ids, afbeeldingen zonder `alt`-attribuut, en ankers en `aria-controls` die nergens naartoe wijzen. Het rapporteert alleen wat een machine kan bewijzen — geen esthetisch oordeel.
+
+```bash title="vereist een lokale Chrome/Chromium"
+npm run build
+node ../scripts/ui_probe.mjs dist   # serveert dist zelf; geef een baseUrl mee om een draaiende server te proben
+```
+
+Het inspecteert het hele document — chrome, zijbalk en dialogen inbegrepen.
+Groen betekent dat de laatste regel van het rapport `SAMPLES WITH FINDINGS: 0` leest (een sample is één route op één breedte).
+
+## De contrastprobe
+
+De tokens claimen AA, dus wordt die claim gemeten in plaats van beweerd. `contrast_probe` laadt elke pagina van `dist` in een echte browser — licht en donker thema, desktop- en telefoonbreedte — en meet elke tekstregel die in de standaardtoestand rendert: HTML-tekst, SVG-tekst en de gegenereerde tekst van `::before` / `::after`, waarbij elke `<dialog data-probe-open>`-overlay open wordt geprobed (en in een zoekvak dat daar wordt aangetroffen een zoekopdracht wordt getypt) op een representatieve pagina — die markering is de verklaring van de site dat de dialoog compleet is zoals geschreven. De ondergrond wordt niet uit een stylesheet gelezen; de pagina wordt gerenderd met elke glyph transparant gemaakt, er wordt een schermafbeelding genomen, en de pixel onder elke tekstregel is haar ondergrond — zodat gradiënten, `color-mix()`-tinten, doorschijnende lagen en het nachtpalet allemaal gemeten worden zoals ze renderen. De voorgrond van een regel draagt de opgetelde `opacity` van haar element en voorouders, dus gedimde tekst wordt gemeten op de sterkte die een lezer werkelijk ziet. Hover- en focustoestanden worden beoordeeld op het oog, niet geprobed. Kleine tekst wordt gehouden aan 4,5:1, grote tekst (24px, of 18,66px vet) aan 3:1; een regel waarvan de kleur niet te parsen is of de grond niet te bemonsteren, telt als bevinding. Het rapport noemt van elke regel onder de lat de pagina, het thema, de breedte, de selector, de twee kleuren en de ratio:
+
+```bash title="na een build, beide thema's"
+node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS versmallen de matrix
+```
+
+<div class="callout system">
+  <div class="callout-title">De routine bij stijlwijzigingen</div>
+  Elke wijziging aan de stylesheets of componenten van het pakket gaat eerst door de build van deze demo, daarna over de output heen met <code>ui_probe</code> en <code>contrast_probe</code> — alles groen vóór het committen. De demo is tegelijk de proefbank van het pakket.
+</div>

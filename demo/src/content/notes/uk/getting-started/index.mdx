@@ -1,0 +1,127 @@
+---
+title: "Швидкий старт"
+brand: "Швидкий старт"
+subtitle: "два підмодулі, три імпорти,\nодин рядок конвеєра"
+description: "Пара git-підмодулів у репозиторії сайту, три імпорти таблиць стилів, один рядок siteMarkdown на весь конвеєр Markdown — і сад готовий."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Інструкція · від нуля до саду" title="Швидкий старт" meta="два підмодулі · три таблиці стилів · один siteMarkdown() · три команди">
+  Ні папір, ні рушій не публікуються в npm — обидва обходяться без збірки й експортують сирий TS/CSS-код. Сайт під’єднує обидва репозиторії як git-підмодулі, імпортує три таблиці стилів і вмикає одну функцію в `astro.config`. Усе, що ви тут бачите, побудовано саме так.
+</Hero>
+
+<Part title="Встановлення" />
+
+## Пара підмодулів
+
+Додайте обидва репозиторії та наведіть на них залежності `file:`:
+
+```bash title="корінь репозиторію сайту"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (залежності)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] Цей демосайт розкладено трохи інакше
+> Демо живе всередині репозиторію пакета (`demo/`), тому його `astro-inkstone` вказує на `file:..`, а рушій лежить у `demo/vendor/`. Окремий сайт використовує наведену вище схему з `packages/` — обидві розкладки рівнозначні.
+
+## Стилі
+
+У глобальній таблиці стилів сайту: спершу токени, далі шар вмісту, потім — якщо сайт має сторінки перегляду — полиця, і лише після цього ваше власне оздоблення:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* головна та сторінки рубрик, на body.wb-root */
+
+/* ідентичність: перевизначте пігменти першого рівня — обидва семантичні контексти й шар компонентів підуть слідом */
+:root {
+  --p-shi: #b03a48; /* ваш акцент колонки читання */
+  --p-zhu: #3b4a7a; /* ваш акцент полиці та знак сайту */
+  --p-shi-n: #e0919b; /* нічні двійники: темна тема читає --p-*-n */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Гарнітура полиці — `--font-display` (Source Serif 4 + Noto Serif SC); розмістіть її в себе, як робить це демо, і шапка виглядатиме точнісінько як тут:
+
+```css title="src/styles/site.css (шрифти, за бажанням)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+Сайтам із математикою потрібен ще один рядок у макеті — таблиця стилів KaTeX (без неї верстка формул розсипається):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="Під’єднання" />
+
+## Конвеєр Markdown в один рядок
+
+Мінімальна конфігурація у формі цього сайту — нумерація розділів, математика, callout-и, діаграми та `[[вікіпосилання]]`, що розв’язуються по колекції нотаток (повна версія, з усіма хуками цього сайту, — це `astro.config.mjs` у репозиторії):
+
+```js title="astro.config.mjs (мінімум)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs' і '/docs/' працюють однаково
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // номери частин і розділів + ToC через remarkPluginFrontmatter
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // кодові рамки: смуга заголовка / копіювання / згортання / анотації
+    mermaid: true, // огорожі mermaid рендеряться на клієнті
+    callouts: true, // синтаксис > [!note] у стилі Obsidian
+    wikiBlocks: WIKI_MODE, // режим редагування: відповідність блок ↔ рядок джерела, завжди останній
+    guard: { autoNumberedHeadings: true }, // контроль вмісту: відкидає набрану руками нумерацію
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown` спирається на діалект рушія (GFM, дружнє до CJK виділення, контроль вмісту); сам пресет лише збирає та впорядковує плагіни сайтового боку — **порядок конвеєра і є контрактом**, тож вашому сайтові байдуже, хто виконується перед ким. Кожен перемикач показано в дії на [[kitchen-sink|демонстраційному стенді]], а міркування за поділом на пакети викладено в [[boundaries|«Поділі натроє»]]. Хочете українські підписи callout-ів? Передайте `calloutLabels` — типові написи англійські.
+
+## Запуск
+
+Скрипти — ті самі, що визначає `package.json` цього демо (`build` після збірки запускає check-dist рушія; `wiki` — це `WIKI=1 astro dev`):
+
+```bash
+npm install
+npm run dev        # сам сад
+npm run build      # статична збірка + check-dist рушія (postbuild)
+npm run wiki       # WIKI=1 astro dev — режим редагування CMS
+```
+
+У статичній збірці немає жодного байта рушія: поза режимом WIKI інтеграційний код рушія навіть не імпортується (динамічний import), і жодні метадані редагування не виводяться. Єдине CMS-подібне, що лишається у виводі, — власна інертна розмітка стикування сайту: порожні span-и `data-inkbrush-slot` у панелі навігації та їхній CSS. Вони не роблять нічого, доки CMS до них не пристикується.

@@ -1,0 +1,24 @@
+---
+title: Cara tautan wiki diresolusi
+description: "Satu resolver untuk halaman, pratinjau editor, pengimpor, dan lint CI — cermin lokal lebih dulu, lalu id, alias, brand, dan judul."
+navLabel: Tautan wiki
+part: 5
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Cara tautan wiki diresolusi">
+  Catatan saling menaut dengan kurung ganda, diresolusi saat build terhadap himpunan catatan yang benar-benar ada. Hasil rendernya — id, alias, label, jangkar — tampil hidup di halaman [[kitchen-sink|serba ada]]; bab ini membahas aturan resolusi di baliknya.
+</PartHero>
+
+## Apa saja yang bisa menjadi target
+
+Target tidak harus id sebuah catatan. Resolusi mencoba, berurutan: **cermin lokal yang sedang dibaca** (tautan pada salah satu dari tujuh belas edisi saudari halaman ini mendarat di edisi sebahasa targetnya, dan baru jatuh ke catatan kanonis bila cerminnya tak ada), lalu id yang persis, lalu alias, nama brand, dan judul, tanpa membedakan huruf besar-kecil. Esai [[garden-craft|perawatan taman kecil]] mendeklarasikan `tending` sebagai alias, sehingga menulis `[[tending]]` mendarat di halaman yang sama. Jangkar dan label berpadu sebagaimana yang Anda harapkan: `[[garden-craft#pruning]]` langsung menuju sebuah bagian, `[[garden-craft|the gardening essay]]` merender teks pilihan sendiri — dan keduanya bisa digabung.
+
+## Tautan mati tidak merusak build
+
+Tautan ke catatan yang tak ada dirender sebagai tautan mati yang kentara, dengan alasannya di tooltip, dan build mencatat sebuah peringatan. Ini pilihan yang disengaja untuk taman: catatan yang belum ditulis adalah undangan, bukan galat. Target yang cocok dengan beberapa catatan sekaligus dirender dengan cara yang sama, ditandai ambigu. Pembusukan tautan tetap urusan CI — CLI `check-wikilinks` milik mesin meresolusi setiap tautan dengan aturan milik pustakanya sendiri dan, dalam mode `--strict`, mengubah tautan mati menjadi exit yang gagal; begitulah repositori ini menjalankannya ([[checks|lima pemeriksaan]]).
+
+## Satu implementasi, empat konsumen
+
+Halaman-halaman, pratinjau langsung editor, [[inkbrush/inbox|pengimpor kotak masuk]], dan lint CI meresolusi dengan kode yang sama — sehingga sebuah tautan berarti sama di mana-mana, dan editornya boleh bermurah hati: mengetik `[[` dalam mode penyuntingan memunculkan autocompletion atas id, judul, dan alias.

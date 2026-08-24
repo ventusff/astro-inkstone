@@ -1,0 +1,24 @@
+---
+title: "L’assistance IA"
+description: "Réécritures de blocs, un chat qui connaît la note, et la traduction de notes entières — via la CLI claude, cantonnée à une copie jetable de la note."
+navLabel: "Assistance IA"
+part: 3
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="L’assistance IA">
+  Les actions ✦ font le pont vers la [CLI claude](https://claude.com/claude-code). Elle doit être installée et connectée sur la machine qui fait tourner le serveur de développement — rien d’autre dans le moteur n’en a besoin : sans la CLI, tout continue de fonctionner, sauf ✦.
+</PartHero>
+
+## Réécrire un bloc
+
+Survolez un bloc, cliquez ✦, puis choisissez une intention rapide — polir, rendre plus rigoureux, condenser, corriger les formules — ou tapez votre propre consigne. La tâche s’exécute côté serveur dans une copie jetable du répertoire de la note, les outils de fichiers cantonnés à cette copie — pas de shell, pas de réseau — et diffuse sa progression en direct ; elle survit à la fermeture de l’onglet du navigateur. À la fin, le fichier modifié doit passer la même porte de build qu’un enregistrement manuel avant d’être rapporté dans le projet et journalisé — [[inkbrush/revisions|⟲]] peut donc le défaire.
+
+## Interroger la note
+
+Le panneau de chat (le bouton flottant, en bas à droite) répond aux questions sur la note que vous êtes en train de lire. Claude lit la source dans une copie de travail, avec des outils en lecture seule ; les questions de relance reprennent la même conversation.
+
+## Traduire la note entière
+
+Pour chaque langue qui manque à une note, le panneau de chat propose en un clic une « génération de version » — non pas une traduction littérale, mais la note racontée à nouveau dans la langue cible, en gardant intacts chaque ancre, chaque bloc de code et chaque invariant de structure. Le résultat s’écrit comme fichier miroir de cette langue, et la porte de build a le dernier mot avant que rien ne soit conservé. Ce jardin pousse en dix-huit langues ; son menu des langues liste chaque édition de la page où vous êtes, et en mode édition, une édition manquante est à un clic. Une traduction est un changement du fichier entier : le journal l’enregistre, et la défaire est une opération git plutôt qu’un clic sur ⟲.

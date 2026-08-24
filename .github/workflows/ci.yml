@@ -40,9 +40,9 @@ jobs:
       - name: Content check (dialect + guard + math)
         working-directory: demo
         run: node vendor/astro-inkbrush/scripts/check-content.mjs src/content/notes --math
-      - name: Wikilink check (strict)
+      - name: Wikilink check (strict, locale table from the site registry)
         working-directory: demo
-        run: node vendor/astro-inkbrush/scripts/check-wikilinks.mjs src/content/notes --locale-prefix zh/ --strict
+        run: node scripts/check-links.mjs
       - name: Render-layer probe
         env:
           CHROME_PATH: /usr/bin/google-chrome

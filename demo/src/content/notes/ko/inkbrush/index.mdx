@@ -1,0 +1,53 @@
+---
+title: 편집 장치
+description: "git이 뒤를 받치는 CMS 엔진 astro-inkbrush를 다섯 개 장으로 도는 투어 — 그리고 이 사이트 자체가 그 데모입니다: 편집 모드에서는 여기 모든 페이지를 그 자리에서 편집할 수 있습니다."
+brand: inkbrush
+subtitle: "CMS 엔진, 자기 매뉴얼 위에서\n5개 장 · 하나의 허브"
+navLabel: 개요
+chapters: false
+nav:
+  - group: 엔진
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="레퍼런스 · CMS 엔진" title="편집 장치" meta="5개 장 · 프로덕션에는 0바이트 · 이 사이트가 곧 데모">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone)이 종이라면, [astro-inkbrush](https://github.com/ventusff/astro-inkbrush)는 붓입니다. 엔진은 어떤 Astro 콘텐츠 사이트든 그 자신의 편집기로 바꿉니다: 편집 모드에서 문단에 마우스를 올리면 작은 핸들이 ✎ 편집, ✦ Claude에게 묻기, ⟲ 이력을 내밉니다. 따로 찾아가 볼 데모 사이트는 없습니다 — **지금 읽고 있는 이 정원이 곧 데모입니다**. `npm run wiki` 명령으로 돌리면 이 페이지를 포함한 여기 모든 노트가 그 자리에서 편집할 수 있게 열리고, 지금 읽고 있는 것 같은 정적 빌드에는 CMS 코드가 단 한 바이트도 들어 있지 않습니다.
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: '유일한 데이터베이스' },
+    { value: '2', label: '모든 저장을 지키는 안전망' },
+    { value: '0 B', label: '정적 빌드 속 CMS 코드' },
+  ]}
+/>
+
+## 다섯 개의 장 `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/ko/inkbrush/editing/`} num="제I부" title="편집, 블록 단위로" count="✎"
+    desc="지금 읽는 블록 자리에 들어서는 CodeMirror, 사이트 자신의 파이프라인을 지나는 라이브 미리보기, 그리고 디스크에 닿기 전의 두 겹 안전망." />
+  <HubCard href={`${base}/ko/inkbrush/revisions/`} num="제II부" title="수정 이력과 되돌리기" count="⟲"
+    desc="모든 저장이 블록 단위로 일지에 기록됩니다 — 누가, 언제, 정확한 전후 텍스트까지 — 클릭 한 번에, 그 자체도 무를 수 있는 되돌리기와 함께." />
+  <HubCard href={`${base}/ko/inkbrush/ai-assist/`} num="제III부" title="AI 어시스트" count="✦"
+    desc="블록 고쳐쓰기, 노트를 아는 채팅, 노트 전체 번역 — claude CLI를 통해, 일회용 사본에 격리된 채로." />
+  <HubCard href={`${base}/ko/inkbrush/inbox/`} num="제IV부" title="Obsidian 수신함" count="📥"
+    desc="감시기를 볼트 폴더에 겨눠 두면 새 노트가 스스로 변환되어 들어옵니다 — 임베드, 위키링크, 하이라이트까지." />
+  <HubCard href={`${base}/ko/inkbrush/wikilinks/`} num="제V부" title="위키링크는 어떻게 해석되는가" count="[[ ]]"
+    desc="페이지, 편집기 미리보기, 가져오기, CI 린트에 해석기는 하나 — 로케일 미러가 먼저, 그다음 id, 별칭, brand, 제목." />
+</div>
+
+## 어디에 놓이는가
+
+엔진은 CMS 기능 **그리고** 콘텐츠 가드가 딸린 Markdown 방언을 소유합니다 — 편집기가 받아들이는 문법과 페이지가 렌더링하는 문법은 하나의 문법이어야 하므로, 한 번 쓰여 어디서나 소비됩니다(경계선이 왜 거기 그어졌는지는 [[three-way-split|세 갈래 분할]]이 설명합니다). 스타일은 종이 계층의 것이고, 아이덴티티는 여러분 사이트의 것입니다. 이 페이지들에 렌더링된 모든 것 — 이 글 위의 스트립까지 — 은 종이가 일하는 모습이고, 이 페이지들을 *편집하는* 모든 것은 엔진입니다.
+
+<div class="path">
+  <strong>읽기 경로.</strong>
+  엔진이 처음이라면 → <a href={`${base}/ko/inkbrush/editing/`}>제I부</a><span class="arrow">→</span><a href={`${base}/ko/inkbrush/revisions/`}>제II부</a>; 사이트에 연결하려면 → 먼저 <a href={`${base}/ko/getting-started/`}>시작하기 가이드</a>; 저장 관문이 강제하는 방언은 → <a href={`${base}/ko/kitchen-sink/`}>전 요소 시연</a>; 노트 가꾸기에 관한 노트는 → <a href={`${base}/ko/garden-craft/`}>정원 가꾸기 에세이</a>.
+</div>

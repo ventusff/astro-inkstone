@@ -1,0 +1,27 @@
+---
+title: Sürüm geçmişi ve geri alma
+description: "Her kayıt blok başına günlüğe geçer — kim, ne zaman, hangi satırlar, öncesi ve sonrası harfi harfine. ⟲ ile gezin, tek tıkla geri alın."
+navLabel: Sürümler
+part: 2
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Sürüm geçmişi ve geri alma">
+  Elle yazılmış, Claude’un ürettiği ya da gelen kutusundan içe aktarılmış — her kayıt, içeriğin yanı başında duran bir sürüm günlüğüne eklenir: kim, ne zaman, hangi satırlar ve öncesi/sonrası metin harfi harfine. Bir bloğun üzerine gelin, ⟲ simgesine tıklayın; o bloğun geçmişi açılır.
+</PartHero>
+
+## Günlük
+
+Her girdi, değişikliğin nasıl yapıldığını (elle düzenleme, Claude düzenlemesi, yapay zekâ çevirisi, gelen kutusundan içe aktarma ya da daha önceki bir geri alma), kimin yaptığını ve katlanabilir bir öncesi/sonrası diff’ini gösterir. Bütün dosyayı kapsayan girdiler — bir çeviri, bir içe aktarma — kayıtlara geçsin diye listelenir ama geri alma düğmesi taşımaz: onları geri almak git’in işidir.
+
+## Geri alma
+
+Bir girdinin geri alma düğmesine tek tık, o sürümün *sonrası* metnini *öncesi* metniyle değiştirir — hem de günlüğe geçen yeni bir düzenleme olarak; yani bir geri alma, kendisi de geri alınabilir. Bilinmeye değer iki ayrıntı:
+
+- Geri alma, içeriğin harfi harfine eşleşmesiyle uygulanır. Blok o zamandan beri düzenlendiyse ve eski metin artık olduğu gibi geçmiyorsa, geri alma tahmin yürütmek yerine reddedilir — hiçbir şey aşağı yukarı bir eşleşmeyle yamalanmaz.
+- Sonuç, başka her kayıt gibi aynı derleme kapısından geçer ([[inkbrush/editing|iki güvenlik ağı]]). Sayfayı bozacak bir geri alma reddedilir.
+
+## Neden hem günlük hem git?
+
+Git (`autocommit` üzerinden) kalıcı, bütün dosya ölçeğindeki geçmiştir — push ettiğiniz, yedeklediğiniz, diff’ini aldığınız şey. Günlük ise ⟲ simgesini anında ve blok başına çalıştıran ince taneli katmandır. İkisi farklı soruları yanıtlar: *"bu dosyaya ne oldu?"* ile *"bu paragrafa ne oldu?"*

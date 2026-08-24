@@ -1,0 +1,84 @@
+---
+title: Kontrole
+brand: Kontrole
+subtitle: "jedna brama na warstwę\nźródło · linki · wynik · render · kontrast"
+description: check-content, check-wikilinks, check-dist, ui_probe, contrast_probe — jedna brama na warstwę; każda łapie klasę cichych awarii, które wypływają na produkcję pod zielonym buildem.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Referencja · narzędzia" title="Kontrole" meta="pięć kontroli · trzy z silnika, dwie z tego pakietu · wszystkie zielone przed commitem">
+  Zielony build nie znaczy, że strony są w porządku. Ten zestaw narzędzi stawia po jednej kontroli na każdej warstwie; każda łapie klasę cichych awarii „build zielony, strona zepsuta” — a dwie z nich patrzą na strony tak, jak patrzy czytelnik: w prawdziwej przeglądarce.
+</Hero>
+
+## Pięć bram, pięć warstw
+
+| Kontrola | Pochodzi z | Patrzy na | Kiedy uruchamiać |
+| --- | --- | --- | --- |
+| check-content | silnik, `scripts/check-content.mjs` | każdy plik źródłowy md/mdx | CI repozytorium treści albo po pisaniu |
+| check-wikilinks | silnik, `scripts/check-wikilinks.mjs` | graf `[[wikilinków]]` | CI repozytorium treści albo po zmianie nazwy notatki |
+| check-dist | silnik, `scripts/check-dist.mjs` | wynik `astro build` | po każdym buildzie (postbuild) |
+| ui_probe | ten pakiet, `scripts/ui_probe.mjs` | strony wyrenderowane w prawdziwej przeglądarce | po zmianach stylów i layoutu |
+| contrast_probe | ten pakiet, `scripts/contrast_probe.mjs` | kontrast każdego węzła tekstu, oba motywy | po każdej zmianie tokenów |
+
+## check-content: warstwa źródeł
+
+Kompiluje każdy plik md/mdx zmierzający na stronę **dokładnie tym samym dialektem** co witryna — błędy składni i ciche zniekształcenia (znaki wyróżnień bez pary, klamry połknięte przez wyliczanie MDX, znaczniki list zrodzone z zawijania wierszy, jednoliniowe `$$`, wzory nie do wyrenderowania przez KaTeX — ten sam zestaw, którym zamyka się [[kitchen-sink|Wszystko naraz]]) wszystkie zapalają CI na czerwono.
+
+Dlaczego ten skrypt musi pochodzić z silnika: walidator, którego zestaw wtyczek różni się od zestawu witryny, jest **gorszy niż brak walidatora** — bez wtyczki matematycznej odczytuje klamry wzorów jako wyrażenia JSX, a bez GFM przepuszcza tabele bez słowa. Dialekt jest napisany raz, w silniku; renderowanie witryny, walidacja zapisu w CMS i ten skrypt konsumują zawsze ten sam.
+
+```bash title="korzeń repozytorium treści"
+node <silnik>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
+```
+
+Poza kompilacją łapie dwie frontmatterowe klasy cichej utraty danych: niecytowany `#` w wartości (YAML czyta go jako komentarz i po cichu ucina resztę) oraz YAML, który w ogóle się nie parsuje, raportowany z numerem linii.
+
+## check-wikilinks: graf linków
+
+Martwe `[[wikilinki]]` celowo nie wywracają builda — ogrodowi wolno linkować do notatek, które jeszcze nie wyrosły. Gnicie linków należy jednak do CI, więc silnik dostarcza lint, który rozwiązuje każdy wikilink **parserem i regułami rozwiązywania samej biblioteki** (alias, brand, tytuł, lustrzane wersje językowe) i raportuje brakujące, wieloznaczne oraz podejrzane kotwice. `--strict` zamienia martwe linki w niezerowy kod wyjścia — tak uruchamia go CI tego repozytorium:
+
+```bash title="kontrola linków tego ogrodu, tak jak uruchamia ją CI"
+node scripts/check-links.mjs
+```
+
+## check-dist: warstwa wyniku
+
+W zbudowanym `dist/` każde wewnętrzne odwołanie, które czytelnik może kliknąć, musi naprawdę istnieć. Ta kontrola łapie ciche dziury pod zielonym buildem:
+
+- wewnętrzne linki i zasoby wskazujące na nieistniejące pliki (ten gatunek, który po przemeblowaniu tras pojawia się tuzinami);
+- kotwice w obrębie strony wskazujące na nieistniejące id;
+- zdublowane segmenty języka w ścieżkach (`/en/en/` — klasyczny owoc i18n-owych fallbacków doklejających prefiks do tras już oprefiksowanych);
+- `<a>` zagnieżdżone w `<a>` (parser HTML domyka zewnętrzny przedwcześnie i przyciski wypadają z kart);
+- resztki błędów KaTeX-a (wzór jest na stronie czerwonym tekstem, a build pozostaje zielony).
+
+To demo wpina ją w postbuild: zielone `npm run build` znaczy, że kontrola wyniku też przeszła.
+
+```bash title="korzeń witryny, po buildzie (przy wdrożeniu pod podścieżką przekaż --base)"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
+```
+
+## Sonda warstwy renderowania
+
+Źródło i wynik mogą być oba w porządku, a strona wciąż zepsuta — klasyczny przypadek to karty strony głównej, do których nie pasuje żadna reguła arkusza stylów i które renderują się jako jedna stłoczona linia gołego tekstu: kontrole linków i kotwic pozostają zielone, bo nigdy nie patrzą na wyrenderowaną stronę. `ui_probe` przejeżdża prawdziwą przeglądarką po każdej stronie w `dist` w czterech szerokościach okna (1440/1024/768/430) i mierzy: poziomy przelew strony, elementy szersze niż ich kontener bez pudełka przewijania, w którym mogłyby mieszkać, klasy, których nie styluje żadna reguła arkusza, przeskoczone poziomy nagłówków, zdublowane id, obrazy bez atrybutu `alt`, kotwice w obrębie strony i `aria-controls` wskazujące donikąd. Raportuje tylko to, co maszyna umie udowodnić — bez sądów estetycznych.
+
+```bash title="wymaga lokalnego Chrome/Chromium"
+npm run build
+node ../scripts/ui_probe.mjs dist   # sam serwuje dist; przekaż baseUrl, by sondować działający serwer
+```
+
+Ogląda cały dokument — chrome, sidebar i dialogi włącznie.
+Zielono jest wtedy, gdy ostatnia linia raportu brzmi `SAMPLES WITH FINDINGS: 0`
+(próbka to jedna trasa w jednej szerokości).
+
+## Sonda kontrastu
+
+Tokeny deklarują AA, więc deklarację się mierzy, a nie powtarza na wiarę. `contrast_probe` ładuje każdą stronę `dist` w prawdziwej przeglądarce — motyw jasny i ciemny, szerokość biurkowa i telefoniczna — i mierzy każdy przebieg tekstu wyrenderowany w stanie domyślnym: tekst HTML, tekst SVG i tekst generowany przez `::before` / `::after`, przy czym każda nakładka `<dialog data-probe-open>` jest sondowana otwarta (a w znalezionym tam polu wyszukiwania wpisywane jest zapytanie) na stronie reprezentatywnej — ten znacznik to deklaracja witryny, że dialog jest kompletny w takiej formie, w jakiej go napisano. Podłoża nie czyta się z arkusza stylów; strona jest renderowana z każdym glifem uczynionym przezroczystym, zrzucana do obrazu, a piksel pod każdym przebiegiem jest jego podłożem — więc gradienty, tinty `color-mix()`, półprzezroczyste warstwy i paleta nocna są mierzone tak, jak się renderują. Kolor przebiegu niesie skumulowane `opacity` elementu i przodków, więc przygaszony tekst jest mierzony w sile, w jakiej naprawdę widzi go czytelnik. Stany hover i focus są przeglądane okiem, nie sondowane. Drobny tekst trzymany jest na 4,5:1, duży (24px albo 18,66px pogrubiony) na 3:1; przebieg, którego koloru nie da się sparsować albo którego podłoża nie da się spróbkować, liczy się jako znalezisko. Raport wymienia stronę, motyw, szerokość, selektor, oba kolory i współczynnik każdego przebiegu poniżej poprzeczki:
+
+```bash title="po buildzie, oba motywy"
+node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS zawężają macierz
+```
+
+<div class="callout system">
+  <div class="callout-title">Rutyna zmiany stylów</div>
+  Każda zmiana w arkuszach stylów lub komponentach pakietu przechodzi najpierw przez build tego dema, potem przez <code>ui_probe</code> i <code>contrast_probe</code> nad wynikiem — wszystko zielone przed commitem. Demo jest zarazem poligonem testowym pakietu.
+</div>

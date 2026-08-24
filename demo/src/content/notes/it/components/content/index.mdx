@@ -1,0 +1,106 @@
+---
+title: Contenuto e tipografia
+description: Callout, chip, griglie, passi, statistiche, carte per articoli e liste di riferimenti — i componenti di cui è fatta la prosa.
+part: 1
+navLabel: Contenuto e tipografia
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="Contenuto e tipografia">
+  I pezzi di cui è fatta la prosa. Ognuno consuma soltanto il livello semantico dei token — cambia pelle alla tavolozza e lo seguono tutti.
+</PartHero>
+
+## Callout
+
+Cinque varianti; `title` sostituisce l’etichetta predefinita della variante (Note / Intuition / Warning / Important / Abstract — le stesse della sintassi a citazione, localizzabili con `labels`). Il [[kitchen-sink|campionario]] mostra le grafie a citazione e in HTML a crudo dello stesso markup.
+
+<Callout variant="intuition" title="Quando prendere il componente">
+  In MDX, quando il contenuto è scritto inline. La sintassi a citazione copre i file in Markdown semplice; entrambe rendono markup identico.
+</Callout>
+
+## Chip
+
+Badge in linea per stati e categorie, nelle quattro varianti che i tag di `PaperCard` e i chip di `HubCard` condividono: <Chip variant="teal">stabile</Chip> <Chip variant="mustard">beta</Chip> <Chip variant="violet">ricerca</Chip> <Chip variant="orange">novità</Chip> — oppure un tono su misura per le tavolozze tematiche: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>tono su misura</Chip>
+
+## Grid
+
+Una griglia, tre pelli (`plain`, `card`, `cmp`). Le carte:
+
+<Grid cols={2} kind="card">
+  <div>
+    **Prima i token.** L’ordine degli import fa parte del contratto: token, poi il livello dei contenuti, poi il chrome del sito.
+  </div>
+  <div>
+    **Solo il livello semantico.** I componenti non toccano mai un colore a crudo — cambia pelle alla tavolozza e seguono tutti.
+  </div>
+</Grid>
+
+E la pelle di confronto, nata per i pannelli prima/dopo:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **Senza guardiano** — un `**` non chiuso arriva in produzione come due asterischi letterali.
+  </div>
+  <div>
+    **Col guardiano** — la build fallisce a file:riga:colonna, con un cursore sotto il segno incriminato.
+  </div>
+</Grid>
+
+## Steps
+
+Un elenco markdown su una rotaia verticale:
+
+<Steps>
+1. Aggiungi i due submodule e le dipendenze `file:`.
+2. Importa `tokens.css`, `base.css` e (per un wiki) `browse.css` nel foglio di stile globale.
+3. Collega `siteMarkdown()` in `astro.config`.
+4. Sovrascrivi la tavolozza del primo livello con i pigmenti della tua identità.
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: 'livelli di token' },
+    { value: '24', label: 'componenti' },
+    { value: '4', label: 'viewport della sonda' },
+    { value: '0', label: 'passi di build' },
+  ]}
+/>
+
+## PaperCard
+
+Il cavallo da tiro delle rassegne bibliografiche — alias, titolo completo, tag di sede, riga degli autori, link e due slot dedicati:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar, et al."
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">I modelli ricorrenti elaborano i token uno dopo l’altro — le dipendenze a lungo raggio sbiadiscono, e nulla si parallelizza.</Fragment>
+  **Idea chiave**: solo attenzione, nessuna ricorrenza — ogni token guarda ogni altro in un passo solo, e l’intera sequenza si addestra in parallelo.
+  <Fragment slot="diff">L’architettura su cui ha costruito quasi ogni grande modello linguistico venuto dopo.</Fragment>
+</PaperCard>
+
+Sotto un titolo di approfondimento, una glossa di una riga in parole semplici (`.speak`) dice a chi legge che cosa *fa* un modulo, prima del meccanismo:
+
+<p class="speak">L’attenzione è una tabella di ricerca morbida: ogni token chiede «chi è rilevante per me?» e riceve una miscela pesata delle risposte.</p>
+
+## References
+
+<References>
+- Vaswani et al., *Attention Is All You Need*, NeurIPS 2017.
+- Knuth, *The TeXbook* — la ragione per cui i fondi delle formule hanno un tono di carta tutto loro.
+- W3C, *Web Content Accessibility Guidelines 2.2* — la soglia di contrasto AA su cui i token vengono verificati.
+</References>

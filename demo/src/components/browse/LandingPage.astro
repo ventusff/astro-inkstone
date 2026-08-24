@@ -3,15 +3,15 @@
  * The garden's landing page, in one locale — taxonomy-driven: masthead with
  * counts → facet index → recently updated → one shelf per primary domain →
  * status legend. Everything on it comes from the note collection; adding a
- * note changes this page without touching it. The en and zh routes render
- * this one component with their locale.
+ * note changes this page without touching it. Every locale's route renders
+ * this one component with its locale.
  */
 import { getCollection } from 'astro:content';
 import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
 import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
 import BrowseLayout from '../../layouts/BrowseLayout.astro';
-import { browseHrefFor, cardOf, facetBaseFor, facetsOf, localized } from '../../lib/display';
-import { ENGINE_URL, GITHUB_URL, landingRoute, otherLocale, UI, type Locale } from '../../lib/i18n';
+import { browseHrefFor, cardOf, facetBaseFor, facetsOf, localized, subLocaleOf } from '../../lib/display';
+import { browseAlternates, ENGINE_URL, GITHUB_URL, UI, type Locale } from '../../lib/i18n';
 import { getWikiUnits, groupByPrimaryDomain } from '../../lib/taxonomy';
 import { STATUSES } from '../../content/notes/_meta/taxonomy';
 
@@ -21,6 +21,7 @@ interface Props {
 const { locale } = Astro.props;
 const t = UI[locale];
 const b = t.browse;
+const sub = subLocaleOf(locale);
 const links = browseHrefFor(locale);
 
 const units = await getWikiUnits();
@@ -33,14 +34,10 @@ const card = (note: (typeof units)[number]) => cardOf(note, locale, byId);
 ---
 
 <BrowseLayout
-  title={locale === 'zh' ? '纸与墨的园地' : 'A paper-and-ink garden'}
-  description={
-    locale === 'zh'
-      ? 'astro-inkstone 示范站——一座笔记园地,笔记本身就是这个包的使用手册。'
-      : "The astro-inkstone demo — a taxonomy garden whose notes are the package's own manual."
-  }
+  title={t.landingTitle}
+  description={t.landingDesc}
   locale={locale}
-  translateRoute={landingRoute(otherLocale(locale))}
+  alternates={browseAlternates('')}
 >
   <header class="wb-hero">
     <p class="wb-kicker">{b.kicker} <span class="sep">·</span> {b.kickerSub}</p>
@@ -72,12 +69,12 @@ const card = (note: (typeof units)[number]) => cardOf(note, locale, byId);
 
   {
     shelves.map(({ def, notes }) => {
-      const d = localized(def, locale);
+      const d = localized('domain', def, locale);
       return (
         <section class="wb-shelf" style={`--shelf-fg:${def.tone.fg}`}>
           <div class="wb-shelf-head">
             <h2 class="wb-shelf-title">{d.label}</h2>
-            <span class="wb-shelf-en">{locale === 'zh' ? def.label : def.zh}</span>
+            <span class="wb-shelf-en">{localized('domain', def, sub).label}</span>
             <a class="wb-shelf-count" href={links.domain(def.id)}>
               {b.shelfCount(notes.length)}
             </a>
@@ -98,7 +95,7 @@ const card = (note: (typeof units)[number]) => cardOf(note, locale, byId);
       /* each status links to its /status/<id>/ browse page; a status no
          note carries yet stays plain text (its route does not prerender) */
       STATUSES.map((s) => {
-        const d = localized(s, locale);
+        const d = localized('status', s, locale);
         return units.some((u) => u.status === s.id) ? (
           <a class="wb-legend-item" href={links.status(s.id)}>
             <span class="dot" style={`background:${s.dot}`} aria-hidden="true" />

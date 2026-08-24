@@ -1,0 +1,27 @@
+---
+title: Lịch sử sửa đổi và hoàn tác
+description: "Mỗi lần lưu được ghi nhật ký theo từng khối — ai, lúc nào, những dòng nào, nguyên văn trước và sau. Duyệt bằng ⟲, gỡ lại trong một cú bấm."
+navLabel: Lịch sử
+part: 2
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Lịch sử sửa đổi và hoàn tác">
+  Mỗi lần lưu — gõ tay, do Claude viết ra, hay nhập từ hộp thư đến — đều được nối vào một cuốn nhật ký sửa đổi nằm ngay cạnh nội dung: ai, lúc nào, những dòng nào, và nguyên văn trước/sau. Rê chuột lên một khối, bấm ⟲, lịch sử của đúng khối ấy mở ra.
+</PartHero>
+
+## Cuốn nhật ký
+
+Mỗi mục ghi rõ thay đổi được tạo ra bằng cách nào (sửa tay, Claude sửa, AI dịch, nhập từ hộp thư đến, hay một cú hoàn tác trước đó), do ai, kèm phần diff trước/sau gấp mở được. Những mục trọn tệp — một bản dịch, một lần nhập — được liệt kê để lưu sổ nhưng không mang nút hoàn tác: gỡ chúng là việc của git.
+
+## Hoàn tác
+
+Một cú bấm vào nút hoàn tác của một mục sẽ thay phần chữ *sau* của lần sửa ấy bằng phần chữ *trước* — dưới dạng một lần sửa mới có ghi nhật ký, nên chính cú hoàn tác cũng hoàn tác được. Hai chi tiết đáng biết:
+
+- Hoàn tác được áp bằng phép khớp nội dung chính xác. Nếu từ đó đến nay khối đã bị sửa đến mức đoạn chữ cũ không còn xuất hiện nguyên văn, cú hoàn tác bị từ chối chứ không đoán mò — không bao giờ có chuyện vá víu áng chừng.
+- Kết quả phải đi qua đúng cửa kiểm build như mọi lần lưu khác ([[inkbrush/editing|hai tấm lưới an toàn]]). Cú hoàn tác nào sẽ làm hỏng trang đều bị gạt.
+
+## Sao phải vừa nhật ký vừa git?
+
+Git (qua `autocommit`) là pho sử bền, trọn tệp — thứ bạn push, sao lưu và diff. Nhật ký là tầng chi li giúp ⟲ tức thời và bám theo từng khối. Hai bên trả lời hai câu hỏi khác nhau: *"tệp này đã trải qua những gì?"* với *"đoạn văn này đã trải qua những gì?"*

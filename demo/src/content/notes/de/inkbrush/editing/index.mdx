@@ -1,0 +1,30 @@
+---
+title: Bearbeiten, Block für Block
+description: Der ✎-Fluss – CodeMirror an der Stelle des Blocks, den du gerade liest, eine Live-Vorschau durch die Pipeline der Site selbst, und zwei Sicherheitsnetze, bevor irgendetwas die Festplatte berührt.
+navLabel: Bearbeiten
+part: 1
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Bearbeiten, Block für Block">
+  Bearbeiten funktioniert hier wie das Ausbessern eines Tippfehlers auf Wikipedia: Du bearbeitest den Absatz, den du gerade vor dir hast, nicht eine riesige Textarea mit der ganzen Seite. Im Bearbeitungsmodus (`npm run wiki`) meldest du dich an, fährst über einen beliebigen Block auf einer beliebigen Notiz – diesen hier eingeschlossen – und klickst ✎.
+</PartHero>
+
+## Die Schleife
+
+Der gerenderte Block verschwindet, und an seiner Stelle klappt ein [CodeMirror](https://codemirror.net/)-Editor auf, mit dem Markdown-Quelltext genau dieses Blocks. Darunter rendert beim Tippen eine Live-Vorschau – durch den Dialekt der Engine plus die Plugins, die die Site an `inkbrush({ markdown })` übergibt, denselben Regelsatz, den die Seiten-Pipeline montiert; Vorschau und Seite können sich also nie widersprechen. `⌘/Ctrl + Enter` speichert; `Esc` bricht ab.
+
+Auch das Frontmatter ist ein Block: Die Taxonomie-Leiste am Kopf jeder Notiz hier trägt ihr eigenes ✎, das das YAML der Notiz öffnet – ändere einen Status oder ein Datum, und der Kopf rendert neu aus dem aktualisierten Frontmatter.
+
+## Die zwei Sicherheitsnetze
+
+**Optimistisches Sperren.** Jeder Block trägt einen Hash des Quelltexts, aus dem er geschnitten wurde. Hat jemand anderes die Datei unter dir geändert, wird das Speichern mit einem Konflikt abgewiesen, statt dessen Arbeit stillschweigend zu überschreiben – neu laden und noch einmal versuchen.
+
+**Eine Build-Schranke.** Bevor irgendetwas auf die Festplatte geschrieben wird, läuft die ganze Datei durch die Markdown-Pipeline der Site – den Dialekt, den Inhaltswächter, die Plugins der Site selbst und, für `.mdx`, den MDX-Compiler. Ein Speichern, das die Seite kaputt machen würde – ein `**` ohne Paar, ein nicht geschlossener Komponenten-Tag, ein missgebildeter Ausdruck –, wird mit dem exakten Fehler abgewiesen, und die Datei auf der Festplatte bleibt unangetastet. Die vollständige Abweisungsliste des Wächters führt [[kitchen-sink|Das volle Programm]] an seinem Schluss vor.
+
+## Wohin ein Speichern geht
+
+Ein Speichern schreibt die Markdown-Datei und wird, mit eingeschaltetem `autocommit`, zu einem git-Commit mit der angemeldeten Person als Autor. Eine Datenbank gibt es nirgends: Die Inhaltsdateien sind die einzige Quelle der Wahrheit, und git ist die dauerhafte Historie. Das feingranulare Block-Journal, das die [[inkbrush/revisions|Revisionshistorie]] antreibt, sitzt obenauf.
+
+Der Dialekt selbst – GFM mit einer CJK-freundlichen Hervorhebungsregel, plus ein Inhaltswächter, der stillschweigend verformendes Markdown abweist – ist einmal in der Engine definiert und wird vom Seiten-Renderer, der Vorschau dieses Editors und dem CLI `check-content` geteilt ([[checks|die fünf Prüfungen]]). Eine Grammatik, drei Konsumenten, null Drift.

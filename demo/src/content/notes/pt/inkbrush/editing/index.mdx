@@ -1,0 +1,30 @@
+---
+title: Edição bloco a bloco
+description: O fluxo do ✎ — CodeMirror no lugar do bloco que você está lendo, uma pré-visualização ao vivo pelo pipeline do próprio site e duas redes de segurança antes de qualquer coisa tocar o disco.
+navLabel: Edição
+part: 1
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Edição bloco a bloco">
+  Editar aqui funciona como corrigir um erro de digitação na Wikipédia: você edita o parágrafo que está olhando, não um textarea gigante com a página inteira. Em modo de edição (`npm run wiki`), entre na sua conta, passe o mouse sobre qualquer bloco de qualquer nota — esta incluída — e clique em ✎.
+</PartHero>
+
+## O ciclo
+
+O bloco renderizado se esconde e um editor [CodeMirror](https://codemirror.net/) se expande no lugar dele, carregando o fonte Markdown daquele bloco. Uma pré-visualização ao vivo renderiza logo abaixo enquanto você digita — pelo dialeto do motor mais os plugins que o site entrega a `inkbrush({ markdown })`, o mesmo conjunto de regras que o pipeline das páginas monta, então a pré-visualização e a página não têm como discordar. `⌘/Ctrl + Enter` salva; `Esc` cancela.
+
+O frontmatter também é um bloco: a faixa de taxonomia no alto de cada nota daqui carrega seu próprio ✎, que abre o YAML da nota — mude um status ou uma data e o cabeçalho re-renderiza a partir do frontmatter atualizado.
+
+## As duas redes de segurança
+
+**Bloqueio otimista.** Cada bloco carrega um hash do fonte de que foi recortado. Se outra pessoa mudou o arquivo debaixo de você, o salvamento é rejeitado com um conflito em vez de sobrescrever em silêncio o trabalho dela — recarregue e tente de novo.
+
+**Um portão de build.** Antes de qualquer coisa ser escrita no disco, o arquivo inteiro passa pelo pipeline de Markdown do site — o dialeto, o guardião de conteúdo, os plugins do próprio site e o compilador de MDX para `.mdx`. Um salvamento que quebraria a página — um `**` sem par, uma tag de componente sem fechar, uma expressão malformada — é recusado com o erro exato, e o arquivo no disco fica intocado. A lista completa de rejeições do guardião está demonstrada no final da [[kitchen-sink|vitrine completa]].
+
+## Para onde vão os salvamentos
+
+Um salvamento escreve o arquivo Markdown e, com `autocommit` ligado, vira um commit de git com a autoria de quem entrou na conta. Não há banco de dados em lugar nenhum: os arquivos de conteúdo são a única fonte de verdade e o git é o histórico durável. O diário fino, bloco a bloco, que alimenta o [[inkbrush/revisions|histórico de revisões]] vai montado por cima.
+
+O dialeto em si — GFM com uma regra de ênfase amigável a CJK, mais um guardião de conteúdo que recusa Markdown que se deforma em silêncio — é definido uma vez no motor e compartilhado pelo renderizador das páginas, pela pré-visualização deste editor e pelo CLI `check-content` ([[checks|as cinco verificações]]). Uma gramática, três consumidores, zero deriva.

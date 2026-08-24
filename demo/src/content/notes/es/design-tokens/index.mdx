@@ -1,0 +1,71 @@
+---
+title: Paleta de dos niveles y temas
+brand: Paleta y temas
+subtitle: "dos niveles, dos contextos\nlos pigmentos y el papel"
+description: "La paleta cruda de pigmentos y los dos contextos semánticos construidos sobre ella — columna de lectura y estantería de exploración —, la disciplina claro/oscuro, el contraste auditado y el punto de entrada único para la identidad del sitio."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Referencia · la capa de tokens" title="Paleta de dos niveles y temas" meta="una paleta · dos contextos · ambos temas ajustados a mano · cada valor de texto medido para AA">
+  `styles/tokens.css` contiene todos los colores que usan las hojas de estilo y los componentes — la única excepción es el par tonal de un dominio, que el registro del sitio suministra como datos. Está escrito en dos niveles — una **paleta cruda** de pigmentos de papel y tinta, y los **tokens semánticos** construidos sobre ella — y el nivel semántico viene en dos contextos, porque una wiki tiene dos clases de página: la columna que lees y la estantería que recorres.
+</Hero>
+
+<Part title="Los niveles" />
+
+## Nivel 1: los pigmentos
+
+La paleta cruda es una caja de pintor, invariante frente al tema, con nombres `--p-*`. **Papeles**: el fondo de exploración 纸 y su cara de tarjeta 页, el fondo de lectura 素 (un punto más frío, más descansado al cabo de una hora) y su superficie suave 帛, la tarjeta blanca, los fondos de código y de fórmulas. **Tintas**: un juego cálido para la estantería y uno neutro para la columna, cada uno en tres intensidades. **Encuadernación**: la regla de la estantería, el borde de las píldoras, los dos filetes finos. Y los **pigmentos**, los colores que cargan significado:
+
+```css title="tokens.css (nivel 1, los pigmentos)"
+--p-zhu: #7d3a3a; /* 朱 · rojo vino — acento de la estantería, la marca del sitio */
+--p-shi: #b6552e; /* 石 · naranja tostado — acento de lectura: enlaces, números, kickers */
+--p-shi-text: #8f3f1f; /* 石 · escalón para texto pequeño (AA sobre su propio tinte) */
+--p-zhe: #c08a2c; /* 赭 · ocre — líneas y bordes */
+--p-dai: #2a6f6b; /* 黛 · verde azulado — acento secundario de contenido */
+--p-zi: #6b4ec4; /* 紫 · violeta — semántica "de sistema" */
+```
+
+A esto se suma un juego **nocturno** para la edición oscura: fondos de crepúsculo, tintas blanco luna y un gemelo abrillantado de cada pigmento.
+
+## Dos contextos, una paleta
+
+El nivel 2 es lo que consume la capa de componentes, y tiene dos caras:
+
+| Contexto | Tokens | Fondo | Tinta | Acento | Dónde |
+| --- | --- | --- | --- | --- | --- |
+| columna de lectura | `--color-*` | 素 `#fbf9f4` | neutra `#1f2024` | 石 naranja tostado | páginas de notas, todos los componentes de contenido, `base.css` |
+| estantería de exploración | `--wb-*` | 纸 `#faf6ec` | cálida `#2b2622` | 朱 rojo vino | portada y páginas de faceta, los componentes wiki, `browse.css` |
+
+La columna es la más callada de las dos: la lees durante una hora. La estantería es más cálida y va compuesta en una serif de exhibición: le echas un vistazo y eliges. Una página entra en el contexto de estantería con una sola clase, `wb-root`, en su body; dentro de ella, los tokens del chrome (`--color-bg`, `--color-accent`, …) se reasignan a los de la estantería, de modo que una barra de navegación escrita una sola vez se asienta bien sobre ambos fondos — y los átomos de taxonomía (insignia de tipo, punto de estado, chip de dominio), escritos contra `--color-*`, se leen como parte de la columna en una nota y como parte de la estantería en una página de exploración. **La capa de componentes solo puede consumir el nivel 2** — `base.css`, `browse.css` y todos los componentes; ninguna regla contiene un valor de color en crudo, y nada recurre a uno como reserva. Esa es la disciplina dura del paquete.
+
+<Part title="Identidad y disciplina" />
+
+## Cómo personaliza un sitio su identidad
+
+Sobrescribiendo el nivel 1. Cambia los pigmentos por los tuyos y ambos contextos y toda la capa de componentes siguen el cambio. Cada pigmento es un **par día/noche**: el tema claro lee `--p-shi` y `--p-zhu`, el oscuro lee sus gemelos nocturnos `--p-shi-n` y `--p-zhu-n` — una sobrescritura de identidad define ambos miembros, o deja que el oscuro conserve los pigmentos por defecto:
+
+```css title="tu site.css"
+:root {
+  --p-shi: #b03a48; /* tu acento de lectura */
+  --p-shi-text: #93303c; /* su escalón de texto pequeño se oscurece por separado, ver abajo */
+  --p-zhu: #3b4a7a; /* tu acento de estantería y la marca */
+  --p-shi-n: #e0919b; /* los gemelos nocturnos, abrillantados para los fondos de crepúsculo */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Reasignar el nivel 2 a tu propia paleta está igual de soportado cuando tu sistema de diseño ya trae una: apunta `--color-*` y `--wb-*` a tus variables. Este jardín no sobrescribe nada a propósito: lo que estás leyendo es la cara desnuda del paquete, la misma que defiende [[paper-and-ink|papel y tinta]].
+
+## El contraste se audita
+
+Cada valor del escalón de texto está verificado para WCAG AA sobre cada superficie en la que se asienta: el texto pequeño parte de 4.5:1; un acento usado como texto pequeño recibe un **escalón de texto** oscurecido por separado (`--p-shi-text`, `--p-zhe-text`), porque un rótulo de 12px en el color de acento suele asentarse sobre el tinte del propio acento; las tintas tenues se fijan en el tono más oscuro que todavía se lee como tenue — `#6a6d74` sobre el fondo de lectura da 4.9:1, y aún 4.5:1 sobre la superficie suave; el fondo de código es un punto más claro que el papel para que el token más tenue del tema de sintaxis (los comentarios) supere 4.5:1; la edición oscura lleva su propio juego abrillantado, medido contra los fondos nocturnos. El paquete distribuye la medición como herramienta: `scripts/contrast_probe.mjs` renderiza la demo en un navegador real, en ambos temas y a dos anchos, muestrea desde los píxeles el fondo bajo cada tramo de texto y reporta cada tramo por debajo del listón ([[checks|la sonda de contraste]]). Antes de cambiar cualquier valor, conoce todas las superficies sobre las que se asienta.
+
+## La identidad es la luz
+
+El tema deliberadamente **no** lee `prefers-color-scheme`: una página jamás debe voltear su propio tema debajo del lector. El oscuro se activa únicamente mediante `[data-theme='dark']`, conmutado por el propio interruptor del sitio (el botón sol/luna a la derecha de la barra de navegación de este sitio; la elección se guarda bajo la clave `inkstone-theme` en `localStorage` y el script inline ThemeInit la repone antes del primer pintado, así que quien lee en oscuro nunca ve un destello color crema). El oscuro no es una inversión sino una segunda edición ajustada a mano: fondos de crepúsculo, tintas blanco luna, pigmentos reabrillantados — [[paper-and-ink|el oscuro es una segunda edición, no una inversión]].
+
+## Las fuentes también viven aquí
+
+Cuatro pilas. `--font-display` es la cara de la estantería — una serif con eje de tamaño óptico (Source Serif 4, con Noto Serif SC para los hanzi) para cabeceras y títulos de estantería; esta demo la aloja por su cuenta vía `@fontsource`, y un sitio que no lo haga cae a la fuente de lectura. `--font-body` es la de la columna de lectura — una pila de serifs del sistema encabezada por Charter e Iowan Old Style, con la serif de exhibición supliendo donde falten. `--font-ui` es Inter (Noto Sans SC para los hanzi) para títulos, chrome y letra pequeña. `--font-mono` es un subconjunto de repertorio fijo de Maple Mono CN (ASCII + caracteres de recuadro + los 3500 hanzi de uso común + la unión de todo lo que el contenido ya usa): el latino a 0.6em, el hanzi a 1.2em — **un hanzi ocupa exactamente dos celdas de carácter**, así que los diagramas de líneas de recuadro se mantienen alineados incluso en texto mixto chino/latino. La receta del subconjunto y el script de regeneración vienen con el paquete (`fonts/build_font_subset.py`); cuando el contenido necesite glifos fuera de la cobertura, vuelve a ejecutarlo y commitea el woff2. [[kitchen-sink|Los marcos de código]] están compuestos íntegramente en ese subconjunto.

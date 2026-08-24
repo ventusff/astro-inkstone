@@ -1,0 +1,30 @@
+---
+title: Biên tập từng khối một
+description: "Luồng ✎ — CodeMirror hiện ra ngay chỗ khối bạn đang đọc, bản xem trước sống chạy qua chính pipeline của site, và hai tấm lưới an toàn trước khi bất cứ thứ gì chạm vào đĩa."
+navLabel: Biên tập
+part: 1
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Biên tập từng khối một">
+  Biên tập ở đây giống hệt việc sửa một lỗi chính tả trên Wikipedia: bạn sửa đúng đoạn văn đang đọc, chứ không phải một ô textarea khổng lồ ôm trọn cả trang. Trong chế độ biên tập (`npm run wiki`), đăng nhập, rê chuột lên bất kỳ khối nào của bất kỳ ghi chú nào — kể cả khối này — rồi bấm ✎.
+</PartHero>
+
+## Vòng lặp
+
+Khối đã render ẩn đi và một trình soạn [CodeMirror](https://codemirror.net/) mở rộng ngay chỗ ấy, chứa nguyên văn Markdown của khối. Bên dưới, bản xem trước sống render theo từng nhịp gõ — qua phương ngữ của engine cộng các plugin mà site trao cho `inkbrush({ markdown })`, đúng bộ luật mà pipeline của trang gắn vào, nên bản xem trước và trang không bao giờ nói hai đằng. `⌘/Ctrl + Enter` để lưu; `Esc` để hủy.
+
+Frontmatter cũng là một khối: dải phân loại trên đầu mỗi ghi chú ở đây mang nút ✎ của riêng nó, mở ra phần YAML của ghi chú — đổi một status hay một ngày tháng là phần đầu trang render lại theo frontmatter vừa cập nhật.
+
+## Hai tấm lưới an toàn
+
+**Khóa lạc quan (optimistic locking).** Mỗi khối mang theo mã băm của phần nguồn nó được cắt ra. Nếu ai đó đã đổi tệp ngay dưới tay bạn, lần lưu bị từ chối kèm báo xung đột thay vì lặng lẽ đè lên công sức của họ — tải lại trang rồi lưu lần nữa.
+
+**Cửa kiểm build.** Trước khi bất cứ thứ gì được ghi xuống đĩa, cả tệp phải chạy qua pipeline Markdown của site — phương ngữ, lớp kiểm soát nội dung, các plugin riêng của site, và trình biên dịch MDX với tệp `.mdx`. Lần lưu nào sẽ làm hỏng trang — một dấu `**` không ghép nổi cặp, một thẻ thành phần chưa đóng, một biểu thức sai dạng — đều bị từ chối kèm đúng thông báo lỗi, còn tệp trên đĩa không suy suyển. Danh sách từ chối đầy đủ của lớp kiểm soát được trưng trọn ở cuối trang [[kitchen-sink|trình diễn tổng hợp]].
+
+## Lưu xong, dữ liệu đi đâu
+
+Một lần lưu ghi thẳng vào tệp Markdown và, khi bật `autocommit`, trở thành một commit git đứng tên người đang đăng nhập. Không có cơ sở dữ liệu nào ở bất cứ đâu: các tệp nội dung là nguồn sự thật duy nhất, còn git là pho sử bền. Cuốn nhật ký chi li theo từng khối — thứ chống lưng cho [[inkbrush/revisions|lịch sử sửa đổi]] — cưỡi lên trên đó.
+
+Bản thân phương ngữ — GFM với luật nhấn mạnh thân thiện với CJK, cộng một lớp kiểm soát nội dung từ chối những cách viết Markdown âm thầm biến dạng — được định nghĩa đúng một lần trong engine và dùng chung cho bộ render trang, bản xem trước của trình soạn này và CLI `check-content` ([[checks|năm phép kiểm]]). Một văn phạm, ba nơi tiêu thụ, không một li xê dịch.

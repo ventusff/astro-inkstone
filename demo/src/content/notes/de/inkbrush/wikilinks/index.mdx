@@ -1,0 +1,24 @@
+---
+title: Wie Wikilinks sich auflösen
+description: Ein Resolver für die Seiten, die Editor-Vorschau, den Importer und den CI-Lint – Locale-Spiegel zuerst, dann ids, Aliasse, Brands und Titel.
+navLabel: Wikilinks
+part: 5
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Wie Wikilinks sich auflösen">
+  Notizen verlinken einander mit Doppelklammern, zur Build-Zeit aufgelöst gegen die Menge der Notizen, die tatsächlich existieren. Die gerenderten Ergebnisse – id, Alias, Beschriftung, Anker – führt [[kitchen-sink|Das volle Programm]] live vor; dieses Kapitel handelt von den Auflösungsregeln dahinter.
+</PartHero>
+
+## Was ein Ziel sein kann
+
+Ein Ziel muss nicht die id einer Notiz sein. Die Auflösung versucht, in dieser Reihenfolge: **den Spiegel der aktuellen Locale** (ein Link auf einer der siebzehn Schwesterausgaben dieser Seite landet auf der gleichsprachigen Ausgabe seines Ziels und fällt nur dort auf die kanonische Notiz zurück, wo kein Spiegel existiert), dann die exakte id, dann Aliasse, Brand-Namen und Titel, ohne Beachtung von Groß- und Kleinschreibung. Der Essay [[garden-craft]] deklariert `tending` als Alias, ein `[[tending]]` landet also auf [[garden-craft|derselben Seite]]. Anker und Beschriftungen komponieren, wie man es sich wünscht: `[[garden-craft#pruning]]` springt direkt zu einem Abschnitt, `[[garden-craft|der Garten-Essay]]` rendert eigenen Text – und beides lässt sich kombinieren.
+
+## Tote Links brechen keine Builds
+
+Ein Link auf eine Notiz, die es nicht gibt, rendert als sichtbar toter Link mit dem Grund im Tooltip, und der Build protokolliert eine Warnung. Für Gärten ist das eine bewusste Entscheidung: Eine ungeschriebene Notiz ist eine Einladung, kein Fehler. Ein Ziel, das mehrere Notizen zugleich trifft, rendert genauso, als mehrdeutig markiert. In die CI gehört Linkfäule trotzdem – das CLI `check-wikilinks` der Engine löst jeden Link mit den Regeln der Bibliothek selbst auf und macht im `--strict`-Modus aus toten Links einen scheiternden Exit; genau so führt dieses Repository ihn aus ([[checks|die fünf Prüfungen]]).
+
+## Eine Implementierung, vier Konsumenten
+
+Die Seiten, die Live-Vorschau des Editors, der [[inkbrush/inbox|Posteingang-Importer]] und der CI-Lint lösen mit demselben Code auf – ein Link bedeutet also überall dasselbe, und der Editor kann großzügig sein: Wer im Bearbeitungsmodus `[[` tippt, bekommt Autovervollständigung über ids, Titel und Aliasse.

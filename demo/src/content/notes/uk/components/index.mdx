@@ -1,0 +1,70 @@
+---
+title: "Набір компонентів"
+description: "Тур усіма компонентами пакета у трьох розділах — і водночас жива демонстрація того, як працює нотатка-хаб із розділами."
+brand: "Компоненти"
+subtitle: "галерея компонентів\nтри розділи · один хаб"
+navLabel: Огляд
+chapters: false
+nav:
+  - group: Галерея
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Галерея в трьох розділах · 2026.08" title="Набір компонентів" meta="3 розділи · 24 компоненти · кожен імпортується за шляхом з astro-inkstone/components/">
+  Усе в галереї імпортовано з `astro-inkstone/components/` за шляхом і відрендерено типовими токенами пакета. Компоненти **суто презентаційні**: дані й рядки підписів приходять через пропси (типові — англійські), тож сайт будь-якою мовою передає власні.
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: 'розділи' },
+        { value: '24', label: 'компоненти' },
+        { value: '6', label: 'вікі-деталей' },
+        { value: '0', label: 'сирих кольорів' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## Розділи `{#chapters notoc}`
+
+Кожна картка — один розділ доріжки в бічній панелі; чипи називають, що в ньому показано.
+
+<div class="hub-grid">
+  <HubCard href={`${base}/uk/components/content/`} num="Частина I" title="Вміст і типографіка" count="7 компонентів"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    Деталі, з яких складається текст, — callout-и, чипи, сітки, доріжки кроків, рядки статистики, картки статей і списки літератури.
+  </HubCard>
+
+  <HubCard href={`${base}/uk/components/wiki/`} num="Частина II" title="Вікі та перегляд" count="8 компонентів"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    Набір таксономії, з якого зібрано полиці цього саду, і дві панелі графа посилань — зворотні посилання та локальний граф бічної панелі.
+  </HubCard>
+
+  <HubCard href={`${base}/uk/components/interactive/`} num="Частина III" title="Інтерактив і обрамлення" count="9 компонентів"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    Живе canvas-демо і контракт завантажувача на боці сайту, а також сторінкове обрамлення — hero, картки хаба, списки переходів, футери.
+  </HubCard>
+</div>
+
+## Хаб наживо
+
+Ця нотатка — сама собі демонстрація **хаба**: нотатка верхнього рівня, чий frontmatter оголошує `nav` — упорядкований список розділів. Механіка, на яку ви зараз дивитеся:
+
+- бічна панель показує доріжку розділів (I/II/III) під брендом хаба, а наприкінці кожного розділу — гортання «попередній/наступний»;
+- розділи успадковують таксономію хаба: жоден із трьох розділів галереї не оголошує власних типу, напряму чи статусу, і все ж кожен показує значення цієї нотатки; розділ, який задав власне значення, переважає цілком ([[three-way-split|те саме правило «явне виграє», що й усюди]]);
+- на сторінках перегляду хаб — **одне ціле**: одна картка з кількістю розділів; розділи ніколи не захаращують полицю;
+- номер `part:` кожного розділу мусить збігатися з його позицією в `nav`, інакше збірка падає — доріжка і frontmatter не можуть розійтися;
+- картки вище — компоненти `HubCard` у `.hub-grid`; рамка нижче — **маршрут читання** (`.path`), ще одна деталь обрамлення хаба.
+
+<div class="path">
+  <div class="title">Звідки почати</div>
+  <div class="route">
+    Уперше бачите пакет → <a href={`${base}/uk/components/content/`}>Частина I</a><span class="arrow">→</span><a href={`${base}/uk/components/wiki/`}>Частина II</a>; будуєте сайт-переглядач → одразу до <a href={`${base}/uk/components/wiki/`}>Частини II</a><span class="arrow">→</span><a href={`${base}/uk/getting-started/`}>інструкції «Швидкий старт»</a>; той самий сюжет із боку Markdown → <a href={`${base}/uk/kitchen-sink/`}>демонстраційний стенд</a>.
+  </div>
+</div>

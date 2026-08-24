@@ -1,0 +1,70 @@
+---
+title: O conjunto de componentes
+description: Um passeio em três capítulos por todos os componentes do pacote — e, ao mesmo tempo, uma demonstração ao vivo de como funciona uma nota-hub com capítulos.
+brand: Componentes
+subtitle: "a galeria de componentes\ntrês capítulos · um hub"
+navLabel: Visão geral
+chapters: false
+nav:
+  - group: Galeria
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Uma galeria em três capítulos · 2026.08" title="O conjunto de componentes" meta="3 capítulos · 24 componentes · todos importados por caminho de astro-inkstone/components/">
+  Tudo na galeria é importado de `astro-inkstone/components/` por caminho e renderizado com os tokens padrão do pacote. Os componentes são **de exibição pura**: recebem dados e textos de rótulo como props (com padrões em inglês), então um site em qualquer idioma passa os seus.
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: 'capítulos' },
+        { value: '24', label: 'componentes' },
+        { value: '6', label: 'peças wiki' },
+        { value: '0', label: 'cores cruas' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## Os capítulos `{#chapters notoc}`
+
+Cada cartão é um capítulo da trilha na barra lateral; os chips nomeiam o que ele mostra.
+
+<div class="hub-grid">
+  <HubCard href={`${base}/pt/components/content/`} num="PARTE I" title="Conteúdo e tipografia" count="7 componentes"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    As peças de que a prosa é feita — callouts, chips, grades, trilhas de passos, linhas de estatísticas, cartões de artigo e listas de referências.
+  </HubCard>
+
+  <HubCard href={`${base}/pt/components/wiki/`} num="PARTE II" title="Wiki e navegação" count="8 componentes"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    O conjunto de taxonomia com que as estantes deste jardim são montadas, e os dois painéis do grafo de links — as menções vinculadas e o grafo local da barra lateral.
+  </HubCard>
+
+  <HubCard href={`${base}/pt/components/interactive/`} num="PARTE III" title="Interativos e mobiliário" count="9 componentes"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    Uma demo de canvas ao vivo e o contrato de carregador que pertence ao site, mais o mobiliário de página — heros, cartões de hub, listas de salto, rodapés.
+  </HubCard>
+</div>
+
+## Um hub, ao vivo
+
+Esta nota é, ela mesma, a demonstração de um **hub**: uma nota de nível superior cujo frontmatter declara `nav` — uma lista ordenada de capítulos. A maquinaria diante dos seus olhos:
+
+- a barra lateral mostra a trilha de capítulos (I/II/III) sob a marca do hub, com paginação anterior/próximo ao pé de cada capítulo;
+- os capítulos herdam a taxonomia do hub — nenhum dos três capítulos da galeria declara tipo, domínio ou status próprios, e ainda assim cada um exibe os desta nota; um capítulo que define os seus sobrepõe por inteiro ([[three-way-split|a mesma regra de todo o resto: o explícito vence]]);
+- nas páginas de navegação o hub é **uma unidade só**: um cartão, com a contagem de capítulos — capítulos nunca entulham uma estante;
+- o número `part:` de cada capítulo precisa bater com a posição dele em `nav`, ou o build falha — a trilha e o frontmatter não têm como divergir;
+- os cartões acima são componentes `HubCard` dentro de um `.hub-grid`; a caixa abaixo é um **caminho de leitura** (`.path`), a outra peça do mobiliário de hub.
+
+<div class="path">
+  <div class="title">Por onde começar</div>
+  <div class="route">
+    Novo no pacote → <a href={`${base}/pt/components/content/`}>Parte I</a><span class="arrow">→</span><a href={`${base}/pt/components/wiki/`}>Parte II</a>; construindo um site de navegação → direto para a <a href={`${base}/pt/components/wiki/`}>Parte II</a><span class="arrow">→</span>o <a href={`${base}/pt/getting-started/`}>guia de primeiros passos</a>; o lado Markdown da mesma história → a <a href={`${base}/pt/kitchen-sink/`}>vitrine completa</a>.
+  </div>
+</div>

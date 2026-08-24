@@ -1,0 +1,37 @@
+---
+title: Hộp thư đến Obsidian
+description: "Trỏ trình canh thư mục vào một thư mục trong vault; ghi chú mới tự chuyển đổi và tự nhập — ảnh nhúng được chép về cạnh ghi chú, wikilink được phân giải, phần bôi sáng được giữ nguyên."
+navLabel: Hộp thư đến
+part: 4
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Hộp thư đến Obsidian">
+  Bao nhiêu bài viết khởi đầu ở một nơi khác — chiếc điện thoại, một trình clip trang web, một vault Obsidian. Hộp thư đến khép kín vòng ấy: trỏ nó vào một thư mục, và ghi chú thả vào đó sẽ tự nhập mình vào site.
+</PartHero>
+
+## Bật lên
+
+Hộp thư đến xuất xưởng ở trạng thái tắt. Bật nó trong `inkbrush.config.ts`:
+
+```ts title="inkbrush.config.ts"
+inbox: {
+  dir: '~/vault/inbox',        // thư mục cần canh (hỗ trợ ~/)
+  ignore: ['daily-'],          // tùy chọn: các tiền tố tên tệp cần bỏ qua
+},
+```
+
+Những tệp đã nằm sẵn trong thư mục lúc khởi động chỉ được đánh dấu là đã thấy, không nhập — chỉ ghi chú thêm vào *sau đó* mới tự động đồng bộ. Bài cũ hơn có thể được nhập bù một cách tường minh qua API, nên bật hộp thư đến không bao giờ bất thình lình trút cả chục năm lịch sử vault lên site của bạn.
+
+## Trình nhập làm những gì
+
+Mỗi ghi chú gửi đến được chuyển đổi, chứ không chép nguyên:
+
+- ảnh nhúng được phân giải theo các thư mục tài nguyên của vault, tệp ảnh được **chép về nằm cạnh ghi chú vừa nhập**, và phần nhúng trở thành cú pháp ảnh chuẩn — sau này xóa ghi chú thì tài nguyên của nó đi theo
+- `[[wikilinks]]` nào khớp một ghi chú có thật trên site thì sống sót thành liên kết, phân giải bằng [[inkbrush/wikilinks|đúng bộ luật như mọi nơi khác]]; số còn lại bị là phẳng thành chữ nhấn thường, kèm một cảnh báo
+- phần bôi sáng trở thành phần tử `<mark>` thật, metadata trong frontmatter trở thành một dòng ghi nguồn dưới tiêu đề, và phần mô tả được rút từ đoạn văn có nội dung đầu tiên
+
+Ghi chú sau chuyển đổi vẫn phải qua được đúng cửa kiểm build như một lần lưu tay — ghi chú nào sẽ làm hỏng trang thì bị từ chối thay vì được nhập.
+
+Mỗi lần nhập đều đáp vào nhật ký sửa đổi (via: inbox) dưới dạng một bản ghi trọn tệp: [[inkbrush/revisions|⟲]] liệt kê nó như một dòng đối chiếu, còn gỡ một lần nhập là một thao tác git. Bật `autocommit` thì mỗi lần nhập cũng thành một commit git như mọi lần sửa khác; tắt thì các tệp vừa nhập nằm lại như thay đổi thường trong cây làm việc, để bạn tự soát và tự commit.

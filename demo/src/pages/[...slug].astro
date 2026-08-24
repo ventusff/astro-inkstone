@@ -4,13 +4,13 @@
  *
  *   notes/<topic>/index.mdx          → /<topic>/
  *   notes/<hub>/<page>/index.mdx     → /<hub>/<page>/
- *   notes/zh/<topic>/index.mdx       → /zh/<topic>/
+ *   notes/<locale>/<topic>/index.mdx → /<locale>/<topic>/
  *
- * Mirrors are materialized only where a zh file exists — no fallback tree.
- * Everything the sidebar shows — the ToC, the hub rail, the language
- * switch, backlinks and the local link graph — is assembled here at build
- * time from the collection; frontmatter contributes the hub's `nav` order
- * and display strings (title, brand, subtitle, navLabel), nothing more.
+ * Mirrors are materialized only where a file exists — no fallback tree.
+ * Everything the sidebar shows — the ToC, the hub rail, backlinks and the
+ * local link graph — is assembled here at build time from the collection;
+ * frontmatter contributes the hub's `nav` order and display strings (title,
+ * brand, subtitle, navLabel), nothing more.
  */
 import { getCollection, render } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
@@ -18,26 +18,29 @@ import type { CollectionEntry } from 'astro:content';
 import { roman } from 'astro-inkstone/lib/rehype-chapters';
 import { getToc } from 'astro-inkstone/lib/toc';
 import NoteLayout, { type HubPageChrome } from '../layouts/NoteLayout.astro';
-import type { HubNav, HubRow, LangNav } from '../components/Sidebar.astro';
+import type { HubNav, HubRow } from '../components/Sidebar.astro';
 import { backlinks as backlinkBuilder, toDocs } from '../lib/backlinks';
 import { stripOf } from '../lib/display';
-import { baseIdOf, counterpartId, href, localeOfId, LOCALES, routeOfId, type Locale } from '../lib/i18n';
+import { baseIdOf, href, idIn, localeOfId, localePrefix, LOCALES, routeOfId, UI, type Alternate, type Locale } from '../lib/i18n';
 import { resolveTaxonomy } from '../lib/taxonomy';
+import { LOCALE_CODES } from '../content/notes/_meta/locales';
 import { RESERVED_SLUGS } from '../content/notes/_meta/taxonomy';
 
 export async function getStaticPaths() {
   const notes = await getCollection('notes');
   // The id IS the route, so a note must not open a namespace the browse
-  // routes own. Mirrors are checked on the canonical id behind their locale
-  // prefix; a bare locale id would claim the mirror root itself.
-  const reserved = new Set<string>(RESERVED_SLUGS);
+  // routes or the locale trees own. Mirrors are checked on the canonical id
+  // behind their locale prefix; a bare locale id would claim a mirror root.
+  const reserved = new Set<string>([...RESERVED_SLUGS, ...LOCALE_CODES]);
   for (const entry of notes) {
     const canonical = baseIdOf(entry.id);
     const first = canonical === '' ? entry.id : (canonical.split('/')[0] ?? canonical);
     if (reserved.has(first)) {
       throw new Error(
         `notes/${entry.id}: its leading path segment "${first}" is reserved (${
-          first === 'zh' ? 'the zh mirror namespace' : `the /${first}/ browse route`
+          (LOCALE_CODES as readonly string[]).includes(first)
+            ? `the ${first} locale namespace`
+            : `the /${first}/ browse route`
         }) — rename the note`,
       );
     }
@@ -62,12 +65,12 @@ const readingMinutes = remarkPluginFrontmatter?.['readingMinutes'];
 
 /* ---------- identity ---------- */
 const locale: Locale = localeOfId(entry.id);
-const zh = locale === 'zh';
+const t = UI[locale];
 const baseId = baseIdOf(entry.id);
 const segments = baseId.split('/');
 const topic = segments[0] ?? baseId;
 const subPath = segments.slice(1).join('/');
-const langPrefix = zh ? 'zh/' : '';
+const langPrefix = localePrefix(locale);
 /** route of a full entry id (locale prefix included) */
 const routeTo = (id: string): string => href(routeOfId(id));
 
@@ -111,7 +114,7 @@ if (hubEntry?.data.nav) {
       }
       const label = child.data.navLabel ?? child.data.title;
       const rowLabel = `${roman(position)}. ${label}`;
-      const longLabel = `Part ${roman(position)} · ${label}`;
+      const longLabel = `${t.partLabel(roman(position))} · ${label}`;
       flat.push({ id: child.id, href: routeTo(childId), rowLabel, longLabel });
       return {
         href: routeTo(childId),
@@ -122,7 +125,7 @@ if (hubEntry?.data.nav) {
   }));
   hub = {
     hubHref: routeTo(hubEntry.id),
-    hubLabel: hubEntry.data.navLabel ?? (zh ? '总览' : 'Overview'),
+    hubLabel: hubEntry.data.navLabel ?? t.overview,
     hubHere: isHubIndex,
     groups,
   };
@@ -152,27 +155,18 @@ if (hubEntry?.data.nav) {
     if (position > 0) {
       const label = entry.data.navLabel ?? entry.data.title;
       hubPage = {
-        crumbLabel: `Part ${roman(position)} · ${label}`,
+        crumbLabel: `${t.partLabel(roman(position))} · ${label}`,
         hubHref: routeTo(topic),
       };
     }
   }
 }
 
-/* ---------- language switch (locales this note exists in) ---------- */
-const langs = LOCALES.map((l) => {
-  const id = `${l.prefix}${baseId}`;
-  if (!byId.has(id)) return null;
-  return {
-    code: l.code,
-    label: l.label,
-    href: href(`${id}/`),
-    current: l.code === locale,
-  };
-}).filter((x): x is NonNullable<typeof x> => x !== null);
-const lang: LangNav | undefined = langs.length > 1 ? { langs } : undefined;
-const otherId = counterpartId(entry.id);
-const translateRoute = byId.has(otherId) ? `${otherId}/` : undefined;
+/* ---------- the language menu's rows: locales this note exists in ---------- */
+const alternates: Alternate[] = LOCALES.flatMap((l) => {
+  const id = idIn(l.code, baseId);
+  return byId.has(id) ? [{ code: l.code, route: routeOfId(id) }] : [];
+});
 
 /* ---------- breadcrumb ---------- */
 // A mirror chapter whose hub has no mirror links its crumb to the primary
@@ -217,13 +211,12 @@ const brandHref = hub ? hub.hubHref : routeTo(entry.id);
   brandHref={brandHref}
   subtitle={brandEntry.data.subtitle}
   noteId={entry.id}
-  translateRoute={translateRoute}
+  alternates={alternates}
   toc={toc}
   tocDepth={entry.data.tocDepth}
   taxonomy={taxonomy}
   hub={hub}
   hubPage={hubPage}
-  lang={lang}
   backlinks={backlinks}
   graph={graph}
 >

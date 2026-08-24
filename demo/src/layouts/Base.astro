@@ -21,7 +21,7 @@ import Breadcrumb from '../components/Breadcrumb.astro';
 import SearchPalette from 'astro-inkstone/components/SearchPalette.astro';
 import { KINDS } from '../content/notes/_meta/taxonomy';
 import ThemeInit from '../components/ThemeInit.astro';
-import { href, UI, type Locale } from '../lib/i18n';
+import { DEFAULT_LOCALE, href, localeDef, UI, type Alternate, type Locale } from '../lib/i18n';
 
 interface Crumb {
   label: string;
@@ -33,10 +33,10 @@ interface Props {
   description?: string | undefined;
   /** UI-chrome language (note pages follow the note's locale) */
   locale?: Locale;
-  htmlLang?: string;
   crumbs?: Crumb[];
-  /** counterpart route in the other locale; omitted on pages with no twin */
-  translateRoute?: string | undefined;
+  /** this page's routes in the locales it exists in — the language menu's
+   *  rows and the head's hreflang alternates */
+  alternates?: Alternate[];
   /** body class — browse pages pass `wb-root` to enter the browse context */
   bodyClass?: string | undefined;
   /** the page has a sidebar drawer for the nav bar's menu button to open */
@@ -51,15 +51,25 @@ interface Props {
 const {
   title,
   description,
-  locale = 'en',
-  htmlLang = locale === 'zh' ? 'zh-CN' : 'en',
+  locale = DEFAULT_LOCALE,
   crumbs = [],
-  translateRoute,
+  alternates = [],
   bodyClass,
   hasSidebar = false,
   noteId,
 } = Astro.props;
 const t = UI[locale];
+const htmlLang = localeDef(locale).htmlLang;
+
+// hreflang alternates: absolute URLs of this page's real twins (x-default =
+// the default locale's edition, when it exists)
+const absolute = (route: string): string => new URL(href(route), Astro.site).href;
+const defaultTwin = alternates.find((a) => a.code === DEFAULT_LOCALE);
+
+// generated content-layer labels ("in plain words →", "vs prior →") follow
+// the page language through two custom properties read by base.css
+const cssStr = (s: string): string => `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+const labelStyle = `:root{--speak-label:${cssStr(t.speakLabel)};--diff-label:${cssStr(t.diffLabel)}}`;
 
 // The CMS resolves a note's URL from its id with this template; the id↔route
 // identity (route = `${base}${id}/`) is what makes the language-switch jump
@@ -90,6 +100,11 @@ const playground = Boolean(import.meta.env.PLAYGROUND ?? process.env.PLAYGROUND)
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'><path d='M10 2.2 17.8 10 10 17.8 2.2 10Z' fill='none' stroke='%237d3a3a' stroke-width='1.6'/><path d='M10 6.4 13.6 10 10 13.6 6.4 10Z' fill='%237d3a3a'/></svg>"
     />
     <title>{title} · astro-inkstone</title>
+    {alternates.map((a) => (
+      <link rel="alternate" hreflang={localeDef(a.code).htmlLang} href={absolute(a.route)} />
+    ))}
+    {defaultTwin && <link rel="alternate" hreflang="x-default" href={absolute(defaultTwin.route)} />}
+    <style set:html={labelStyle}></style>
     {(wikiMode || playground) && noteId && <meta name="inkbrush-note" content={noteId} />}
     {(wikiMode || playground) && noteId && <meta name="inkbrush-note-url" content={noteUrlTemplate} />}
     <ThemeInit />
@@ -98,7 +113,7 @@ const playground = Boolean(import.meta.env.PLAYGROUND ?? process.env.PLAYGROUND)
     {/* first tab stop on every page; #main is the layouts' main element.
         sr-only while unfocused (the focused state is styled in site.css) */}
     <a class="sr-only skip-link" href="#main">{t.skip}</a>
-    <Breadcrumb locale={locale} crumbs={crumbs} translateRoute={translateRoute} hasSidebar={hasSidebar} />
+    <Breadcrumb locale={locale} crumbs={crumbs} alternates={alternates} hasSidebar={hasSidebar} />
     <slot />
 
     <dialog class="lightbox" aria-label={t.lightbox}>
@@ -113,7 +128,7 @@ const playground = Boolean(import.meta.env.PLAYGROUND ?? process.env.PLAYGROUND)
       locale={locale}
       scopes={[
         { id: 'all', label: t.searchScopeAll },
-        ...KINDS.map((k) => ({ id: k.id, label: locale === 'zh' ? k.zh : k.label, crumb: k.label })),
+        ...KINDS.map((k) => ({ id: k.id, label: t.kinds[k.id].label, crumb: t.kinds[k.id].label })),
       ]}
       labels={{
         dialog: t.searchDialog,

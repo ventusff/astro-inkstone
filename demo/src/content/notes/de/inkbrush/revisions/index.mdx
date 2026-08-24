@@ -1,0 +1,27 @@
+---
+title: Revisionshistorie und Revert
+description: Jedes Speichern wird blockweise journaliert – wer, wann, welche Zeilen, das exakte Vorher und Nachher. Mit ⟲ darin stöbern, mit einem Klick rückgängig machen.
+navLabel: Revisionen
+part: 2
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Revisionshistorie und Revert">
+  Jedes Speichern – von Hand getippt, von Claude produziert oder aus dem Posteingang importiert – wird an ein Revisionsjournal neben dem Inhalt angehängt: wer, wann, welche Zeilen, und der exakte Vorher-/Nachher-Text. Fahr über einen Block, klick ⟲, und die Historie genau dieses Blocks öffnet sich.
+</PartHero>
+
+## Das Journal
+
+Jeder Eintrag zeigt, wie die Änderung entstand (manuelle Bearbeitung, Claude-Bearbeitung, KI-Übersetzung, Posteingang-Import oder ein früherer Revert), von wem, und einen aufklappbaren Vorher-/Nachher-Diff. Ganzdatei-Einträge – eine Übersetzung, ein Import – stehen fürs Protokoll in der Liste, tragen aber keinen Revert-Knopf: Sie rückgängig zu machen ist Aufgabe von git.
+
+## Revert
+
+Ein Klick auf den Revert-Knopf eines Eintrags ersetzt den *Nachher*-Text dieser Revision durch ihren *Vorher*-Text – als neue journalierte Bearbeitung, ein Revert ist also selbst wieder revertierbar. Zwei Details, die man kennen sollte:
+
+- Der Revert wird über exakten Textabgleich angewandt. Wurde der Block seither so bearbeitet, dass der alte Text nicht mehr wörtlich vorkommt, wird der Revert abgewiesen statt geraten – nie wird irgendetwas unscharf zusammengeflickt.
+- Das Ergebnis läuft durch dieselbe Build-Schranke wie jedes andere Speichern ([[inkbrush/editing|die zwei Sicherheitsnetze]]). Ein Revert, der die Seite kaputt machen würde, wird abgewiesen.
+
+## Warum Journal und git zugleich?
+
+Git (per `autocommit`) ist die dauerhafte Ganzdatei-Historie – das, was du pushst, sicherst und diffst. Das Journal ist die feingranulare Schicht, die ⟲ sofort und blockweise macht. Die beiden beantworten verschiedene Fragen: *„Was ist mit dieser Datei passiert?“* gegenüber *„Was ist mit diesem Absatz passiert?“*

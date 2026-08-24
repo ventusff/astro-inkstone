@@ -1,0 +1,24 @@
+---
+title: KI-Assistenz
+description: Block-Umformulierungen, ein Chat, der die Notiz kennt, und Ganznotiz-Übersetzung – über das claude-CLI, eingesperrt in eine Wegwerfkopie der Notiz.
+navLabel: KI-Assistenz
+part: 3
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="KI-Assistenz">
+  Die ✦-Aktionen sind die Brücke zum [claude-CLI](https://claude.com/claude-code). Es muss auf der Maschine, auf der der Dev-Server läuft, installiert und angemeldet sein – nichts sonst in der Engine braucht es, ohne das CLI arbeitet also alles außer ✦ weiter.
+</PartHero>
+
+## Einen Block umformulieren
+
+Fahr über einen Block, klick ✦, und wähl entweder eine Schnellabsicht – glätten, strenger machen, verdichten, die Formeln reparieren – oder tipp deine eigene Anweisung. Der Job läuft serverseitig in einer Wegwerfkopie des Notiz-Verzeichnisses, mit Dateiwerkzeugen, die auf diese Kopie beschränkt sind – keine Shell, kein Netz –, und streamt seinen Fortschritt live; das Schließen des Browser-Tabs überlebt er. Am Ende muss die geänderte Datei dieselbe Build-Schranke passieren wie ein manuelles Speichern, bevor sie ins Projekt zurückgetragen und journaliert wird – [[inkbrush/revisions|⟲]] kann sie also rückgängig machen.
+
+## Fragen zur Notiz stellen
+
+Das Chat-Panel (der schwebende Knopf, unten rechts) beantwortet Fragen zu der Notiz, die du gerade liest. Claude liest den Quelltext in einer Arbeitskopie mit einem Nur-Lese-Werkzeugsatz; Anschlussfragen setzen dieselbe Konversation fort.
+
+## Die ganze Notiz übersetzen
+
+Für jede Locale, in der eine Notiz fehlt, bietet das Chat-Panel per Klick „Version erzeugen“ an – keine wörtliche Übersetzung, sondern die Notiz in der Zielsprache neu erzählt, mit jedem Anker, jedem Code-Block und jeder strukturellen Invariante intakt. Das Ergebnis wird als Spiegeldatei der Locale geschrieben, und die Build-Schranke hat das letzte Wort, bevor irgendetwas behalten wird. Dieser Garten wächst in achtzehn Sprachen; sein Sprachmenü listet jede Ausgabe der Seite, auf der du gerade bist, und im Bearbeitungsmodus ist eine fehlende Ausgabe einen Klick entfernt. Eine Übersetzung ist eine Ganzdatei-Änderung: Das Journal protokolliert sie, und sie rückgängig zu machen ist eine git-Operation, kein ⟲-Klick.

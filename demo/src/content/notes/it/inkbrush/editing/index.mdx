@@ -1,0 +1,30 @@
+---
+title: Modificare, blocco per blocco
+description: Il flusso ✎ — CodeMirror al posto del blocco che stai leggendo, un’anteprima dal vivo attraverso la pipeline stessa del sito e due reti di sicurezza prima che qualcosa tocchi il disco.
+navLabel: Editing
+part: 1
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Modificare, blocco per blocco">
+  Modificare funziona come correggere un refuso su Wikipedia: modifichi il paragrafo che hai sotto gli occhi, non una textarea gigante che contiene l’intera pagina. In modalità di editing (`npm run wiki`), accedi, passa il mouse su un blocco qualunque di una nota qualunque — questo compreso — e fai clic su ✎.
+</PartHero>
+
+## Il ciclo
+
+Il blocco reso si nasconde e al suo posto si apre un editor [CodeMirror](https://codemirror.net/) con il sorgente Markdown di quel blocco. Lì sotto, mentre digiti, rende un’anteprima dal vivo — attraverso il dialetto del motore più i plugin che il sito passa a `inkbrush({ markdown })`, la stessa serie di regole che monta la pipeline delle pagine, così l’anteprima e la pagina non possono mai essere in disaccordo. `⌘/Ctrl + Enter` salva; `Esc` annulla.
+
+Anche il frontmatter è un blocco: la striscia tassonomica in testa a ogni nota qui porta il suo ✎, che apre lo YAML della nota — cambia uno stato o una data e l’intestazione si ri-rende dal frontmatter aggiornato.
+
+## Le due reti di sicurezza
+
+**Lock ottimistico.** Ogni blocco porta un hash del sorgente da cui è stato ritagliato. Se qualcun altro ha cambiato il file sotto di te, il salvataggio viene respinto con un conflitto invece di sovrascrivere in silenzio il suo lavoro — ricarica e riprova.
+
+**Un cancello di build.** Prima che qualcosa venga scritto su disco, l’intero file passa per la pipeline Markdown del sito — il dialetto, il guardiano dei contenuti, i plugin propri del sito e il compilatore MDX per gli `.mdx`. Un salvataggio che romperebbe la pagina — un `**` che non può accoppiarsi, un tag di componente non chiuso, un’espressione malformata — viene rifiutato con l’errore esatto, e il file su disco resta intatto. L’elenco completo di ciò che il guardiano respinge è dimostrato in coda al [[kitchen-sink|campionario]].
+
+## Dove vanno i salvataggi
+
+Un salvataggio scrive il file Markdown e, con `autocommit` attivo, diventa un commit git che ha per autore l’utente che ha effettuato l’accesso. Non c’è nessun database da nessuna parte: i file dei contenuti sono l’unica fonte di verità e git è la storia durevole. Il registro a grana fine, per blocco, che alimenta la [[inkbrush/revisions|cronologia delle revisioni]] viaggia sopra di essi.
+
+Il dialetto stesso — GFM con una regola di enfasi amichevole col CJK, più un guardiano dei contenuti che rifiuta il Markdown che si deforma in silenzio — è definito una volta nel motore e condiviso dal renderer delle pagine, dall’anteprima di questo editor e dalla CLI `check-content` ([[checks|i cinque controlli]]). Una grammatica, tre consumatori, zero deriva.

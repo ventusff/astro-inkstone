@@ -1,0 +1,70 @@
+---
+title: De componentenset
+description: Een rondgang in drie hoofdstukken langs elk meegeleverd component — en tegelijk een live demonstratie van hoe een hubnotitie met hoofdstukken werkt.
+brand: Componenten
+subtitle: "de componentgalerij\ndrie hoofdstukken · één hub"
+navLabel: Overzicht
+chapters: false
+nav:
+  - group: Galerij
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Een galerij in drie hoofdstukken · 2026.08" title="De componentenset" meta="3 hoofdstukken · 24 componenten · elk per pad geïmporteerd uit astro-inkstone/components/">
+  Alles in de galerij is per pad geïmporteerd uit `astro-inkstone/components/` en gerenderd met de standaardtokens van het pakket. Componenten zijn **puur presentatie**: data en labelteksten komen binnen als props (met Engelse standaardwaarden), dus een site in welke taal dan ook geeft zijn eigen teksten mee.
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: 'hoofdstukken' },
+        { value: '24', label: 'componenten' },
+        { value: '6', label: 'wiki-onderdelen' },
+        { value: '0', label: 'rauwe kleurwaarden' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## De hoofdstukken `{#chapters notoc}`
+
+Elke kaart is één hoofdstuk van de rail in de zijbalk; de chips noemen wat het hoofdstuk laat zien.
+
+<div class="hub-grid">
+  <HubCard href={`${base}/nl/components/content/`} num="DEEL I" title="Inhoud & typografie" count="7 componenten"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    De onderdelen waar lopende tekst uit wordt opgebouwd — callouts, chips, rasters, stappenrails, statistiekenrijen, papierkaarten en literatuurlijsten.
+  </HubCard>
+
+  <HubCard href={`${base}/nl/components/wiki/`} num="DEEL II" title="Wiki & bladeren" count="8 componenten"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    De taxonomieset waar de boekenplanken van deze tuin van zijn gebouwd, plus de twee linkgraaf-panelen — gelinkte vermeldingen en de lokale graaf in de zijbalk.
+  </HubCard>
+
+  <HubCard href={`${base}/nl/components/interactive/`} num="DEEL III" title="Interactief & meubilair" count="9 componenten"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    Een live canvasdemo en het loader-contract dat bij de site hoort, plus het paginameubilair — hero's, hubkaarten, springlijsten, voetregels.
+  </HubCard>
+</div>
+
+## Een hub, live
+
+Deze notitie is zelf de demonstratie van een **hub**: een notitie op het hoogste niveau die in haar frontmatter `nav` verklaart — een geordende hoofdstukkenlijst. De machinerie waar je nu naar kijkt:
+
+- de zijbalk toont de hoofdstukkenrail (I/II/III) onder het beeldmerk van de hub, met vorige/volgende-navigatie aan de voet van elk hoofdstuk;
+- hoofdstukken erven de taxonomie van de hub — geen van de drie galerijhoofdstukken verklaart een eigen soort, domein of status, en toch tonen ze alle drie die van deze notitie; een hoofdstuk dat wél eigen waarden zet, overschrijft dat veld volledig ([[three-way-split|dezelfde regel als overal: expliciet wint]]);
+- op bladerpagina's is de hub **één geheel**: één kaart, met een hoofdstukkenteller — hoofdstukken slingeren nooit los over een plank;
+- het `part:`-nummer van elk hoofdstuk moet overeenkomen met zijn positie in `nav`, anders faalt de build — de rail en de frontmatter kunnen niet uit elkaar drijven;
+- de kaarten hierboven zijn `HubCard`-componenten in een `.hub-grid`; het kader hieronder is een **leesroute** (`.path`), het andere stuk hubmeubilair.
+
+<div class="path">
+  <div class="title">Waar te beginnen</div>
+  <div class="route">
+    Nieuw met het pakket → <a href={`${base}/nl/components/content/`}>Deel I</a><span class="arrow">→</span><a href={`${base}/nl/components/wiki/`}>Deel II</a>; bouw je een bladersite → rechtstreeks naar <a href={`${base}/nl/components/wiki/`}>Deel II</a><span class="arrow">→</span>de <a href={`${base}/nl/getting-started/`}>aan-de-slag-gids</a>; de Markdown-kant van hetzelfde verhaal → de <a href={`${base}/nl/kitchen-sink/`}>staalkaart</a>.
+  </div>
+</div>

@@ -69,8 +69,13 @@ Inkstone alone for a static site that simply reads beautifully.
   and the dark theme is complete — every text color is measured for WCAG AA against the pixels
   it actually sits on.
 - 🧰 **And the rest.** A digital garden proper: kinds, domains, tags and status, hub notes with
-  numbered chapters, linked mentions, a local link graph, ⌘K search and locale mirrors. CJK-first
-  typography: bold that survives Chinese punctuation, a zh UI, and Hanzi two cells wide in code.
+  numbered chapters, linked mentions, a local link graph, ⌘K search and locale mirrors — the
+  demo garden ships its whole manual in 18 languages, behind one registry-driven language menu
+  (adding a language is one registry row, one strings file and a content directory), and the
+  engine's own manual lives there too, as the `/inkbrush/` chapters under the `inkbrush`
+  tag. CJK-first
+  typography: bold that survives Chinese punctuation, per-language Han glyph forms, and Hanzi
+  two cells wide in code.
   Broken Markdown doesn't ship: a content guard refuses the save and fails the build on silent
   deformations, and two headless Chrome probes fail CI on overflow, dead anchors and contrast
   below AA. No separate build step and no production footprint: your site consumes the
@@ -203,8 +208,8 @@ renders wrong" cannot happen.
   the faceted wiki set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational
   and token-driven.
 - **Digital-garden machinery** — a taxonomy factory (kinds / domains / tags / status, hub notes
-  with numbered chapters, locale mirrors) and a backlink-index builder with context snippets,
-  both bound to your vocabulary in a three-line site module.
+  with numbered chapters, locale mirrors for any number of languages) and a backlink-index
+  builder with context snippets, both bound to your vocabulary in a three-line site module.
 - **`siteMarkdown()`** — GFM, CJK-friendly emphasis, KaTeX (dual-theme), Mermaid, Obsidian-style
   callouts, `[[wikilinks]]`, reading time, auto-numbered headings with ToC extraction,
   base-prefix link rewriting, and the build-time content guard.

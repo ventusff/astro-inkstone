@@ -1,0 +1,37 @@
+---
+title: La inbox di Obsidian
+description: Punta il watcher su una cartella del vault; le nuove note si convertono e si importano da sole — embed copiati accanto alla nota, wikilink risolti, evidenziazioni preservate.
+navLabel: Inbox
+part: 4
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="La inbox di Obsidian">
+  Un sacco di scrittura comincia altrove — un telefono, un clipper, un vault di Obsidian. La inbox chiude quel cerchio: puntala su una cartella, e le note lasciate lì si importano da sole nel sito.
+</PartHero>
+
+## Accenderla
+
+La inbox arriva spenta. Si accende in `inkbrush.config.ts`:
+
+```ts title="inkbrush.config.ts"
+inbox: {
+  dir: '~/vault/inbox',        // la cartella da osservare (supporta ~/)
+  ignore: ['daily-'],          // opzionale: prefissi di nome file da saltare
+},
+```
+
+I file già presenti nella cartella all’avvio vengono marcati come visti, non importati — solo le note aggiunte *dopo* si sincronizzano da sole. Tutto ciò che è più vecchio si può recuperare esplicitamente attraverso l’API, così accendere la inbox non ti rovescia mai sul sito, a sorpresa, dieci anni di storia del vault.
+
+## Che cosa fa l’importatore
+
+Ogni nota in arrivo viene convertita, non copiata:
+
+- gli embed di immagini si risolvono sulle cartelle delle risorse del vault, i file vengono **copiati accanto alla nota importata**, e gli embed diventano sintassi standard delle immagini — cancellare la nota, più avanti, cancella con lei le sue risorse
+- i `[[wikilink]]` che corrispondono a una nota reale del sito sopravvivono come link, risolti con [[inkbrush/wikilinks|le stesse regole di ovunque]]; il resto viene appiattito a semplice enfasi con un avviso
+- le evidenziazioni diventano veri elementi `<mark>`, i metadati del frontmatter diventano una riga di provenienza sotto il titolo, e una descrizione viene derivata dal primo paragrafo sostanzioso
+
+La nota convertita deve poi passare lo stesso cancello di build di un salvataggio manuale — una nota che romperebbe la pagina viene rifiutata invece che importata.
+
+Ogni importazione finisce nel registro delle revisioni (via: inbox) come record a file intero: [[inkbrush/revisions|⟲]] la elenca come riga di verifica, e annullare un’importazione è un’operazione git. Con `autocommit` acceso, ogni importazione diventa anche un commit git come qualunque altra modifica; con esso spento, i file importati arrivano come ordinarie modifiche del working tree, da rivedere e committare tu stesso.

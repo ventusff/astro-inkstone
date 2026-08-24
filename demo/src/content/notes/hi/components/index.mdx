@@ -1,0 +1,70 @@
+---
+title: कंपोनेंट संग्रह
+description: "हर शिप होने वाले कंपोनेंट की तीन-अध्याय सैर — और साथ-ही-साथ, यह नोट खुद इस बात का जीवंत प्रदर्शन है कि अध्यायों वाला हब कैसे चलता है।"
+brand: कंपोनेंट
+subtitle: "कंपोनेंट की गैलरी\nतीन अध्याय · एक हब"
+navLabel: अवलोकन
+chapters: false
+nav:
+  - group: गैलरी
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="तीन अध्यायों की गैलरी · 2026.08" title="कंपोनेंट संग्रह" meta="3 अध्याय · 24 कंपोनेंट · हर एक astro-inkstone/components/ से पाथ द्वारा import">
+  गैलरी की हर चीज़ `astro-inkstone/components/` से पाथ द्वारा import होती है और पैकेज के डिफ़ॉल्ट टोकनों से रेंडर होती है। कंपोनेंट **विशुद्ध प्रदर्शन** के हैं: डेटा और लेबल-टेक्स्ट props से आते हैं (डिफ़ॉल्ट अंग्रेज़ी), इसलिए किसी भी भाषा की साइट अपने भेज देती है।
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: 'अध्याय' },
+        { value: '24', label: 'कंपोनेंट' },
+        { value: '6', label: 'wiki हिस्से' },
+        { value: '0', label: 'नंगे रंग-मान' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## अध्याय `{#chapters notoc}`
+
+हर कार्ड साइडबार की अध्याय-पटरी का एक अध्याय है; कार्ड के chip बताते हैं कि उस अध्याय में क्या-क्या दिखता है।
+
+<div class="hub-grid">
+  <HubCard href={`${base}/hi/components/content/`} num="भाग I" title="सामग्री और टाइपोग्राफ़ी" count="7 कंपोनेंट"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    वे हिस्से जिनसे गद्य बनता है — callout, chip, ग्रिड, स्टेप-पटरियाँ, आँकड़ा-पंक्तियाँ, पेपर-कार्ड और संदर्भ-सूचियाँ।
+  </HubCard>
+
+  <HubCard href={`${base}/hi/components/wiki/`} num="भाग II" title="विकी और ब्राउज़" count="8 कंपोनेंट"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    वह वर्गीकरण-सेट जिससे इस बगीचे की शेल्फ़ें बनी हैं, और लिंक-ग्राफ़ के दो पैनल — बैकलिंक और साइडबार का लोकल ग्राफ़।
+  </HubCard>
+
+  <HubCard href={`${base}/hi/components/interactive/`} num="भाग III" title="इंटरैक्टिव और साज़ो-सामान" count="9 कंपोनेंट"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    एक जीवंत canvas-डेमो और साइट के हिस्से वाला लोडर-अनुबंध, साथ में पन्ने का साज़ो-सामान — हीरो, हब-कार्ड, जंप-लिस्ट, फ़ुटर।
+  </HubCard>
+</div>
+
+## हब, आपकी आँखों के सामने
+
+यह नोट खुद **हब** का प्रदर्शन है: एक शीर्ष-स्तरीय नोट जिसके frontmatter में `nav` घोषित है — अध्यायों की क्रमबद्ध सूची। जो मशीनरी इस पल आपके सामने चल रही है:
+
+- साइडबार हब के brand के नीचे अध्याय-पटरी (I/II/III) दिखाता है, हर अध्याय के पैर में पिछला/अगला;
+- अध्याय हब का वर्गीकरण विरासत में पाते हैं — गैलरी के तीनों अध्यायों में से कोई अपना प्रकार, क्षेत्र या स्थिति घोषित नहीं करता, फिर भी हर एक इसी नोट के दिखाता है; जो अध्याय अपने मान लिख दे, उसका वह फ़ील्ड पूरा-का-पूरा उसी का हो जाता है ([[three-way-split|वही नियम जो हर जगह है: जो खुद लिखा, वही मान्य]]);
+- ब्राउज़-पन्नों पर हब **एक इकाई** है: एक कार्ड, अध्याय-गिनती के साथ — अध्याय शेल्फ़ पर कभी नहीं बिखरते;
+- हर अध्याय का `part:` क्रमांक `nav` में उसकी जगह से मेल खाना ही चाहिए, वरना बिल्ड गिर जाता है — पटरी और frontmatter अलग-अलग सुर में बोल ही नहीं सकते;
+- ऊपर के कार्ड `.hub-grid` में सजे `HubCard` हैं; नीचे का बक्सा **पढ़ने का रास्ता** (`.path`) है — हब का दूसरा साज़ो-सामान।
+
+<div class="path">
+  <div class="title">कहाँ से शुरू करें</div>
+  <div class="route">
+    पैकेज से नई-नई पहचान → <a href={`${base}/hi/components/content/`}>भाग I</a><span class="arrow">→</span><a href={`${base}/hi/components/wiki/`}>भाग II</a>; ब्राउज़-साइट बनानी है → सीधे <a href={`${base}/hi/components/wiki/`}>भाग II</a><span class="arrow">→</span><a href={`${base}/hi/getting-started/`}>शुरुआत करें</a>; इसी कहानी का Markdown-पक्ष → <a href={`${base}/hi/kitchen-sink/`}>पूरा पिटारा</a>।
+  </div>
+</div>

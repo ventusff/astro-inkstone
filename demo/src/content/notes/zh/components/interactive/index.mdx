@@ -1,0 +1,90 @@
+---
+title: 交互与页面配件
+description: DemoMount 与站点持有的加载器契约,外加页面配件——hero、Part 分隔、hub 卡、页内跳转列表与页脚。
+navLabel: 交互与配件
+part: 3
+---
+
+import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import LocalToc from 'astro-inkstone/components/LocalToc.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="交互与页面配件">
+  先看一个真实运行的 canvas 演示和它背后的契约;再看给每篇笔记搭框的那些安静组件——从第一页起,你一直在看的就是它们。
+</PartHero>
+
+## DemoMount 现场演示
+
+分工还是这个包一贯的分法:**挂载标记**(舞台、控件槽、图注槽)随包提供;**演示模块和它的加载器**归站点所有。本站把加载器放在 `src/lib/demo-loader.ts`,在布局里调用一次 `mountAllDemos()`;这个调用每页都执行,但只有页面上真的带着 `[data-demo]` 挂载点,才会去拉取对应演示模块的 chunk。
+
+要在画布上接收指针输入的演示,传 `interactive`——舞台随即接管触摸手势并显示十字准星。这一个是被动的(只渲染),所以不传这个开关,在画布上滑动仍然是翻页。它用页面自己的墨色 token 画双源波干涉,所以跟着主题走:
+
+<DemoMount demo="waves/interference" title="演示 · 双源波干涉" canvas={{ w: 640, h: 300 }}>
+  <Fragment slot="caption">
+    两个点源发出圆形波;波峰遇上波峰,墨色汇聚,波峰遇上波谷,纸色透出来。切换一下主题——演示会从实时 token 里重新取墨。
+  </Fragment>
+</DemoMount>
+
+模块契约只有一条:默认导出一个 `mount(ctx)`,返回清理函数;像 `waves/interference` 这样的模块 id 怎么解析,全由站点自定(本站用 `import.meta.glob`)。
+
+## 页面配件
+
+剩下这些组件不填充笔记,而是给笔记搭框:
+
+- `Hero` 给一篇笔记开场:眉题、展示标题、一段走完整 markdown 管线的导语、一行元信息,还有可选的 `tocLabel`——它会在侧栏加一行不编号的「引子」。frontmatter 的 `title` 仍是给 `<title>` 与卡片用的简短正名;hero 的标题可以写长。
+- `PartHero` 给 hub 的一章开场——本页页头就是它。它的眉题从来不用手写:路由把这一章的「第 III 部 · …」标签作为 `props.partLabel` 传进来。
+- `Part` 把一篇长的单页笔记切成几部;编号预设把它变成侧栏里「PART II · …」那样的分组行。[[kitchen-sink|全要素演示]]就是这么切的。
+- `HubCard` 与 `.hub-grid` 是 hub 落地页的卡片,`.path` 是它的阅读路径框——两样都在[[components|本合集的总览页]]上。
+- `LocalToc` 渲染页内跳转列表;两种编号预设产出的两种 ToC 形状它都接受,条目数低于可配置的下限时自动隐藏。下面就拿本章自己的 ToC 现场演示。
+- `SidebarMemory` 让可滚动的侧栏跨页面记住读者上次停的位置,当前项(默认认 `[aria-current="page"]`)快要滚出视野时自动居中。把它放进侧栏的滚动盒里、导航标记之后;它在首次绘制前运行,侧栏不会先闪到顶部再跳回来。本站的侧栏就装着它。
+- `LineageSvg` 给手绘 SVG(方法脉络图、分类树)配一个卡片框——下面有一幅。
+- `PageFooter` 是笔记脚下那行小字——本站每篇笔记底下那行就是。
+- 导览类组件在[[components/wiki|wiki 与导览一章]];本合集的 markdown 侧则是[[kitchen-sink|全要素演示]]。
+
+## LocalToc 与 LineageSvg 现场演示
+
+把本页构建期生成的 ToC 喂给 `LocalToc`——和侧栏消费的是同一份数据,以 `props.toc` 递给笔记:
+
+<LocalToc toc={props.toc} label="本章内容" />
+
+再看 `LineageSvg` 框住一幅手绘示意图,通篇只用语义 token 上墨,两套主题都坐得住:
+
+<LineageSvg title="图 · 纸面层的位置">
+  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css 供给 base.css 与 browse.css,二者再供给全部组件" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
+    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
+      <rect x="20" y="55" width="150" height="40" rx="6" />
+      <rect x="245" y="15" width="150" height="40" rx="6" />
+      <rect x="245" y="95" width="150" height="40" rx="6" />
+      <rect x="470" y="55" width="150" height="40" rx="6" />
+    </g>
+    <g fill="none" stroke="var(--color-ink-faint)">
+      <path d="M170 68 C 210 60, 210 42, 245 37" />
+      <path d="M170 82 C 210 90, 210 108, 245 113" />
+      <path d="M395 37 C 430 42, 430 60, 470 68" />
+      <path d="M395 113 C 430 108, 430 90, 470 82" />
+    </g>
+    <g fill="var(--color-ink)" text-anchor="middle">
+      <text x="95" y="80">tokens.css</text>
+      <text x="320" y="40">base.css</text>
+      <text x="320" y="120">browse.css</text>
+      <text x="545" y="80">components</text>
+    </g>
+  </svg>
+</LineageSvg>
+
+## 没有组件形态的配件
+
+有几件配件只是 `base.css` 里的普通类,留给站点在自己的布局里渲染,或在行文里直接写 HTML:
+
+| 类 | 是什么 |
+| --- | --- |
+| `.page-head` + `.kicker`、`.page-desc`、`.page-date` | 由 frontmatter 驱动的页头(眉题、h1、描述、日期),由布局渲染,替代 `<Hero>` |
+| `.banner`、`.banner-fallback` | 页头下面的一行通告;fallback 变体是弱化样式的那种 |
+| `.page-foot` | 两栏小字页脚(左槽、右槽) |
+| `.speak` | 深入小节标题下的大白话注解;标签文案在 `--speak-label` |
+| `.path` + `.title`、`.route`、`.arrow` | hub 上的阅读路径框 |
+| `.ref-tag` | 文献列表里的等宽小标签(会议名、年份) |
+| `.tag`、`.tag.teal / .mustard / .violet` | 论文卡同款徽章,哪里都能用 |
+| `.measured` + `.measured-head`、`.measured-body`、`.measured-pane`(`.doc`)、`.measured-tag` | 「文档说 vs 实测」对比卡:一条实心青色标题栏压着两栏,`.doc` 栏放文档的说法,另一栏放测量结果——轮廓和任何 callout 都不一样 |
+| `.paper .idea-label` | `PaperCard` 正文里的大写小标签,如 `<span class="idea-label">Key idea</span>` |

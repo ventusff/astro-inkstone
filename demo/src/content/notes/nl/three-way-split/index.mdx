@@ -1,0 +1,47 @@
+---
+title: De driedeling
+brand: De driedeling
+subtitle: "de engine bewerkt, het papier toont,\nde site ben jij"
+description: De engine bewerkt, het papier toont, de site ben jij — wie waarvan eigenaar is, en waarom de grenzen liggen waar ze liggen.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Gids · architectuur" title="De driedeling" meta="drie repo's · drie eigenaren · één zin om te onthouden">
+  Een docs- of wikisite die je met deze gereedschapskist bouwt, bestaat uit drie delen, elk eigenaar van precies één laag. De grenzen ertussen zijn geen kwestie van smaak — achter elke grens zit een beperking die bijt zodra je eroverheen stapt.
+</Hero>
+
+## Drie lagen, drie eigenaren
+
+- **astro-inkbrush (de engine)**: een minimaal CMS — blokken ter plekke bewerken in de browser, revisiegeschiedenis en terugdraaien per blok, reacties, AI-vragen / herschrijven / vertalen, import via een inbox. De engine bezit ook één ding dat op het eerste gezicht niet bij een CMS lijkt te horen: **het Markdown-dialect en de poortwachter voor de inhoud**. De reden is hard: de grammatica die de editor accepteert en de grammatica die de pagina rendert moeten dezelfde zijn, anders is "opslaan lukt in de editor, renderen gaat mis op de pagina" slechts een kwestie van tijd. De parserregels worden dus één keer geschreven, in de engine, en op drie plekken geconsumeerd — site-rendering, opslagvalidatie in het CMS, CI-controles.
+- **astro-inkstone (het papier — dit pakket)**: de gedeelde laag voor uiterlijk en pipeline — tweelaagse designtokens in twee contexten, de inhoudsstylesheet `base.css` en de boekenplank `browse.css`, de componentbibliotheek, de pipeline-preset `siteMarkdown`, de taxonomie- en backlink-hulpen waar deze tuin op draait, de codelettersubset van Maple Mono CN en de renderprobes. Het doet **geen** site-identiteit: merkkleuren, layout-chrome, routing en deployment gaan het niets aan.
+- **De site (zoals de tuin die je nu leest)**: overschrijft de tokens van laag één voor zijn identiteitskleur; bezit zijn eigen Sidebar- en nav-chrome (de implementatie van deze site is het referentie-antwoord); bepaalt hoe de inhoud is georganiseerd, hoe routes eruitzien en waar hij wordt uitgerold.
+
+Eén zin om te onthouden: **de engine bewerkt, het papier toont, de site ben jij.**
+
+## Waarom de grenzen hier liggen
+
+Achter elke snede zit een echte beperking:
+
+**Het dialect hoort bij de engine**, omdat een controle waarvan de pluginset afwijkt van die van de site erger is dan geen controle — een controle zonder de wiskundeplugin leest formule-accolades als JSX-expressies, en één zonder GFM wuift tabelstrepen door. De grammatica wordt één keer geschreven en op drie plekken geconsumeerd, dus ze kán niet uit elkaar drijven.
+
+**Stijlen horen bij het papier**, omdat wanneer meerdere sites elk hun eigen inhoudsstylesheet onderhouden, één contrastfix per site opnieuw moet worden aangebracht — mis er één, en de kleine tekst van díe site zakt onder AA. In een gedeelde laag landt één fix overal.
+
+**Identiteit hoort bij de site**, omdat op het moment dat een gedeelde laag de merkkleur van één site opslokt, elke andere site ertegen moet vechten met overrides. Vandaar de tweelaagse tokens: een site overschrijft het rauwe palet van laag één (`--p-*`) en de semantische laag plus de componenten volgen ongemoeid — zie [[design-tokens]].
+
+## Waar de bladermachinerie woont
+
+Dezelfde discipline geldt voor wat je op dit moment aan het doorbladeren bent. Het pakket levert de **mechaniek** — `createTaxonomy` (het oplossen van soort/domein/tag, hub-overerving, taalspiegels), `createBacklinks` (de index van gelinkte vermeldingen) en presentatiecomponenten zoals de notitiekaarten en facetrijen op de landingspagina. De site bezit het **vocabulaire en de routes**: de soorten en domeinen van deze tuin staan in zijn eigen registrybestand, en zijn pagina's onder `/kind/…`, `/domain/…` en `/tag/…` zijn gewone Astro-pagina's die een consumerende site kopieert en naar eigen hand zet. Dezelfde snede, één verdieping hoger: mechaniek in het pakket, betekenis in de site.
+
+## Wat een site ervoor terugkrijgt
+
+Vanuit de site bekeken levert dit pakket plus de engine op:
+
+- `astro-inkstone/styles/tokens.css` + `base.css` + `browse.css`: eerst de tokens, dan de leeskolom, dan de boekenplank — drie `@import`-regels voor de hele look;
+- `siteMarkdown(...)`: de complete Markdown-pipeline in één regel, met de schakelaars beschreven in [[getting-started]];
+- componenten onder `astro-inkstone/components/`, per pad te importeren waar nodig;
+- de taxonomiefabriek en de backlink-bouwer onder `astro-inkstone/lib/`, gekoppeld aan de eigen registry van de site;
+- in WIKI-modus het volledige CMS van de engine (probeer het op deze site met `npm run wiki`);
+- vijf controles: `check-content`, `check-wikilinks` en `check-dist` (meegeleverd met de engine), `ui_probe` en `contrast_probe` (meegeleverd hier) — zie [[checks]].
+
+Elk rendereffect op elke pagina van deze tuin is het product van die snede — de notities zijn de handleiding, en de handleiding is de demo.

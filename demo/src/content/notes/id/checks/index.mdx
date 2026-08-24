@@ -1,0 +1,84 @@
+---
+title: Rangkaian pemeriksaan
+brand: Pemeriksaan
+subtitle: "satu gerbang per lapisan\nsumber · tautan · keluaran · render · kontras"
+description: check-content, check-wikilinks, check-dist, ui_probe, contrast_probe — satu gerbang per lapisan, masing-masing menangkap satu kelas kegagalan senyap yang lolos di balik build hijau.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Referensi · perkakas" title="Rangkaian pemeriksaan" meta="lima pemeriksaan · tiga dari mesin, dua dari paket ini · semua hijau sebelum commit">
+  Build yang hijau tidak berarti halamannya beres. Rantai perkakas ini menempatkan satu pemeriksaan di tiap lapisan, masing-masing menangkap satu kelas kegagalan senyap "build hijau, halaman rusak" — dan dua di antaranya memandang halaman sebagaimana pembaca memandangnya, di browser sungguhan.
+</Hero>
+
+## Lima gerbang, lima lapisan
+
+| Pemeriksaan | Dikirim bersama | Yang diperiksa | Kapan dijalankan |
+| --- | --- | --- | --- |
+| check-content | mesin, `scripts/check-content.mjs` | setiap berkas sumber md/mdx | CI repo konten, atau seusai menulis |
+| check-wikilinks | mesin, `scripts/check-wikilinks.mjs` | graf `[[tautan wiki]]` | CI repo konten, atau seusai mengganti nama catatan |
+| check-dist | mesin, `scripts/check-dist.mjs` | keluaran `astro build` | setiap selesai build (postbuild) |
+| ui_probe | paket ini, `scripts/ui_probe.mjs` | halaman yang dirender di browser sungguhan | seusai perubahan gaya/tata letak |
+| contrast_probe | paket ini, `scripts/contrast_probe.mjs` | kontras setiap simpul teks, kedua tema | seusai perubahan token mana pun |
+
+## check-content: lapisan sumber
+
+Mengompilasi setiap md/mdx yang akan menjadi halaman dengan **dialek yang persis sama** dengan milik situs — galat sintaks maupun deformasi senyap (penanda emphasis yang tak bisa berpasangan, kurung kurawal yang ditelan evaluasi MDX, penanda daftar yang lahir dari pelipatan baris, `$$` satu-baris, rumus yang tak bisa dirender KaTeX — set yang sama yang menutup halaman [[kitchen-sink|serba ada]]) semuanya membuat CI merah.
+
+Mengapa skrip ini harus datang dari mesin: pemeriksa yang set plugin-nya berbeda dari milik situs **lebih buruk daripada tanpa pemeriksa** — yang kehilangan plugin matematika salah membaca kurung kurawal rumus sebagai ekspresi JSX, yang tanpa GFM meloloskan tabel begitu saja. Dialeknya ditulis sekali di mesin; perenderan situs, validasi simpan CMS, dan skrip ini mengonsumsi dialek yang satu itu, selalu.
+
+```bash title="akar repo konten"
+node <engine>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
+```
+
+Di luar kompilasi, ia menangkap dua kelas kehilangan senyap di frontmatter: `#` tanpa tanda kutip di sebuah nilai (YAML membacanya sebagai komentar dan diam-diam memenggal sisanya) dan YAML yang sama sekali gagal diurai, dilaporkan berikut barisnya.
+
+## check-wikilinks: graf tautan
+
+`[[Tautan wiki]]` yang mati sengaja tidak menggagalkan build — sebuah taman harus boleh menaut ke catatan yang belum ia tumbuhkan. Tetapi pembusukan tautan tetap harus ketahuan di CI, maka mesin mengirim sebuah lint yang meresolusi setiap tautan wiki dengan **parser dan aturan resolusi milik pustakanya sendiri** (alias, brand, judul, cermin lokal) dan melaporkan yang hilang, yang ambigu, dan jangkar yang meragukan. `--strict` mengubah tautan mati menjadi exit gagal — begitulah CI repositori ini menjalankannya:
+
+```bash title="pemeriksaan tautan taman ini, sebagaimana CI menjalankannya"
+node scripts/check-links.mjs
+```
+
+## check-dist: lapisan keluaran
+
+Di dalam `dist/` hasil build, setiap rujukan internal yang bisa diklik pembaca harus benar-benar ada. Ia menangkap lubang-lubang senyap di bawah build yang hijau:
+
+- tautan/aset internal yang menunjuk berkas yang tak ada (jenis yang muncul berlusin-lusin sehabis perombakan rute);
+- jangkar dalam-halaman yang menunjuk id yang tak ada;
+- segmen lokal berganda di jalur (`/en/en/` — buah klasik dari fallback i18n yang menumpuk prefiks di atas rute yang sudah berprefiks);
+- `<a>` bersarang di dalam `<a>` (parser HTML menutup yang luar lebih awal dan tombol-tombol berjatuhan dari kartunya);
+- residu galat KaTeX (rumusnya jadi teks merah di halaman sementara build tetap hijau).
+
+Demo ini menyambungkannya ke postbuild: `npm run build` yang hijau berarti pemeriksaan keluaran juga lolos.
+
+```bash title="akar situs, seusai build (sertakan --base bila situs dideploy di sub-path)"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
+```
+
+## Probe lapisan render
+
+Sumber dan keluaran bisa sama-sama benar sementara halamannya tetap rusak — kasus klasiknya kartu beranda yang tak dicocoki satu aturan stylesheet pun, dirender sebagai satu baris teks telanjang yang berdesakan: pemeriksaan tautan dan jangkar tetap hijau karena keduanya tak pernah melihat halaman yang dirender. `ui_probe` mengemudikan browser sungguhan menyusuri setiap halaman di `dist` pada empat lebar viewport (1440/1024/768/430) dan mengukur: luapan horizontal halaman, elemen yang lebih lebar dari wadahnya tanpa kotak gulir untuk ditinggali, kelas yang tak digayakan satu aturan stylesheet pun, tingkat judul yang terlompati, id ganda, gambar tanpa atribut `alt`, jangkar dalam-halaman dan `aria-controls` yang menunjuk kehampaan. Ia hanya melaporkan yang bisa dibuktikan mesin — tanpa penilaian estetika.
+
+```bash title="butuh Chrome/Chromium lokal"
+npm run build
+node ../scripts/ui_probe.mjs dist   # menyajikan dist sendiri; beri baseUrl untuk memeriksa server yang hidup
+```
+
+Ia memeriksa seluruh dokumen — chrome, bilah sisi, dan dialog termasuk.
+Hijau berarti baris terakhir laporannya berbunyi `SAMPLES WITH FINDINGS: 0`
+(satu sampel adalah satu rute pada satu lebar).
+
+## Probe kontras
+
+Token-tokennya mengklaim AA, maka klaim itu diukur, bukan sekadar dinyatakan. `contrast_probe` memuat setiap halaman `dist` di browser sungguhan — tema terang dan gelap, lebar desktop dan ponsel — dan mengukur setiap larik teks yang dirender dalam keadaan bawaan: teks HTML, teks SVG, dan teks buatan `::before` / `::after`, dengan setiap overlay `<dialog data-probe-open>` diperiksa dalam keadaan terbuka (dan sebuah kueri diketikkan ke kotak pencarian yang ditemukan di sana) pada satu halaman perwakilan — penanda itu adalah pernyataan situs bahwa dialognya sudah utuh sebagaimana ditulis. Dasarnya tidak dibaca dari stylesheet; halaman dirender dengan semua glif dibuat transparan, ditangkap layar, dan piksel di bawah tiap larik itulah dasarnya — sehingga gradien, semburat `color-mix()`, lapisan tembus pandang, dan palet malam semuanya diukur sebagaimana mereka dirender. Warna depan sebuah larik membawa akumulasi `opacity` elemennya dan para leluhurnya, sehingga teks yang diredupkan diukur pada kekuatan yang benar-benar dilihat pembaca. Keadaan hover dan fokus ditinjau mata, bukan diprobe. Teks kecil dipatok 4.5:1, teks besar (24px, atau 18.66px tebal) 3:1; larik yang warnanya tak bisa diurai atau dasarnya tak bisa disampel dihitung sebagai temuan. Laporannya menyebut halaman, tema, lebar, selector, kedua warna, dan rasio dari setiap larik yang di bawah ambang:
+
+```bash title="seusai build, kedua tema"
+node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS mempersempit matriksnya
+```
+
+<div class="callout system">
+  <div class="callout-title">Rutinitas perubahan gaya</div>
+  Setiap perubahan pada stylesheet atau komponen paket melewati build demo ini dulu, lalu <code>ui_probe</code> dan <code>contrast_probe</code> atas keluarannya — semua hijau sebelum commit. Demo ini merangkap ajang uji paketnya.
+</div>

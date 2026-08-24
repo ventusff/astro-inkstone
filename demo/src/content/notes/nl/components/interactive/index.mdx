@@ -1,0 +1,90 @@
+---
+title: Interactief
+description: DemoMount en het loader-contract dat bij de site hoort, plus het paginameubilair — hero's, deelscheiders, hubkaarten, springlijsten en voetregels.
+part: 3
+navLabel: "Interactief & meubilair"
+---
+
+import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import LocalToc from 'astro-inkstone/components/LocalToc.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Interactief & meubilair">
+  Een live canvasdemo en het contract erachter, en daarna de stille componenten waar elke notitie door omlijst wordt — dezelfde die je sinds de eerste pagina al voor je hebt.
+</PartHero>
+
+## DemoMount — live
+
+De taakverdeling is de gebruikelijke van dit pakket: de **mount-markup** (podium, slot voor bediening, slot voor onderschrift) reist mee in het pakket; de **demomodule en haar loader** horen bij de site. Deze site houdt zijn loader in `src/lib/demo-loader.ts` en roept `mountAllDemos()` één keer aan vanuit de layout; die aanroep draait op elke pagina, maar een demomodule-chunk wordt alleen opgehaald voor een pagina die een `[data-demo]`-mount draagt.
+
+Een demo die aanwijzerinvoer op haar canvas aanneemt, geeft `interactive` mee — het podium claimt dan aanraakgebaren en toont een draadkruis. Deze demo is passief (alleen renderen), laat de vlag dus weg, en een veeg over het canvas scrolt gewoon de pagina. Ze tekent interferentie van twee golfbronnen met het eigen inkt-token van de pagina, en volgt zo het thema:
+
+<DemoMount demo="waves/interference" title="Demo · Interferentie van twee golfbronnen" canvas={{ w: 640, h: 300 }}>
+  <Fragment slot="caption">
+    Twee puntbronnen zenden cirkelvormige golven uit; waar toppen op toppen vallen hoopt de inkt zich op, waar toppen op dalen vallen schemert het papier erdoorheen. Wissel eens van thema — de demo inkt zichzelf opnieuw vanuit de actuele tokens.
+  </Fragment>
+</DemoMount>
+
+Het modulecontract is één default export, `mount(ctx)`, die een opruimfunctie teruggeeft; de loader lost module-ids als `waves/interference` op zoals het de site uitkomt (hier met `import.meta.glob`).
+
+## Paginameubilair
+
+De resterende componenten omlijsten een notitie in plaats van haar te vullen:
+
+- `Hero` opent een notitie: kicker, displaytitel, een intro die door de volledige Markdown-pipeline gaat, een metaregel en een optioneel `tocLabel` dat een ongenummerde "intro"-rij aan de zijbalk toevoegt. De frontmatter-`title` van de notitie blijft de korte canonieke naam voor `<title>` en kaarten; die van de hero mag lang zijn.
+- `PartHero` opent een hoofdstuk van een hub — het hoofd van deze pagina zelf. Zijn kicker typ je nooit uit: de route geeft het "Deel III · …"-label van het hoofdstuk door als `props.partLabel`.
+- `Part` verdeelt een lange notitie van één pagina in delen; de nummeringspreset maakt er de groepsrijen van de zijbalk van. De [[kitchen-sink|staalkaart]] is zo opgedeeld.
+- `HubCard` en `.hub-grid` zijn de landingskaarten van een hub; `.path` is zijn leesroutekader — beide op [[components|het overzicht van deze galerij]].
+- `LocalToc` rendert een springlijst binnen de pagina; het accepteert beide ToC-vormen die de twee nummeringspresets produceren en verbergt zichzelf onder een instelbaar minimum. Hieronder, live, op de ToC van dit hoofdstuk zelf.
+- `SidebarMemory` houdt een scrollende zijbalk over paginaladingen heen waar de lezer hem achterliet, en centreert het huidige item (standaard `[aria-current="page"]`) zodra het anders buiten beeld zou vallen. Zet het in de scrollbak van de zijbalk, na de navigatiemarkup; het draait vóór de eerste paint, dus de zijbalk flitst nooit eerst naar boven. De zijbalk van deze demo draagt het zelf.
+- `LineageSvg` lijst een handgetekende SVG (een methodestamboom, een taxonomieboom) in als kaart — er staat er één hieronder.
+- `PageFooter` is de kleine lettertjes aan de voet van een notitie — de regel onder elke notitie hier.
+- De bladeronderdelen wonen in [[components/wiki|het wiki-hoofdstuk]]; de Markdown-kant van de galerij is de [[kitchen-sink|staalkaart]].
+
+## LocalToc en LineageSvg, live
+
+`LocalToc`, gevoed met de buildtijd-ToC van deze pagina zelf — dezelfde data die de zijbalk consumeert, aan de notitie doorgegeven als `props.toc`:
+
+<LocalToc toc={props.toc} label="In dit hoofdstuk" />
+
+En `LineageSvg` rond een handgeschreven diagram, volledig geïnkt in semantische tokens zodat het op beide thema's past:
+
+<LineageSvg title="Fig. — waar de uiterlijklaag zit">
+  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css voedt base.css en browse.css, en die voeden elk component" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
+    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
+      <rect x="20" y="55" width="150" height="40" rx="6" />
+      <rect x="245" y="15" width="150" height="40" rx="6" />
+      <rect x="245" y="95" width="150" height="40" rx="6" />
+      <rect x="470" y="55" width="150" height="40" rx="6" />
+    </g>
+    <g fill="none" stroke="var(--color-ink-faint)">
+      <path d="M170 68 C 210 60, 210 42, 245 37" />
+      <path d="M170 82 C 210 90, 210 108, 245 113" />
+      <path d="M395 37 C 430 42, 430 60, 470 68" />
+      <path d="M395 113 C 430 108, 430 90, 470 82" />
+    </g>
+    <g fill="var(--color-ink)" text-anchor="middle">
+      <text x="95" y="80">tokens.css</text>
+      <text x="320" y="40">base.css</text>
+      <text x="320" y="120">browse.css</text>
+      <text x="545" y="80">components</text>
+    </g>
+  </svg>
+</LineageSvg>
+
+## Meubilair zonder component
+
+Een paar stukken zijn gewone classes in `base.css`, voor sites die ze vanuit hun eigen layout renderen of als HTML in lopende tekst schrijven:
+
+| Class | Wat het is |
+| --- | --- |
+| `.page-head` + `.kicker`, `.page-desc`, `.page-date` | een paginakop uit frontmatter (kicker, h1, beschrijving, datum), gerenderd door een layout in plaats van een `<Hero>` |
+| `.banner`, `.banner-fallback` | een éénregelige melding onder de kop; de fallback-variant is de gedempte |
+| `.page-foot` | een tweekoloms voetregel in kleine letters (linkerslot, rechterslot) |
+| `.speak` | de uitleg in gewone taal onder een verdiepingskop; zijn label is `--speak-label` |
+| `.path` + `.title`, `.route`, `.arrow` | een leesroutekader op een hub |
+| `.ref-tag` | een klein monospace-label in een literatuurlijst (een venue, een jaartal) |
+| `.tag`, `.tag.teal / .mustard / .violet` | de badges van de papierkaarten, overal bruikbaar |
+| `.measured` + `.measured-head`, `.measured-body`, `.measured-pane` (`.doc`), `.measured-tag` | de vergelijkingskaart gedocumenteerd-versus-gemeten: een effen teal titelbalk boven twee panelen, het `.doc`-paneel met de bewering en het andere met de meting — een silhouet dat van elke callout te onderscheiden is |
+| `.paper .idea-label` | het kleine kernidee-label in kapitalen binnen een `PaperCard`-tekst, bijv. `<span class="idea-label">Kernidee</span>` |

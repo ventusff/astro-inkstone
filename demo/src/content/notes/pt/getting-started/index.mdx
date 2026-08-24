@@ -1,0 +1,127 @@
+---
+title: Primeiros passos
+brand: Primeiros passos
+subtitle: "dois submodules, três imports,\numa linha de pipeline"
+description: Um par de submodules no repositório do site, três imports de folha de estilo, uma linha de siteMarkdown para o pipeline de Markdown inteiro — e você tem um jardim.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Guia · do zero a um jardim" title="Primeiros passos" meta="dois submodules · três folhas de estilo · um siteMarkdown() · três comandos">
+  Nem o papel nem o motor são publicados no npm — os dois são zero-build e expõem o fonte TS/CSS cru. O site vendoriza os dois repositórios como submodules do git, importa três folhas de estilo e liga uma função no `astro.config`. Tudo o que você vê neste site foi montado assim.
+</Hero>
+
+<Part title="Instalação" />
+
+## Um par de submodules
+
+Traga os dois repositórios para dentro e aponte dependências `file:` para eles:
+
+```bash title="raiz do repositório do site"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (dependências)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] O layout desta demo é um pouco diferente
+> A demo mora dentro do repositório do pacote (`demo/`), então o `astro-inkstone` dela aponta para `file:..` e o motor fica pendurado em `demo/vendor/`. Um site independente usa o layout `packages/` acima — os dois arranjos são equivalentes.
+
+## Estilos
+
+Na sua folha de estilo global: primeiro os tokens, depois a camada de conteúdo, depois — em um site com páginas de navegação — a estante, e só então o seu próprio chrome:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* páginas de landing e de faceta, sobre body.wb-root */
+
+/* identidade: sobrescreva os pigmentos da camada um; os dois contextos semânticos e a camada de componentes acompanham */
+:root {
+  --p-shi: #b03a48; /* seu acento de leitura */
+  --p-zhu: #3b4a7a; /* seu acento de estante e a marca do site */
+  --p-shi-n: #e0919b; /* os gêmeos noturnos: o tema escuro lê --p-*-n */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+A serifa da estante é `--font-display` (Source Serif 4 + Noto Serif SC); hospede-a você mesmo como esta demo faz e o cabeçalho fica exatamente igual a este:
+
+```css title="src/styles/site.css (fontes, opcional)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+Sites com matemática acrescentam uma linha no layout para a folha de estilo do KaTeX (sem ela, a diagramação das fórmulas desmonta):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="Ligação" />
+
+## O pipeline de Markdown em uma linha
+
+Uma configuração mínima no formato deste site — numeração de capítulos, matemática, callouts, diagramas e `[[wikilinks]]` resolvidos contra a coleção de notas (a versão completa, com todos os ganchos que este site liga, é o `astro.config.mjs` do repositório):
+
+```js title="astro.config.mjs (mínimo)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs' e '/docs/' funcionam igual
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // números de parte/capítulo + ToC via remarkPluginFrontmatter
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // molduras de código: barra de título / copiar / recolher / anotações
+    mermaid: true, // cercas mermaid renderizam no cliente
+    callouts: true, // sintaxe > [!note] no estilo Obsidian
+    wikiBlocks: WIKI_MODE, // modo de edição: mapeamento bloco ↔ linha do fonte, sempre por último
+    guard: { autoNumberedHeadings: true }, // guardião de conteúdo: rejeita numeração digitada à mão
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown` se apoia no dialeto do motor (GFM, ênfase amigável a CJK, o guardião de conteúdo); o preset em si só monta e ordena os plugins do lado do site — **a ordem do pipeline é o contrato**, e o seu site nunca mais se preocupa com quem roda antes de quem. Cada chave está demonstrada na página da [[kitchen-sink|vitrine completa]], e o raciocínio por trás da divisão do pacote mora em [[boundaries|a divisão em três]]. Quer os títulos dos callouts em português? Passe `calloutLabels` — os padrões são em inglês.
+
+## Coloque para rodar
+
+Os scripts são os que o `package.json` desta demo define (`build` roda o check-dist do motor como postbuild; `wiki` é `WIKI=1 astro dev`):
+
+```bash
+npm install
+npm run dev        # o jardim
+npm run build      # build estático + o check-dist do motor (postbuild)
+npm run wiki       # WIKI=1 astro dev — modo de edição do CMS
+```
+
+O build estático não carrega um único byte do motor: fora do modo WIKI, o código de integração do motor nem sequer é importado (import dinâmico), e nenhum metadado de edição é emitido. O único vestígio com cara de CMS na saída é a marcação de encaixe inerte do próprio site — os spans `data-inkbrush-slot` vazios na barra de navegação e o CSS deles — que não faz nada até o CMS atracar ali.

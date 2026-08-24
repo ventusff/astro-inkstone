@@ -44,7 +44,7 @@ Beyond compiling, it catches two frontmatter classes of silent loss: an unquoted
 Dead `[[wikilinks]]` deliberately do not fail the build — a garden must be allowed to link to notes it hasn't grown yet. But link rot still belongs in CI, so the engine ships a lint that resolves every wikilink with **the library's own parser and resolution rules** (alias, brand, title, locale mirrors) and reports the missing, the ambiguous, and the dubious anchors. `--strict` turns dead links into a failing exit — that is how this repository's CI runs it:
 
 ```bash title="this garden's link check, as CI runs it"
-node vendor/astro-inkbrush/scripts/check-wikilinks.mjs src/content/notes --locale-prefix zh/ --strict
+node scripts/check-links.mjs
 ```
 
 ## check-dist: the output layer

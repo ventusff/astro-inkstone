@@ -1,0 +1,70 @@
+---
+title: 组件合集
+description: 全部随包组件分三章走一遍——同时,这篇笔记本身就是带章节的 hub 如何运作的现场演示。
+brand: 组件合集
+subtitle: "全部组件的陈列\n三章 · 一个 hub"
+navLabel: 总览
+chapters: false
+nav:
+  - group: 陈列
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="三章陈列 · 2026.08" title="组件合集" meta="3 章 · 24 个组件 · 全部从 astro-inkstone/components/ 按路径导入">
+  陈列里的每一个组件都从 `astro-inkstone/components/` 按路径导入,用包的默认 token 渲染。组件是**纯展示**的:数据与标签文案都走 props(默认英文),任何语言的站点传自己的即可。
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: '章' },
+        { value: '24', label: '个组件' },
+        { value: '6', label: '个 wiki 零件' },
+        { value: '0', label: '处裸色值' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## 三个章节 `{#chapters notoc}`
+
+每张卡对应侧栏章节轨上的一章;卡上的 chip 报的是这一章都演些什么。
+
+<div class="hub-grid">
+  <HubCard href={`${base}/zh/components/content/`} num="第 I 部" title="内容与排版" count="7 个组件"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    行文由这些零件搭成——callout、chip、栅格、步骤轨、统计行、论文卡与文献列表。
+  </HubCard>
+
+  <HubCard href={`${base}/zh/components/wiki/`} num="第 II 部" title="wiki 与导览" count="8 个组件"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    这座园地的书架就是用这套分类组件搭的,外加两块链接图面板——反向链接与侧栏的局部关系图。
+  </HubCard>
+
+  <HubCard href={`${base}/zh/components/interactive/`} num="第 III 部" title="交互与页面配件" count="9 个组件"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    一个真实运行的 canvas 演示与站点持有的加载器契约,再加页面配件——hero、hub 卡、页内跳转列表、页脚。
+  </HubCard>
+</div>
+
+## hub 现场演示
+
+这篇笔记本身就是 **hub** 的现场演示:一篇顶层笔记,frontmatter 里声明了 `nav`——一份有序的章节清单。此刻在你眼前运转的机制有这些:
+
+- 侧栏在 hub 字标下方挂出章节轨(I/II/III),每章末尾带上一章/下一章翻页;
+- 章节继承 hub 的分类:三章没有一章自己声明 kind、domain 或 status,页头的元信息却一章不缺——继承的都是本篇的;哪一章自己声明了,该字段就整个以它为准([[three-way-split|和别处同一条规则:写了就算自己的]]);
+- 在导览页上,hub 是**一个整体**:一张卡、标着章数——章节不会散落到书架上;
+- 每章的 `part:` 编号必须与它在 `nav` 里的位置一致,否则构建直接失败——章节轨和 frontmatter 不可能各说各话;
+- 上面的卡片是排在 `.hub-grid` 里的 `HubCard`;下面这个框是**阅读路径**(`.path`),hub 的另一件配件。
+
+<div class="path">
+  <div class="title">从哪读起</div>
+  <div class="route">
+    初次接触这个包 → <a href={`${base}/zh/components/content/`}>第 I 部</a><span class="arrow">→</span><a href={`${base}/zh/components/wiki/`}>第 II 部</a>;要搭导览站 → 直接进<a href={`${base}/zh/components/wiki/`}>第 II 部</a><span class="arrow">→</span><a href={`${base}/zh/getting-started/`}>快速上手</a>;同一套东西的 markdown 侧 → <a href={`${base}/zh/kitchen-sink/`}>全要素演示</a>。
+  </div>
+</div>

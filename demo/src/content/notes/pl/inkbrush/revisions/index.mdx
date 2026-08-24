@@ -1,0 +1,27 @@
+---
+title: Historia rewizji i cofanie
+description: Każdy zapis jest dziennikowany na poziomie bloku — kto, kiedy, które linie, dokładny tekst przed i po. Przeglądaj przez ⟲, odkręcaj jednym kliknięciem.
+navLabel: Rewizje
+part: 2
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Historia rewizji i cofanie">
+  Każdy zapis — wpisany ręcznie, wyprodukowany przez Claude'a czy zaimportowany ze skrzynki — jest dopisywany do dziennika rewizji przechowywanego obok treści: kto, kiedy, które linie i dokładny tekst przed/po. Najedź na blok, kliknij ⟲, a otworzy się historia tego bloku.
+</PartHero>
+
+## Dziennik
+
+Każdy wpis pokazuje, jak zmiana powstała (edycja ręczna, edycja Claude'a, tłumaczenie AI, import ze skrzynki albo wcześniejsze cofnięcie), kto jej dokonał, oraz zwijany diff przed/po. Wpisy całoplikowe — tłumaczenie, import — są wymieniane dla porządku, ale nie niosą przycisku cofnięcia: ich odkręcanie to robota gita.
+
+## Cofnięcie
+
+Jedno kliknięcie w przycisk cofnięcia przy wpisie zastępuje tekst *po* danej rewizji jej tekstem *przed* — jako nowa, dziennikowana edycja, więc cofnięcie samo też da się cofnąć. Dwa szczegóły warte znajomości:
+
+- Cofnięcie jest nakładane przez dokładne dopasowanie treści. Jeśli blok był od tamtej pory edytowany i stary tekst nie występuje już dosłownie, cofnięcie zostaje odrzucone, a nie zgadnięte — nic nie jest nigdy łatane rozmytym dopasowaniem.
+- Wynik przechodzi przez tę samą bramę builda co każdy inny zapis ([[inkbrush/editing|dwie siatki bezpieczeństwa]]). Cofnięcie, które zepsułoby stronę, jest odrzucane.
+
+## Po co naraz dziennik i git?
+
+Git (przez `autocommit`) to trwała, całoplikowa historia — ta, którą pushujesz, backupujesz i diffujesz. Dziennik to warstwa drobnoziarnista, dzięki której ⟲ jest natychmiastowe i blokowe. Odpowiadają na różne pytania: *„co się stało z tym plikiem?”* kontra *„co się stało z tym akapitem?”*

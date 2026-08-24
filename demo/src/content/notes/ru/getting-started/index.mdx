@@ -1,0 +1,127 @@
+---
+title: Быстрый старт
+brand: Быстрый старт
+subtitle: "два подмодуля, три импорта,\nодна строка пайплайна"
+description: Пара подмодулей в репозитории сайта, три импорта стилей и одна строка siteMarkdown на весь конвейер Markdown — и сад готов.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Инструкция · от нуля до собственного сада" title="Быстрый старт" meta="два подмодуля · три таблицы стилей · один siteMarkdown() · три команды">
+  Ни бумага, ни движок не публикуются в npm — оба обходятся без шага сборки и отдают исходный TS/CSS как есть. Сайт подключает оба репозитория как подмодули git, импортирует три таблицы стилей и вписывает одну функцию в `astro.config`. Всё, что вы видите на этом сайте, собрано именно так.
+</Hero>
+
+<Part title="Установка" />
+
+## Пара подмодулей
+
+Подключите оба репозитория и наведите на них зависимости `file:`:
+
+```bash title="корень репозитория сайта"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (зависимости)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] У этого демо раскладка чуть иная
+> Демо живёт внутри репозитория пакета (`demo/`), поэтому его `astro-inkstone` указывает на `file:..`, а движок висит в `demo/vendor/`. Отдельному сайту подойдёт раскладка `packages/` из примера выше — обе равнозначны.
+
+## Стили
+
+В глобальной таблице стилей порядок такой: сначала токены, затем слой контента, затем — если у сайта есть обзорные страницы — полка, и лишь после этого ваша собственная обвязка:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* главная и страницы рубрик, на body.wb-root */
+
+/* айдентика: переопределите пигменты первого уровня — оба семантических контекста и слой компонентов последуют за ними */
+:root {
+  --p-shi: #b03a48; /* ваш акцент колонки чтения */
+  --p-zhu: #3b4a7a; /* ваш акцент полки и знак сайта */
+  --p-shi-n: #e0919b; /* ночные двойники: тёмная тема читает --p-*-n */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Антиква полки — это `--font-display` (Source Serif 4 + Noto Serif SC); разместите её у себя, как это делает демо, и шапка будет выглядеть в точности как здешняя:
+
+```css title="src/styles/site.css (шрифты, по желанию)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+Сайтам с математикой нужна ещё одна строка в лейауте — таблица стилей KaTeX (без неё вёрстка формул рассыпается):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="Подключение" />
+
+## Конвейер Markdown — одной строкой
+
+Минимальная конфигурация по образцу этого сайта — нумерация глав, математика, callout-блоки, диаграммы и `[[вики-ссылки]]`, разрешаемые по коллекции заметок (полный вариант, со всеми хуками этого сайта, — `astro.config.mjs` в репозитории):
+
+```js title="astro.config.mjs (минимум)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // подходят и '/docs', и '/docs/'
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // номера частей и глав + оглавление через remarkPluginFrontmatter
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // рамки для кода: строка заголовка / копирование / сворачивание / пометки
+    mermaid: true, // mermaid-ограды рендерятся на клиенте
+    callouts: true, // синтаксис > [!note] в духе Obsidian
+    wikiBlocks: WIKI_MODE, // режим редактирования: соответствие блок ↔ строка исходника, всегда последним
+    guard: { autoNumberedHeadings: true }, // контроль контента: отклонять набранные вручную номера
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+В основании `siteMarkdown` лежит диалект движка (GFM, дружелюбный к CJK разбор выделения, контроль контента); сам пресет лишь собирает и упорядочивает плагины сайтовой стороны — **порядок конвейера и есть контракт**, сайту больше не нужно думать, кто за кем идёт. Каждый переключатель показан в деле на странице [[kitchen-sink|«Всё и сразу»]], а о том, почему пакет разрезан именно так, — [[boundaries|заметка о тройном разделении]]. Хотите подписи callout-блоков по-русски? Передайте `calloutLabels` — умолчания английские.
+
+## Запуск
+
+Скрипты — ровно те, что определяет `package.json` этого демо (`build` после сборки запускает движковый check-dist; `wiki` — это `WIKI=1 astro dev`):
+
+```bash
+npm install
+npm run dev        # сам сад
+npm run build      # статическая сборка + движковая проверка check-dist (postbuild)
+npm run wiki       # WIKI=1 astro dev — режим редактирования CMS
+```
+
+В статической сборке нет ни байта движка: вне режима WIKI код его интеграции даже не импортируется (импорт динамический), и никакие метаданные редактирования не выводятся. Единственное, что в выводе напоминает о CMS, — собственная инертная стыковочная разметка сайта: пустые элементы `span` с `data-inkbrush-slot` в панели навигации и их CSS. Пока CMS не пристыковалась, они не делают ничего.

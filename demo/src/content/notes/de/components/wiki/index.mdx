@@ -1,0 +1,154 @@
+---
+title: Wiki & Stöbern
+description: Der Taxonomie-Satz – Notizkarten, Facettenzeilen, Abzeichen, das Panel der verknüpften Erwähnungen und der lokale Graph der Seitenleiste – hier mit Beispieldaten gezeigt, und überall in diesem Garten live im Einsatz.
+part: 2
+navLabel: Wiki & Stöbern
+---
+
+import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph from 'astro-inkstone/components/LocalGraph.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import DomainChip from 'astro-inkstone/components/wiki/DomainChip.astro';
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import KindBadge from 'astro-inkstone/components/wiki/KindBadge.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import StatusDot from 'astro-inkstone/components/wiki/StatusDot.astro';
+import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<PartHero kicker={props.partLabel} title="Wiki & Stöbern">
+  Alles in diesem Kapitel läuft auf dieser Site **live**: Die Regale der Startseite bestehen aus `NoteCard`, ihre Facettenzeilen sind eine `FacetNav`, die Meta-Leiste über diesem Text ist eine `TaxonomyLine`, und das kleine Sternbild in der Seitenleiste ist ein `LocalGraph`. Alle sind reine Darstellungskomponenten – die Site löst ihre Registry auf und übergibt anzeigefertige Daten. Die Auflösungshelfer liegen dem Paket bei, als `createTaxonomy` und `createBacklinks` ([[three-way-split|Mechanik im Paket, Bedeutung in der Site]]).
+</PartHero>
+
+## Die Bindung, drei Zeilen
+
+```ts title="src/lib/taxonomy.ts (die gesamte Bindung dieser Site)"
+import { createTaxonomy } from 'astro-inkstone/lib/taxonomy';
+import { DOMAINS, KINDS, STATUSES } from '../content/notes/_meta/taxonomy';
+
+export const { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, tagIndex, resolveTaxonomy } =
+  createTaxonomy({ kinds: KINDS, domains: DOMAINS, statuses: STATUSES },
+    { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' });
+```
+
+Die Registry (`_meta/taxonomy.ts`) ist pure Daten im Inhaltsbaum: Arten, Bereiche mit Farbtönen, Status mit Punktfarben, jeder Wert mit englischer und chinesischer Beschriftung. Trag dort einen Wert ein, versieh eine Notiz damit, und jede Stöberseite nimmt ihn auf – die Routen sind ohnehin nach Werten parametrisiert.
+
+## Das Regal und seine Tokens
+
+Stöberseiten stehen auf einem zweiten Grund: `browse.css` gibt ihnen das warme Papier, den Serifen-Seitenkopf, die Zwei-Punkt-Regalkante und das Kartenraster, alles über die `--wb-*`-Tokens – die Regalhälfte der [[design-tokens|Zwei-Kontexte-Palette]]. Eine Seite betritt den Kontext mit einer einzigen Klasse, `wb-root`, am Body; darin sind die Chrome-Tokens umgelegt, dieselbe Navigationsleiste sitzt also auf beiden Gründen.
+
+## NoteCard
+
+Eine Karte nimmt anzeigefertige Daten – aufgelöste Beschriftungen, Farbtöne, ein formatiertes Datum, Spiegel-Links. Karten wohnen im Regal, das Beispiel sitzt darum in einem Stück Stöberkontext (`.wb-root.wb-inset`) mitten in dieser Lesespalte:
+
+<div class="wb-root wb-inset">
+<ul class="wb-grid">
+  <NoteCard
+    note={{
+      id: 'sample-note',
+      href: `${base}/de/kitchen-sink/`,
+      title: 'Das volle Programm',
+      description: 'Jedes Element der Markdown-Pipeline tritt auf dieser Seite genau einmal auf.',
+      kind: { id: 'reference', label: 'Referenz' },
+      domains: [{ id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' }, href: `${base}/de/domain/pipeline/` }],
+      status: { id: 'evergreen', label: 'Immergrün', dot: '#1f5e46' },
+      updated: '2026.08',
+      mirrors: [{ label: 'EN', href: `${base}/kitchen-sink/` }],
+    }}
+  />
+  <NoteCard
+    note={{
+      id: 'sample-hub',
+      href: `${base}/de/components/`,
+      title: 'Der Komponentensatz',
+      description: 'Ein Rundgang in drei Kapiteln durch jede mitgelieferte Komponente – und zugleich eine Hub-Vorführung, live.',
+      kind: { id: 'reference', label: 'Referenz' },
+      domains: [{ id: 'components', label: 'Komponenten', tone: { bg: '#f7e9dc', fg: '#98511a' }, href: `${base}/de/domain/components/` }],
+      status: { id: 'evergreen', label: 'Immergrün', dot: '#1f5e46' },
+      updated: '2026.08',
+      chapterCount: 3,
+      sourceLine: 'Hero · HubCard · Stats – das Hub-Mobiliar, am Hub selbst',
+    }}
+  />
+</ul>
+</div>
+
+## FacetNav
+
+Der mehrdimensionale Stöberindex – Arten, Bereiche (mit ihren Farbtönen), die meistgenutzten Schlagwörter, alles als vorgerenderte Pillen-Links:
+
+<FacetNav
+  base={`${base}/de`}
+  kinds={[
+    { def: { id: 'guide', label: 'Leitfaden' }, count: 2 },
+    { def: { id: 'reference', label: 'Referenz' }, count: 4 },
+    { def: { id: 'pattern', label: 'Muster' }, count: 1 },
+  ]}
+  domains={[
+    { def: { id: 'design', label: 'Design', tone: { bg: '#ece7f2', fg: '#5b4a8a' } }, count: 3 },
+    { def: { id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' } }, count: 2 },
+  ]}
+  tags={[
+    { tag: 'tokens', count: 1 },
+    { tag: 'markdown', count: 1 },
+  ]}
+  active={{ dim: 'kind', value: 'reference' }}
+  labels={{ kind: 'Art', domain: 'Bereich', tag: 'Schlagwörter', all: 'Alle →' }}
+/>
+
+Auch die Beschriftungen sind Props mit englischen Defaults – das Beispiel oben übergibt `labels={{ kind: 'Art', domain: 'Bereich', tag: 'Schlagwörter', all: 'Alle →' }}`, genau das, was die deutschen Facettenseiten dieser Site übergeben; sonst ändert sich nichts.
+
+## TaxonomyLine, KindBadge, StatusDot, DomainChip
+
+Die einzeilige Meta-Leiste am Kopf einer Notiz setzt sich aus den drei Abzeichen-Atomen zusammen; jedes ist auch allein verwendbar:
+
+<TaxonomyLine
+  kind={{ id: 'pattern', label: 'Muster' }}
+  domains={[{ id: 'design', label: 'Design', tone: { bg: '#ece7f2', fg: '#5b4a8a' }, href: `${base}/de/domain/design/` }]}
+  status={{ id: 'growing', label: 'Wachsend', dot: '#5c8a3c' }}
+  updated="2026.08"
+/>
+
+Die Atome einzeln, mitten im Satz: ein <KindBadge def={{ id: 'guide', label: 'Leitfaden' }} /> Art-Abzeichen, ein <DomainChip def={{ id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' } }} href={`${base}/de/domain/pipeline/`} /> Bereichs-Chip, ein <StatusDot def={{ id: 'evergreen', label: 'Immergrün', dot: '#1f5e46' }} /> Statuspunkt.
+
+## Backlinks
+
+Das Panel „Verknüpfte Erwähnungen“ unter jeder Notiz dieses Gartens berechnet das Paket mit `createBacklinks` – der eigene Wikilink-Resolver der Engine, invertiert zu einem Index Ziel ← Quellen, Kontextschnipsel inklusive. Hier mit Beispieldaten:
+
+<Backlinks
+  items={[
+    {
+      href: `${base}/de/kitchen-sink/`,
+      title: 'Das volle Programm',
+      before: 'die siebenspaltige Tabelle ist zugleich der ',
+      label: 'Callout-Spickzettel',
+      after: ' und ein Live-Test des Kartenumbruchs …',
+    },
+    {
+      href: `${base}/de/design-tokens/`,
+      title: 'Zweistufige Palette und Themes',
+      before: 'Komponenten konsumieren nur die ',
+      label: 'semantische Stufe',
+      after: ', Identitätswechsel berühren sie deshalb nie.',
+    },
+  ]}
+/>
+
+Scroll ans Ende dieser Seite für das echte Panel – dieses Kapitel ist selbst ein Wikilink-Ziel.
+
+## LocalGraph
+
+Derselbe Index beantwortet noch eine zweite Frage – *was liegt einen Sprung von hier entfernt?* – und `index.localGraph(id, titleOf)` liefert die Antwort als Nachbarliste, eingehende zuerst. Die Komponente zeichnet sie auf eine Ellipse um die Notiz, eingehend durchgezogen, ausgehend gestrichelt; ein Nachbar darf eine eigene `color` mitbringen (etwa aus einer zweiten Sammlung). Hier in Spaltenbreite, mit Beispieldaten; der echte sitzt in der Seitenleiste jeder Notiz, die Links hat:
+
+<div style="max-width: 300px">
+  <LocalGraph
+    centerTitle="Wiki & Stöbern"
+    neighbors={[
+      { id: 'kitchen-sink', title: 'Das volle Programm', href: `${base}/de/kitchen-sink/`, dir: 'in' },
+      { id: 'design-tokens', title: 'Zweistufige Palette', href: `${base}/de/design-tokens/`, dir: 'out' },
+      { id: 'three-way-split', title: 'Die Dreiteilung', href: `${base}/de/three-way-split/`, dir: 'out' },
+      { id: 'checks', title: 'Die Prüfungen', href: `${base}/de/checks/`, dir: 'in', color: 'var(--color-accent4)' },
+    ]}
+  />
+</div>

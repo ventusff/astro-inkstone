@@ -102,17 +102,30 @@ whose content is the package's own manual.
   backlink-index builder (`createBacklinks`) on the engine's own resolver.
 - The demo is the wiki-shape reference implementation: a taxonomy garden
   (registry in `demo/src/content/notes/_meta/`, browse routes under
-  `demo/src/pages/`) whose notes are the package manual. Notes open with
+  `demo/src/pages/`) whose notes are the package manual — and the engine's
+  manual too: the engine repo carries no demo site of its own, its features
+  are documented here as the `inkbrush` hub (tag `inkbrush`, domain
+  `editing`), and this garden is the site its README points at. Notes open with
   `<Hero>` (chapters with `<PartHero kicker={props.partLabel}>`); the layout
   renders the taxonomy strip, the hub crumb, linked mentions, prev/next and
   the footer around them, and the sidebar carries the note's brand, the
   generated ToC and its local link graph.
 - `components/DemoMount.astro` renders mount markup only; the demo-module
   loader is site-owned (call your `mountAllDemos()` from the site layout).
-- The demo's browse tree exists in both locales: `demo/src/components/browse/`
-  holds the landing, facet and all-notes pages as locale-parameterized
-  components; `demo/src/pages/` and `demo/src/pages/zh/` are one-line route
-  files over them. Registry defs carry `label`/`desc` (en) and `zh`/`descZh`.
+- The demo speaks every language in `_meta/locales.ts` — the locale registry
+  that drives the routes, the nav bar's language menu (the site's ONE
+  language control), the hreflang alternates, the wikilink resolver's locale
+  table and the strict link check (`demo/scripts/check-links.mjs`).
+  `demo/src/components/browse/` holds the landing, facet and all-notes pages
+  as locale-parameterized components; the default locale's routes live at
+  the `demo/src/pages/` root and a single `[lang]/` tree serves every other
+  locale. UI strings live one file per locale in `demo/src/lib/ui/`, typed
+  total by `UIStrings` — count-taking strings are functions so each language
+  applies its own plural rules; taxonomy display strings for every language
+  live there too, keyed by the registry's canonical ids (the registry itself
+  carries only the English `label`/`desc`). Adding a language = one registry
+  row + one ui strings file + one content directory; RTL languages need a
+  mirrored appearance layer first and must not be added as a row alone.
 - The README's GIFs and screenshots are recorded by `scripts/readme-clips/`
   against the demo in editing mode (see its README); re-record rather than
   hand-edit them.

@@ -1,0 +1,127 @@
+---
+title: Hızlı başlangıç
+brand: Hızlı başlangıç
+subtitle: "iki submodule, üç stil importu\ntek satır işlem hattı"
+description: "Site deponuza eklenen bir çift submodule, üç stil sayfası importu, bütün Markdown işlem hattı için tek satır siteMarkdown — ve bahçeniz hazır."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Rehber · sıfırdan bir bahçeye" title="Hızlı başlangıç" meta="iki submodule · üç stil sayfası · bir siteMarkdown() · üç komut">
+  Ne kâğıt ne de motor npm’de yayımlanır — ikisi de sıfır derleme adımıyla ham TS/CSS kaynağını doğrudan dışa verir. Bir site iki depoyu git submodule olarak içine alır, üç stil sayfasını import eder ve `astro.config`’e tek bir fonksiyon bağlar. Bu sitedeki her şey tam da böyle kurulmuştur.
+</Hero>
+
+<Part title="Kurulum" />
+
+## Bir çift submodule
+
+İki depoyu siteye alın, `file:` bağımlılıklarıyla onlara işaret edin:
+
+```bash title="site deposunun kök dizini"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (bağımlılıklar)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] Bu demonun yerleşimi biraz farklı
+> Demo, paket deposunun içinde yaşar (`demo/`); bu yüzden onun `astro-inkstone` bağımlılığı `file:..` adresini gösterir, motor da `demo/vendor/` altında durur. Bağımsız bir site yukarıdaki `packages/` yerleşimini kullanır — ikisi eşdeğerdir.
+
+## Stiller
+
+Global stil sayfanızda sıra bellidir: önce token’lar, sonra içerik katmanı, göz atma sayfaları olan bir sitede ardından raf, en sonda yalnızca kendi chrome’unuz:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* açılış / dizin sayfaları, body.wb-root üzerinde */
+
+/* kimlik: birinci katman pigmentlerini geçersiz kılın; iki anlamsal bağlam da bileşen katmanı da peşinden gelir */
+:root {
+  --p-shi: #b03a48; /* okuma vurgunuz */
+  --p-zhu: #3b4a7a; /* raf vurgunuz ve site simgeniz */
+  --p-shi-n: #e0919b; /* gece ikizleri: koyu tema --p-*-n değerlerini okur */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Rafın serif yüzü `--font-display`’dir (Source Serif 4 + Noto Serif SC); bu demo gibi kendiniz barındırırsanız site başlığı buradakiyle birebir aynı görünür:
+
+```css title="src/styles/site.css (yazı tipleri, isteğe bağlı)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+Matematik kullanan siteler, KaTeX’in stil sayfası için layout’a bir satır ekler (o satır olmadan formül dizgisi dağılır):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="Devreye alma" />
+
+## Markdown işlem hattı, tek satırda
+
+Bu sitenin biçiminde asgari bir yapılandırma — bölüm numaralandırma, matematik, callout’lar, diyagramlar ve not koleksiyonuna karşı çözülen `[[wikilink]]`’ler (bu sitenin bağladığı bütün kancaları taşıyan tam sürüm, depodaki `astro.config.mjs` dosyasıdır):
+
+```js title="astro.config.mjs (asgari)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs' da '/docs/' da çalışır
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // kısım/bölüm numaraları + remarkPluginFrontmatter üzerinden ToC
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // kod çerçeveleri: başlık çubuğu / kopyalama / katlama / satır imleri
+    mermaid: true, // mermaid blokları istemci tarafında çizilir
+    callouts: true, // Obsidian tarzı > [!note] sözdizimi
+    wikiBlocks: WIKI_MODE, // düzenleme kipi: blok ↔ kaynak satırı eşlemesi, her zaman en sonda
+    guard: { autoNumberedHeadings: true }, // içerik bekçisi: elle yazılmış başlık numaralarını reddet
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown`, motorun lehçesi üzerine oturur (GFM, CJK dostu vurgu ayrıştırması, içerik bekçisi); ön ayarın kendisi yalnızca site tarafındaki eklentileri derleyip sıraya dizer — **işlem hattının sırası sözleşmenin ta kendisidir**, kimin kimden önce çalışacağını siteniz bir daha düşünmez. Her anahtarın yaptığı iş [[kitchen-sink|hepsi bir arada]] sayfasında tek tek sergilenir; paketin neden üçe bölündüğü ise [[three-way-split|üçlü ayrım]] notunda anlatılır. Callout başlıklarını Türkçe mi istiyorsunuz? `calloutLabels` geçmeniz yeter — varsayılanlar İngilizcedir.
+
+## Çalıştırın
+
+Betikler, bu demonun `package.json`’ında tanımlı olanların aynısıdır (`build`, postbuild adımında motorun check-dist denetimini çalıştırır; `wiki` ise `WIKI=1 astro dev` demektir):
+
+```bash
+npm install
+npm run dev        # bahçenin kendisi
+npm run build      # statik derleme + motorun check-dist denetimi (postbuild)
+npm run wiki       # WIKI=1 astro dev — CMS düzenleme kipi
+```
+
+Statik çıktıda motordan gelen tek bir bayt yoktur: WIKI kipi dışında motorun entegrasyon kodu import bile edilmez (dinamik import) ve hiçbir düzenleme üstverisi üretilmez. Çıktıda CMS’yi andıran ne kaldıysa, sitenin kendi hareketsiz yanaşma işaretleridir — gezinme çubuğundaki boş `data-inkbrush-slot` span’leri ve onların CSS’i — CMS gelip kenetlenene dek hiçbir şey yapmazlar.

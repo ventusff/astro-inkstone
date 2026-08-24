@@ -1,0 +1,106 @@
+---
+title: Контент и типографика
+description: Callout-блоки, чипы, сетки, шаги, статистика, карточки статей и списки литературы — компоненты, из которых собирается проза.
+part: 1
+navLabel: Контент и типографика
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="Контент и типографика">
+  Детали, из которых собирается проза. Каждая потребляет только семантический уровень токенов — перекрасьте палитру, и все они последуют.
+</PartHero>
+
+## Callout
+
+Пять вариантов; `title` замещает подпись варианта по умолчанию (Note / Intuition / Warning / Important / Abstract — те же умолчания, что у цитатного синтаксиса; локализуются через `labels`). На странице [[kitchen-sink|«Всё и сразу»]] показаны цитатное и сырое HTML-написания той же разметки.
+
+<Callout variant="intuition" title="Когда тянуться к компоненту">
+  В MDX, когда содержимое пишется прямо на месте. Цитатный синтаксис закрывает чистые Markdown-файлы; разметка у обоих одинаковая.
+</Callout>
+
+## Chip
+
+Строчные бейджи для статусов и категорий в четырёх вариантах, общих для тегов `PaperCard` и чипов `HubCard`: <Chip variant="teal">стабильно</Chip> <Chip variant="mustard">бета</Chip> <Chip variant="violet">исследование</Chip> <Chip variant="orange">новое</Chip> — либо собственный тон для тематических палитр: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>свой тон</Chip>
+
+## Grid
+
+Одна сетка, три обличья (`plain`, `card`, `cmp`). Карточки:
+
+<Grid cols={2} kind="card">
+  <div>
+    **Сначала токены.** Порядок импорта — часть контракта: токены, затем слой контента, затем обвязка сайта.
+  </div>
+  <div>
+    **Только семантический уровень.** Компоненты не трогают сырых цветов — перекрасьте палитру, и все они последуют.
+  </div>
+</Grid>
+
+И сравнительное обличье, придуманное для панелей «до и после»:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **Без контроля** — незакрытая `**` уезжает в продакшен двумя буквальными звёздочками.
+  </div>
+  <div>
+    **С контролем** — сборка падает с адресом файл:строка:столбец и кареткой под маркером.
+  </div>
+</Grid>
+
+## Steps
+
+Markdown-список на вертикальном рельсе:
+
+<Steps>
+1. Добавьте оба подмодуля и зависимости `file:`.
+2. Импортируйте `tokens.css`, `base.css` и — для вики — `browse.css` в глобальную таблицу стилей.
+3. Впишите `siteMarkdown()` в `astro.config`.
+4. Переопределите палитру первого уровня своими фирменными пигментами.
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: 'уровня токенов' },
+    { value: '24', label: 'компонента' },
+    { value: '4', label: 'вьюпорта зонда' },
+    { value: '0', label: 'шагов сборки' },
+  ]}
+/>
+
+## PaperCard
+
+Рабочая лошадка обзоров литературы — псевдоним, полное название, теги площадок, авторская строка, ссылки и два выделенных слота:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar, et al."
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">Рекуррентные модели обрабатывают токены строго по одному — дальние зависимости затухают, и ничего не параллелится.</Fragment>
+  **Ключевая идея**: одно лишь внимание, без рекуррентности — каждый токен смотрит на каждый за один шаг, и вся последовательность обучается параллельно.
+  <Fragment slot="diff">Архитектура, на которой с тех пор построена почти каждая большая языковая модель.</Fragment>
+</PaperCard>
+
+Под заголовком глубокого разбора однострочная глосса простыми словами (`.speak`) говорит читателю, что модуль *делает*, прежде чем показывать механизм:
+
+<p class="speak">Внимание — это мягкая таблица поиска: каждый токен спрашивает «кто здесь важен для меня?» и получает взвешенную смесь ответов.</p>
+
+## References
+
+<References>
+- Vaswani et al., *Attention Is All You Need*, NeurIPS 2017.
+- Кнут, *The TeXbook* — причина, по которой фон формул получил собственный тон бумаги.
+- W3C, *Web Content Accessibility Guidelines 2.2* — планка контраста AA, по которой аудируются токены.
+</References>

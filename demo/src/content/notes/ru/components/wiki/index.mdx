@@ -1,0 +1,154 @@
+---
+title: Вики и навигация
+description: Таксономический набор — карточки заметок, ряды рубрик, бейджи, панель обратных ссылок и локальный граф сайдбара — здесь показан на образцах данных, а по всему саду работает вживую.
+part: 2
+navLabel: Вики и навигация
+---
+
+import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph from 'astro-inkstone/components/LocalGraph.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import DomainChip from 'astro-inkstone/components/wiki/DomainChip.astro';
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import KindBadge from 'astro-inkstone/components/wiki/KindBadge.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import StatusDot from 'astro-inkstone/components/wiki/StatusDot.astro';
+import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<PartHero kicker={props.partLabel} title="Вики и навигация">
+  Всё в этой главе работает на этом сайте **вживую**: полки главной собраны из `NoteCard`, её ряды рубрик — это `FacetNav`, полоса мета над этим текстом — `TaxonomyLine`, а маленькое созвездие в сайдбаре — `LocalGraph`. Все они — чисто презентационные компоненты: сайт сам разрешает свой реестр и передаёт данные, готовые к показу. Помощники разрешения едут в пакете — `createTaxonomy` и `createBacklinks` ([[three-way-split|механика в пакете, смысл на сайте]]).
+</PartHero>
+
+## Вся привязка — три строки
+
+```ts title="src/lib/taxonomy.ts (вся привязка этого сайта)"
+import { createTaxonomy } from 'astro-inkstone/lib/taxonomy';
+import { DOMAINS, KINDS, STATUSES } from '../content/notes/_meta/taxonomy';
+
+export const { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, tagIndex, resolveTaxonomy } =
+  createTaxonomy({ kinds: KINDS, domains: DOMAINS, statuses: STATUSES },
+    { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' });
+```
+
+Реестр (`_meta/taxonomy.ts`) — чистые данные в дереве контента: типы, направления с тоновыми цветами, статусы с цветами точек, и у каждого значения подписи по-английски и по-китайски. Добавьте туда значение, пометьте им заметку — и каждая обзорная страница его подхватит: маршруты и так параметризованы по значениям.
+
+## Полка и её токены
+
+Обзорные страницы стоят на втором фоне: `browse.css` даёт им тёплую бумагу, антиквенную шапку, линейку полки в два пункта и сетку карточек — всё через токены `--wb-*`, навигационную половину [[design-tokens|двухконтекстной палитры]]. Страница входит в контекст одним классом `wb-root` на body; внутри него токены обвязки переназначены, и одна и та же панель навигации сидит на любом из двух фонов.
+
+## NoteCard
+
+Карточка получает данные, готовые к показу, — разрешённые подписи, тона, отформатированную дату, ссылки на зеркала. Живут карточки на полке, поэтому образец помещён в лоскут навигационного контекста (`.wb-root.wb-inset`) прямо посреди колонки чтения:
+
+<div class="wb-root wb-inset">
+<ul class="wb-grid">
+  <NoteCard
+    note={{
+      id: 'sample-note',
+      href: `${base}/ru/kitchen-sink/`,
+      title: 'Всё и сразу',
+      description: 'Каждый элемент конвейера Markdown выступает на этой странице ровно один раз.',
+      kind: { id: 'reference', label: 'Справочник' },
+      domains: [{ id: 'pipeline', label: 'Пайплайн', tone: { bg: '#e3efec', fg: '#2a6f62' }, href: `${base}/ru/domain/pipeline/` }],
+      status: { id: 'evergreen', label: 'Вечнозелёная', dot: '#1f5e46' },
+      updated: '2026.08',
+      mirrors: [{ label: 'EN', href: `${base}/kitchen-sink/` }],
+    }}
+  />
+  <NoteCard
+    note={{
+      id: 'sample-hub',
+      href: `${base}/ru/components/`,
+      title: 'Набор компонентов',
+      description: 'Все компоненты пакета за три главы — и живой показ хаба.',
+      kind: { id: 'reference', label: 'Справочник' },
+      domains: [{ id: 'components', label: 'Компоненты', tone: { bg: '#f7e9dc', fg: '#98511a' }, href: `${base}/ru/domain/components/` }],
+      status: { id: 'evergreen', label: 'Вечнозелёная', dot: '#1f5e46' },
+      updated: '2026.08',
+      chapterCount: 3,
+      sourceLine: 'Hero · HubCard · Stats — обрамление хаба, показанное на самом хабе',
+    }}
+  />
+</ul>
+</div>
+
+## FacetNav
+
+Многомерный указатель для навигации — типы, направления (со своими тонами), популярные теги, всё в виде заранее отрисованных ссылок-пилюль:
+
+<FacetNav
+  base={`${base}/ru`}
+  kinds={[
+    { def: { id: 'guide', label: 'Инструкция' }, count: 2 },
+    { def: { id: 'reference', label: 'Справочник' }, count: 4 },
+    { def: { id: 'pattern', label: 'Паттерн' }, count: 1 },
+  ]}
+  domains={[
+    { def: { id: 'design', label: 'Дизайн', tone: { bg: '#ece7f2', fg: '#5b4a8a' } }, count: 3 },
+    { def: { id: 'pipeline', label: 'Пайплайн', tone: { bg: '#e3efec', fg: '#2a6f62' } }, count: 2 },
+  ]}
+  tags={[
+    { tag: 'tokens', count: 1 },
+    { tag: 'markdown', count: 1 },
+  ]}
+  active={{ dim: 'kind', value: 'reference' }}
+  labels={{ kind: 'Тип', domain: 'Направление', tag: 'Теги', all: 'Все →' }}
+/>
+
+Строки подписей — тоже props с английскими умолчаниями: выше передано `labels={{ kind: 'Тип', domain: 'Направление', tag: 'Теги', all: 'Все →' }}` — ровно то, что передают русские страницы рубрик этого сада; больше не меняется ничего.
+
+## TaxonomyLine, KindBadge, StatusDot, DomainChip
+
+Однострочная полоса мета в шапке заметки — это три бейджа-атома, собранные вместе; каждый атом можно использовать и поодиночке:
+
+<TaxonomyLine
+  kind={{ id: 'pattern', label: 'Паттерн' }}
+  domains={[{ id: 'design', label: 'Дизайн', tone: { bg: '#ece7f2', fg: '#5b4a8a' }, href: `${base}/ru/domain/design/` }]}
+  status={{ id: 'growing', label: 'Растёт', dot: '#5c8a3c' }}
+  updated="2026.08"
+/>
+
+Атомы сами по себе, прямо в строке текста: бейдж типа <KindBadge def={{ id: 'guide', label: 'Инструкция' }} />, чип направления <DomainChip def={{ id: 'pipeline', label: 'Пайплайн', tone: { bg: '#e3efec', fg: '#2a6f62' } }} href={`${base}/ru/domain/pipeline/`} />, точка статуса <StatusDot def={{ id: 'evergreen', label: 'Вечнозелёная', dot: '#1f5e46' }} />.
+
+## Backlinks
+
+Панель «Обратные ссылки» под каждой заметкой этого сада считает пакетный `createBacklinks`: он выворачивает собственный резолвер вики-ссылок движка в индекс «цель ← источники», вместе с фрагментами контекста. Здесь — на встроенных образцах данных:
+
+<Backlinks
+  items={[
+    {
+      href: `${base}/ru/kitchen-sink/`,
+      title: 'Всё и сразу',
+      before: 'семиколонная таблица — одновременно ',
+      label: 'шпаргалка по вариантам callout',
+      after: ' и живая проверка переклейки в карточки…',
+    },
+    {
+      href: `${base}/ru/design-tokens/`,
+      title: 'Двухуровневая палитра и темы',
+      before: 'компоненты потребляют только ',
+      label: 'семантический уровень',
+      after: ', поэтому смена айдентики их не касается.',
+    },
+  ]}
+/>
+
+Долистайте до подвала этой страницы — там настоящая панель: эта глава сама служит целью вики-ссылок.
+
+## LocalGraph
+
+Тот же индекс отвечает и на второй вопрос — *что отсюда в одном переходе?* — а `index.localGraph(id, titleOf)` возвращает ответ списком соседей, входящие первыми. Компонент рассаживает их по эллипсу вокруг заметки: входящие — сплошной линией, исходящие — пунктиром; сосед может нести собственный `color` (скажем, из второй коллекции). Ниже — на ширину колонки, с образцами данных; настоящий граф стоит в сайдбаре каждой заметки, у которой есть ссылки:
+
+<div style="max-width: 300px">
+  <LocalGraph
+    centerTitle="Вики и навигация"
+    neighbors={[
+      { id: 'kitchen-sink', title: 'Всё и сразу', href: `${base}/ru/kitchen-sink/`, dir: 'in' },
+      { id: 'design-tokens', title: 'Двухуровневая палитра', href: `${base}/ru/design-tokens/`, dir: 'out' },
+      { id: 'three-way-split', title: 'Тройное разделение', href: `${base}/ru/three-way-split/`, dir: 'out' },
+      { id: 'checks', title: 'Проверки', href: `${base}/ru/checks/`, dir: 'in', color: 'var(--color-accent4)' },
+    ]}
+  />
+</div>

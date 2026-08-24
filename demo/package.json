@@ -10,7 +10,7 @@
     "postbuild": "node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/} ${PLAYGROUND:+--playground}",
     "preview": "astro preview",
     "wiki": "WIKI=1 astro dev",
-    "check": "node vendor/astro-inkbrush/scripts/check-content.mjs src/content/notes --math && node vendor/astro-inkbrush/scripts/check-wikilinks.mjs src/content/notes --locale-prefix zh/ --strict"
+    "check": "node vendor/astro-inkbrush/scripts/check-content.mjs src/content/notes --math && node scripts/check-links.mjs"
   },
   "engines": {
     "node": ">=22.18.0"

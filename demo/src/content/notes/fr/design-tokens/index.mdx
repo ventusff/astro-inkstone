@@ -1,0 +1,71 @@
+---
+title: "Palette à deux niveaux et thèmes"
+brand: "Palette & thèmes"
+subtitle: "deux niveaux, deux contextes\nles pigments et le papier"
+description: "La palette brute de pigments et les deux contextes sémantiques bâtis dessus — colonne de lecture et étagère de parcours —, la discipline clair/sombre, le contraste audité et l’unique point d’entrée de l’identité d’un site."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Référence · la couche des tokens" title="Palette à deux niveaux et thèmes" meta="une palette · deux contextes · deux thèmes réglés à la main · chaque valeur de texte mesurée pour AA">
+  `styles/tokens.css` contient toutes les couleurs que consomment les feuilles de style et les composants — à la seule exception de la paire de tons d’un domaine, que le registre du site fournit comme donnée. Il s’écrit en deux niveaux — une **palette brute** de pigments papier-et-encre, et des **tokens sémantiques** bâtis dessus — et le niveau sémantique se décline en deux contextes, parce qu’un wiki a deux sortes de pages : la colonne qu’on lit, et l’étagère qu’on parcourt.
+</Hero>
+
+<Part title="Les niveaux" />
+
+## Premier niveau : les pigments
+
+La palette brute est une boîte de peintre, indifférente au thème, nommée `--p-*`. **Les papiers** : le fond de parcours 纸 et sa face de carte 页, le fond de lecture 素 (un cran plus froid, plus doux pour les yeux au bout d’une heure) et sa surface feutrée 帛, la carte blanche, les fonds du code et des mathématiques. **Les encres** : un jeu chaud pour l’étagère et un jeu neutre pour la colonne, chacun en trois intensités. **La reliure** : le filet de l’étagère, la bordure des pastilles, les deux filets fins. **Les pigments**, enfin — les couleurs porteuses de sens :
+
+```css title="tokens.css (niveau 1, les pigments)"
+--p-zhu: #7d3a3a; /* 朱 · rouge lie-de-vin — accent du parcours, la marque du site */
+--p-shi: #b6552e; /* 石 · orange brûlé — accent de lecture : liens, numéros, surtitres */
+--p-shi-text: #8f3f1f; /* 石 · déclinaison petit texte (AA sur sa propre teinte) */
+--p-zhe: #c08a2c; /* 赭 · ocre — filets et bordures */
+--p-dai: #2a6f6b; /* 黛 · bleu-vert — accent secondaire du contenu */
+--p-zi: #6b4ec4; /* 紫 · violet — la sémantique « système » */
+```
+
+S’y ajoute un jeu **nocturne** pour l’édition sombre : fonds crépusculaires, encres blanc-de-lune, et un jumeau ravivé de chaque pigment.
+
+## Deux contextes, une palette
+
+Le second niveau est ce que consomme la couche de composants, et il a deux visages :
+
+| Contexte | Tokens | Fond | Encre | Accent | Où |
+| --- | --- | --- | --- | --- | --- |
+| colonne de lecture | `--color-*` | 素 `#fbf9f4` | neutre `#1f2024` | 石 orange brûlé | pages de notes, chaque composant de contenu, `base.css` |
+| étagère de parcours | `--wb-*` | 纸 `#faf6ec` | chaude `#2b2622` | 朱 rouge lie-de-vin | pages d’accueil et de facettes, les composants wiki, `browse.css` |
+
+La colonne est la plus discrète des deux — on la lit une heure durant. L’étagère est plus chaude et composée dans une serif d’affichage — on y jette un œil, on choisit. Une page entre dans le contexte de l’étagère par une seule classe, `wb-root`, sur son body ; à l’intérieur, les tokens de l’habillage (`--color-bg`, `--color-accent`, …) sont re-projetés sur ceux de l’étagère, si bien qu’une barre de navigation écrite une fois se tient correctement sur les deux fonds — et que les atomes de taxonomie (badge de type, point de statut, pastille de domaine), écrits contre `--color-*`, se lisent comme un morceau de la colonne sur une page de note et comme un morceau de l’étagère sur une page de parcours. **La couche de composants ne peut consommer que le second niveau** — `base.css`, `browse.css` et chaque composant ; aucune règle ne contient de valeur de couleur brute, et rien n’y recourt même comme valeur de repli. C’est la discipline dure du paquet.
+
+<Part title="Identité et discipline" />
+
+## Comment un site personnalise son identité
+
+Surchargez le premier niveau. Remplacez les pigments par les vôtres : les deux contextes et toute la couche de composants suivent. Chaque pigment forme une **paire jour/nuit** : le thème clair lit `--p-shi` et `--p-zhu`, le thème sombre lit leurs jumeaux nocturnes `--p-shi-n` et `--p-zhu-n` — une surcharge d’identité règle les deux membres, ou bien le sombre garde les pigments d’origine :
+
+```css title="votre site.css"
+:root {
+  --p-shi: #b03a48; /* votre accent de lecture */
+  --p-shi-text: #93303c; /* sa déclinaison petit texte s’assombrit séparément, voir plus bas */
+  --p-zhu: #3b4a7a; /* votre accent d’étagère, qui est aussi la marque du site */
+  --p-shi-n: #e0919b; /* les jumeaux nocturnes, ravivés pour les fonds crépusculaires */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Re-projeter le second niveau sur votre propre palette est tout aussi pris en charge, si votre système de design en possède déjà une — faites pointer `--color-*` et `--wb-*` vers vos variables. Ce jardin, délibérément, ne surcharge rien : vous lisez le visage nu du paquet, celui-là même que défend [[paper-and-ink]].
+
+## Le contraste est audité
+
+Chaque valeur de la strate texte est vérifiée pour le niveau AA de WCAG sur chaque surface où elle se pose : le petit texte part de 4,5:1 ; un accent employé en petit texte reçoit une **déclinaison texte** assombrie séparément (`--p-shi-text`, `--p-zhe-text`), parce qu’une étiquette de 12 px dans la couleur d’accent se pose le plus souvent sur la teinte de ce même accent ; les encres estompées sont réglées sur la nuance la plus sombre qui se lise encore comme estompée — `#6a6d74` sur le fond de lecture donne 4,9:1, et tient encore 4,5:1 sur la surface feutrée ; le fond du code est un cran plus clair que le papier, pour que le token le plus pâle du thème de syntaxe (les commentaires) franchisse 4,5:1 ; l’édition sombre porte son propre jeu ravivé, mesuré contre les fonds nocturnes. Le paquet livre la mesure sous forme d’outil : `scripts/contrast_probe.mjs` rend la démo dans un vrai navigateur, dans les deux thèmes et à deux largeurs, échantillonne au pixel le fond sous chaque segment de texte et signale tout segment sous le seuil ([[checks|la sonde de contraste]]). Avant de changer une valeur, sachez sur quelles surfaces elle se pose.
+
+## Le clair est l’identité
+
+Le thème, délibérément, ne lit **pas** `prefers-color-scheme` : une page ne doit jamais basculer son propre thème sous les yeux du lecteur. Le sombre ne s’active que par `[data-theme='dark']`, commuté par l’interrupteur du site lui-même (le bouton soleil/lune à droite de la barre de navigation de ce site ; le choix est mémorisé sous la clé `inkstone-theme` du `localStorage` et rejoué par le script en ligne ThemeInit avant le premier rendu, si bien qu’un lecteur en thème sombre ne voit jamais d’éclair crème). Le sombre n’est pas une inversion mais une seconde édition composée à la main : fonds crépusculaires, encres blanc-de-lune, pigments ravivés — [[paper-and-ink|le sombre est une seconde édition, pas une inversion]].
+
+## Les polices vivent ici aussi
+
+Quatre piles. `--font-display` est le visage de l’étagère — une serif à taille optique (Source Serif 4, avec Noto Serif SC pour les sinogrammes) pour les bandeaux de titre et les titres d’étagère ; cette démo l’héberge elle-même via `@fontsource`, et un site qui ne le fait pas retombe sur la police de lecture. `--font-body` est la pile de la colonne de lecture — des serifs système menées par Charter et Iowan Old Style, la police d’affichage prenant le relais là où elles manquent. `--font-ui` est Inter (Noto Sans SC pour les sinogrammes), pour les titres, l’habillage et les petites lignes. `--font-mono` est un sous-ensemble à jeu de caractères figé de Maple Mono CN (ASCII + les caractères box-drawing + les 3500 sinogrammes courants + l’union du contenu existant) : le latin à 0,6 em, le sinogramme à 1,2 em — **un sinogramme fait exactement deux cellules de large**, si bien que les diagrammes box-drawing restent alignés même dans un texte mêlant chinois et latin. La recette du sous-ensemble et son script de régénération sont livrés avec le paquet (`fonts/build_font_subset.py`) ; quand un contenu réclame des glyphes hors couverture, relancez-le et committez le woff2. Les [[kitchen-sink|cadres de code]] sont composés entièrement dans ce sous-ensemble.

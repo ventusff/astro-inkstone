@@ -1,0 +1,47 @@
+---
+title: Üçlü ayrım
+brand: Üçlü ayrım
+subtitle: "motor düzenler, kâğıt görünür\nsite ise sizsiniz"
+description: "Motor düzenler, kâğıt görünür, site sizsiniz — kim neyin sahibi ve çizgiler neden tam buradan geçiyor."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Rehber · mimari" title="Üçlü ayrım" meta="üç depo · üç sahip · akılda tutulacak tek cümle">
+  Bu araç takımıyla kurulan bir belge/wiki sitesi, her biri tam olarak bir katmanın sahibi olan üç parçadan birleşir. Aralarındaki çizgiler zevk meselesi değildir — her çizgi, çiğnendiğinde ısıran gerçek bir kısıta yaslanır.
+</Hero>
+
+## Üç katman, üç sahip
+
+- **astro-inkbrush (motor)**: asgari bir CMS — tarayıcıda yerinde blok düzenleme, blok düzeyinde sürüm geçmişi ve geri alma, yorumlar, yapay zekâ ile soru-cevap / yeniden yazım / çeviri, gelen kutusundan içe aktarma. Bir de, ilk bakışta bir CMS’ye ait görünmeyen bir şeyin sahibidir: **Markdown lehçesi ve içerik bekçisi**. Gerekçe katıdır: editörün kabul ettiği dil bilgisi ile sayfanın çizdiği dil bilgisi aynı olmak zorundadır; yoksa "editörde sorunsuz kaydediliyor, sayfada yanlış görünüyor" yalnızca zaman meselesidir. Bu yüzden ayrıştırıcı kuralları bir kez, motorda yazılır ve üç yerde tüketilir — site çizimi, CMS kayıt doğrulaması, CI denetimleri.
+- **astro-inkstone (kâğıt — bu paket)**: ortak görünüm ve işlem hattı katmanı — iki bağlamda iki katmanlı tasarım token’ları, içerik stil sayfası `base.css` ile göz atma rafı `browse.css`, bileşen kitaplığı, `siteMarkdown` işlem hattı ön ayarı, bu bahçenin üzerinde döndüğü taksonomi ve geri bağlantı yardımcıları, Maple Mono CN kod yazı tipi alt kümesi ve görüntüleme katmanı sondaları. Site kimliğine **karışmaz**: marka renkleri, yerleşim chrome’u, yönlendirme ve dağıtım onun işi değildir.
+- **Site (şu an okuduğunuz bahçe gibi)**: kimlik rengi için birinci katman token’larını geçersiz kılar; kendi Sidebar’ının ve gezinme chrome’unun sahibidir (bu sitenin gerçekleştirimi referans cevaptır); içeriğin nasıl örgütleneceğine, rotaların neye benzeyeceğine ve nereye dağıtılacağına kendisi karar verir.
+
+Akılda tutulacak tek cümle: **motor düzenler, kâğıt görünür, site sizsiniz.**
+
+## Çizgiler neden tam buradan geçiyor
+
+Her kesiğin arkasında gerçek bir kısıt vardır:
+
+**Lehçe motora aittir**, çünkü eklenti takımı sitenizkinden farklı bir denetçi, denetçisizlikten beterdir — matematik eklentisi eksik olan, formül ayraçlarını JSX ifadesi sanır; GFM’si olmayan, tablo çizgilerini elini kolunu sallayarak geçirir. Dil bilgisi bir kez yazılır, üç yerde tüketilir — sapması mümkün değildir.
+
+**Stiller kâğıda aittir**, çünkü birkaç site kendi içerik stil sayfasını ayrı ayrı beslediğinde, tek bir kontrast düzeltmesi her sitede tek tek uygulanmak zorundadır — birini kaçırın, o sitenin küçük metni AA’nın altına düşer. Ortak katmanda bir düzeltme her yere birden iner.
+
+**Kimlik siteye aittir**, çünkü ortak katman bir sitenin marka rengini içine aldığı an, diğer bütün siteler geçersiz kılmalarla onunla boğuşmak zorunda kalır. İki katmanlı token’lar bundandır: site birinci katmandaki ham paleti (`--p-*`) geçersiz kılar; anlamsal katman da bileşen katmanı da elleşilmeden peşinden gelir — bkz. [[design-tokens]].
+
+## Göz atma makinesi nerede duruyor
+
+Aynı disiplin, şu an içinde gezindiğiniz şeye de uygulanır. Paket **mekaniği** taşır — `createTaxonomy` (tür/alan/etiket çözümü, hub kalıtımı, yerel ayar aynaları), `createBacklinks` (bağlantılı anmalar dizini) ve açılış sayfasındaki not kartları ile dizin satırları gibi salt görsel bileşenler. **Sözcük dağarcığı ve rotalar** ise sitenindir: bu bahçenin türleri ve alanları kendi kayıt defteri dosyasında yaşar; `/kind/…`, `/domain/…`, `/tag/…` sayfaları da tüketen bir sitenin kopyalayıp kendine göre biçtiği sıradan Astro sayfalarıdır. Aynı ayrım, bir kat yukarıda: mekanik pakette, anlam sitede.
+
+## Bir site ne kazanır
+
+Sitenin gözünden, bu paketi motorla birlikte tüketmek şunları getirir:
+
+- `astro-inkstone/styles/tokens.css` + `base.css` + `browse.css`: önce token’lar, sonra okuma sütunu, sonra göz atma rafı — bütün görünüm için üç `@import` satırı;
+- `siteMarkdown(...)`: tüm Markdown işlem hattı tek satırda; anahtarları [[getting-started]] anlatır;
+- `astro-inkstone/components/` altındaki bileşenler, gerektikçe yoldan import edilir;
+- `astro-inkstone/lib/` altında, sitenin kendi kayıt defterine bağlanan taksonomi fabrikası ile geri bağlantı kurucusu;
+- WIKI kipinde motorun eksiksiz CMS’si (bu sitede `npm run wiki` ile deneyin);
+- beş denetim: `check-content`, `check-wikilinks` ve `check-dist` (motorla gelir), `ui_probe` ve `contrast_probe` (bu paketle gelir) — bkz. [[checks]].
+
+Bu bahçenin her sayfasındaki her görüntüleme efekti bu ayrımın ürünüdür — notlar kılavuz, kılavuz da demodur.

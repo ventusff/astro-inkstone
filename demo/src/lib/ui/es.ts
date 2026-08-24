@@ -1,0 +1,110 @@
+/** Español — Spanish. */
+import type { UIStrings } from './types';
+
+/** count + noun, with the Spanish singular/plural split */
+const notas = (n: number): string => `${n} ${n === 1 ? 'nota' : 'notas'}`;
+
+export const strings: UIStrings = {
+  searchPlaceholder: 'Buscar en el jardín… (Esc para cerrar)',
+  searchHint: 'Títulos, secciones y cuerpo del texto, en este idioma.',
+  searchEmpty: 'Ninguna nota coincide.',
+  searchUnavailable: 'No se pudo cargar el índice de búsqueda.',
+  searchUnit: 'páginas',
+  searchScopeAll: 'Todo',
+  searchDialog: 'Búsqueda del sitio',
+  searchInput: 'Buscar en el manual',
+  searchResults: 'Resultados de la búsqueda',
+  searchButton: 'Buscar (⌘K)',
+
+  languages: 'Idioma',
+
+  breadcrumb: 'Migas de pan',
+  contents: 'Contenido',
+  chapterNav: 'Navegación por capítulos',
+  prev: '← anterior',
+  next: 'siguiente →',
+  hub: 'Visión general',
+  overview: 'Visión general',
+  updated: 'actualizado',
+  backlinks: 'Menciones enlazadas',
+  localGraph: 'Grafo local',
+  lightbox: 'Visor de imágenes',
+  close: 'Cerrar',
+  copied: 'Código copiado al portapapeles',
+  copyFailed: 'No se pudo copiar: el portapapeles no está disponible',
+  theme: 'Cambiar entre tema claro y oscuro',
+  menu: 'Menú',
+  skip: 'Saltar al contenido',
+  partLabel: (roman) => `Parte ${roman}`,
+  readingTime: (min) => `${min} min de lectura`,
+  footer: 'Demo de astro-inkstone · las notas son el manual; el manual, la demo',
+
+  landingTitle: 'Un jardín de papel y tinta',
+  landingDesc:
+    'La demo de astro-inkstone: un jardín taxonómico cuyas notas son el manual del propio paquete.',
+
+  speakLabel: 'En palabras llanas →',
+  diffLabel: 'Frente a lo anterior →',
+
+  kinds: {
+    guide: { label: 'Guía', desc: 'Recorridos orientados a tareas: empieza aquí y conéctalo todo' },
+    reference: { label: 'Referencia', desc: 'La visión completa de un subsistema, siempre al día' },
+    pattern: { label: 'Patrón', desc: 'Una postura de diseño que merece nombre, con sus razones' },
+  },
+  domains: {
+    design: { label: 'Diseño', desc: 'Tokens, temas y la estética de papel y tinta' },
+    pipeline: { label: 'Pipeline', desc: 'El pipeline de Markdown: dialecto, plugins y el guardián de contenido' },
+    components: { label: 'Componentes', desc: 'El conjunto de componentes y cómo combinarlos' },
+    tooling: { label: 'Herramientas', desc: 'Comprobaciones, sondas de render y la parte de CI' },
+    editing: { label: 'Edición', desc: 'La máquina de edición: bloques, historial, IA, bandeja de entrada' },
+  },
+  statuses: {
+    seedling: { label: 'Brote', desc: 'Un esbozo: plantado, aún por crecer' },
+    growing: { label: 'En crecimiento', desc: 'Un documento vivo que aún se está escribiendo' },
+    evergreen: { label: 'Perenne', desc: 'Madura y bien cuidada' },
+  },
+
+  browse: {
+    kicker: 'Jardín',
+    kickerSub: 'el manual, cultivado como notas',
+    title: 'Papel y tinta',
+    titleSub: 'un jardín de notas de trabajo que sigue creciendo',
+    lede: (notes, domains) =>
+      `El manual de astro-inkstone, cultivado como un jardín: ${notes} notas repartidas en ${domains} dominios, navegables por tipo, dominio y etiqueta. Cada efecto de renderizado en estas páginas es el propio paquete en acción.`,
+    sep: ' ',
+    stop: '.',
+    source: 'Código fuente:',
+    thisPackage: 'este paquete',
+    theEngine: 'el motor CMS:',
+    editsThesePages: 'edita estas mismas páginas',
+    recent: 'Actualizaciones recientes',
+    recentSub: 'las tres últimas en cambiar',
+    shelfCount: (n) => `${n} ${n === 1 ? 'principal' : 'principales'} · todas →`,
+    allNotes: 'Todas las notas →',
+    byKind: 'Por tipo',
+    byDomain: 'Por dominio',
+    byStatus: 'Por estado',
+    byTag: 'Por etiqueta',
+    facetLede: (desc, n) => `${desc} — ${notas(n)}.`,
+    domainLede: (desc, n) => `${desc} — ${notas(n)}, con este dominio como principal o secundario.`,
+    tagLede: (n) => `${notas(n)}.`,
+    tagDesc: (tag, n) => `Notas con la etiqueta ${tag} (${n})`,
+    facetDesc: (desc, n) => `${desc} (${notas(n)})`,
+    all: 'Todas las notas',
+    allKicker: 'todas y cada una',
+    allEntries: (n) => `${n} ${n === 1 ? 'entrada' : 'entradas'}`,
+    allDesc: (n) => `Todas las notas del jardín (${n}), las más recientes primero, con filtros al instante.`,
+    allLede:
+      'Las más recientes primero. Los filtros de abajo actúan al instante; sin JavaScript llevan a las páginas de cada faceta.',
+    dimKind: 'Tipo',
+    dimDomain: 'Dominio',
+    dimStatus: 'Estado',
+    dimTag: 'Etiquetas',
+    facetsAria: 'Índice de exploración',
+    facetAll: 'Todas →',
+    clear: 'Quitar filtros',
+    noMatch: 'Ninguna nota cumple todos los filtros seleccionados.',
+    allTags: 'Todas las etiquetas',
+    chapters: (n) => `${n} ${n === 1 ? 'capítulo' : 'capítulos'}`,
+  },
+};

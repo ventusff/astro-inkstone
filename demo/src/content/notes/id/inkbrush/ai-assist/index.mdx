@@ -1,0 +1,24 @@
+---
+title: Bantuan AI
+description: "Penulisan ulang blok, obrolan yang mengenal catatan, dan penerjemahan seutuh catatan — lewat CLI claude, terkurung di salinan sekali pakai catatannya."
+navLabel: Bantuan AI
+part: 3
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Bantuan AI">
+  Aksi-aksi ✦ menjembatani ke [CLI claude](https://claude.com/claude-code). CLI-nya harus terpasang dan sudah masuk di komputer yang menjalankan server dev — tak ada bagian lain dari mesin yang membutuhkannya, jadi tanpa CLI itu semuanya kecuali ✦ tetap bekerja.
+</PartHero>
+
+## Menulis ulang sebuah blok
+
+Arahkan kursor ke sebuah blok, klik ✦, lalu pilih salah satu niat cepat — rapikan, buat lebih ketat, padatkan, betulkan rumus-rumusnya — atau ketik instruksi Anda sendiri. Pekerjaannya berjalan di sisi server dalam salinan sekali pakai dari direktori catatan itu, dengan perkakas berkas yang dikurung di salinan tersebut — tanpa shell, tanpa jaringan — dan menyiarkan kemajuannya secara langsung; ia tetap hidup meski tab browser ditutup. Begitu selesai, berkas yang berubah harus lolos gerbang build yang sama dengan simpanan manual sebelum dibawa kembali ke proyek dan dijurnalkan, sehingga [[inkbrush/revisions|⟲]] bisa membatalkannya.
+
+## Bertanya tentang catatannya
+
+Panel obrolan (tombol mengambang di kanan bawah) menjawab pertanyaan tentang catatan yang sedang Anda baca. Claude membaca sumbernya di sebuah salinan kerja dengan set perkakas hanya-baca; pertanyaan lanjutan meneruskan percakapan yang sama.
+
+## Menerjemahkan seutuh catatan
+
+Untuk setiap lokal yang belum dimiliki sebuah catatan, panel obrolan menawarkan "buat versi" sekali klik — bukan terjemahan harfiah, melainkan catatannya dituturkan ulang dalam bahasa sasaran, dengan setiap jangkar, blok kode, dan invarian struktur dijaga utuh. Hasilnya ditulis sebagai berkas cermin lokal itu, dan gerbang build memegang kata akhir sebelum apa pun disimpan. Taman ini tumbuh dalam delapan belas bahasa; menu bahasanya mendaftar setiap edisi dari halaman yang sedang Anda buka, dan dalam mode penyuntingan, edisi yang belum ada tinggal satu klik jauhnya. Terjemahan adalah perubahan seutuh berkas: jurnal mencatatnya, dan membatalkannya adalah operasi git, bukan satu klik ⟲.

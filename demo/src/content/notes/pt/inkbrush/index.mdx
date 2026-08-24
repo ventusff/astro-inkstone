@@ -1,0 +1,53 @@
+---
+title: A máquina de edição
+description: "Um passeio em cinco capítulos pelo astro-inkbrush, o motor de CMS com git por baixo com que este jardim faz par — e este próprio site é a demo: em modo de edição, cada página daqui é editável no lugar."
+brand: inkbrush
+subtitle: "o motor de CMS, no próprio manual\ncinco capítulos · um hub"
+navLabel: Visão geral
+chapters: false
+nav:
+  - group: O motor
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Referência · o motor de CMS" title="A máquina de edição" meta="cinco capítulos · zero bytes em produção · este site é a demo">
+  O [astro-inkstone](https://github.com/ventusff/astro-inkstone) é o papel; o [astro-inkbrush](https://github.com/ventusff/astro-inkbrush) é o pincel. O motor transforma qualquer site de conteúdo Astro no seu próprio editor: passe o mouse sobre um parágrafo em modo de edição e uma pequena alça oferece ✎ editar, ✦ perguntar ao Claude, ⟲ histórico. Não existe um site de demonstração separado para ir olhar — **o jardim que você está lendo é a demo**. Rode-o com `npm run wiki` e cada nota daqui, esta página incluída, se abre para edição no lugar; um build estático como o que você está lendo não contém um único byte de código de CMS.
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: 'o único banco de dados' },
+    { value: '2', label: 'redes de segurança a cada salvamento' },
+    { value: '0 B', label: 'de código de CMS num build estático' },
+  ]}
+/>
+
+## Cinco capítulos `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/pt/inkbrush/editing/`} num="PARTE I" title="Edição bloco a bloco" count="✎"
+    desc="CodeMirror no lugar do bloco que você está lendo, uma pré-visualização ao vivo pelo pipeline do próprio site e duas redes de segurança antes de qualquer coisa tocar o disco." />
+  <HubCard href={`${base}/pt/inkbrush/revisions/`} num="PARTE II" title="Histórico de revisões e reversão" count="⟲"
+    desc="Cada salvamento registrado no diário, bloco a bloco — quem, quando, o antes e o depois exatos — com reversão em um clique, ela mesma reversível." />
+  <HubCard href={`${base}/pt/inkbrush/ai-assist/`} num="PARTE III" title="Assistência de IA" count="✦"
+    desc="Reescritas de bloco, um chat que conhece a nota e tradução da nota inteira pelo CLI claude, confinados a uma cópia descartável." />
+  <HubCard href={`${base}/pt/inkbrush/inbox/`} num="PARTE IV" title="A caixa de entrada do Obsidian" count="📥"
+    desc="Aponte o observador para uma pasta do cofre; notas novas se convertem e se importam sozinhas — embeds, wikilinks e destaques incluídos." />
+  <HubCard href={`${base}/pt/inkbrush/wikilinks/`} num="PARTE V" title="Como os wikilinks resolvem" count="[[ ]]"
+    desc="Um resolvedor só para as páginas, a pré-visualização do editor, o importador e o lint do CI — espelhos de idioma primeiro, depois ids, aliases, brands e títulos." />
+</div>
+
+## Onde ele se encaixa
+
+O motor é dono das funções de CMS **e** do dialeto de Markdown com seu guardião de conteúdo — a gramática que o editor aceita e a gramática que a página renderiza têm de ser uma gramática só, então ela é escrita uma vez e consumida em toda parte ([[three-way-split|a divisão em três]] explica por que a linha passa ali). Estilo pertence à camada de papel; identidade pertence ao seu site. Tudo o que estas páginas renderizam — inclusive a faixa acima deste texto — é o papel em ação; tudo o que *edita* estas páginas é o motor.
+
+<div class="path">
+  <strong>Caminho de leitura.</strong>
+  Novo no motor → <a href={`${base}/pt/inkbrush/editing/`}>Parte I</a><span class="arrow">→</span><a href={`${base}/pt/inkbrush/revisions/`}>Parte II</a>; ligando-o a um site → primeiro o <a href={`${base}/pt/getting-started/`}>guia de primeiros passos</a>; o dialeto que o portão de salvamento aplica → a <a href={`${base}/pt/kitchen-sink/`}>vitrine completa</a>; uma nota sobre manter notas → <a href={`${base}/pt/garden-craft/`}>o ensaio de jardinagem</a>.
+</div>

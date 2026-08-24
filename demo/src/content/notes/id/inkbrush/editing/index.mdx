@@ -1,0 +1,30 @@
+---
+title: Menyunting, blok demi blok
+description: "Alur ✎ — CodeMirror menggantikan blok yang sedang Anda baca, pratinjau langsung lewat pipeline milik situs sendiri, dan dua jaring pengaman sebelum apa pun menyentuh disk."
+navLabel: Penyuntingan
+part: 1
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Menyunting, blok demi blok">
+  Menyunting di sini bekerja seperti membetulkan salah ketik di Wikipedia: Anda menyunting paragraf yang sedang Anda pandangi, bukan sebuah textarea raksasa yang memuat seluruh halaman. Dalam mode penyuntingan (`npm run wiki`), masuklah, arahkan kursor ke blok mana pun di catatan mana pun — termasuk yang ini — lalu klik ✎.
+</PartHero>
+
+## Putarannya
+
+Blok yang dirender bersembunyi dan sebuah editor [CodeMirror](https://codemirror.net/) mengembang di tempatnya, memuat sumber Markdown blok itu. Pratinjau langsung dirender di bawahnya selagi Anda mengetik — lewat dialek mesin plus plugin yang dioper situs ke `inkbrush({ markdown })`, set aturan yang sama dengan yang dipasang pipeline halaman, sehingga pratinjau dan halaman mustahil berbeda pendapat. `⌘/Ctrl + Enter` menyimpan; `Esc` membatalkan.
+
+Frontmatter pun sebuah blok: strip taksonomi di puncak setiap catatan di sini membawa ✎-nya sendiri, yang membuka YAML catatan itu — ubah sebuah status atau tanggal, dan header dirender ulang dari frontmatter yang telah diperbarui.
+
+## Dua jaring pengaman
+
+**Penguncian optimistis.** Setiap blok membawa hash dari sumber tempat ia dipotong. Bila orang lain sempat mengubah berkasnya tanpa Anda tahu, simpanan ditolak dengan sebuah konflik alih-alih menimpa pekerjaan mereka secara senyap — segarkan halaman dan coba lagi.
+
+**Gerbang build.** Sebelum apa pun ditulis ke disk, seluruh berkas dijalankan melewati pipeline Markdown milik situs — dialeknya, penjaga konten, plugin milik situs sendiri, dan kompiler MDX untuk `.mdx`. Simpanan yang akan merusak halaman — `**` yang tak berpasangan, tag komponen yang tak ditutup, ekspresi yang cacat bentuk — ditolak berikut galat persisnya, dan berkas di disk tetap tak tersentuh. Daftar tolakan lengkap sang penjaga diperagakan di ujung halaman [[kitchen-sink|serba ada]].
+
+## Ke mana simpanan pergi
+
+Sebuah simpan menulis berkas Markdown-nya dan, dengan `autocommit` menyala, menjadi commit git atas nama pengguna yang masuk. Tidak ada basis data di mana pun: berkas kontenlah satu-satunya sumber kebenaran, dan git-lah riwayatnya yang awet. Jurnal per blok berbutir halus yang menggerakkan [[inkbrush/revisions|riwayat revisi]] menumpang di atasnya.
+
+Dialeknya sendiri — GFM dengan aturan emphasis yang ramah CJK, plus penjaga konten yang menolak Markdown yang terdeformasi secara senyap — didefinisikan sekali di mesin dan dipakai bersama oleh perender halaman, pratinjau editor ini, dan CLI `check-content` ([[checks|lima pemeriksaan]]). Satu tata bahasa, tiga konsumen, nol simpangan.

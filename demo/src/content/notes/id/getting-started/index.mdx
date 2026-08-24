@@ -1,0 +1,127 @@
+---
+title: Memulai
+brand: Memulai
+subtitle: "dua submodule, tiga impor,\nsatu baris pipeline"
+description: Sepasang submodule di repo situs Anda, tiga impor stylesheet, satu baris siteMarkdown untuk seluruh pipeline Markdown — dan jadilah sebuah taman.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Panduan · dari nol sampai jadi taman" title="Memulai" meta="dua submodule · tiga stylesheet · satu siteMarkdown() · tiga perintah">
+  Baik lapisan kertas maupun mesinnya tidak diterbitkan ke npm — keduanya tanpa langkah build dan mengekspos sumber TS/CSS mentah. Sebuah situs membawa kedua repo sebagai git submodule, mengimpor tiga stylesheet, lalu menyambungkan satu fungsi ke `astro.config`. Semua yang Anda lihat di situs ini dibangun dengan cara itu.
+</Hero>
+
+<Part title="Pemasangan" />
+
+## Sepasang submodule
+
+Bawa kedua repo ke dalam situs, lalu arahkan dependensi `file:` ke sana:
+
+```bash title="akar repo situs"
+git submodule add https://github.com/ventusff/astro-inkstone.git packages/astro-inkstone
+git submodule add https://github.com/ventusff/astro-inkbrush.git packages/astro-inkbrush
+```
+
+```json title="package.json (bagian dependencies)"
+{
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.5",
+    "astro": "^7.1.6",
+    "astro-inkstone": "file:packages/astro-inkstone",
+    "astro-inkbrush": "file:packages/astro-inkbrush"
+  }
+}
+```
+
+> [!note] Tata letak demo ini sedikit berbeda
+> Demo ini hidup di dalam repo paketnya sendiri (`demo/`), sehingga `astro-inkstone`-nya menunjuk ke `file:..` dan mesinnya digantung di bawah `demo/vendor/`. Situs mandiri cukup memakai tata letak `packages/` di atas — keduanya setara.
+
+## Gaya
+
+Di stylesheet global situs Anda: token dulu, lalu lapisan konten, lalu — untuk situs yang punya halaman jelajah — rak, dan setelah itu barulah chrome milik Anda sendiri:
+
+```css title="src/styles/site.css"
+@import 'astro-inkstone/styles/tokens.css';
+@import 'astro-inkstone/styles/base.css';
+@import 'astro-inkstone/styles/browse.css'; /* halaman beranda / faset, menempel pada body.wb-root */
+
+/* identitas: timpa pigmen tingkat satu; kedua konteks semantik dan lapisan komponen ikut berubah */
+:root {
+  --p-shi: #b03a48; /* aksen baca milik Anda */
+  --p-zhu: #3b4a7a; /* aksen rak sekaligus tanda situs Anda */
+  --p-shi-n: #e0919b; /* kembaran malam: tema gelap membaca --p-*-n */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Serif milik rak adalah `--font-display` (Source Serif 4 + Noto Serif SC); hosting sendiri seperti yang dilakukan demo ini, dan masthead Anda akan tampil persis seperti di sini:
+
+```css title="src/styles/site.css (font, opsional)"
+@import '@fontsource-variable/source-serif-4/opsz.css';
+@import '@fontsource-variable/source-serif-4/opsz-italic.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource/noto-serif-sc/400.css';
+@import '@fontsource/noto-serif-sc/600.css';
+```
+
+Situs yang memuat matematika menambahkan satu baris untuk stylesheet KaTeX di layout (tanpanya, tata letak rumus berantakan):
+
+```ts title="src/layouts/Base.astro (frontmatter)"
+import 'katex/dist/katex.min.css';
+```
+
+<Part title="Penyambungan" />
+
+## Pipeline Markdown, satu baris
+
+Konfigurasi minimal mengikuti bentuk situs ini — penomoran bab, matematika, callout, diagram, serta `[[tautan wiki]]` yang diresolusi terhadap koleksi catatan (versi lengkapnya, dengan semua hook yang disambungkan situs ini, adalah `astro.config.mjs` di repositori):
+
+```js title="astro.config.mjs (minimal)"
+import { defineConfig } from 'astro/config';
+import mdx from '@astrojs/mdx';
+import { normalizeBase } from 'astro-inkstone';
+import { siteMarkdown } from 'astro-inkstone/markdown-preset';
+import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
+
+const WIKI_MODE = process.env.WIKI === '1';
+const inkbrush = WIKI_MODE ? (await import('astro-inkbrush')).inkbrush : null;
+const BASE = normalizeBase(process.env.DEMO_BASE || '/'); // '/docs' maupun '/docs/' sama-sama jalan
+
+export default defineConfig({
+  site: 'https://example.com',
+  base: BASE || '/',
+  integrations: [mdx(), ...(inkbrush ? [inkbrush()] : [])],
+  markdown: siteMarkdown({
+    numbering: 'chapters', // nomor bagian/bab + ToC lewat remarkPluginFrontmatter
+    math: true, // remark-math + KaTeX
+    codeFrame: true, // bingkai kode: bilah judul / salin / lipat / anotasi baris
+    mermaid: true, // blok mermaid dirender di sisi klien
+    callouts: true, // sintaks > [!note] gaya Obsidian
+    wikiBlocks: WIKI_MODE, // mode penyuntingan: pemetaan blok ↔ baris sumber, selalu paling akhir
+    guard: { autoNumberedHeadings: true }, // penjaga konten: tolak nomor yang diketik tangan
+    wikilinks: {
+      resolve: buildWikilinkResolver({
+        notes: cachedScan('src/content/notes'),
+        urlFor: (id) => `${BASE}/${id}/`,
+        locales: [{ code: 'en', prefix: '' }, { code: 'zh', prefix: 'zh/' }],
+      }),
+    },
+  }),
+});
+```
+
+`siteMarkdown` berdiri di atas dialek milik mesin (GFM, penguraian emphasis yang ramah CJK, penjaga konten); preset ini sendiri hanya merakit dan mengurutkan plugin sisi situs — **urutan pipeline adalah kontraknya**, jadi situs Anda tak perlu lagi memikirkan siapa jalan sebelum siapa. Setiap sakelar diperagakan di halaman [[kitchen-sink|serba ada]], dan alasan di balik pembagian paketnya ada di [[boundaries|catatan pembagian tiga arah]]. Ingin label callout dalam bahasa lain? Berikan `calloutLabels` — bawaannya bahasa Inggris.
+
+## Menjalankannya
+
+Skripnya persis seperti yang didefinisikan `package.json` demo ini (`build` menjalankan check-dist milik mesin sebagai postbuild; `wiki` berarti `WIKI=1 astro dev`):
+
+```bash
+npm install
+npm run dev        # tamannya
+npm run build      # build statis + check-dist milik mesin (postbuild)
+npm run wiki       # WIKI=1 astro dev — mode penyuntingan CMS
+```
+
+Build statisnya tidak memuat satu byte pun dari mesin: di luar mode WIKI, kode integrasi mesin bahkan tak pernah diimpor (impor dinamis), dan tidak ada metadata penyuntingan yang dihasilkan. Satu-satunya yang berbentuk CMS di keluaran adalah markup dermaga milik situs sendiri yang diam — beberapa span `data-inkbrush-slot` kosong di bilah navigasi beserta CSS-nya — yang tidak berbuat apa-apa sampai CMS-nya merapat.

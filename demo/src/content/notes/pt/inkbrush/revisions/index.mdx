@@ -1,0 +1,27 @@
+---
+title: Histórico de revisões e reversão
+description: Cada salvamento entra num diário, bloco a bloco — quem, quando, quais linhas, o antes e o depois exatos. Navegue por ele com ⟲, desfaça em um clique.
+navLabel: Revisões
+part: 2
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Histórico de revisões e reversão">
+  Cada salvamento — digitado à mão, produzido pelo Claude ou importado da caixa de entrada — é acrescentado a um diário de revisões que vive ao lado do conteúdo: quem, quando, quais linhas e o texto exato de antes e de depois. Passe o mouse sobre um bloco, clique em ⟲, e o histórico daquele bloco se abre.
+</PartHero>
+
+## O diário
+
+Cada entrada mostra como a mudança foi feita (edição manual, edição do Claude, tradução por IA, importação da caixa de entrada ou uma reversão anterior), por quem, e um diff dobrável de antes/depois. Entradas de arquivo inteiro — uma tradução, uma importação — ficam listadas para registro, mas não carregam botão de reversão: desfazê-las é trabalho do git.
+
+## Reversão
+
+Um clique no botão de reversão de uma entrada troca o texto *depois* daquela revisão pelo texto *antes* dela — como uma nova edição registrada no diário, então uma reversão é, ela mesma, reversível. Dois detalhes que vale saber:
+
+- A reversão é aplicada por casamento exato de conteúdo. Se o bloco foi editado desde então e o texto antigo já não aparece ao pé da letra, a reversão é recusada em vez de adivinhada — nada nunca é remendado por aproximação.
+- O resultado passa pelo mesmo portão de build de qualquer outro salvamento ([[inkbrush/editing|as duas redes de segurança]]). Uma reversão que quebraria a página é rejeitada.
+
+## Por que um diário e o git, os dois?
+
+O git (via `autocommit`) é o histórico durável, de arquivos inteiros — o que você empurra com push, guarda em backup e compara com diff. O diário é a camada fina que torna o ⟲ instantâneo e por bloco. Eles respondem a perguntas diferentes: *"o que aconteceu com este arquivo?"* versus *"o que aconteceu com este parágrafo?"*

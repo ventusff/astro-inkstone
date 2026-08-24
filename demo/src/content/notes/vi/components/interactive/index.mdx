@@ -1,0 +1,90 @@
+---
+title: Tương tác
+description: "DemoMount và bản hợp đồng loader thuộc về site, cộng các phụ kiện của trang — hero, vách ngăn phần, thẻ hub, danh sách nhảy trang và chân trang."
+part: 3
+navLabel: "Tương tác & phụ kiện"
+---
+
+import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import LocalToc from 'astro-inkstone/components/LocalToc.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Tương tác & phụ kiện trang">
+  Một demo canvas chạy thật và bản hợp đồng đứng sau nó, rồi đến những thành phần lặng lẽ đóng khung cho mọi ghi chú — chính là những thứ bạn đã nhìn từ trang đầu tiên.
+</PartHero>
+
+## DemoMount — chạy thật
+
+Phân công vẫn theo nếp quen của gói: **markup điểm gắn** (sân khấu, slot điều khiển, slot chú thích) đi kèm gói; **mô-đun demo và loader của nó** thuộc về site. Site này giữ loader ở `src/lib/demo-loader.ts` và gọi `mountAllDemos()` đúng một lần từ layout; lời gọi chạy trên mọi trang, nhưng chunk của mô-đun demo chỉ được tải về cho trang nào thật sự mang một điểm gắn `[data-demo]`.
+
+Demo nào nhận thao tác con trỏ trên canvas thì truyền `interactive` — sân khấu khi đó chiếm cử chỉ chạm và hiện con trỏ chữ thập. Demo dưới đây là loại thụ động (chỉ vẽ), nên bỏ cờ đó và vuốt ngang canvas vẫn cuộn trang như thường. Nó vẽ giao thoa sóng hai nguồn bằng chính token mực của trang, nên đổi giao diện là đổi theo:
+
+<DemoMount demo="waves/interference" title="Demo · Giao thoa sóng hai nguồn" canvas={{ w: 640, h: 300 }}>
+  <Fragment slot="caption">
+    Hai nguồn điểm phát sóng tròn; nơi đỉnh gặp đỉnh, mực tụ lại; nơi đỉnh gặp lõm, giấy lộ ra. Thử lật giao diện — demo tự chấm mực lại từ token đang sống.
+  </Fragment>
+</DemoMount>
+
+Bản hợp đồng mô-đun là một default export duy nhất, `mount(ctx)`, trả về hàm dọn dẹp; loader phân giải id mô-đun kiểu `waves/interference` theo cách nào tùy site (ở đây là `import.meta.glob`).
+
+## Phụ kiện trang
+
+Các thành phần còn lại đóng khung ghi chú thay vì lấp đầy nó:
+
+- `Hero` mở màn một ghi chú: kicker, tiêu đề cỡ display, đoạn dẫn chạy qua trọn pipeline Markdown, dòng meta, và `tocLabel` tùy chọn để thêm một hàng "mở đầu" không đánh số vào thanh bên. `title` trong frontmatter vẫn là tên ngắn chuẩn cho `<title>` và các thẻ; tiêu đề trên hero được phép dài.
+- `PartHero` mở màn một chương của hub — chính phần đầu của trang này. Kicker của nó không bao giờ gõ tay: route truyền nhãn "Phần III · …" của chương vào qua `props.partLabel`.
+- `Part` chia một ghi chú dài dạng một trang thành nhiều phần; preset đánh số biến nó thành các hàng nhóm kiểu "PHẦN II · Nền móng" trên thanh bên. Trang [[kitchen-sink|trình diễn tổng hợp]] được cắt đúng kiểu đó.
+- `HubCard` và `.hub-grid` là dàn thẻ cửa ngõ của hub; `.path` là hộp lộ trình đọc của nó — cả hai đều có mặt trên [[components|trang tổng quan của phòng trưng bày này]].
+- `LocalToc` render danh sách nhảy trong trang; nó nhận cả hai dạng ToC mà hai preset đánh số sinh ra, và tự ẩn khi ít mục hơn ngưỡng cấu hình. Ngay bên dưới, chạy thật trên ToC của chính chương này.
+- `SidebarMemory` giữ thanh bên đang cuộn đúng chỗ người đọc rời đi, xuyên qua các lần tải trang, và canh giữa mục hiện tại (mặc định `[aria-current="page"]`) mỗi khi nó lọt khỏi tầm nhìn. Đặt nó trong hộp cuộn của thanh bên, sau phần markup điều hướng; nó chạy trước lượt vẽ đầu tiên, nên thanh bên không bao giờ chớp về đầu. Thanh bên của bản demo này đang mang nó.
+- `LineageSvg` đóng khung một SVG vẽ tay (phả hệ phương pháp, cây phân loại) thành tấm thẻ — có một tấm ngay bên dưới.
+- `PageFooter` là dòng chữ in nhỏ dưới chân ghi chú — chính dòng nằm dưới mọi ghi chú nơi đây.
+- Các mảnh ghép duyệt nằm ở [[components/wiki|chương wiki]]; còn phía Markdown của phòng trưng bày là [[kitchen-sink|trình diễn tổng hợp]].
+
+## LocalToc và LineageSvg, chạy thật
+
+`LocalToc` được đút cho ToC sinh lúc build của chính trang này — cùng dữ liệu thanh bên tiêu thụ, trao cho ghi chú qua `props.toc`:
+
+<LocalToc toc={props.toc} label="Trong chương này" />
+
+Và `LineageSvg` bao quanh một sơ đồ vẽ tay, chấm mực toàn bằng token ngữ nghĩa nên ngồi vững trên cả hai giao diện:
+
+<LineageSvg title="Hình — lớp dáng vẻ đứng ở đâu">
+  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css nuôi base.css và browse.css, hai tệp này nuôi mọi thành phần" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
+    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
+      <rect x="20" y="55" width="150" height="40" rx="6" />
+      <rect x="245" y="15" width="150" height="40" rx="6" />
+      <rect x="245" y="95" width="150" height="40" rx="6" />
+      <rect x="470" y="55" width="150" height="40" rx="6" />
+    </g>
+    <g fill="none" stroke="var(--color-ink-faint)">
+      <path d="M170 68 C 210 60, 210 42, 245 37" />
+      <path d="M170 82 C 210 90, 210 108, 245 113" />
+      <path d="M395 37 C 430 42, 430 60, 470 68" />
+      <path d="M395 113 C 430 108, 430 90, 470 82" />
+    </g>
+    <g fill="var(--color-ink)" text-anchor="middle">
+      <text x="95" y="80">tokens.css</text>
+      <text x="320" y="40">base.css</text>
+      <text x="320" y="120">browse.css</text>
+      <text x="545" y="80">components</text>
+    </g>
+  </svg>
+</LineageSvg>
+
+## Phụ kiện không cần thành phần
+
+Vài món chỉ là class trơn trong `base.css`, dành cho site muốn render chúng từ layout của mình hoặc viết thẳng bằng HTML trong bài:
+
+| Class | Là gì |
+| --- | --- |
+| `.page-head` + `.kicker`, `.page-desc`, `.page-date` | đầu trang dựng từ frontmatter (kicker, h1, mô tả, ngày) do layout render thay cho một `<Hero>` |
+| `.banner`, `.banner-fallback` | dòng thông báo một dòng ngay dưới đầu trang; biến thể fallback là bản dịu màu |
+| `.page-foot` | chân trang chữ nhỏ hai cột (slot trái, slot phải) |
+| `.speak` | dòng diễn nôm dưới một đề mục đào sâu; nhãn của nó là `--speak-label` |
+| `.path` + `.title`, `.route`, `.arrow` | hộp lộ trình đọc trên một hub |
+| `.ref-tag` | thẻ monospace nhỏ trong danh mục tham khảo (tên hội nghị, năm) |
+| `.tag`, `.tag.teal / .mustard / .violet` | các huy hiệu của thẻ bài báo, dùng được ở bất cứ đâu |
+| `.measured` + `.measured-head`, `.measured-body`, `.measured-pane` (`.doc`), `.measured-tag` | thẻ so sánh "tài-liệu-nói đối chiếu số-đo-được": thanh tiêu đề xanh cổ vịt đặc trên hai ô, ô `.doc` mang lời tuyên bố, ô kia mang số đo — một dáng hình phân biệt hẳn với mọi callout |
+| `.paper .idea-label` | nhãn ý-then-chốt viết hoa cỡ nhỏ trong thân một `PaperCard`, ví dụ `<span class="idea-label">Ý then chốt</span>` |

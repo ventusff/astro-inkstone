@@ -1,0 +1,82 @@
+---
+title: Las comprobaciones
+brand: Las comprobaciones
+subtitle: "una puerta por capa\nfuente · enlaces · salida · render · contraste"
+description: "check-content, check-wikilinks, check-dist, ui_probe, contrast_probe — una puerta por capa, cada una atrapando una clase de fallo silencioso que llega a producción bajo un build verde."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Referencia · herramientas" title="Las comprobaciones" meta="cinco comprobaciones · tres del motor, dos de este paquete · todo verde antes de commitear">
+  Un build verde no significa que las páginas estén bien. Esta cadena de herramientas coloca una comprobación en cada capa, cada una atrapando una clase de fallo silencioso del tipo «build verde, página rota» — y dos de ellas miran las páginas como lo hace un lector: en un navegador real.
+</Hero>
+
+## Cinco puertas, cinco capas
+
+| Comprobación | Viene con | Mira | Cuándo ejecutarla |
+| --- | --- | --- | --- |
+| check-content | el motor, `scripts/check-content.mjs` | cada archivo fuente md/mdx | CI del repo de contenido, o después de escribir |
+| check-wikilinks | el motor, `scripts/check-wikilinks.mjs` | el grafo de `[[wikilinks]]` | CI del repo de contenido, o tras renombrar una nota |
+| check-dist | el motor, `scripts/check-dist.mjs` | la salida de `astro build` | después de cada build (postbuild) |
+| ui_probe | este paquete, `scripts/ui_probe.mjs` | las páginas renderizadas en un navegador real | tras cambios de estilo o de layout |
+| contrast_probe | este paquete, `scripts/contrast_probe.mjs` | el contraste de cada nodo de texto, en ambos temas | tras cualquier cambio de tokens |
+
+## check-content: la capa de la fuente
+
+Compila cada md/mdx destinado a convertirse en página con **exactamente el mismo dialecto** que el sitio — los errores de sintaxis y las deformaciones silenciosas (marcadores de énfasis sin pareja, llaves tragadas por la evaluación de MDX, marcadores de lista nacidos de un salto de línea, `$$` de una sola línea, fórmulas que KaTeX no puede renderizar — el mismo repertorio con el que cierra [[kitchen-sink|el muestrario]]) ponen el CI en rojo, todos.
+
+Por qué este script tiene que venir del motor: un verificador cuyo conjunto de plugins difiere del del sitio es **peor que ningún verificador** — a uno sin el plugin de matemáticas las llaves de una fórmula le parecen expresiones JSX; uno sin GFM deja pasar las tablas sin mirarlas. El dialecto se escribe una vez en el motor; el renderizado del sitio, la validación al guardar del CMS y este script consumen siempre el mismo.
+
+```bash title="raíz del repo de contenido"
+node <engine>/scripts/check-content.mjs . --glob '**/index.{md,mdx}' --math
+```
+
+Más allá de compilar, atrapa dos clases de pérdida silenciosa en el frontmatter: un `#` sin comillas dentro de un valor (YAML lo lee como comentario y trunca el resto en silencio) y YAML que directamente no parsea, reportado con su línea.
+
+## check-wikilinks: el grafo de enlaces
+
+Los `[[wikilinks]]` muertos deliberadamente no hacen fallar el build — a un jardín hay que permitirle enlazar notas que aún no han crecido. Pero la podredumbre de enlaces sigue perteneciendo al CI, así que el motor incluye un lint que resuelve cada wikilink con **el parser y las reglas de resolución de la propia biblioteca** (alias, brand, título, espejos de idioma) y reporta los que faltan, los ambiguos y las anclas dudosas. `--strict` convierte los enlaces muertos en una salida con error — así es exactamente como lo ejecuta el CI de este repositorio:
+
+```bash title="el chequeo de enlaces de este jardín, tal como lo ejecuta el CI"
+node scripts/check-links.mjs
+```
+
+## check-dist: la capa de salida
+
+En el `dist/` construido, cada referencia interna en la que un lector puede hacer clic tiene que existir de verdad. Atrapa los huecos silenciosos bajo un build verde:
+
+- enlaces y recursos internos que apuntan a archivos inexistentes (de los que aparecen por docenas tras una reorganización de rutas);
+- anclas dentro de la página que apuntan a ids inexistentes;
+- segmentos de idioma duplicados en las rutas (`/en/en/` — el clásico resultado de los fallbacks de i18n apilando un prefijo sobre rutas ya prefijadas);
+- `<a>` anidado dentro de `<a>` (el parser de HTML cierra el exterior antes de tiempo y los botones se caen de sus tarjetas);
+- residuos de error de KaTeX (la fórmula es texto rojo en la página mientras el build sigue verde).
+
+Esta demo lo conecta como postbuild: un `npm run build` verde significa que la comprobación de la salida también pasó.
+
+```bash title="raíz del sitio, tras un build (pasa --base cuando el sitio se despliega bajo una subruta)"
+node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
+```
+
+## La sonda de la capa de render
+
+La fuente y la salida pueden estar ambas bien y la página seguir rota — el caso clásico son tarjetas de portada a las que ninguna regla de hoja de estilos les aplica, renderizadas como una sola línea apelmazada de texto desnudo: los chequeos de enlaces y anclas siguen verdes porque nunca miran una página renderizada. `ui_probe` conduce un navegador real por cada página de `dist` a cuatro anchos de viewport (1440/1024/768/430) y mide: desbordamiento horizontal de la página, elementos más anchos que su contenedor sin una caja de scroll donde vivir, clases que ninguna regla de hoja de estilos estiliza, niveles de título saltados, ids duplicados, imágenes sin atributo `alt`, anclas dentro de la página y `aria-controls` que no apuntan a nada. Reporta solo lo que una máquina puede probar — sin juicios estéticos.
+
+```bash title="necesita un Chrome/Chromium local"
+npm run build
+node ../scripts/ui_probe.mjs dist   # sirve dist por sí mismo; pasa una baseUrl para sondear un servidor vivo
+```
+
+Inspecciona el documento entero — chrome, sidebar y diálogos incluidos. Verde significa que la última línea del informe dice `SAMPLES WITH FINDINGS: 0` (una muestra es una ruta a un ancho).
+
+## La sonda de contraste
+
+Los tokens afirman AA, así que la afirmación se mide en lugar de darse por sentada. `contrast_probe` carga cada página de `dist` en un navegador real — tema claro y oscuro, ancho de escritorio y de teléfono — y mide cada tramo de texto renderizado en el estado por defecto: texto HTML, texto SVG y el texto generado de `::before` / `::after`, con cada overlay `<dialog data-probe-open>` sondeado abierto (y una consulta tecleada en el buscador que encuentre allí) en una página representativa — el marcador es la declaración del sitio de que el diálogo está completo tal como fue escrito. El fondo no se lee de una hoja de estilos: la página se renderiza con todos los glifos en transparente, se captura la pantalla, y el píxel bajo cada tramo es su fondo — así, degradados, tintes de `color-mix()`, capas translúcidas y la paleta nocturna se miden tal como se renderizan. El color de un tramo carga la `opacity` acumulada de su elemento y sus ancestros, de modo que el texto atenuado se mide a la intensidad que el lector ve de verdad. Los estados hover y focus se revisan a ojo, no se sondean. Al texto pequeño se le exige 4.5:1, al grande (24px, o 18.66px en negrita) 3:1; un tramo cuyo color no se puede parsear o cuyo fondo no se puede muestrear cuenta como hallazgo. El informe nombra la página, el tema, el ancho, el selector, los dos colores y la razón de contraste de cada tramo por debajo del listón:
+
+```bash title="tras un build, ambos temas"
+node ../scripts/contrast_probe.mjs dist   # PROBE_THEMES / PROBE_WIDTHS acotan la matriz
+```
+
+<div class="callout system">
+  <div class="callout-title">La rutina ante un cambio de estilo</div>
+  Cualquier cambio en las hojas de estilo o los componentes del paquete pasa primero por el build de esta demo, y luego por <code>ui_probe</code> y <code>contrast_probe</code> sobre la salida — todo verde antes de commitear. La demo hace las veces de banco de pruebas del paquete.
+</div>

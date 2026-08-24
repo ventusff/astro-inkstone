@@ -1,0 +1,28 @@
+---
+title: "Papel e tinta, de propósito"
+brand: "Papel e tinta"
+subtitle: "a postura por trás dos tokens"
+description: Por que este sistema de design se compromete com um fundo de papel quente, serifas de verdade, dois fundos para dois tipos de página e um tema escuro composto à mão — uma nota sobre a postura por trás dos tokens.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Padrão · uma postura de design" title="Papel e tinta, de propósito" meta="um fundo quente · um corpo serifado · dois fundos · uma segunda edição para o escuro">
+  A maioria dos temas de documentação recorre aos mesmos padrões: branco `#fff`, uma sans grotesca, texto gray-800, modo escuro do sistema. Eles se lêem bem e não têm cara de nada. Este sistema parte de outra premissa — **um documento técnico longo é algo que você lê por uma hora** — e os tokens decorrem dela.
+</Hero>
+
+## A postura
+
+Uma hora de leitura pede o que a imprensa descobriu séculos atrás: um fundo quente que não ofusca, uma face de texto com contraste real entre os traços e um ritmo de layout medido em ems do corpo do texto, não em pixels de chrome. Daí o vocabulário em que a [[design-tokens|camada de tokens]] é escrita: papéis (纸 a folha, 页 a página, 素 o fundo liso, 帛 a seda) em vez de gray-50 a gray-200; tintas e pigmentos saídos de uma caixa de pintor — 朱 vinho, 石 laranja-queimado, 赭 ocre, 黛 verde-azulado, 紫 violeta — em vez de primary/secondary/accent. Os nomes não são enfeite: eles mantêm cada nova decisão de cor ancorada na mesma metáfora física, e é por isso que cinco superfícies diferentes ainda se lêem como uma única folha de papel.
+
+## Dois fundos, porque dois tipos de página
+
+Um wiki é lido de dois jeitos. Você **lê** uma nota — uma coluna, uma hora, os olhos pedem calma: um papel levemente frio, uma tinta neutra, um único acento para links e números. Você **garimpa** uma estante — uma grade de cartões, uma olhada, uma escolha: o papel pode ser mais quente, os títulos podem vir numa serifa display, o acento pode ser um vinho profundo que se lê como marca, não como link. Dar a essas duas situações uma paleta só comprometeria as duas. Por isso a camada semântica tem dois contextos — a coluna de leitura (`--color-*`) e a estante de navegação (`--wb-*`) —, tirados de uma única caixa de pigmentos, e cada página declara qual dos dois é. O resultado é um site que parece um objeto só com dois cômodos.
+
+## O escuro é uma segunda edição, não uma inversão
+
+Modos escuros algorítmicos invertem a luminosidade e dão por encerrado; o texto vira giz sobre ardósia e toda superfície tingida vira lama. Aqui o tema escuro é uma **segunda edição composta à mão**: fundos de crepúsculo e tintas branco-lua escolhidos por si mesmos, pigmentos de acento reclareados só o bastante para sustentar o contraste AA sobre os papéis mais escuros. Isso custa um segundo conjunto de decisões — e é exatamente esse o ponto. O interruptor honra apenas a escolha explícita do leitor ([[design-tokens|nunca a preferência do sistema operacional]]), porque uma página que vira o próprio tema no meio da leitura é uma página que assusta.
+
+## CJK é estrutural
+
+Texto misto chinês/latim é onde a maioria dos temas desmonta em silêncio: ênfase que se recusa a fechar contra um ponto final de largura cheia, diagramas de código que entortam porque um hanzi mede 1.7 célula. Os dois casos são tratados aqui como bugs de corretude, não como gosto tipográfico — o [[kitchen-sink|dialeto analisa ênfase CJK corretamente]], e o subconjunto da fonte de código fixa um hanzi em exatamente duas células, para que o desenho de caixa sobreviva à tradução. Um tema que só funciona em inglês é meio tema.

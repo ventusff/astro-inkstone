@@ -1,0 +1,47 @@
+---
+title: "Le découpage en trois"
+brand: "Le découpage en trois"
+subtitle: "le moteur édite, le papier habille,\nle site, c’est vous"
+description: "Le moteur édite, le papier habille, le site, c’est vous — qui possède quoi, et pourquoi les frontières passent là où elles passent."
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+
+<Hero kicker="Guide · architecture" title="Le découpage en trois" meta="trois dépôts · trois propriétaires · une phrase à retenir">
+  Un site de documentation ou un wiki bâti avec cette boîte à outils s’assemble à partir de trois pièces, chacune propriétaire d’exactement une couche. Les frontières entre elles ne relèvent pas du goût — chacune s’adosse à une contrainte qui mord dès qu’on la franchit.
+</Hero>
+
+## Trois couches, trois propriétaires
+
+- **astro-inkbrush (le moteur)** : un CMS minimal — édition de blocs en place dans le navigateur, historique de révisions et retour arrière au niveau du bloc, commentaires, questions-réponses, réécriture et traduction par IA, import depuis une boîte de réception. Il possède aussi une chose qui semble ne pas appartenir à un CMS : **le dialecte Markdown et le garde-fou du contenu**. La raison est dure : la grammaire que l’éditeur accepte et la grammaire que la page rend doivent être la même, sans quoi « ça s’enregistre bien dans l’éditeur, ça se rend mal sur la page » n’est qu’une question de temps. Les règles d’analyse s’écrivent donc une fois, dans le moteur, et se consomment en trois endroits — le rendu du site, la validation à l’enregistrement du CMS, les vérifications de la CI.
+- **astro-inkstone (le papier — ce paquet)** : la couche partagée d’apparence et de chaîne de traitement — les tokens de design à deux niveaux en deux contextes, la feuille de style de contenu `base.css` et l’étagère `browse.css`, la bibliothèque de composants, le préréglage de pipeline `siteMarkdown`, les assistants de taxonomie et de mentions liées qui font tourner ce jardin, le sous-ensemble de police de code Maple Mono CN, et les sondes de la couche de rendu. Il ne fait **pas** l’identité du site : couleurs de marque, habillage de mise en page, routage et déploiement ne le regardent pas.
+- **Le site (comme le jardin que vous lisez)** : il surcharge les tokens du premier niveau pour sa couleur d’identité ; il possède sa barre latérale et son habillage de navigation (l’implémentation de ce site est la réponse de référence) ; il décide de l’organisation du contenu, de la forme des routes et du lieu de déploiement.
+
+Une phrase à retenir : **le moteur édite, le papier habille, le site, c’est vous.**
+
+## Pourquoi les frontières passent ici
+
+Chaque coupe s’adosse à une contrainte réelle :
+
+**Le dialecte appartient au moteur**, parce qu’un vérificateur dont le jeu de plugins diffère de celui du site est pire que pas de vérificateur du tout — sans le plugin mathématique, il prend les accolades des formules pour des expressions JSX ; sans GFM, il laisse passer les barres verticales des tableaux. La grammaire s’écrit une fois et se consomme en trois endroits : elle ne peut jamais dériver.
+
+**Les styles appartiennent au papier**, parce que lorsque plusieurs sites entretiennent chacun leur feuille de style de contenu, une correction de contraste doit s’appliquer une fois par site — un site oublié, et son petit texte tombe sous AA. Dans une couche partagée, une correction se pose partout d’un coup.
+
+**L’identité appartient au site**, parce qu’à l’instant où une couche partagée absorbe la couleur de marque d’un site, tous les autres doivent la combattre à coups de surcharges. D’où les tokens à deux niveaux : un site surcharge la palette brute du premier niveau (`--p-*`), et les couches sémantique et composants suivent sans qu’on y touche — voir [[design-tokens]].
+
+## Où loge la mécanique de parcours
+
+La même discipline s’applique à ce que vous êtes en train de parcourir. Le paquet livre la **mécanique** — `createTaxonomy` (résolution des types, domaines et étiquettes, héritage du hub, miroirs de langue), `createBacklinks` (l’index des mentions liées) et des composants purement présentationnels, comme les cartes de notes et les rangées de facettes de la page d’accueil. Le site possède le **vocabulaire et les routes** : les types et les domaines de ce jardin vivent dans son propre fichier de registre, et ses pages `/kind/…`, `/domain/…`, `/tag/…` sont des pages Astro ordinaires qu’un site consommateur copie et remodèle. Même découpage, un étage plus haut : la mécanique dans le paquet, le sens dans le site.
+
+## Ce qu’un site y gagne
+
+Du point de vue du site, consommer ce paquet plus le moteur rapporte :
+
+- `astro-inkstone/styles/tokens.css` + `base.css` + `browse.css` : les tokens d’abord, puis la colonne de lecture, puis l’étagère de parcours — trois lignes d’`@import` pour toute l’apparence ;
+- `siteMarkdown(...)` : la chaîne Markdown entière en une ligne, options décrites dans [[getting-started]] ;
+- les composants sous `astro-inkstone/components/`, importés par chemin selon le besoin ;
+- la fabrique de taxonomie et le constructeur de mentions liées sous `astro-inkstone/lib/`, liés au registre propre du site ;
+- en mode WIKI, le CMS complet du moteur (essayez-le sur ce site avec `npm run wiki`) ;
+- cinq vérifications : `check-content`, `check-wikilinks` et `check-dist` (livrées avec le moteur), `ui_probe` et `contrast_probe` (livrées ici) — voir [[checks]].
+
+Chaque effet de rendu, sur chaque page de ce jardin, est le produit de ce découpage — les notes sont le manuel, et le manuel est la démo.

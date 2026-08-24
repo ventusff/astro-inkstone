@@ -62,6 +62,7 @@ const isActive = (dim: string, value: string): boolean =>
 <nav class="facet-nav" aria-label={label.aria}>
   <div class="row">
     <span class="dim">{label.kind}</span>
+    <span class="pills">
     {kinds.map(({ def, count }) => (
       <a
         class="pill"
@@ -71,9 +72,11 @@ const isActive = (dim: string, value: string): boolean =>
         {def.label} <b>{count}</b>
       </a>
     ))}
+    </span>
   </div>
   <div class="row">
     <span class="dim">{label.domain}</span>
+    <span class="pills">
     {domains.map(({ def, count }) => (
       <a
         class="pill"
@@ -84,11 +87,13 @@ const isActive = (dim: string, value: string): boolean =>
         {def.label} <b>{count}</b>
       </a>
     ))}
+    </span>
   </div>
   {
     statuses.length > 0 && (
       <div class="row">
         <span class="dim">{label.status}</span>
+        <span class="pills">
         {statuses.map(({ def, count }) => (
           <a
             class="pill"
@@ -98,11 +103,13 @@ const isActive = (dim: string, value: string): boolean =>
             {def.label} <b>{count}</b>
           </a>
         ))}
+        </span>
       </div>
     )
   }
   <div class="row">
     <span class="dim">{label.tag}</span>
+    <span class="pills">
     {tags.map(({ tag, count }) => (
       <a
         class="pill"
@@ -115,6 +122,7 @@ const isActive = (dim: string, value: string): boolean =>
     <a class="pill more" href={`${root}/all/`} aria-current={active?.dim === 'all' ? 'page' : undefined}>
       {label.all}
     </a>
+    </span>
   </div>
 </nav>
 
@@ -125,11 +133,15 @@ const isActive = (dim: string, value: string): boolean =>
     background: color-mix(in srgb, var(--wb-bg-card) 55%, transparent);
     border: 1px solid var(--wb-border-soft);
     border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    align-items: center;
+    gap: 8px 12px;
   }
   .row {
+    display: contents;
+  }
+  .pills {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -139,8 +151,7 @@ const isActive = (dim: string, value: string): boolean =>
     font: 600 11px/1 var(--wb-sans);
     letter-spacing: 0.12em;
     color: var(--wb-text-muted);
-    width: 42px;
-    flex-shrink: 0;
+    min-width: 30px;
   }
   .pill {
     font: 500 12px/1 var(--wb-sans);

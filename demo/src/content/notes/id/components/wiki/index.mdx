@@ -1,0 +1,154 @@
+---
+title: Wiki & jelajah
+description: Set taksonomi — kartu catatan, baris faset, lencana, panel tautan balik, dan graf lokal di bilah sisi — diperagakan dengan data contoh, dan berjalan sungguhan di seantero taman ini.
+part: 2
+navLabel: Wiki & jelajah
+---
+
+import Backlinks from 'astro-inkstone/components/Backlinks.astro';
+import LocalGraph from 'astro-inkstone/components/LocalGraph.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import DomainChip from 'astro-inkstone/components/wiki/DomainChip.astro';
+import FacetNav from 'astro-inkstone/components/wiki/FacetNav.astro';
+import KindBadge from 'astro-inkstone/components/wiki/KindBadge.astro';
+import NoteCard from 'astro-inkstone/components/wiki/NoteCard.astro';
+import StatusDot from 'astro-inkstone/components/wiki/StatusDot.astro';
+import TaxonomyLine from 'astro-inkstone/components/wiki/TaxonomyLine.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<PartHero kicker={props.partLabel} title="Wiki & jelajah">
+  Semua isi bab ini berjalan **sungguhan** di situs ini: rak-rak halaman beranda disusun dari `NoteCard`, baris fasetnya sebuah `FacetNav`, strip meta di atas teks ini sebuah `TaxonomyLine`, dan gugusan bintang kecil di bilah sisi sebuah `LocalGraph`. Semuanya komponen tampilan murni — situs meresolusi registrinya sendiri dan mengoper data yang siap tampil. Pembantu resolusinya dikirim di paket sebagai `createTaxonomy` dan `createBacklinks` ([[three-way-split|mekanisme di paket, makna di situs]]).
+</PartHero>
+
+## Pengikatannya, tiga baris
+
+```ts title="src/lib/taxonomy.ts (seluruh pengikatan situs ini)"
+import { createTaxonomy } from 'astro-inkstone/lib/taxonomy';
+import { DOMAINS, KINDS, STATUSES } from '../content/notes/_meta/taxonomy';
+
+export const { getWikiUnits, groupByKind, groupByDomain, groupByPrimaryDomain, tagIndex, resolveTaxonomy } =
+  createTaxonomy({ kinds: KINDS, domains: DOMAINS, statuses: STATUSES },
+    { collection: 'notes', locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en' });
+```
+
+Registrinya (`_meta/taxonomy.ts`) adalah data murni di pohon konten: jenis, bidang berikut warna ronanya, status berikut warna titiknya, masing-masing dengan label Inggris dan Tionghoa. Tambahkan sebuah nilai di sana, tandai satu catatan dengannya, dan semua halaman jelajah langsung menangkapnya — rutenya memang terparameterisasi per nilai.
+
+## Rak dan token-tokennya
+
+Halaman jelajah berdiri di dasar kedua: `browse.css` memberi mereka kertas hangat, masthead berserif, garis rak dua poin, dan kisi kartu, semuanya lewat token `--wb-*` — belahan rak dari [[design-tokens|palet dua konteks]]. Sebuah halaman masuk konteks ini lewat satu kelas, `wb-root`, pada body-nya; di dalamnya token chrome dipetakan ulang sehingga bilah navigasi yang sama duduk di dasar mana pun.
+
+## NoteCard
+
+Kartu menerima data siap tampil — label yang sudah diresolusi, rona, tanggal yang sudah diformat, tautan cermin. Kartu aslinya tinggal di rak, maka contoh ini duduk dalam sepetak konteks jelajah (`.wb-root.wb-inset`) di dalam kolom baca ini:
+
+<div class="wb-root wb-inset">
+<ul class="wb-grid">
+  <NoteCard
+    note={{
+      id: 'sample-note',
+      href: `${base}/id/kitchen-sink/`,
+      title: 'Serba ada',
+      description: 'Setiap elemen pipeline markdown tampil satu kali di halaman ini.',
+      kind: { id: 'reference', label: 'Referensi' },
+      domains: [{ id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' }, href: `${base}/id/domain/pipeline/` }],
+      status: { id: 'evergreen', label: 'Hijau abadi', dot: '#1f5e46' },
+      updated: '2026.08',
+      mirrors: [{ label: 'EN', href: `${base}/kitchen-sink/` }],
+    }}
+  />
+  <NoteCard
+    note={{
+      id: 'sample-hub',
+      href: `${base}/id/components/`,
+      title: 'Koleksi komponen',
+      description: 'Tur tiga bab atas semua komponen bawaan — sekaligus demonstrasi hub secara langsung.',
+      kind: { id: 'reference', label: 'Referensi' },
+      domains: [{ id: 'components', label: 'Komponen', tone: { bg: '#f7e9dc', fg: '#98511a' }, href: `${base}/id/domain/components/` }],
+      status: { id: 'evergreen', label: 'Hijau abadi', dot: '#1f5e46' },
+      updated: '2026.08',
+      chapterCount: 3,
+      sourceLine: 'Hero · HubCard · Stats — perabot hub, dipakai di hub itu sendiri',
+    }}
+  />
+</ul>
+</div>
+
+## FacetNav
+
+Indeks jelajah multidimensi — jenis, bidang (berikut ronanya), tag teratas, semuanya sebagai tautan pil yang dirender di muka:
+
+<FacetNav
+  base={`${base}/id`}
+  kinds={[
+    { def: { id: 'guide', label: 'Panduan' }, count: 2 },
+    { def: { id: 'reference', label: 'Referensi' }, count: 4 },
+    { def: { id: 'pattern', label: 'Pola' }, count: 1 },
+  ]}
+  domains={[
+    { def: { id: 'design', label: 'Desain', tone: { bg: '#ece7f2', fg: '#5b4a8a' } }, count: 3 },
+    { def: { id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' } }, count: 2 },
+  ]}
+  tags={[
+    { tag: 'tokens', count: 1 },
+    { tag: 'markdown', count: 1 },
+  ]}
+  active={{ dim: 'kind', value: 'reference' }}
+  labels={{ kind: 'Jenis', domain: 'Bidang', tag: 'Tag', all: 'Semua →' }}
+/>
+
+Teks labelnya juga props dengan bawaan Inggris — set di atas mengoper `labels={{ kind: 'Jenis', domain: 'Bidang', tag: 'Tag', all: 'Semua →' }}`, persis yang dioper halaman-halaman faset edisi Indonesia situs ini; selain itu tak ada yang berubah.
+
+## TaxonomyLine, KindBadge, StatusDot, DomainChip
+
+Strip meta satu-baris di kepala catatan adalah rakitan tiga atom lencana; masing-masing juga bisa dipakai sendiri:
+
+<TaxonomyLine
+  kind={{ id: 'pattern', label: 'Pola' }}
+  domains={[{ id: 'design', label: 'Desain', tone: { bg: '#ece7f2', fg: '#5b4a8a' }, href: `${base}/id/domain/design/` }]}
+  status={{ id: 'growing', label: 'Bertumbuh', dot: '#5c8a3c' }}
+  updated="2026.08"
+/>
+
+Atom-atomnya sendirian, di tengah kalimat: sebuah lencana jenis <KindBadge def={{ id: 'guide', label: 'Panduan' }} />, sebuah chip bidang <DomainChip def={{ id: 'pipeline', label: 'Pipeline', tone: { bg: '#e3efec', fg: '#2a6f62' } }} href={`${base}/id/domain/pipeline/`} />, sebuah titik status <StatusDot def={{ id: 'evergreen', label: 'Hijau abadi', dot: '#1f5e46' }} />.
+
+## Backlinks
+
+Panel "tautan balik" di bawah setiap catatan di taman ini dihitung oleh `createBacklinks` milik paket — resolver tautan wiki milik mesin sendiri dibalik menjadi indeks target ← sumber, lengkap dengan cuplikan konteks. Di sini dengan data contoh sebaris:
+
+<Backlinks
+  items={[
+    {
+      href: `${base}/id/kitchen-sink/`,
+      title: 'Serba ada',
+      before: 'tabel tujuh kolom itu merangkap ',
+      label: 'contekan varian callout',
+      after: ' dan uji reflow kartu…',
+    },
+    {
+      href: `${base}/id/design-tokens/`,
+      title: 'Palet dua tingkat dan tema',
+      before: 'komponen hanya mengonsumsi ',
+      label: 'tingkat semantik',
+      after: ', sehingga perubahan identitas tak pernah menyentuhnya.',
+    },
+  ]}
+/>
+
+Gulir ke kaki halaman ini untuk melihat yang asli — bab ini sendiri adalah target tautan wiki.
+
+## LocalGraph
+
+Indeks yang sama menjawab pertanyaan kedua — *apa saja yang berjarak satu lompatan dari sini?* — dan `index.localGraph(id, titleOf)` mengembalikannya sebagai daftar tetangga, yang masuk di depan. Komponennya menggambar mereka di atas elips mengelilingi catatan, garis masuk utuh dan garis keluar putus-putus; seorang tetangga boleh membawa `color`-nya sendiri (dari koleksi kedua, misalnya). Di sini pada lebar kolom, dengan data contoh; yang asli duduk di bilah sisi setiap catatan yang punya tautan:
+
+<div style="max-width: 300px">
+  <LocalGraph
+    centerTitle="Wiki & jelajah"
+    neighbors={[
+      { id: 'kitchen-sink', title: 'Serba ada', href: `${base}/id/kitchen-sink/`, dir: 'in' },
+      { id: 'design-tokens', title: 'Palet dua tingkat', href: `${base}/id/design-tokens/`, dir: 'out' },
+      { id: 'three-way-split', title: 'Pembagian tiga arah', href: `${base}/id/three-way-split/`, dir: 'out' },
+      { id: 'checks', title: 'Rangkaian pemeriksaan', href: `${base}/id/checks/`, dir: 'in', color: 'var(--color-accent4)' },
+    ]}
+  />
+</div>

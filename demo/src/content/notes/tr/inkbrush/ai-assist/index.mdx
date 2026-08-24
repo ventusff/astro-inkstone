@@ -1,0 +1,24 @@
+---
+title: Yapay zekâ desteği
+description: "Blok yeniden yazımları, notun farkında bir sohbet ve bütün notun çevirisi — claude CLI üzerinden, notun kullanılıp atılan bir kopyasına hapsedilmiş hâlde."
+navLabel: Yapay zekâ
+part: 3
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Yapay zekâ desteği">
+  ✦ eylemleri [claude CLI](https://claude.com/claude-code)’ye köprü kurar. CLI’nin, geliştirme sunucusunu çalıştıran makinede kurulu ve oturum açmış olması gerekir — motordaki başka hiçbir şey ona ihtiyaç duymaz; CLI yokken ✦ dışında her şey çalışmaya devam eder.
+</PartHero>
+
+## Bir bloğu yeniden yazdırmak
+
+Bir bloğun üzerine gelin, ✦ simgesine tıklayın ve ya hazır bir niyet seçin — cilala, daha titiz yap, sıkılaştır, formülleri düzelt — ya da kendi yönergenizi yazın. İş, sunucu tarafında, notun dizininin kullanılıp atılan bir kopyasında çalışır; dosya araçları o kopyayla sınırlıdır — kabuk yok, ağ yok — ve ilerlemesini canlı akışla gösterir; tarayıcı sekmesi kapansa da yaşamaya devam eder. Bittiğinde, değişen dosya projeye geri taşınıp günlüğe geçmeden önce, elle yapılan bir kaydın geçtiği derleme kapısının aynısından geçmek zorundadır — [[inkbrush/revisions|⟲]] onu böylece geri alabilir.
+
+## Nota soru sormak
+
+Sohbet paneli (sağ alttaki yüzen düğme) okumakta olduğunuz notla ilgili soruları yanıtlar. Claude kaynağı, salt okunur bir araç takımıyla bir çalışma kopyasında okur; devam soruları aynı konuşmayı sürdürür.
+
+## Bütün notu çevirtmek
+
+Notun eksik olduğu her yerel ayar için sohbet paneli tek tıklık bir "sürüm üret" sunar — birebir çeviri değil, notun hedef dilde yeniden anlatımı; her çapa, kod bloğu ve yapısal değişmez olduğu gibi korunur. Sonuç, o yerel ayarın ayna dosyası olarak yazılır ve bir şeyin kalıp kalmayacağına son sözü derleme kapısı söyler. Bu bahçe on sekiz dilde büyüyor; dil menüsü, üzerinde olduğunuz sayfanın var olan her sürümünü listeler ve düzenleme kipinde eksik bir sürüm tek tık uzaktadır. Çeviri, bütün dosyayı kapsayan bir değişikliktir: günlük onu kayda geçirir, geri almak ise bir ⟲ tıkı değil bir git işlemidir.

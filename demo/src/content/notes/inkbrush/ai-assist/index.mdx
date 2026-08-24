@@ -1,0 +1,24 @@
+---
+title: AI assist
+description: Block rewrites, a note-aware chat, and whole-note translation — through the claude CLI, sandboxed to a throwaway copy of the note.
+navLabel: AI assist
+part: 3
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="AI assist">
+  The ✦ actions bridge to the [claude CLI](https://claude.com/claude-code). It has to be installed and signed in on the machine running the dev server — nothing else in the engine needs it, so without the CLI everything but ✦ keeps working.
+</PartHero>
+
+## Rewrite a block
+
+Hover a block, click ✦, and either pick a quick intent — polish, make it more rigorous, condense, fix the formulas — or type your own instruction. The job runs server-side in a throwaway copy of the note's directory, with file tools confined to that copy — no shell, no network — and streams its progress live; it survives the browser tab closing. When it ends, the changed file has to pass the same build gate as a manual save before it is carried back into the project and journaled, so [[inkbrush/revisions|⟲]] can undo it.
+
+## Ask about the note
+
+The chat panel (the floating button, bottom right) answers questions about the note you are reading. Claude reads the source in a working copy with a read-only toolset; follow-up questions resume the same conversation.
+
+## Translate the whole note
+
+For each locale a note lacks, the chat panel offers a one-click "generate version" — not a literal translation, but the note re-told in the target language, keeping every anchor, code block and structural invariant intact. The result is written as the locale's mirror file, and the build gate has the final word before anything is kept. This garden grows in eighteen languages; its language menu lists every edition of the page you are on, and in editing mode a missing edition is one click away. A translation is a whole-file change: the journal records it, and undoing it is a git operation rather than a ⟲ click.

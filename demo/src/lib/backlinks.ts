@@ -8,16 +8,14 @@
 import type { CollectionEntry } from 'astro:content';
 import { createBacklinks, type BacklinkDoc } from 'astro-inkstone/lib/backlinks';
 
+import { LOCALE_DEFS } from '../content/notes/_meta/locales';
 import { href } from './i18n';
 
 export type { BacklinkItem } from 'astro-inkstone/lib/backlinks';
 
 export const backlinks = createBacklinks({
   urlFor: (id) => href(`${id}/`),
-  locales: [
-    { code: 'en', prefix: '' },
-    { code: 'zh', prefix: 'zh/' },
-  ],
+  locales: LOCALE_DEFS.map(({ code, prefix }) => ({ code, prefix })),
 });
 
 const corpora = new WeakMap<CollectionEntry<'notes'>[], BacklinkDoc[]>();

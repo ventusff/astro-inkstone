@@ -1,0 +1,70 @@
+---
+title: Der Komponentensatz
+description: Ein Rundgang in drei Kapiteln durch jede mitgelieferte Komponente – und zugleich die Live-Vorführung, wie eine Hub-Notiz mit Kapiteln funktioniert.
+brand: Komponenten
+subtitle: "die Komponentengalerie\ndrei Kapitel · ein Hub"
+navLabel: Übersicht
+chapters: false
+nav:
+  - group: Galerie
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Eine Galerie in drei Kapiteln · 2026.08" title="Der Komponentensatz" meta="3 Kapitel · 24 Komponenten · jede per Pfad aus astro-inkstone/components/ importiert">
+  Alles in dieser Galerie ist per Pfad aus `astro-inkstone/components/` importiert und mit den Standard-Tokens des Pakets gerendert. Komponenten sind **reine Darstellung**: Daten und Beschriftungen kommen als Props herein (Defaults auf Englisch), eine Site in jeder beliebigen Sprache übergibt ihre eigenen.
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: 'Kapitel' },
+        { value: '24', label: 'Komponenten' },
+        { value: '6', label: 'Wiki-Bausteine' },
+        { value: '0', label: 'rohe Farbwerte' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## Die Kapitel `{#chapters notoc}`
+
+Jede Karte ist ein Kapitel der Leiste in der Seitenleiste; die Chips nennen, was das Kapitel zeigt.
+
+<div class="hub-grid">
+  <HubCard href={`${base}/de/components/content/`} num="Teil I" title="Inhalt & Typografie" count="7 Komponenten"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    Die Bausteine, aus denen Fließtext entsteht – Callouts, Chips, Raster, Schrittleisten, Statistikzeilen, Papierkarten und Literaturlisten.
+  </HubCard>
+
+  <HubCard href={`${base}/de/components/wiki/`} num="Teil II" title="Wiki & Stöbern" count="8 Komponenten"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    Der Taxonomie-Satz, aus dem die Regale dieses Gartens gebaut sind, dazu die beiden Link-Graph-Panels – die verknüpften Erwähnungen und der lokale Graph der Seitenleiste.
+  </HubCard>
+
+  <HubCard href={`${base}/de/components/interactive/`} num="Teil III" title="Interaktiv & Mobiliar" count="9 Komponenten"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    Eine live laufende Canvas-Demo samt dem Loader-Vertrag, den die Site besitzt, dazu das Seitenmobiliar – Heros, Hub-Karten, Sprunglisten, Fußzeilen.
+  </HubCard>
+</div>
+
+## Ein Hub, live
+
+Diese Notiz ist selbst die Vorführung eines **Hubs**: eine Notiz auf oberster Ebene, deren Frontmatter `nav` deklariert – eine geordnete Kapitelliste. Die Maschinerie, die du gerade vor dir hast:
+
+- Die Seitenleiste zeigt unter dem Zeichen des Hubs die Kapitelleiste (I/II/III), mit Blättern zum vorigen und nächsten Kapitel am Fuß jedes Kapitels;
+- Kapitel erben die Taxonomie des Hubs – keines der drei Galeriekapitel deklariert eigene Art, eigenen Bereich oder eigenen Status, und doch zeigt jedes die Werte dieser Notiz; ein Kapitel, das eigene Werte setzt, überschreibt das Feld als Ganzes ([[three-way-split|dieselbe Regel wie überall: explizit gewinnt]]);
+- auf Stöberseiten ist der Hub **eine Einheit**: eine Karte, mit Kapitelzahl – Kapitel liegen nie einzeln im Regal herum;
+- die `part:`-Nummer jedes Kapitels muss seiner Position in `nav` entsprechen, sonst scheitert der Build – Leiste und Frontmatter können nicht auseinanderlaufen;
+- die Karten oben sind `HubCard`-Komponenten in einem `.hub-grid`; der Kasten darunter ist ein **Lesepfad** (`.path`), das andere Stück Hub-Mobiliar.
+
+<div class="path">
+  <div class="title">Wo anfangen</div>
+  <div class="route">
+    Neu in diesem Paket → <a href={`${base}/de/components/content/`}>Teil I</a><span class="arrow">→</span><a href={`${base}/de/components/wiki/`}>Teil II</a>; eine Stöber-Site bauen → direkt in <a href={`${base}/de/components/wiki/`}>Teil II</a><span class="arrow">→</span>der Leitfaden <a href={`${base}/de/getting-started/`}>Erste Schritte</a>; die Markdown-Seite derselben Geschichte → <a href={`${base}/de/kitchen-sink/`}>Das volle Programm</a>.
+  </div>
+</div>

@@ -1,0 +1,37 @@
+---
+title: Skrzynka odbiorcza Obsidiana
+description: Wskaż obserwatorowi folder sejfu, a nowe notatki same się skonwertują i zaimportują — osadzenia skopiowane obok notatki, wikilinki rozwiązane, zakreślenia zachowane.
+navLabel: Skrzynka
+part: 4
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Skrzynka odbiorcza Obsidiana">
+  Mnóstwo pisania zaczyna się gdzie indziej — na telefonie, w clipperze, w sejfie (vault) Obsidiana. Skrzynka domyka tę pętlę: wskaż jej folder, a notatki, które tam wpadną, same zaimportują się do witryny.
+</PartHero>
+
+## Włączanie
+
+Skrzynka jest domyślnie wyłączona. Włącza się ją w `inkbrush.config.ts`:
+
+```ts title="inkbrush.config.ts"
+inbox: {
+  dir: '~/vault/inbox',        // obserwowany folder (obsługuje ~/)
+  ignore: ['daily-'],          // opcjonalnie: pomijane prefiksy nazw plików
+},
+```
+
+Pliki, które w chwili startu już leżą w folderze, są oznaczane jako widziane, nie importowane — automatycznie synchronizują się tylko notatki dodane *później*. Wszystko starsze można jawnie doimportować przez API, więc włączenie skrzynki nigdy nie wysypie ci znienacka na witrynę dekady historii sejfu.
+
+## Co robi importer
+
+Każda przychodząca notatka jest konwertowana, nie kopiowana:
+
+- osadzenia obrazów są rozwiązywane względem folderów zasobów sejfu, pliki są **kopiowane obok zaimportowanej notatki**, a osadzenia stają się standardową składnią obrazów — późniejsze usunięcie notatki usuwa razem z nią jej zasoby
+- `[[wikilinki]]` pasujące do prawdziwej notatki w witrynie przeżywają jako linki, rozwiązane [[inkbrush/wikilinks|tymi samymi regułami co wszędzie indziej]]; reszta jest spłaszczana do zwykłego wyróżnienia, z ostrzeżeniem
+- zakreślenia stają się prawdziwymi elementami `<mark>`, metadane frontmattera — linią źródła pod tytułem, a opis jest wyprowadzany z pierwszego treściwego akapitu
+
+Skonwertowana notatka musi potem przejść przez tę samą bramę builda co zapis ręczny — notatka, która zepsułaby stronę, zostaje odrzucona zamiast zaimportowana.
+
+Każdy import ląduje w dzienniku rewizji (via: inbox) jako zapis całoplikowy: [[inkbrush/revisions|⟲]] pokazuje go jako wiersz do wglądu, a odkręcenie importu jest operacją gita. Przy włączonym `autocommit` każdy import staje się też commitem gita jak każda inna edycja; przy wyłączonym — zaimportowane pliki przychodzą jako zwykłe zmiany w drzewie roboczym, do samodzielnego przejrzenia i commitowania.

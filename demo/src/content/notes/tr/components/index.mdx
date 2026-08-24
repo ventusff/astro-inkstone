@@ -1,0 +1,70 @@
+---
+title: Bileşen takımı
+description: "Paketle gelen her bileşenin üç bölümlük turu — aynı zamanda, bölümlü bir hub notunun nasıl çalıştığının canlı gösterimi."
+brand: Bileşen takımı
+subtitle: "bileşen galerisi\nüç bölüm · tek hub"
+navLabel: Genel bakış
+chapters: false
+nav:
+  - group: Galeri
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Üç bölümlük bir galeri · 2026.08" title="Bileşen takımı" meta="3 bölüm · 24 bileşen · hepsi astro-inkstone/components/ altından yoldan import edilir">
+  Galerideki her şey `astro-inkstone/components/` altından yoldan import edilir ve paketin varsayılan token’larıyla çizilir. Bileşenler **salt görseldir**: veriyi de etiket dizgelerini de props olarak alırlar (varsayılanlar İngilizce), böylece hangi dilde olursa olsun her site kendininkini geçer.
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: 'bölüm' },
+        { value: '24', label: 'bileşen' },
+        { value: '6', label: 'wiki parçası' },
+        { value: '0', label: 'ham renk' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## Bölümler `{#chapters notoc}`
+
+Her kart, kenar çubuğundaki bölüm rayının bir bölümüdür; çipler o bölümün neyi sergilediğini söyler.
+
+<div class="hub-grid">
+  <HubCard href={`${base}/tr/components/content/`} num="I. Kısım" title="İçerik ve tipografi" count="7 bileşen"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    Düz yazının yapı taşları — callout’lar, çipler, ızgaralar, adım rayları, istatistik satırları, makale kartları ve kaynakça listeleri.
+  </HubCard>
+
+  <HubCard href={`${base}/tr/components/wiki/`} num="II. Kısım" title="Wiki ve göz atma" count="8 bileşen"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    Bu bahçenin raflarını kuran taksonomi takımı ve iki bağlantı grafı paneli — bağlantılı anmalar ile kenar çubuğunun yerel grafiği.
+  </HubCard>
+
+  <HubCard href={`${base}/tr/components/interactive/`} num="III. Kısım" title="Etkileşim ve sayfa donatıları" count="9 bileşen"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    Canlı bir canvas demosu ve site tarafındaki yükleyici sözleşmesi, artı sayfa donatıları — hero’lar, hub kartları, sayfa içi atlama listeleri, alt bilgiler.
+  </HubCard>
+</div>
+
+## Bir hub, canlı hâliyle
+
+Bu not, **hub** kavramının canlı gösteriminin ta kendisidir: frontmatter’ında `nav` — sıralı bir bölüm listesi — bildiren en üst düzey bir not. Şu an gözünüzün önünde dönen mekanizma:
+
+- kenar çubuğu, hub’ın markasının altında bölüm rayını gösterir (I/II/III); her bölümün sonunda önceki/sonraki sayfalaması vardır;
+- bölümler hub’ın taksonomisini devralır — üç galeri bölümünün hiçbiri kendi kind, domain ya da status değerini bildirmez, ama her biri bu notunkileri gösterir; kendi değerini bildiren bir bölüm alanı toptan devralmak yerine kendisi belirler ([[three-way-split|her yerdeki kuralın aynısı: yazan kazanır]]);
+- göz atma sayfalarında hub **tek bir birimdir**: bölüm sayısını taşıyan tek bir kart — bölümler rafı asla kalabalıklaştırmaz;
+- her bölümün `part:` numarası, `nav` içindeki sırasıyla eşleşmek zorundadır, yoksa derleme düşer — ray ile frontmatter birbirinden kopamaz;
+- yukarıdaki kartlar `.hub-grid` içine dizilmiş `HubCard` bileşenleridir; aşağıdaki kutu ise bir **okuma rotası** (`.path`) — hub’ın öteki donatısı.
+
+<div class="path">
+  <div class="title">Nereden başlamalı</div>
+  <div class="route">
+    Paketle yeni mi tanışıyorsunuz → <a href={`${base}/tr/components/content/`}>I. Kısım</a><span class="arrow">→</span><a href={`${base}/tr/components/wiki/`}>II. Kısım</a>; bir göz atma sitesi mi kuruyorsunuz → doğrudan <a href={`${base}/tr/components/wiki/`}>II. Kısım</a><span class="arrow">→</span><a href={`${base}/tr/getting-started/`}>hızlı başlangıç rehberi</a>; aynı hikâyenin Markdown tarafı → <a href={`${base}/tr/kitchen-sink/`}>hepsi bir arada</a>.
+  </div>
+</div>

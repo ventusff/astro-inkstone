@@ -1,0 +1,53 @@
+---
+title: Mesin penyuntingan
+description: "Tur lima bab atas astro-inkbrush, mesin CMS berbasis git yang menjadi pasangan taman ini — dan situs inilah demonya: dalam mode penyuntingan, setiap halaman di sini bisa disunting langsung di tempat."
+brand: inkbrush
+subtitle: "mesin CMS, dalam panduannya sendiri\nlima bab · satu hub"
+navLabel: Ikhtisar
+chapters: false
+nav:
+  - group: Mesinnya
+    pages: [editing, revisions, ai-assist, inbox, wikilinks]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Referensi · mesin CMS" title="Mesin penyuntingan" meta="lima bab · nol byte di build produksi · situs ini demonya">
+  [astro-inkstone](https://github.com/ventusff/astro-inkstone) adalah kertasnya; [astro-inkbrush](https://github.com/ventusff/astro-inkbrush) adalah penanya. Mesin ini mengubah situs konten Astro mana pun menjadi editornya sendiri: arahkan kursor ke sebuah paragraf dalam mode penyuntingan, dan sebuah pegangan kecil menawarkan ✎ sunting, ✦ tanya Claude, ⟲ riwayat. Tidak ada situs demo terpisah yang perlu dikunjungi — **taman yang sedang Anda baca inilah demonya**. Jalankan dengan `npm run wiki`, maka setiap catatan di sini, termasuk halaman ini, terbuka untuk disunting langsung di tempat; build statis seperti yang sedang Anda baca tidak memuat satu byte pun kode CMS.
+</Hero>
+
+<Stats
+  items={[
+    { value: 'git', label: 'satu-satunya basis data' },
+    { value: '2', label: 'jaring pengaman pada setiap simpan' },
+    { value: '0 B', label: 'kode CMS di build statis' },
+  ]}
+/>
+
+## Lima bab `{#chapters notoc}`
+
+<div class="hub-grid">
+  <HubCard href={`${base}/id/inkbrush/editing/`} num="Bagian I" title="Menyunting, blok demi blok" count="✎"
+    desc="CodeMirror menggantikan blok yang sedang Anda baca, pratinjau langsung lewat pipeline milik situs sendiri, dan dua jaring pengaman sebelum apa pun menyentuh disk." />
+  <HubCard href={`${base}/id/inkbrush/revisions/`} num="Bagian II" title="Riwayat revisi dan pengembalian" count="⟲"
+    desc="Setiap simpan dijurnalkan per blok — siapa, kapan, teks sebelum dan sesudah yang persis — dengan pengembalian satu klik yang bisa dikembalikan lagi." />
+  <HubCard href={`${base}/id/inkbrush/ai-assist/`} num="Bagian III" title="Bantuan AI" count="✦"
+    desc="Penulisan ulang blok, obrolan yang mengenal catatan, dan penerjemahan seutuh catatan lewat CLI claude, terkurung di salinan sekali pakai." />
+  <HubCard href={`${base}/id/inkbrush/inbox/`} num="Bagian IV" title="Kotak masuk Obsidian" count="📥"
+    desc="Arahkan pengawasnya ke sebuah folder vault; catatan baru mengonversi dan mengimpor dirinya sendiri — embed, tautan wiki, sorotan, semuanya ikut." />
+  <HubCard href={`${base}/id/inkbrush/wikilinks/`} num="Bagian V" title="Cara tautan wiki diresolusi" count="[[ ]]"
+    desc="Satu resolver untuk halaman, pratinjau editor, pengimpor, dan lint CI — cermin lokal lebih dulu, lalu id, alias, brand, dan judul." />
+</div>
+
+## Kedudukannya
+
+Mesin memiliki fitur-fitur CMS **dan** dialek Markdown berikut penjaga kontennya — tata bahasa yang diterima editor dan tata bahasa yang dirender halaman harus satu tata bahasa, maka ia ditulis sekali dan dikonsumsi di mana-mana ([[three-way-split|pembagian tiga arah]] menjelaskan mengapa garisnya ditarik di situ). Gaya adalah milik lapisan kertas; identitas milik situs Anda. Segala yang *dirender* di halaman-halaman ini — termasuk strip di atas teks ini — adalah kertas yang sedang bekerja; segala yang *menyunting* halaman-halaman ini adalah mesinnya.
+
+<div class="path">
+  <strong>Jalur baca.</strong>
+  Baru mengenal mesin ini → <a href={`${base}/id/inkbrush/editing/`}>Bagian I</a><span class="arrow">→</span><a href={`${base}/id/inkbrush/revisions/`}>Bagian II</a>; hendak menyambungkannya ke sebuah situs → <a href={`${base}/id/getting-started/`}>panduan memulai</a> lebih dulu; dialek yang ditegakkan gerbang simpan → <a href={`${base}/id/kitchen-sink/`}>halaman serba ada</a>; catatan tentang merawat catatan → <a href={`${base}/id/garden-craft/`}>esai berkebun</a>.
+</div>

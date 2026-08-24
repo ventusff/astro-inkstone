@@ -1,0 +1,24 @@
+---
+title: Come si risolvono i wikilink
+description: Un solo resolver per le pagine, l’anteprima dell’editor, l’importatore e il lint in CI — prima i mirror di lingua, poi id, alias, brand e titoli.
+navLabel: Wikilink
+part: 5
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Come si risolvono i wikilink">
+  Le note si collegano tra loro con doppie parentesi quadre, risolte a tempo di build sull’insieme delle note che esistono davvero. I risultati resi — id, alias, etichetta, ancora — si esibiscono dal vivo nel [[kitchen-sink|campionario]]; questo capitolo riguarda le regole di risoluzione che stanno loro dietro.
+</PartHero>
+
+## Che cosa può essere un bersaglio
+
+Un bersaglio non deve per forza essere l’id di una nota. La risoluzione prova, nell’ordine: **il mirror della lingua corrente** (un link su una delle diciassette edizioni sorelle di questa pagina atterra sull’edizione nella stessa lingua del suo bersaglio, ripiegando sulla nota canonica solo dove nessun mirror esiste), poi l’id esatto, poi alias, nomi di brand e titoli, senza distinguere maiuscole e minuscole. Il saggio [[garden-craft|sulla cura del giardino]] dichiara `tending` come alias, così `[[tending]]` atterra sulla stessa pagina (gli alias vivono sulla nota canonica: i mirror non ne portano). Ancore ed etichette si compongono come speri: `[[garden-craft#pruning]]` va dritto a una sezione, `[[garden-craft|il saggio sulla cura del giardino]]` rende un testo personalizzato — e le due cose si combinano.
+
+## I link morti non rompono le build
+
+Un link a una nota che non esiste rende come link morto ben visibile, con la ragione nel suo tooltip, e la build scrive un avviso nel log. È una scelta deliberata per i giardini: una nota non ancora scritta è un invito, non un errore. Un bersaglio che corrisponde a più note in una volta rende allo stesso modo, marcato come ambiguo. La ruggine dei link appartiene comunque alla CI — la CLI `check-wikilinks` del motore risolve ogni link con le regole della libreria stessa e, in modalità `--strict`, trasforma i link morti in un’uscita fallita; è così che la esegue questo repository ([[checks|i cinque controlli]]).
+
+## Un’implementazione, quattro consumatori
+
+Le pagine, l’anteprima dal vivo dell’editor, l’[[inkbrush/inbox|importatore della inbox]] e il lint in CI risolvono con lo stesso codice — così un link significa la stessa cosa ovunque, e l’editor può permettersi d’essere generoso: digitare `[[` in modalità di editing apre il completamento automatico su id, titoli e alias.

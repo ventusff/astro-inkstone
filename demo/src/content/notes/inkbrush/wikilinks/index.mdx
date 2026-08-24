@@ -1,0 +1,24 @@
+---
+title: How wikilinks resolve
+description: One resolver for the pages, the editor preview, the importer and the CI lint — locale mirrors first, then ids, aliases, brands and titles.
+navLabel: Wikilinks
+part: 5
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="How wikilinks resolve">
+  Notes link to each other with double brackets, resolved at build time against the set of notes that actually exist. The rendered results — id, alias, label, anchor — perform live in the [[kitchen-sink|kitchen sink]]; this chapter is about the resolution rules behind them.
+</PartHero>
+
+## What a target can be
+
+A target doesn't have to be a note's id. Resolution tries, in order: **the current locale's mirror** (a link on one of this page's seventeen sister editions lands on the same-language edition of its target, falling back to the canonical note only where no mirror exists), then the exact id, then aliases, brand names and titles, case-insensitively. The essay [[garden-craft]] declares `tending` as an alias, so [[tending]] lands on the same page. Anchors and labels compose the way you'd hope: `[[garden-craft#pruning]]` goes straight to a section, `[[garden-craft|the gardening essay]]` renders custom text — and the two combine.
+
+## Dead links don't break builds
+
+A link to a note that doesn't exist renders as a visibly dead link with the reason in its tooltip, and the build logs a warning. This is a deliberate choice for gardens: an unwritten note is an invitation, not an error. A target matching several notes at once renders the same way, marked ambiguous. Link rot still belongs in CI — the engine's `check-wikilinks` CLI resolves every link with the library's own rules and, in `--strict` mode, turns dead links into a failing exit; that is how this repository runs it ([[checks|the five checks]]).
+
+## One implementation, four consumers
+
+The pages, the editor's live preview, the [[inkbrush/inbox|inbox importer]] and the CI lint resolve with the same code — so a link means the same thing everywhere, and the editor can be generous: typing `[[` in editing mode pops up autocompletion over ids, titles and aliases.

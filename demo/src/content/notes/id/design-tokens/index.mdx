@@ -1,0 +1,71 @@
+---
+title: Palet dua tingkat dan tema
+brand: Palet & tema
+subtitle: "dua tingkat, dua konteks\npigmen dan kertasnya"
+description: Palet pigmen mentah dan dua konteks semantik yang dibangun di atasnya — kolom baca dan rak jelajah — disiplin terang/gelap, kontras yang diaudit, dan satu pintu masuk untuk identitas situs.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Referensi · lapisan token" title="Palet dua tingkat dan tema" meta="satu palet · dua konteks · kedua tema diracik tangan · setiap nilai teks diukur terhadap AA">
+  `styles/tokens.css` memuat setiap warna yang dipakai stylesheet dan komponen — satu-satunya pengecualian adalah pasangan rona sebuah bidang, yang dipasok registri situs sebagai data. Berkas ini ditulis dalam dua tingkat — **palet mentah** berisi pigmen kertas-dan-tinta, dan **token semantik** yang dibangun di atasnya — dan tingkat semantiknya hadir dalam dua konteks, karena sebuah wiki punya dua macam halaman: kolom yang Anda baca, dan rak yang Anda jelajahi.
+</Hero>
+
+<Part title="Tingkat-tingkatnya" />
+
+## Tingkat 1: pigmen
+
+Palet mentahnya adalah kotak cat pelukis, tak berubah antar tema, dinamai `--p-*`. **Kertas**: dasar jelajah 纸 dan muka kartunya 页, dasar baca 素 (sedikit lebih sejuk, lebih nyaman bagi mata selama satu jam) dan permukaan lembutnya 帛, kartu putih, dasar kode dan matematika. **Tinta**: satu set hangat untuk rak dan satu set netral untuk kolom, masing-masing dalam tiga kekuatan. **Penjilidan**: garis rak, bingkai pil, dua garis rambut. **Pigmen**, warna-warna yang membawa makna:
+
+```css title="tokens.css (tingkat 1, pigmen)"
+--p-zhu: #7d3a3a; /* 朱 · merah anggur — aksen jelajah, tanda situs */
+--p-shi: #b6552e; /* 石 · jingga bakar — aksen baca: tautan, angka, kicker */
+--p-shi-text: #8f3f1f; /* 石 · tingkat teks-kecil (AA di atas semburat warnanya sendiri) */
+--p-zhe: #c08a2c; /* 赭 · oker — garis dan bingkai */
+--p-dai: #2a6f6b; /* 黛 · teal — aksen konten sekunder */
+--p-zi: #6b4ec4; /* 紫 · ungu — semantik "sistem" */
+```
+
+Ditambah satu set **malam** untuk edisi gelap: dasar-dasar senja, tinta putih rembulan, dan kembaran yang dicerahkan dari setiap pigmen.
+
+## Dua konteks, satu palet
+
+Tingkat 2 adalah yang dikonsumsi lapisan komponen, dan ia punya dua wajah:
+
+| Konteks | Token | Dasar | Tinta | Aksen | Di mana |
+| --- | --- | --- | --- | --- | --- |
+| kolom baca | `--color-*` | 素 `#fbf9f4` | netral `#1f2024` | 石 jingga bakar | halaman catatan, semua komponen konten, `base.css` |
+| rak jelajah | `--wb-*` | 纸 `#faf6ec` | hangat `#2b2622` | 朱 merah anggur | halaman beranda dan faset, komponen wiki, `browse.css` |
+
+Kolomlah yang lebih tenang dari keduanya — Anda membacanya selama satu jam. Raknya lebih hangat dan ditata dengan serif display — Anda meliriknya sekilas lalu memilih. Sebuah halaman masuk ke konteks rak lewat satu kelas, `wb-root`, pada body-nya; di dalamnya token chrome (`--color-bg`, `--color-accent`, …) dipetakan ulang ke token rak, sehingga bilah navigasi yang ditulis sekali duduk benar di kedua dasar — dan atom taksonomi (lencana jenis, titik status, chip bidang), yang ditulis terhadap `--color-*`, terbaca sebagai bagian kolom di halaman catatan dan sebagai bagian rak di halaman jelajah. **Lapisan komponen hanya boleh mengonsumsi tingkat 2** — `base.css`, `browse.css`, dan setiap komponen; tidak ada satu aturan pun yang memuat nilai warna mentah, dan tidak ada yang jatuh kembali ke sana. Itulah disiplin keras paket ini.
+
+<Part title="Identitas dan disiplin" />
+
+## Cara situs menata identitasnya
+
+Timpa tingkat 1. Ganti pigmennya dengan milik Anda, maka kedua konteks dan seluruh lapisan komponen ikut serta. Setiap pigmen adalah **pasangan siang/malam**: tema terang membaca `--p-shi` dan `--p-zhu`, tema gelap membaca kembaran malamnya `--p-shi-n` dan `--p-zhu-n` — penimpaan identitas mengisi kedua anggota, atau biarkan tema gelap memakai pigmen bawaan:
+
+```css title="site.css milik Anda"
+:root {
+  --p-shi: #b03a48; /* aksen baca milik Anda */
+  --p-shi-text: #93303c; /* tingkat teks-kecilnya digelapkan tersendiri, lihat di bawah */
+  --p-zhu: #3b4a7a; /* aksen rak sekaligus tanda situs Anda */
+  --p-shi-n: #e0919b; /* kembaran malam, dicerahkan untuk dasar senja */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Memetakan ulang tingkat 2 ke palet Anda sendiri sama-sama didukung bila sistem desain Anda sudah punya palet — arahkan saja `--color-*` dan `--wb-*` ke variabel Anda. Taman ini sengaja tidak menimpa apa pun: yang sedang Anda baca adalah wajah polos paket ini, wajah yang sama yang diperjuangkan catatan [[paper-and-ink|kertas dan tinta]].
+
+## Kontras diaudit
+
+Setiap nilai warna teks diverifikasi terhadap WCAG AA di setiap permukaan tempat ia berdiri: teks kecil dimulai dari 4.5:1; aksen yang dipakai sebagai teks kecil mendapat **tingkat teks** yang digelapkan tersendiri (`--p-shi-text`, `--p-zhe-text`), sebab label 12px berwarna aksen biasanya justru duduk di atas semburat warna aksen itu sendiri; tinta pudar diambil pada gradasi paling gelap yang masih terbaca pudar — `#6a6d74` di dasar baca bernilai 4.9:1, dan masih 4.5:1 di permukaan lembut; dasar kode dibuat satu tingkat lebih terang dari kertasnya agar token paling pudar milik tema sintaks (komentar) tetap lolos 4.5:1; edisi gelap membawa setnya sendiri yang dicerahkan, diukur terhadap dasar-dasar malam. Pengukurannya pun dikirim bersama paket sebagai perkakas: `scripts/contrast_probe.mjs` merender demo di browser sungguhan, kedua tema dan dua lebar, mengambil sampel dasar di bawah setiap larik teks dari piksel, dan melaporkan setiap larik yang tak mencapai ambang ([[checks|probe kontras]]). Sebelum mengubah nilai mana pun, ketahui dulu setiap permukaan tempat ia duduk.
+
+## Terang adalah identitasnya
+
+Tema ini dengan sengaja **tidak** membaca `prefers-color-scheme`: sebuah halaman tak boleh membalik temanya sendiri di depan pembaca. Gelap hanya aktif lewat `[data-theme='dark']`, dinyalakan oleh sakelar milik situs (tombol matahari/bulan di kanan bilah navigasi situs ini; pilihannya disimpan di bawah kunci `inkstone-theme` di `localStorage` dan diputar ulang oleh skrip inline ThemeInit sebelum lukisan pertama, sehingga pembaca tema gelap tak pernah melihat kilatan krem). Gelap bukan inversi, melainkan edisi kedua yang diracik tangan: dasar senja, tinta putih rembulan, pigmen yang dicerahkan ulang — [[paper-and-ink|gelap adalah edisi kedua, bukan inversi]].
+
+## Font juga tinggal di sini
+
+Empat tumpukan. `--font-display` adalah wajah rak — serif dengan sumbu ukuran optis (Source Serif 4, dengan Noto Serif SC untuk Hanzi) untuk masthead dan judul rak; demo ini menghostingnya sendiri lewat `@fontsource`, dan situs yang tidak melakukannya jatuh kembali ke wajah baca. `--font-body` milik kolom baca — tumpukan serif sistem yang dipimpin Charter dan Iowan Old Style, dengan wajah display menggantikan saat keduanya absen. `--font-ui` adalah Inter (Noto Sans SC untuk Hanzi) bagi judul, chrome, dan cetakan kecil. `--font-mono` adalah subset berkarakter-tetap dari Maple Mono CN (ASCII + karakter garis-kotak + 3500 Hanzi umum + gabungan seluruh karakter konten yang ada): Latin selebar 0.6em, Hanzi 1.2em — **satu Hanzi tepat selebar dua sel karakter**, sehingga diagram garis-kotak tetap lurus bahkan dalam teks campuran Tionghoa/Latin. Resep subset dan skrip regenerasinya dikirim bersama paket (`fonts/build_font_subset.py`); saat konten butuh glif di luar cakupan, jalankan ulang dan commit woff2-nya. [[kitchen-sink|Bingkai kode]] seluruhnya ditata dalam subset ini.

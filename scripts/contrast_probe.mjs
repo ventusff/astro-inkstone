@@ -19,13 +19,14 @@
  * ancestors, composited over the sampled ground. (Exact when the translucent
  * ancestors paint no background of their own — the common text-dimming case;
  * a translucent group with its own background composites its glyphs a step
- * earlier, which this model approximates.) Dialogs are probed too: on
- * one representative route per theme and width the probe opens every
- * `<dialog data-probe-open>` (typing a query into a search box it finds
- * there) and measures the text inside. The marker is the site's declaration
- * that the dialog is complete as authored; a dialog whose real state the
- * probe cannot construct (a lightbox that only ever opens holding an image)
- * carries no marker and is reviewed by eye.
+ * earlier, which this model approximates.) Dialogs and popovers are probed
+ * too: on one representative route per theme and width the probe opens
+ * every `<dialog data-probe-open>` (typing a query into a search box it
+ * finds there) and, in a separate pass, every `[popover][data-probe-open]`
+ * (a language menu, say), and measures the text inside. The marker is the
+ * site's declaration that the surface is complete as authored; one whose
+ * real state the probe cannot construct (a lightbox that only ever opens
+ * holding an image) carries no marker and is reviewed by eye.
  *
  * What is not measured, by design: visually-hidden helper text (.sr-only,
  * .visually-hidden), closed <details>, and hover/focus states — those are
@@ -194,9 +195,9 @@ const routeList = routes(DIST);
 for (const r of routeList) {
   for (const theme of THEMES) {
     for (const width of WIDTHS) {
-      // every page in its default state; on the first route a second pass
-      // opens the dialogs and measures the text inside them
-      const scopes = r === routeList[0] ? ['document', 'dialogs'] : ['document'];
+      // every page in its default state; on the first route further passes
+      // open the dialogs, then the popovers, and measure the text inside
+      const scopes = r === routeList[0] ? ['document', 'dialogs', 'popovers'] : ['document'];
       for (const scope of scopes) {
       await page.setViewport({ width, height: VIEW, deviceScaleFactor: 1 });
       await page.goto(BASE + r, { waitUntil: 'load', timeout: 60000 });
@@ -241,14 +242,32 @@ for (const r of routeList) {
         // network to settle instead of guessing a delay
         await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
         await new Promise((res) => setTimeout(res, 150));
+      } else if (scope === 'popovers') {
+        // open every marked popover (in its own pass — a modal dialog would
+        // sit in the same top layer and shadow the sample points)
+        const opened = await page.evaluate(() => {
+          const pops = [...document.querySelectorAll('[popover][data-probe-open]')];
+          for (const p of pops) {
+            try { p.showPopover(); } catch { /* unsupported or already open */ }
+          }
+          return pops.length;
+        });
+        if (!opened) continue;
+        await new Promise((res) => setTimeout(res, 150));
       }
 
       // 1) collect text runs in document coordinates (scrollY = 0)
       const runs = await page.evaluate((scope) => {
         const out = [];
         const skipTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'TITLE', 'OPTION', 'TEXTAREA']);
-        const hiddenScope = scope === 'dialogs' ? '.sr-only, .visually-hidden' : '.sr-only, .visually-hidden, dialog:not([open])';
-        const inScope = (el) => (scope === 'dialogs' ? Boolean(el.closest('dialog[open]')) : true);
+        const hiddenScope =
+          scope === 'dialogs' ? '.sr-only, .visually-hidden' : '.sr-only, .visually-hidden, dialog:not([open])';
+        const inScope = (el) =>
+          scope === 'dialogs'
+            ? Boolean(el.closest('dialog[open]'))
+            : scope === 'popovers'
+              ? Boolean(el.closest('[popover]'))
+              : true;
         // effective opacity: the product over the element and its ancestors
         const alphaCache = new Map();
         const effAlpha = (el) => {
@@ -290,6 +309,33 @@ for (const r of routeList) {
           return [x, y];
         };
         const isSvgText = (el) => el.namespaceURI === 'http://www.w3.org/2000/svg';
+        // The visible portion of a rect: its intersection with every
+        // clipping ancestor's content box (client metrics — borders and
+        // classic scrollbars excluded). A glyph a scroll box or an
+        // ellipsis clipped away is not rendered text, and a sample offset
+        // stepping past the clip edge lands on border hairlines — the rect
+        // that gets sampled must be the rect the reader can see.
+        const visibleRect = (el, rect) => {
+          let L = rect.left, T = rect.top, R = rect.right, B = rect.bottom;
+          for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+            const c = getComputedStyle(n);
+            const clips =
+              c.overflowX !== 'visible' || c.overflowY !== 'visible' || c.clip !== 'auto' || c.clipPath !== 'none';
+            if (!clips) continue;
+            const b = n.getBoundingClientRect();
+            const cl = b.left + n.clientLeft;
+            const ct = b.top + n.clientTop;
+            if (c.overflowX !== 'visible' || c.clip !== 'auto' || c.clipPath !== 'none') {
+              L = Math.max(L, cl);
+              R = Math.min(R, cl + n.clientWidth);
+            }
+            if (c.overflowY !== 'visible' || c.clip !== 'auto' || c.clipPath !== 'none') {
+              T = Math.max(T, ct);
+              B = Math.min(B, ct + n.clientHeight);
+            }
+          }
+          return { left: L, top: T, width: R - L, height: B - T };
+        };
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
         for (let n = walker.nextNode(); n; n = walker.nextNode()) {
           const text = (n.nodeValue || '').replace(/\s+/g, ' ').trim();
@@ -304,7 +350,9 @@ for (const r of routeList) {
           const range = document.createRange();
           range.selectNodeContents(n);
           // every line box is a sample: wrapped text can cross grounds
-          for (const rect of range.getClientRects()) {
+          for (const raw of range.getClientRects()) {
+            if (raw.width < 1 || raw.height < 1) continue;
+            const rect = visibleRect(el, raw);
             if (rect.width < 1 || rect.height < 1) continue;
             out.push({
               text: text.slice(0, 40),
@@ -316,8 +364,9 @@ for (const r of routeList) {
               ...(() => {
                 const cx = rect.left + rect.width / 2;
                 const [gx, gy] = groundPoint(el, cx, rect.top + rect.height / 2);
-                // a clamped point sits in a scroll box: only its own pixel is safe
-                return { x: gx + window.scrollX, y: gy + window.scrollY, w: gx === cx ? rect.width : 0 };
+                // a clamped point sits in a scroll box: only its own pixel is
+                // safe; the sweep width shrinks past the clip edges too
+                return { x: gx + window.scrollX, y: gy + window.scrollY, w: gx === cx ? rect.width - 2 : 0 };
               })(),
             });
           }
@@ -334,7 +383,7 @@ for (const r of routeList) {
             if (!text || !visible(cs)) continue;
             const alpha = (+cs.opacity || 0) * effAlpha(el);
             if (alpha === 0) continue;
-            const box = el.getBoundingClientRect();
+            const box = visibleRect(el, el.getBoundingClientRect());
             if (box.width < 1 || box.height < 1) continue;
             const inset = Math.min(parseFloat(cs.fontSize) * 0.6, box.width / 2);
             out.push({
@@ -347,7 +396,7 @@ for (const r of routeList) {
               ...(() => {
                 const [gx, gy] = groundPoint(
                   el,
-                  pseudo === '::before' ? box.left + inset : box.right - inset,
+                  pseudo === '::before' ? box.left + inset : box.left + box.width - inset,
                   box.top + Math.min(box.height / 2, parseFloat(cs.lineHeight) / 2 || box.height / 2),
                 );
                 return { x: gx + window.scrollX, y: gy + window.scrollY, w: 0 };

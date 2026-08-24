@@ -1,0 +1,90 @@
+---
+title: Etkileşim ve sayfa donatıları
+description: "DemoMount ve site tarafındaki yükleyici sözleşmesi, artı sayfa donatıları — hero’lar, kısım ayraçları, hub kartları, atlama listeleri ve alt bilgiler."
+part: 3
+navLabel: Etkileşim ve donatılar
+---
+
+import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import LocalToc from 'astro-inkstone/components/LocalToc.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Etkileşim ve sayfa donatıları">
+  Canlı bir canvas demosu ve arkasındaki sözleşme; ardından her notu çerçeveleyen sessiz bileşenler — ilk sayfadan beri bakmakta olduklarınız.
+</PartHero>
+
+## DemoMount — canlı
+
+İş bölümü, paketin her zamanki ayrımıdır: **bağlama işaretlemesi** (sahne, kontrol yuvası, altyazı yuvası) paketle gelir; **demo modülü ve yükleyicisi** sitenindir. Bu site yükleyicisini `src/lib/demo-loader.ts` içinde tutar ve layout’tan bir kez `mountAllDemos()` çağırır; çağrı her sayfada çalışır, ama bir demo modülü parçası yalnızca `[data-demo]` bağlama noktası taşıyan bir sayfa için indirilir.
+
+Canvas’ı üzerinde işaretçi girdisi alan bir demo `interactive` geçer — sahne o zaman dokunma hareketlerini sahiplenir ve bir nişangâh gösterir. Aşağıdaki demo edilgendir (yalnızca çizer); bayrağı kapalı bırakır, canvas üzerinde kaydırma sayfayı kaydırmaya devam eder. İki kaynaklı dalga girişimini sayfanın kendi mürekkep token’ıyla çizer, dolayısıyla temayı izler:
+
+<DemoMount demo="waves/interference" title="Demo · İki kaynaklı dalga girişimi" canvas={{ w: 640, h: 300 }}>
+  <Fragment slot="caption">
+    İki nokta kaynak dairesel dalgalar yayar; tepeler tepelerle buluştuğu yerde mürekkep birikir, tepeler çukurlarla buluştuğu yerde kâğıt görünür. Temayı değiştirin — demo kendini canlı token’lardan yeniden mürekkepler.
+  </Fragment>
+</DemoMount>
+
+Modül sözleşmesi tek bir varsayılan export’tur: temizleme fonksiyonu döndüren `mount(ctx)`; yükleyici, `waves/interference` gibi modül kimliklerini sitenin gönlünce çözer (burada `import.meta.glob`).
+
+## Sayfa donatıları
+
+Kalan bileşenler bir notu doldurmaz, çerçeveler:
+
+- `Hero` bir notu açar: kicker, vitrin başlığı, tam Markdown işlem hattından geçen bir giriş paragrafı, bir üstveri satırı ve kenar çubuğuna numarasız bir "giriş" satırı ekleyen isteğe bağlı `tocLabel`. Notun frontmatter’daki `title` değeri, `<title>` ve kartlar için kısa ve kurallı olan kalır; hero’nunki uzun olabilir.
+- `PartHero` bir hub’ın bölümünü açar — bu sayfanın kendi başı. Kicker’ı asla elle yazılmaz: rota, bölümün "III. Kısım · …" etiketini `props.partLabel` olarak içeri geçirir.
+- `Part`, uzun tek sayfalık bir notu kısımlara böler; numaralandırma ön ayarı bunu kenar çubuğundaki "II. Kısım · Temeller" tarzı grup satırlarına çevirir. [[kitchen-sink|Hepsi bir arada]] böyle bölünmüştür.
+- `HubCard` ile `.hub-grid` bir hub’ın açılış kartlarıdır; `.path` onun okuma rotası kutusudur — ikisi de [[components|bu galerinin genel bakışında]].
+- `LocalToc` sayfa içi bir atlama listesi çizer; iki numaralandırma ön ayarının ürettiği her iki ToC biçimini de kabul eder ve ayarlanabilir bir alt sınırın altında kendini gizler. Aşağıda, bu bölümün kendi ToC’siyle, canlı.
+- `SidebarMemory`, kayan bir kenar çubuğunu sayfa geçişleri arasında okurun bıraktığı yerde tutar ve geçerli öge görünümden çıkacaksa onu ortalar (varsayılan olarak `[aria-current="page"]`). Kenar çubuğunun kaydırma kutusunun içine, gezinme işaretlemesinin ardına koyun; ilk boyamadan önce çalışır, kenar çubuğu asla tepede parlamaz. Demonun kendi kenar çubuğu onu taşır.
+- `LineageSvg`, elle çizilmiş bir SVG’yi (bir yöntem soyağacı, bir taksonomi ağacı) kart olarak çerçeveler — bir örneği aşağıda.
+- `PageFooter`, notun dibindeki küçük punto satırıdır — buradaki her notun altındaki satır.
+- Göz atma parçaları [[components/wiki|wiki bölümünde]] yaşar; galerinin Markdown tarafı ise [[kitchen-sink|hepsi bir arada]].
+
+## LocalToc ve LineageSvg, canlı
+
+`LocalToc`, bu sayfanın derleme zamanı ToC’siyle beslenmiş hâlde — kenar çubuğunun tükettiği verinin aynısı, nota `props.toc` olarak verilir:
+
+<LocalToc toc={props.toc} label="Bu bölümde" />
+
+Ve `LineageSvg`, elle yazılmış bir diyagramın çevresinde — baştan sona anlamsal token’larla mürekkeplendiği için iki temada da oturur:
+
+<LineageSvg title="Şekil — görünüm katmanının yeri">
+  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css, base.css ile browse.css dosyalarını besler; onlar da her bileşeni besler" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
+    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
+      <rect x="20" y="55" width="150" height="40" rx="6" />
+      <rect x="245" y="15" width="150" height="40" rx="6" />
+      <rect x="245" y="95" width="150" height="40" rx="6" />
+      <rect x="470" y="55" width="150" height="40" rx="6" />
+    </g>
+    <g fill="none" stroke="var(--color-ink-faint)">
+      <path d="M170 68 C 210 60, 210 42, 245 37" />
+      <path d="M170 82 C 210 90, 210 108, 245 113" />
+      <path d="M395 37 C 430 42, 430 60, 470 68" />
+      <path d="M395 113 C 430 108, 430 90, 470 82" />
+    </g>
+    <g fill="var(--color-ink)" text-anchor="middle">
+      <text x="95" y="80">tokens.css</text>
+      <text x="320" y="40">base.css</text>
+      <text x="320" y="120">browse.css</text>
+      <text x="545" y="80">bileşenler</text>
+    </g>
+  </svg>
+</LineageSvg>
+
+## Bileşensiz donatılar
+
+Birkaç parça, `base.css` içinde düz sınıf olarak yaşar — kendi layout’undan çizen ya da düz yazının içine HTML olarak yazan siteler için:
+
+| Sınıf | Nedir |
+| --- | --- |
+| `.page-head` + `.kicker`, `.page-desc`, `.page-date` | `<Hero>` yerine bir layout’un çizdiği, frontmatter’dan beslenen sayfa başı (kicker, h1, açıklama, tarih) |
+| `.banner`, `.banner-fallback` | başlığın altında tek satırlık bir duyuru; fallback varyantı sönük olanıdır |
+| `.page-foot` | iki sütunlu küçük punto alt bilgisi (sol yuva, sağ yuva) |
+| `.speak` | derin inceleme başlığının altındaki sade dilli açıklama; etiketi `--speak-label` |
+| `.path` + `.title`, `.route`, `.arrow` | bir hub’daki okuma rotası kutusu |
+| `.ref-tag` | kaynakça listesindeki küçük eş aralıklı etiket (bir mekân, bir yıl) |
+| `.tag`, `.tag.teal / .mustard / .violet` | makale kartı rozetleri, her yerde kullanılabilir |
+| `.measured` + `.measured-head`, `.measured-body`, `.measured-pane` (`.doc`), `.measured-tag` | belgelenen-ölçülen karşılaştırma kartı: iki panonun üstünde dolgun petrol yeşili bir başlık çubuğu; `.doc` panosu iddiayı, öteki ölçümü taşır — silüeti her callout’tan ayrıdır |
+| `.paper .idea-label` | `PaperCard` gövdesindeki küçük, büyük harfli ana fikir etiketi, örn. `<span class="idea-label">Ana fikir</span>` |

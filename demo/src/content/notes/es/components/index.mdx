@@ -1,0 +1,70 @@
+---
+title: El conjunto de componentes
+description: "Un recorrido en tres capítulos por todos los componentes incluidos — y, al mismo tiempo, una demostración en vivo de cómo funciona una nota hub con capítulos."
+brand: Componentes
+subtitle: "la galería de componentes\ntres capítulos · un hub"
+navLabel: Visión general
+chapters: false
+nav:
+  - group: Galería
+    pages: [content, wiki, interactive]
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import HubCard from 'astro-inkstone/components/HubCard.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+
+export const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+<Hero kicker="Una galería en tres capítulos · 2026.08" title="El conjunto de componentes" meta="3 capítulos · 24 componentes · todos importados por ruta desde astro-inkstone/components/">
+  Todo lo que hay en la galería se importa por ruta desde `astro-inkstone/components/` y se renderiza con los tokens por defecto del paquete. Los componentes son **presentacionales**: reciben los datos y los rótulos como props (con valores por defecto en inglés), así que un sitio en cualquier idioma pasa los suyos.
+
+  <Fragment slot="after">
+    <Stats
+      items={[
+        { value: '3', label: 'capítulos' },
+        { value: '24', label: 'componentes' },
+        { value: '6', label: 'piezas wiki' },
+        { value: '0', label: 'colores en crudo' },
+      ]}
+    />
+  </Fragment>
+</Hero>
+
+## Los capítulos `{#chapters notoc}`
+
+Cada tarjeta es un capítulo del raíl del sidebar; los chips nombran lo que ese capítulo muestra.
+
+<div class="hub-grid">
+  <HubCard href={`${base}/es/components/content/`} num="PARTE I" title="Contenido y tipografía" count="7 componentes"
+    chips={[{ label: 'Callout', variant: 'teal' }, { label: 'PaperCard', variant: 'orange' }, { label: 'Grid' }, { label: 'Steps' }, { label: 'Stats' }]}>
+    Las piezas con las que se arma la prosa — callouts, chips, cuadrículas, raíles de pasos, filas de estadísticas, tarjetas de artículos y listas de referencias.
+  </HubCard>
+
+  <HubCard href={`${base}/es/components/wiki/`} num="PARTE II" title="Wiki y exploración" count="8 componentes"
+    chips={[{ label: 'NoteCard', variant: 'orange' }, { label: 'FacetNav', variant: 'orange' }, { label: 'TaxonomyLine' }, { label: 'Backlinks', variant: 'violet' }, { label: 'LocalGraph', variant: 'violet' }]}>
+    El juego de taxonomía con el que están construidas las estanterías de este jardín, y los dos paneles del grafo de enlaces — las menciones enlazadas y el grafo local del sidebar.
+  </HubCard>
+
+  <HubCard href={`${base}/es/components/interactive/`} num="PARTE III" title="Interactivos y mobiliario" count="9 componentes"
+    chips={[{ label: 'DemoMount', variant: 'teal' }, { label: 'Hero' }, { label: 'HubCard' }, { label: 'LocalToc', variant: 'mustard' }, { label: 'PageFooter' }]}>
+    Una demo de canvas en vivo con el contrato de cargador que posee el sitio, más el mobiliario de página — heros, tarjetas de hub, listas de salto, pies de página.
+  </HubCard>
+</div>
+
+## Un hub, en vivo
+
+Esta nota es en sí misma la demostración de un **hub**: una nota de nivel superior cuyo frontmatter declara `nav` — una lista ordenada de capítulos. La maquinaria que tienes delante:
+
+- el sidebar muestra el raíl de capítulos (I/II/III) bajo la marca del hub, con paginación anterior/siguiente al pie de cada capítulo;
+- los capítulos heredan la taxonomía del hub — ninguno de los tres capítulos de la galería declara su propio tipo, dominio o estado, y sin embargo cada uno muestra los de esta nota; un capítulo que fija sus propios valores sobrescribe en bloque ([[three-way-split|la misma regla que en todas partes: lo explícito gana]]);
+- en las páginas de exploración el hub es **una sola unidad**: una tarjeta, con su recuento de capítulos — los capítulos nunca abarrotan una estantería;
+- el número `part:` de cada capítulo debe coincidir con su posición en `nav`, o el build falla — el raíl y el frontmatter no pueden contarse historias distintas;
+- las tarjetas de arriba son componentes `HubCard` dentro de una `.hub-grid`; la caja de abajo es una **ruta de lectura** (`.path`), la otra pieza del mobiliario de hub.
+
+<div class="path">
+  <div class="title">Por dónde empezar</div>
+  <div class="route">
+    Si el paquete es nuevo para ti → <a href={`${base}/es/components/content/`}>Parte I</a><span class="arrow">→</span><a href={`${base}/es/components/wiki/`}>Parte II</a>; para montar un sitio de exploración → directo a la <a href={`${base}/es/components/wiki/`}>Parte II</a><span class="arrow">→</span><a href={`${base}/es/getting-started/`}>primeros pasos</a>; el lado Markdown de la misma historia → <a href={`${base}/es/kitchen-sink/`}>el muestrario</a>.
+  </div>
+</div>

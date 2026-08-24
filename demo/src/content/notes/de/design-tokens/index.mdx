@@ -1,0 +1,71 @@
+---
+title: Zweistufige Palette und Themes
+brand: "Palette & Themes"
+subtitle: "zwei Stufen, zwei Kontexte\ndie Pigmente und das Papier"
+description: Die rohe Pigmentpalette und die zwei darauf gebauten semantischen Kontexte – Lesespalte und Stöberregal –, dazu die Hell-Dunkel-Disziplin, der nachgemessene Kontrast und der eine Einstiegspunkt für die Identität einer Site.
+---
+
+import Hero from 'astro-inkstone/components/Hero.astro';
+import Part from 'astro-inkstone/components/Part.astro';
+
+<Hero kicker="Referenz · die Token-Schicht" title="Zweistufige Palette und Themes" meta="eine Palette · zwei Kontexte · beide Themes von Hand gesetzt · jeder Textwert auf AA vermessen">
+  `styles/tokens.css` enthält jede Farbe, die die Stylesheets und Komponenten verwenden – die eine Ausnahme ist das Farbtonpaar eines Bereichs, das die Registry einer Site als Daten beisteuert. Die Datei ist in zwei Stufen geschrieben – eine **Rohpalette** aus Papier-und-Tusche-Pigmenten und darauf gebaute **semantische Tokens** –, und die semantische Stufe kommt in zwei Kontexten, denn ein Wiki hat zwei Arten von Seiten: die Spalte, in der du liest, und das Regal, in dem du stöberst.
+</Hero>
+
+<Part title="Die Stufen" />
+
+## Stufe eins: die Pigmente
+
+Die Rohpalette ist ein Malkasten, unabhängig vom Theme, benannt `--p-*`. **Papiere**: der Stöbergrund 纸 und seine Kartenfläche 页, der Lesegrund 素 (eine Spur kühler, über eine Stunde angenehmer für die Augen) und seine weiche Oberfläche 帛, die weiße Karte, die Gründe für Code und Mathe. **Tuschen**: ein warmer Satz für das Regal und ein neutraler für die Spalte, jeder in drei Stärken. **Bindung**: die Regalkante, der Pillenrand, die zwei Haarlinien. **Pigmente**, die Farben, die Bedeutung tragen:
+
+```css title="tokens.css (Stufe eins, die Pigmente)"
+--p-zhu: #7d3a3a; /* 朱 · Weinrot – Stöberakzent, das Zeichen der Site */
+--p-shi: #b6552e; /* 石 · Brandorange – Leseakzent: Links, Nummern, Kicker */
+--p-shi-text: #8f3f1f; /* 石 · Kleintext-Stufe (AA auf der eigenen Tönung) */
+--p-zhe: #c08a2c; /* 赭 · Ocker – Linien und Ränder */
+--p-dai: #2a6f6b; /* 黛 · Petrol – zweiter Inhaltsakzent */
+--p-zi: #6b4ec4; /* 紫 · Violett – Semantik für alles Systemhafte */
+```
+
+Dazu ein **Nacht**-Satz für die dunkle Ausgabe: Dämmerungsgründe, mondweiße Tuschen und von jedem Pigment ein aufgehellter Zwilling.
+
+## Zwei Kontexte, eine Palette
+
+Stufe zwei ist das, was die Komponentenschicht konsumiert, und sie hat zwei Gesichter:
+
+| Kontext | Tokens | Grund | Tusche | Akzent | Wo |
+| --- | --- | --- | --- | --- | --- |
+| Lesespalte | `--color-*` | 素 `#fbf9f4` | neutral `#1f2024` | 石 Brandorange | Notizseiten, jede Inhaltskomponente, `base.css` |
+| Stöberregal | `--wb-*` | 纸 `#faf6ec` | warm `#2b2622` | 朱 Weinrot | Start- und Facettenseiten, die Wiki-Komponenten, `browse.css` |
+
+Die Spalte ist die ruhigere von beiden – in ihr liest du eine Stunde. Das Regal ist wärmer und in einer Display-Serife gesetzt – du wirfst einen Blick darauf und wählst. Eine Seite betritt den Regalkontext mit einer einzigen Klasse, `wb-root`, am Body; darin werden die Chrome-Tokens (`--color-bg`, `--color-accent`, …) auf die des Regals umgelegt, sodass eine einmal geschriebene Navigationsleiste auf beiden Gründen richtig sitzt – und die Taxonomie-Atome (Art-Abzeichen, Statuspunkt, Bereichs-Chip), geschrieben gegen `--color-*`, auf einer Notizseite als Teil der Spalte lesen und auf einer Stöberseite als Teil des Regals. **Die Komponentenschicht darf ausschließlich Stufe zwei konsumieren** – `base.css`, `browse.css` und jede Komponente; keine Regel enthält einen rohen Farbwert, und nichts fällt auf einen zurück. Das ist die harte Disziplin des Pakets.
+
+<Part title="Identität und Disziplin" />
+
+## Wie eine Site ihre Identität setzt
+
+Überschreibe Stufe eins. Tausche die Pigmente gegen deine eigenen, und beide Kontexte samt der ganzen Komponentenschicht ziehen nach. Jedes Pigment ist ein **Tag-Nacht-Paar**: Das helle Theme liest `--p-shi` und `--p-zhu`, das dunkle liest ihre Nachtzwillinge `--p-shi-n` und `--p-zhu-n` – eine Identitätsüberschreibung setzt beide Hälften, oder das Dunkel behält die Standardpigmente:
+
+```css title="deine site.css"
+:root {
+  --p-shi: #b03a48; /* dein Leseakzent */
+  --p-shi-text: #93303c; /* seine Kleintext-Stufe wird separat abgedunkelt, siehe unten */
+  --p-zhu: #3b4a7a; /* dein Regalakzent und dein Zeichen */
+  --p-shi-n: #e0919b; /* die Nachtzwillinge, aufgehellt für die Dämmerungsgründe */
+  --p-zhu-n: #9fb0e4;
+}
+```
+
+Genauso getragen ist der andere Weg: Stufe zwei direkt auf deine eigene Palette umzulegen, wenn dein Designsystem schon eine hat – richte `--color-*` und `--wb-*` auf deine Variablen. Dieser Garten überschreibt mit Absicht gar nichts: Was du hier liest, ist das blanke Gesicht des Pakets – dasselbe, für das [[paper-and-ink|Papier und Tusche]] argumentiert.
+
+## Kontrast wird nachgemessen
+
+Jeder Wert einer Textstufe ist auf WCAG AA geprüft, und zwar auf jeder Fläche, auf der er sitzt: Kleintext beginnt bei 4.5:1; ein Akzent, der als Kleintext auftritt, bekommt eine eigens abgedunkelte **Textstufe** (`--p-shi-text`, `--p-zhe-text`), denn ein 12px-Label in der Akzentfarbe sitzt meist auf der hellen Tönung ebendieses Akzents; die blassen Tuschen stehen auf dem dunkelsten Wert, der noch als blass liest – `#6a6d74` erreicht auf dem Lesegrund 4.9:1 und auf der weichen Oberfläche immer noch 4.5:1; der Codegrund ist eine Spur heller als das Papier, damit auch der blasseste Token des Syntax-Themes (Kommentare) 4.5:1 schafft; die dunkle Ausgabe führt ihren eigenen, aufgehellten Satz, vermessen gegen die Nachtgründe. Das Paket liefert die Messung als Werkzeug mit: `scripts/contrast_probe.mjs` rendert die Demo in einem echten Browser, beide Themes und zwei Breiten, sampelt den Grund unter jedem Textlauf aus Pixeln und meldet jeden Lauf unter der Latte ([[checks|die Kontrastprobe]]). Bevor du einen Wert änderst: Kenne jede Fläche, auf der er sitzt.
+
+## Hell ist die Identität
+
+Das Theme liest mit Absicht **nicht** `prefers-color-scheme`: Eine Seite darf ihr Theme niemals unter dem Leser wegkippen. Dunkel wird ausschließlich über `[data-theme='dark']` aktiv, geschaltet vom Schalter der Site selbst (der Sonne-Mond-Knopf rechts in der Navigationsleiste dieser Site; die Wahl liegt unter dem Schlüssel `inkstone-theme` im `localStorage` und wird vom Inline-Skript ThemeInit vor dem ersten Paint wieder eingespielt, sodass Leser im Dunkeln nie einen cremefarbenen Blitz sehen). Dunkel ist keine Invertierung, sondern eine zweite, von Hand gesetzte Ausgabe: Dämmerungsgründe, mondweiße Tuschen, neu aufgehellte Pigmente – [[paper-and-ink|Dunkel ist eine zweite Auflage, keine Invertierung]].
+
+## Auch die Schriften wohnen hier
+
+Vier Stacks. `--font-display` ist das Gesicht des Regals – eine Serife mit optischer Größenachse (Source Serif 4, mit Noto Serif SC für Hanzi) für Seitenköpfe und Regaltitel; diese Demo hostet sie über `@fontsource` selbst, und eine Site, die das nicht tut, fällt auf die Leseschrift zurück. `--font-body` gehört der Lesespalte – ein System-Serifenstack, angeführt von Charter und Iowan Old Style, mit der Display-Serife als Einspringerin, wo beide fehlen. `--font-ui` ist Inter (Noto Sans SC für Hanzi) für Überschriften, Chrome und das Kleingedruckte. `--font-mono` ist ein Subset von Maple Mono CN mit festem Zeichenvorrat (ASCII + Rahmenzeichen + die 3500 gebräuchlichen Hanzi + die Vereinigung aller Zeichen des Bestands): Latein bei 0.6em, Hanzi bei 1.2em – **ein Hanzi ist exakt zwei Zeichenzellen breit**, Diagramme aus Rahmenzeichen bleiben also selbst in gemischt chinesisch-lateinischem Text ausgerichtet. Rezept und Regenerierskript des Subsets liegen dem Paket bei (`fonts/build_font_subset.py`); braucht Inhalt Glyphen jenseits der Abdeckung, lass es neu laufen und committe die woff2 mit. Die [[kitchen-sink|Code-Rahmen]] sind vollständig in diesem Subset gesetzt.

@@ -1,0 +1,27 @@
+---
+title: Riwayat revisi dan pengembalian
+description: "Setiap simpan dijurnalkan per blok — siapa, kapan, baris mana, teks sebelum dan sesudah yang persis. Telusuri dengan ⟲, batalkan dalam satu klik."
+navLabel: Revisi
+part: 2
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Riwayat revisi dan pengembalian">
+  Setiap simpan — diketik tangan, dihasilkan Claude, atau diimpor dari kotak masuk — ditambahkan ke jurnal revisi yang tinggal berdampingan dengan kontennya: siapa, kapan, baris mana, dan teks sebelum/sesudah yang persis. Arahkan kursor ke sebuah blok, klik ⟲, dan riwayat blok itu terbuka.
+</PartHero>
+
+## Jurnalnya
+
+Setiap entri menunjukkan bagaimana perubahan itu dibuat (suntingan manual, suntingan Claude, terjemahan AI, impor kotak masuk, atau pengembalian yang lebih dulu), oleh siapa, dan diff sebelum/sesudah yang bisa dilipat. Entri seutuh berkas — sebuah terjemahan, sebuah impor — didaftar sebagai arsip tetapi tak membawa tombol pengembalian: membatalkannya adalah urusan git.
+
+## Pengembalian
+
+Satu klik pada tombol pengembalian sebuah entri mengganti teks *sesudah* milik revisi itu dengan teks *sebelum*-nya — sebagai suntingan baru yang ikut dijurnalkan, sehingga sebuah pengembalian bisa dikembalikan lagi. Dua detail yang patut diketahui:
+
+- Pengembalian diterapkan lewat pencocokan isi yang persis. Bila blok itu sudah disunting lagi sehingga teks lamanya tak lagi muncul kata demi kata, pengembalian ditolak alih-alih ditebak — tak ada yang pernah ditambal secara kira-kira.
+- Hasilnya melewati gerbang build yang sama dengan simpanan mana pun ([[inkbrush/editing|dua jaring pengaman]]). Pengembalian yang akan merusak halaman ditolak.
+
+## Mengapa jurnal dan git dua-duanya?
+
+Git (lewat `autocommit`) adalah riwayat seutuh-berkas yang awet — yang Anda push, cadangkan, dan diff. Jurnal adalah lapisan berbutir halus yang membuat ⟲ seketika dan per blok. Keduanya menjawab pertanyaan yang berbeda: *"apa yang terjadi pada berkas ini?"* versus *"apa yang terjadi pada paragraf ini?"*

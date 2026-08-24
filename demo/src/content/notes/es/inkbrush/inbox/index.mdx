@@ -1,0 +1,37 @@
+---
+title: La bandeja de entrada de Obsidian
+description: "Apunta el observador a una carpeta del vault; las notas nuevas se convierten y se importan solas — las incrustaciones copiadas junto a la nota, los wikilinks resueltos, los subrayados conservados."
+navLabel: Bandeja de entrada
+part: 4
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="La bandeja de entrada de Obsidian">
+  Mucho de lo que se escribe empieza en otra parte — un teléfono, un recortador web, un vault de Obsidian. La bandeja de entrada cierra ese circuito: apúntala a una carpeta, y las notas que caigan ahí se importan solas al sitio.
+</PartHero>
+
+## Encenderla
+
+La bandeja de entrada viene apagada. Actívala en `inkbrush.config.ts`:
+
+```ts title="inkbrush.config.ts"
+inbox: {
+  dir: '~/vault/inbox',        // la carpeta a observar (admite ~/)
+  ignore: ['daily-'],          // opcional: prefijos de nombre de archivo a saltar
+},
+```
+
+Los archivos que ya están en la carpeta al arrancar se marcan como vistos, no se importan — solo las notas añadidas *después* se sincronizan automáticamente. Todo lo anterior puede rellenarse explícitamente a través de la API, así que encender la bandeja de entrada nunca vuelca por sorpresa una década de historia del vault sobre tu sitio.
+
+## Qué hace el importador
+
+Cada nota entrante se convierte, no se copia:
+
+- las incrustaciones de imagen se resuelven contra las carpetas de recursos del vault, los archivos se **copian junto a la nota importada**, y las incrustaciones se vuelven sintaxis estándar de imagen — borrar la nota más adelante borra sus recursos con ella
+- los `[[wikilinks]]` que coinciden con una nota real del sitio sobreviven como enlaces, resueltos con [[inkbrush/wikilinks|las mismas reglas que en todas partes]]; el resto se aplana a simple énfasis con una advertencia
+- los subrayados se convierten en elementos `<mark>` de verdad, los metadatos del frontmatter se vuelven una línea de procedencia bajo el título, y la descripción se deriva del primer párrafo con sustancia
+
+La nota convertida tiene entonces que pasar la misma puerta de build que un guardado manual — una nota que rompería la página se rechaza en lugar de importarse.
+
+Cada importación queda en el diario de revisiones (vía: inbox) como un registro de archivo completo: [[inkbrush/revisions|⟲]] la lista como fila de auditoría, y deshacer una importación es una operación de git. Con `autocommit` encendido, cada importación se convierte además en un commit de git como cualquier otra edición; con él apagado, los archivos importados llegan como cambios ordinarios del árbol de trabajo, para revisarlos y commitearlos tú.

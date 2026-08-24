@@ -1,0 +1,27 @@
+---
+title: "Historique des révisions et annulation"
+description: "Chaque enregistrement est journalisé bloc par bloc — qui, quand, quelles lignes, l’avant et l’après exacts. Parcourez l’historique avec ⟲, annulez en un clic."
+navLabel: "Révisions"
+part: 2
+---
+
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+<PartHero kicker={props.partLabel} title="Historique des révisions et annulation">
+  Chaque enregistrement — tapé à la main, produit par Claude ou importé de la boîte de réception — s’ajoute à un journal des révisions conservé à côté du contenu : qui, quand, quelles lignes, et le texte exact d’avant et d’après. Survolez un bloc, cliquez ⟲ : l’historique de ce bloc s’ouvre.
+</PartHero>
+
+## Le journal
+
+Chaque entrée montre comment la modification a été faite (édition manuelle, édition par Claude, traduction IA, import de la boîte de réception, ou une annulation antérieure), par qui, et un diff avant/après repliable. Les entrées portant sur le fichier entier — une traduction, un import — figurent pour mémoire mais n’ont pas de bouton d’annulation : les défaire est l’affaire de git.
+
+## L’annulation
+
+Un clic sur le bouton d’annulation d’une entrée remplace le texte d’*après* de cette révision par son texte d’*avant* — sous forme de nouvelle édition journalisée : une annulation est donc elle-même annulable. Deux détails à connaître :
+
+- L’annulation s’applique par correspondance exacte du contenu. Si le bloc a depuis été édité au point que l’ancien texte n’apparaît plus mot pour mot, l’annulation est refusée plutôt que devinée — rien n’est jamais rapiécé à l’à-peu-près.
+- Le résultat passe par la même porte de build que tout autre enregistrement ([[inkbrush/editing|les deux filets de sécurité]]). Une annulation qui casserait la page est rejetée.
+
+## Pourquoi à la fois un journal et git ?
+
+Git (via `autocommit`) est l’historique durable, à l’échelle du fichier — ce que vous poussez, sauvegardez et diffez. Le journal est la couche fine qui rend ⟲ instantané et bloc par bloc. Ils répondent à deux questions différentes : *« qu’est-il arrivé à ce fichier ? »* contre *« qu’est-il arrivé à ce paragraphe ? »*

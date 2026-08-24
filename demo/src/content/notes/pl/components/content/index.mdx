@@ -1,0 +1,106 @@
+---
+title: Treść i typografia
+description: Callouty, chipy, siatki, kroki, statystyki, karty publikacji i listy bibliograficzne — komponenty, z których składa się proza.
+part: 1
+navLabel: Treść i typografia
+---
+
+import Callout from 'astro-inkstone/components/Callout.astro';
+import Chip from 'astro-inkstone/components/Chip.astro';
+import Grid from 'astro-inkstone/components/Grid.astro';
+import PartHero from 'astro-inkstone/components/PartHero.astro';
+import Steps from 'astro-inkstone/components/Steps.astro';
+import Stats from 'astro-inkstone/components/Stats.astro';
+import PaperCard from 'astro-inkstone/components/PaperCard.astro';
+import References from 'astro-inkstone/components/References.astro';
+
+<PartHero kicker={props.partLabel} title="Treść i typografia">
+  Klocki, z których składa się proza. Każdy z nich konsumuje wyłącznie semantyczną warstwę tokenów — przemaluj paletę, a wszystkie pójdą w ślad.
+</PartHero>
+
+## Callout
+
+Pięć wariantów; `title` zastępuje domyślną etykietę wariantu (Note / Intuition / Warning / Important / Abstract — te same domyślne, których używa składnia cytatu, lokalizowane przez `labels`). Strona [[kitchen-sink|Wszystko naraz]] pokazuje te same znaczniki w pisowni cytatu i surowego HTML-a.
+
+<Callout variant="intuition" title="Kiedy sięgnąć po komponent">
+  W MDX, gdy treść powstaje w miejscu. Składnia cytatu obsługuje zwykłe pliki Markdowna; obie renderują identyczny znacznik.
+</Callout>
+
+## Chip
+
+Odznaki w linii, do statusów i kategorii, w czterech wariantach wspólnych dla tagów `PaperCard` i chipów `HubCard`: <Chip variant="teal">stabilny</Chip> <Chip variant="mustard">beta</Chip> <Chip variant="violet">badawczy</Chip> <Chip variant="orange">nowy</Chip> — albo z własnym odcieniem dla palet tematycznych: <Chip tone={{ bg: '#e8f0ee', fg: '#1f5f56' }}>własny odcień</Chip>
+
+## Grid
+
+Jedna siatka, trzy skóry (`plain`, `card`, `cmp`). Karty:
+
+<Grid cols={2} kind="card">
+  <div>
+    **Najpierw tokeny.** Kolejność importów jest częścią kontraktu: tokeny, potem warstwa treści, potem chrome witryny.
+  </div>
+  <div>
+    **Tylko warstwa semantyczna.** Komponenty nigdy nie dotykają surowych kolorów — przemaluj paletę, a wszystkie pójdą w ślad.
+  </div>
+</Grid>
+
+I skóra porównawcza, stworzona do paneli „przed / po”:
+
+<Grid cols={2} kind="cmp">
+  <div>
+    **Bez strażnika** — niedomknięte `**` wypływa na produkcję jako dwie dosłowne gwiazdki.
+  </div>
+  <div>
+    **Ze strażnikiem** — build pada z plikiem:linią:kolumną i daszkiem pod znakiem.
+  </div>
+</Grid>
+
+## Steps
+
+Lista markdownowa na pionowej szynie:
+
+<Steps>
+1. Dodaj oba submoduły i zależności `file:`.
+2. Zaimportuj `tokens.css`, `base.css` oraz (dla wiki) `browse.css` w globalnym arkuszu stylów.
+3. Wepnij `siteMarkdown()` w `astro.config`.
+4. Nadpisz paletę pierwszej warstwy pigmentami swojej tożsamości.
+</Steps>
+
+## Stats
+
+<Stats
+  items={[
+    { value: '2', label: 'warstwy tokenów' },
+    { value: '24', label: 'komponenty' },
+    { value: '4', label: 'szerokości sondy' },
+    { value: '0', label: 'kroków budowania' },
+  ]}
+/>
+
+## PaperCard
+
+Koń roboczy przeglądów literatury — alias, pełny tytuł, tagi z miejscem publikacji, metadane autorów, linki i dwa dedykowane sloty:
+
+<PaperCard
+  alias="Transformer"
+  full="Attention Is All You Need"
+  tags={[{ label: 'NeurIPS 2017', variant: 'teal' }]}
+  meta="Vaswani, Shazeer, Parmar i in."
+  links={[{ label: 'arXiv:1706.03762', href: 'https://arxiv.org/abs/1706.03762' }]}
+  id="transformer-card"
+>
+  <Fragment slot="pain">Modele rekurencyjne przetwarzają tokeny jeden po drugim — dalekie zależności bledną i nic się nie zrównolegla.</Fragment>
+  **Kluczowa idea**: sama atencja, bez rekurencji — każdy token patrzy na każdy inny w jednym kroku, a cała sekwencja trenuje się równolegle.
+  <Fragment slot="diff">Architektura, na której zbudowano niemal każdy późniejszy duży model językowy.</Fragment>
+</PaperCard>
+
+Pod nagłówkiem sekcji pogłębionej jednolinijkowy przekład na ludzki język (`.speak`) mówi czytelnikowi, co moduł *robi*, zanim przyjdzie mechanizm:
+
+<p class="speak">Atencja to miękka tablica wyszukiwania: każdy token pyta „kto jest dla mnie istotny?” i dostaje ważoną mieszankę odpowiedzi.</p>
+
+## References
+
+<References>
+- Vaswani i in., *Attention Is All You Need*, NeurIPS 2017.
+- Knuth, *The TeXbook* — powód, dla którego podłoża matematyki dostają własny odcień papieru.
+- W3C, *Web Content Accessibility Guidelines 2.2* — poprzeczka kontrastu AA, pod którą audytowane są tokeny.
+</References>
