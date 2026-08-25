@@ -90,6 +90,10 @@ await page.goto(NOTE, { waitUntil: 'networkidle2' });
 /* ---- badge, activation, chrome ---- */
 await page.waitForSelector('.inkbrush-playground-badge button', { timeout: 15000 });
 ok('badge shows try-it on a clean visit', (await badgeText()).includes('Try editing'));
+ok('reset is hidden before activation', await page.evaluate(() => {
+  const r = document.querySelector('.inkbrush-playground-badge .pg-reset');
+  return !!r && getComputedStyle(r).display === 'none';
+}));
 await activate();
 ok('activation turns the badge on', true);
 ok('blocks are stamped after activation', (await page.$$eval('[data-wiki-src]', (els) => els.length)) > 3);
@@ -180,6 +184,20 @@ ok('reset clears the frontmatter edit', !/local edit/.test(await badgeText()));
 await page.goto(url('/zh/getting-started/'), { waitUntil: 'networkidle2' });
 await page.waitForSelector('.inkbrush-playground-badge button', { timeout: 15000 });
 ok('zh page badge is localized', (await badgeText()).includes('试一试'));
+
+/* ---- phone viewport: the entry point stays reachable ---- */
+await page.setViewport({ width: 390, height: 844 });
+await page.goto(NOTE, { waitUntil: 'networkidle2' });
+await page.waitForSelector('.inkbrush-playground-badge button', { timeout: 15000 });
+ok('phone badge floats fixed inside the viewport', await page.evaluate(() => {
+  const b = document.querySelector('.inkbrush-playground-badge');
+  if (!b || !b.classList.contains('pg-floating')) return false;
+  if (getComputedStyle(b).position !== 'fixed') return false;
+  const r = b.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight;
+}));
+await activate();
+ok('phone activation works from the floating badge', true);
 
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 

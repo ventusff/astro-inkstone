@@ -93,6 +93,14 @@ const home = landingRoute(locale);
     const open = document.body.classList.toggle('nav-open');
     toggle.setAttribute('aria-expanded', String(open));
   });
+  // Following a drawer link closes the drawer: the target section must be
+  // readable at once, not buried under the still-open drawer.
+  document.querySelector('.sidebar')?.addEventListener('click', (e) => {
+    if (!(e.target as HTMLElement).closest('a')) return;
+    if (!document.body.classList.contains('nav-open')) return;
+    document.body.classList.remove('nav-open');
+    toggle?.setAttribute('aria-expanded', 'false');
+  });
 </script>
 
 <style>

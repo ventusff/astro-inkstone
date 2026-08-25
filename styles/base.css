@@ -1839,6 +1839,14 @@ span.wikilink-dead {
   .demo {
     padding: 14px;
   }
+  /* the vertical rhythm tightens with the measure: the desktop hero/part
+     gaps span most of a phone screen at full size */
+  .hero {
+    margin-bottom: 32px;
+  }
+  .part-divider {
+    margin-top: 52px;
+  }
 }
 
 

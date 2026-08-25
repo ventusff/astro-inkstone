@@ -19,7 +19,12 @@
  * ancestors, composited over the sampled ground. (Exact when the translucent
  * ancestors paint no background of their own — the common text-dimming case;
  * a translucent group with its own background composites its glyphs a step
- * earlier, which this model approximates.) Dialogs and popovers are probed
+ * earlier, which this model approximates.) A fixed-position overlay (a
+ * floating chip, a corner badge) is measured in place from a dedicated
+ * shot and hidden while the document is swept: its opaque face is the
+ * ground of its own text, never of the text it happens to occlude at some
+ * scroll offset — occluded text is invisible there, not low-contrast.
+ * Dialogs and popovers are probed
  * too: on one representative route per theme and width the probe opens
  * every `<dialog data-probe-open>` (typing a query into a search box it
  * finds there) and, in a separate pass, every `[popover][data-probe-open]`
@@ -263,6 +268,20 @@ for (const r of routeList) {
         await new Promise((res) => setTimeout(res, 150));
       }
 
+      // fixed-position overlays float over whatever scrolls past — their
+      // face is the ground of their own text only. Marked so their runs are
+      // sampled from a dedicated shot and the sweep hides them.
+      const overlays = await page.evaluate(() => {
+        let n = 0;
+        for (const el of document.body.querySelectorAll('*')) {
+          if (el.closest('dialog, [popover], [data-probe-fixed]')) continue;
+          if (getComputedStyle(el).position !== 'fixed') continue;
+          el.setAttribute('data-probe-fixed', '');
+          n++;
+        }
+        return n;
+      });
+
       // 1) collect text runs in document coordinates (scrollY = 0)
       const runs = await page.evaluate((scope) => {
         const out = [];
@@ -368,6 +387,7 @@ for (const r of routeList) {
               alpha,
               fontSize: parseFloat(cs.fontSize),
               fontWeight: +cs.fontWeight || 400,
+              fixd: Boolean(el.closest('[data-probe-fixed]')),
               ...(() => {
                 const cx = rect.left + rect.width / 2;
                 const [gx, gy] = groundPoint(el, cx, rect.top + rect.height / 2);
@@ -400,6 +420,7 @@ for (const r of routeList) {
               alpha,
               fontSize: parseFloat(cs.fontSize),
               fontWeight: +cs.fontWeight || 400,
+              fixd: Boolean(el.closest('[data-probe-fixed]')),
               ...(() => {
                 const [gx, gy] = groundPoint(
                   el,
@@ -421,6 +442,20 @@ for (const r of routeList) {
         // currentColor borders and icons - the ground keeps every non-text ink
         st.textContent += `*{-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important}svg text{fill:transparent!important}`;
       });
+      // fixed overlays: one shot with them in place — the ground of their
+      // own text — then hidden for the sweep, so their face never stands in
+      // as the ground of text they merely occlude
+      let fixedShot = null;
+      if (overlays > 0) {
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await new Promise((res) => setTimeout(res, 60));
+        fixedShot = decodePng(await page.screenshot({ type: 'png' }));
+        await page.evaluate(() => {
+          document.getElementById('__probe').textContent +=
+            '[data-probe-fixed]{visibility:hidden!important}';
+        });
+      }
+
       // a modal dialog sits in the top layer at viewport coordinates: its
       // pass keeps the collection viewport so nothing moves between the run
       // collection and the screenshot
@@ -457,10 +492,16 @@ for (const r of routeList) {
         // sampled at several points across its width
         const half = Math.max((run.w ?? 0) / 2 - 2, 0);
         const offsets = half > 4 ? [-half, -half / 2, 0, half / 2, half] : [0];
+        // a fixed overlay's runs come from its dedicated shot (viewport
+        // coordinates — the collection scroll was 0)
+        const px = (x, y) =>
+          run.fixd && fixedShot
+            ? fixedShot.at(Math.round(x), Math.min(Math.round(y), VIEW - 1))
+            : sample(x, y);
         let worst = null;
         let worstBg = null;
         for (const dx of offsets) {
-          const bg = sample(run.x + dx, run.y);
+          const bg = px(run.x + dx, run.y);
           if (!bg) continue;
           worstBg = bg;
           if (!fg) break;
