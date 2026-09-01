@@ -1,10 +1,11 @@
 /**
- * The demo's browser-playground wiring (PLAYGROUND builds only — see
- * components/PlaygroundMount.astro for the mount gate). The fragment
- * pipeline reuses the exact build plugins through sitePluginSets, with
- * whole-document concerns off: chapter numbering and reading time need the
- * full document, and the wikilink resolver comes from the manifest (the
- * engine mounts it itself).
+ * The demo's browser-playground wiring (PLAYGROUND builds only — the
+ * playground-mount integration in astro.config.mjs injects it). The fragment
+ * pipeline reuses the exact build plugins through sitePluginSets (from the
+ * browser-safe lib/site-plugins module — the preset itself carries the
+ * engine's processor factory), with whole-document concerns off: chapter
+ * numbering and reading time need the full document, and the wikilink
+ * resolver comes from the index manifest (the engine mounts it itself).
  */
 import { bootPlayground, type PlaygroundStrings } from 'astro-inkbrush/playground';
 import { normalizeBase } from 'astro-inkstone/lib/base';
@@ -33,9 +34,10 @@ export function mountPlayground(): void {
     guestName: zh ? '体验访客' : 'Playground visitor',
     ...(zh ? { strings: ZH_STRINGS } : {}),
     configure: async () => {
-      // the plugin graph (katex and friends) loads only on activation — a
-      // static import here would land it in the boot chunk of every page
-      const { sitePluginSets } = await import('astro-inkstone/lib/markdown-preset');
+      // the plugin graph (katex and friends) loads when the engine first
+      // renders (idle time after activation, or the first edit) — a static
+      // import here would land it in the boot chunk of every page
+      const { sitePluginSets } = await import('astro-inkstone/lib/site-plugins');
       return {
         site: sitePluginSets({
           math: true,

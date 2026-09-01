@@ -9,8 +9,12 @@
  * is not source order), zh strings on a zh page, and then EVERY note page:
  * activation must leave the build's block map exactly as built (each
  * stamped node keeps its range, ranges well-formed, disjoint and within the
- * note's source, every anchor bound to the element it precedes). Every
- * check is PASS/FAIL; any FAIL fails the process.
+ * note's source, every anchor bound to the element it precedes) and every
+ * page must carry its own source island. The click path is measured on the
+ * wire (the server gzips what a static host gzips): activation must stay
+ * within its byte budget, the index manifest must carry no sources, and
+ * the editor chunk must be prefetched in the idle time after activation.
+ * Every check is PASS/FAIL; any FAIL fails the process.
  *
  *   node scripts/playground_probe.mjs <root> [base] [--exclude <route regex>]
  *
@@ -29,6 +33,7 @@
 import { createServer } from 'node:http';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
+import { gzipSync } from 'node:zlib';
 
 import puppeteer from 'puppeteer-core';
 
@@ -39,6 +44,9 @@ const ROOT = resolve(argv[0] || 'dist');
 const BASE = (argv[1] || '/').replace(/\/?$/, '/');
 const CHROME = process.env.CHROME_PATH || '/usr/bin/google-chrome';
 const PORT = 4980;
+/** wire bytes a first activation may transfer (its chunk, the index manifest);
+ *  the site's plugin graph and the editor are idle-time loads, never part of it */
+const ACTIVATION_BUDGET = 96 * 1024;
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript',
   '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.woff2': 'font/woff2',
@@ -50,8 +58,10 @@ const server = createServer((req, res) => {
   let file = join(ROOT, p);
   if (existsSync(file) && statSync(file).isDirectory()) file = join(file, 'index.html');
   if (!existsSync(file)) { res.writeHead(404); res.end('not found'); return; }
-  res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream' });
-  res.end(readFileSync(file));
+  const body = readFileSync(file);
+  const gzip = /gzip/.test(req.headers['accept-encoding'] ?? '') && /\.(?:html|js|mjs|css|json|svg|txt)$/.test(file);
+  res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream', ...(gzip ? { 'content-encoding': 'gzip' } : {}) });
+  res.end(gzip ? gzipSync(body) : body);
 });
 await new Promise((r) => server.listen(PORT, r));
 
@@ -65,6 +75,26 @@ const waitActive = () => page.waitForFunction(
   { timeout: 30000 },
 );
 const activate = async () => { await page.click('.inkbrush-playground-badge button'); await waitActive(); };
+/** the network between the click and the badge turning active: wire bytes and requests */
+const measureActivation = async () => {
+  const cdp = await page.createCDPSession();
+  await cdp.send('Network.enable');
+  const requests = new Map();
+  cdp.on('Network.requestWillBeSent', (e) => requests.set(e.requestId, { url: e.request.url, bytes: 0 }));
+  cdp.on('Network.loadingFinished', (e) => { const r = requests.get(e.requestId); if (r) r.bytes = e.encodedDataLength; });
+  const t0 = Date.now();
+  await activate();
+  const ms = Date.now() - t0;
+  await cdp.detach();
+  const rows = [...requests.values()];
+  return { ms, bytes: rows.reduce((a, r) => a + r.bytes, 0), urls: rows.map((r) => r.url.replace(/^http:\/\/[^/]+/, '')) };
+};
+/** the source island a built note page carries: { file, source } */
+const islandOf = (html) => {
+  const m = /<script[^>]*data-inkbrush-source[^>]*>([\s\S]*?)<\/script>/.exec(html);
+  if (!m) return null;
+  try { return JSON.parse(m[1]); } catch { return null; }
+};
 /* the block is activated by focus (the keyboard path): a hover lands on
    whatever the pointer crosses on the way, focus names the block exactly */
 const hoverAndEdit = async (handle) => {
@@ -109,13 +139,18 @@ ok('reset is hidden before activation', await page.evaluate(() => {
   const r = document.querySelector('.inkbrush-playground-badge .pg-reset');
   return !!r && getComputedStyle(r).display === 'none';
 }));
-await activate();
+const firstActivation = await measureActivation();
 ok('activation turns the badge on', true);
+ok(`activation stays within its wire budget (${(firstActivation.bytes / 1024).toFixed(0)} KB in ${firstActivation.ms} ms, ${firstActivation.urls.length} requests)`, firstActivation.bytes <= ACTIVATION_BUDGET, firstActivation.urls.join(' '));
 ok('blocks are stamped after activation', (await page.$$eval('[data-wiki-src]', (els) => els.length)) > 3);
 ok('playground stylesheet is injected', await page.evaluate(() => !!document.getElementById('inkbrush-playground-style')));
 ok('toolbar is fixed-positioned (styled)', await page.evaluate(() => { const h = document.querySelector('.wiki-handle'); return !!h && getComputedStyle(h).position === 'fixed'; }));
 ok('a11y hint is visually collapsed', await page.evaluate(() => { const el = document.querySelector('.wiki-sr-only'); if (!el) return false; const r = el.getBoundingClientRect(); return r.width <= 2 && r.height <= 2; }));
 ok('activation hint toast shows', await page.evaluate(() => (document.querySelector('.wiki-toast-region')?.textContent ?? '').length > 0));
+ok('editor chunk is prefetched in the idle time after activation', await page.waitForFunction(
+  () => performance.getEntriesByType('resource').some((e) => /\/editor\.[^/]+\.js$/.test(e.name)),
+  { timeout: 6000 },
+).then(() => true).catch(() => false));
 
 /* ---- a paragraph block: edit, preview, save, persist, history, reset ---- */
 const target = await page.evaluateHandle(() => [...document.querySelectorAll('p[data-wiki-src]')].find((p) => (p.textContent ?? '').length > 40));
@@ -249,15 +284,16 @@ ok('phone activation works from the floating badge', true);
 /* ---- every note page: activation keeps the block map exactly as built ---- */
 await page.setViewport({ width: 1280, height: 900 });
 const manifest = JSON.parse(readFileSync(join(ROOT, BASE, 'playground-manifest.json'), 'utf8'));
-const lineCount = new Map(manifest.notes.map((n) => [n.id, n.source.split('\n').length]));
+ok('index manifest carries note identities, no sources', manifest.notes.length > 0 && manifest.notes.every((n) => typeof n.id === 'string' && typeof n.title === 'string' && !('source' in n)));
 const notePages = [];
 const walk = (dir, route) => {
   for (const entry of readdirSync(dir)) {
     const p = join(dir, entry);
     if (statSync(p).isDirectory()) walk(p, `${route}${entry}/`);
     else if (entry === 'index.html') {
-      const id = /<meta name="inkbrush-note" content="([^"]+)"/.exec(readFileSync(p, 'utf8'))?.[1];
-      if (id && !(EXCLUDE && EXCLUDE.test(route))) notePages.push({ route, id });
+      const html = readFileSync(p, 'utf8');
+      const id = /<meta name="inkbrush-note" content="([^"]+)"/.exec(html)?.[1];
+      if (id && !(EXCLUDE && EXCLUDE.test(route))) notePages.push({ route, id, island: islandOf(html) });
     }
   }
 };
@@ -271,8 +307,11 @@ const mapOf = () => page.evaluate(() => [...document.querySelectorAll('[data-wik
   return { stamp: n.dataset.wikiSrc, tag: n.tagName.toLowerCase(), bound };
 }));
 const sweepFailures = [];
-for (const { route, id } of notePages) {
+for (const { route, id, island } of notePages) {
   const problems = [];
+  const lines = island && typeof island.source === 'string' ? island.source.split('\n').length : undefined;
+  if (!island) problems.push('no source island in the page head');
+  else if (!['md', 'mdx'].some((ext) => (island.file ?? '').endsWith(`/${id}/index.${ext}`))) problems.push(`source island names ${island.file}, not this note's file`);
   try {
     await page.goto(`http://127.0.0.1:${PORT}${route}`, { waitUntil: 'networkidle2', timeout: 60000 });
     await page.waitForSelector('.inkbrush-playground-badge button', { timeout: 15000 });
@@ -283,7 +322,6 @@ for (const { route, id } of notePages) {
       const i = before.findIndex((b, k) => JSON.stringify(b) !== JSON.stringify(after[k]));
       problems.push(`stamp changed by activation: ${JSON.stringify(before[i])} → ${JSON.stringify(after[i])}`);
     }
-    const lines = lineCount.get(id);
     const ranges = [];
     for (const { stamp, tag, bound } of after) {
       const m = /^(\d+)-(\d+)$/.exec(stamp ?? '');
@@ -309,7 +347,7 @@ for (const { route, id } of notePages) {
   }
   if (problems.length > 0) sweepFailures.push(`${route}: ${problems.join('; ')}`);
 }
-ok(`every note page keeps its block map through activation (${notePages.length} pages)`, sweepFailures.length === 0, sweepFailures.slice(0, 5).join(' | '));
+ok(`every note page carries its source and keeps its block map through activation (${notePages.length} pages)`, sweepFailures.length === 0, sweepFailures.slice(0, 5).join(' | '));
 
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 

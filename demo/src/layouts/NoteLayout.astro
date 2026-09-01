@@ -19,6 +19,7 @@ import type { DomainDisplay, KindDisplay, StatusDisplay } from 'astro-inkstone/l
 import type { BacklinkItem } from 'astro-inkstone/lib/backlinks';
 import type { TocData } from 'astro-inkstone/lib/toc-types';
 import Base from './Base.astro';
+import type { NoteSource } from '../lib/playground-source';
 import Sidebar, { type HubNav } from '../components/Sidebar.astro';
 import { DEFAULT_LOCALE, UI, type Alternate, type Locale } from '../lib/i18n';
 
@@ -55,6 +56,8 @@ interface Props {
   brandHref: string;
   subtitle?: string | undefined;
   noteId?: string | undefined;
+  /** the page's own source, carried for the playground (PLAYGROUND builds) */
+  noteSource?: NoteSource | undefined;
   /** this page's routes in the locales it exists in */
   alternates: Alternate[];
   toc: TocData;
@@ -78,6 +81,7 @@ const {
   brandHref,
   subtitle,
   noteId,
+  noteSource,
   alternates,
   toc,
   tocDepth = 2,
@@ -99,6 +103,7 @@ const t = UI[locale];
   crumbs={crumbs}
   alternates={alternates}
   noteId={noteId}
+  noteSource={noteSource}
   published={published}
   modified={modified}
   hasSidebar

@@ -22,6 +22,7 @@ import type { HubNav, HubRow } from '../components/Sidebar.astro';
 import { backlinks as backlinkBuilder, toDocs } from '../lib/backlinks';
 import { stripOf } from '../lib/display';
 import { baseIdOf, href, idIn, localeOfId, localePrefix, LOCALES, routeOfId, UI, type Alternate, type Locale } from '../lib/i18n';
+import { readNoteSource } from '../lib/playground-source';
 import { resolveTaxonomy } from '../lib/taxonomy';
 import { LOCALE_CODES } from '../content/notes/_meta/locales';
 import { RESERVED_SLUGS } from '../content/notes/_meta/taxonomy';
@@ -56,6 +57,9 @@ interface Props {
 }
 
 const { entry } = Astro.props;
+// PLAYGROUND=1 builds: the page carries its own source for the browser-local
+// playground — the file the build stamped, frontmatter included
+const noteSource = process.env.PLAYGROUND ? readNoteSource(entry) : undefined;
 const notes = await getCollection('notes');
 const byId = new Map(notes.map((n) => [n.id, n]));
 
@@ -211,6 +215,7 @@ const brandHref = hub ? hub.hubHref : routeTo(entry.id);
   brandHref={brandHref}
   subtitle={brandEntry.data.subtitle}
   noteId={entry.id}
+  noteSource={noteSource}
   alternates={alternates}
   toc={toc}
   tocDepth={entry.data.tocDepth}

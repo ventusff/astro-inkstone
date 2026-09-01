@@ -21,6 +21,7 @@ import Breadcrumb from '../components/Breadcrumb.astro';
 import SearchPalette from 'astro-inkstone/components/SearchPalette.astro';
 import { KINDS } from '../content/notes/_meta/taxonomy';
 import ThemeInit from '../components/ThemeInit.astro';
+import { type NoteSource, noteSourceIsland } from '../lib/playground-source';
 import { DEFAULT_LOCALE, GITHUB_URL, href, localeDef, UI, type Alternate, type Locale } from '../lib/i18n';
 
 interface Crumb {
@@ -47,6 +48,9 @@ interface Props {
    * mode only, so the published bundle never carries them.
    */
   noteId?: string | undefined;
+  /** the note's own source, emitted as the playground's source island
+   *  (PLAYGROUND builds only; see lib/playground-source.ts) */
+  noteSource?: NoteSource | undefined;
   /** a note's frontmatter dates — the article's published/modified times */
   published?: Date | undefined;
   modified?: Date | undefined;
@@ -60,6 +64,7 @@ const {
   bodyClass,
   hasSidebar = false,
   noteId,
+  noteSource,
   published,
   modified,
 } = Astro.props;
@@ -193,6 +198,7 @@ const playground = Boolean(import.meta.env.PLAYGROUND ?? process.env.PLAYGROUND)
     <style set:html={labelStyle}></style>
     {(wikiMode || playground) && noteId && <meta name="inkbrush-note" content={noteId} />}
     {(wikiMode || playground) && noteId && <meta name="inkbrush-note-url" content={noteUrlTemplate} />}
+    {playground && noteSource && <script is:inline type="application/json" data-inkbrush-source set:html={noteSourceIsland(noteSource)} />}
     <ThemeInit />
   </head>
   <body class={bodyClass}>

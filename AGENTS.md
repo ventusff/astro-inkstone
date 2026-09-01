@@ -96,6 +96,12 @@ whose content is the package's own manual.
   `[[alias]]` ambiguous), so a schema may default it to `[]`.
 - Relative imports inside `lib/` carry the `.ts` extension: the library is
   consumed as source by Vite and run as source by `node --test`.
+- `lib/site-plugins.ts` holds `sitePluginSets` — the site plugin arrays
+  alone, browser-safe by construction (it imports the engine's
+  `wikilinks/core` and `wiki-blocks` leaves, never its processor factory);
+  `lib/markdown-preset.ts` wraps them with the engine's processor and shiki
+  for the build and re-exports them. Browser code (the demo's playground)
+  imports `site-plugins`; a site's `astro.config` imports the preset.
 - `components/LocalToc.astro` accepts both ToC shapes (`entries`/`items`).
 - Wiki components are presentational: sites bind data with
   `createTaxonomy()` from `lib/taxonomy.ts` and pass props (including label
@@ -144,7 +150,7 @@ node scripts/probe.mjs ui                # render-layer probe, en+zh trees (need
 node scripts/probe.mjs contrast          # WCAG contrast, en+zh trees, both themes
 node scripts/probe.mjs ui --all          # every locale's tree — before a release,
 node scripts/probe.mjs contrast --all    #   and after any language-shaped change
-PLAYGROUND=1 npm run build               # the Pages shape: stamped blocks + sources manifest
+PLAYGROUND=1 npm run build               # the Pages shape: block stamps, per-page source islands, the index manifest
 node ../scripts/playground_probe.mjs dist    # the browser-local editor end to end, every note's block map
 ```
 
