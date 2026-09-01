@@ -4,16 +4,22 @@ The monospace font used for code blocks and box diagrams, as a CJK-capable
 subset. Latin glyphs are exactly 600, Hanzi exactly 1200, box drawing and
 arrows 600 (units of 1/1000 em) — a strict 1:2 Latin/Hanzi ratio, so mixed
 Chinese/English box diagrams never skew. The full font weighs tens of MB;
-this subset (~4000 characters, ~900 KB woff2) is cut once from a fixed
-recipe and self-hosted — every consuming site ships the same file instead of
-scanning its own content.
+this subset (~4500 code points) is cut once from a fixed recipe and
+self-hosted — every consuming site ships the same files instead of scanning
+its own content. It is served as two faces of one family, split by code
+point at U+2E80 (`FACES` in the generator, `unicode-range` in
+`styles/tokens.css`): the Latin face (~30 KB: ASCII, Latin, Greek, Cyrillic,
+punctuation, arrows, math, box drawing) is all a page with ASCII code
+downloads; the CJK face (~960 KB: CJK punctuation, kana, Hanzi, fullwidth
+forms) arrives only when the code on the page uses a CJK character.
 
 ## Files
 
 | File | What it is |
 | --- | --- |
-| `MapleMonoCN-subset.woff2` | the subset artifact, committed; sites reference it directly |
-| `coverage.txt` | the subset's actual cmap, written by the generator; `test/font-coverage.test.ts` holds it against the recipe and the demo content |
+| `MapleMonoCN-subset-latin.woff2` | the Latin face (code points below U+2E80), committed; `styles/tokens.css` references it |
+| `MapleMonoCN-subset-cjk.woff2` | the CJK face (U+2E80 and up), committed; loaded only for CJK code |
+| `coverage.txt` | the subset's actual cmap across both faces plus each face's SHA-256, written by the generator; `test/font-coverage.test.ts` holds it against the recipe and the demo content |
 | `build_font_subset.py` | the generator (fixed recipe, below; the source font pinned by SHA-256) |
 | `hanzi-3500.txt` | the 3500 level-1 characters of the Table of General Standard Chinese Characters |
 | `extra-chars.txt` | recipe item 4: every further character the subset carries, one `U+XXXX` per line |
@@ -43,8 +49,8 @@ python3 -m venv /tmp/fontenv && /tmp/fontenv/bin/pip install 'fonttools==4.63.0'
 /tmp/fontenv/bin/python fonts/build_font_subset.py --scan path/to/content   # extends extra-chars.txt
 ```
 
-then commit `extra-chars.txt`, the regenerated `MapleMonoCN-subset.woff2`
-and `coverage.txt` together. The build is deterministic (a fixed
+then commit `extra-chars.txt`, the two regenerated `MapleMonoCN-subset-*.woff2`
+faces and `coverage.txt` together. The build is deterministic (a fixed
 `SOURCE_DATE_EPOCH`): the same source, recipe and pinned toolchain
 reproduce the artifact byte for byte. The source ttf is auto-discovered under `~/.local/share/fonts/**/`
 and `/usr/share/fonts/**/`, or pointed at with `MAPLE_TTF=/path/to/it`.

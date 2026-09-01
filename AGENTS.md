@@ -63,7 +63,7 @@ whose content is the package's own manual.
   (`fonts/build_font_subset.py` + `hanzi-3500.txt` + `extra-chars.txt`), cut
   from a source font pinned by SHA-256. Content needing glyphs beyond it:
   `build_font_subset.py --scan <dir>`, then commit `extra-chars.txt`, the
-  regenerated woff2 and `coverage.txt` together (the sidecar the
+  regenerated woff2 faces and `coverage.txt` together (the sidecar the
   font-coverage test reads; the build is deterministic under the pinned
   toolchain). The display serif and UI sans are not shipped:
   `--font-display` / `--font-ui` name the `@fontsource` families the demo

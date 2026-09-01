@@ -34,12 +34,24 @@
    ============================================================ */
 
 /* Code font: a fixed-charset subset of Maple Mono CN (ASCII + box drawing +
-   3500 common Hanzi + content union). Latin is 0.6 em, Hanzi 1.2 em — a Hanzi
-   is exactly two character cells, so box diagrams stay aligned. Recipe and
-   regeneration: fonts/README.md; licensed under the OFL. */
+   3500 common Hanzi + content union), served as two faces of one family split
+   by code point — a page downloads the CJK half only when its code uses a CJK
+   character. Latin is 0.6 em, Hanzi 1.2 em — a Hanzi is exactly two character
+   cells, so box diagrams stay aligned. The split boundary (U+2E80) is the
+   generator's; recipe and regeneration: fonts/README.md; licensed under the
+   OFL. */
 @font-face {
   font-family: 'Maple Mono CN Sub';
-  src: url('../fonts/MapleMonoCN-subset.woff2') format('woff2');
+  src: url('../fonts/MapleMonoCN-subset-latin.woff2') format('woff2');
+  unicode-range: U+0000-2E7F;
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Maple Mono CN Sub';
+  src: url('../fonts/MapleMonoCN-subset-cjk.woff2') format('woff2');
+  unicode-range: U+2E80-FFFF, U+10000-10FFFF;
   font-weight: 400;
   font-style: normal;
   font-display: swap;

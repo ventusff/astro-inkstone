@@ -15,20 +15,28 @@ import { fileURLToPath } from 'node:url';
 const FONTS = fileURLToPath(new URL('../fonts', import.meta.url));
 const NOTES = fileURLToPath(new URL('../demo/src/content/notes', import.meta.url));
 
+const FACES = ['MapleMonoCN-subset-latin.woff2', 'MapleMonoCN-subset-cjk.woff2'];
+
 const covered = new Set<number>();
 const absentFromSource = new Set<number>();
-let artifactSha: string | null = null;
+const artifactSha = new Map<string, string>();
 for (const line of readFileSync(join(FONTS, 'coverage.txt'), 'utf8').split('\n')) {
   const t = line.trim();
   if (t.startsWith('U+')) covered.add(parseInt(t.slice(2), 16));
   else if (t.startsWith('absent ')) absentFromSource.add(parseInt(t.slice(7), 16));
-  else if (t.startsWith('sha256 ')) artifactSha = t.slice(7);
+  else if (t.startsWith('sha256 ')) {
+    const [name, hash] = t.slice(7).split(/\s+/);
+    if (name && hash) artifactSha.set(name, hash);
+  }
 }
 
-test('coverage.txt describes the committed woff2 (artifact hash anchored)', () => {
-  assert.ok(artifactSha, 'coverage.txt carries no sha256 line — regenerate the subset');
-  const actual = createHash('sha256').update(readFileSync(join(FONTS, 'MapleMonoCN-subset.woff2'))).digest('hex');
-  assert.equal(actual, artifactSha, 'the woff2 and coverage.txt were not committed together — regenerate both');
+test('coverage.txt describes the committed woff2 faces (artifact hashes anchored)', () => {
+  for (const name of FACES) {
+    const expected = artifactSha.get(name);
+    assert.ok(expected, `coverage.txt carries no sha256 line for ${name} — regenerate the subset`);
+    const actual = createHash('sha256').update(readFileSync(join(FONTS, name))).digest('hex');
+    assert.equal(actual, expected, `${name} and coverage.txt were not committed together — regenerate both`);
+  }
 });
 
 const label = (cp: number): string => `U+${cp.toString(16).toUpperCase().padStart(4, '0')} ${String.fromCodePoint(cp)}`;
@@ -72,6 +80,6 @@ test('every character the demo notes use is in the subset (or marked absent from
   assert.deepEqual(
     uncovered.map(label),
     [],
-    'run: <fontenv>/bin/python fonts/build_font_subset.py --scan demo/src/content/notes, then commit extra-chars.txt, the woff2 and coverage.txt together',
+    'run: <fontenv>/bin/python fonts/build_font_subset.py --scan demo/src/content/notes, then commit extra-chars.txt, the woff2 faces and coverage.txt together',
   );
 });
