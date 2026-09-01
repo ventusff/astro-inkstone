@@ -27,7 +27,13 @@
     "cjk",
     "typography",
     "wysiwyg",
-    "cms"
+    "cms",
+    "withastro",
+    "astro-component",
+    "astro-themes",
+    "knowledge-base",
+    "obsidian",
+    "i18n"
   ],
   "engines": {
     "node": ">=22.12.0"
