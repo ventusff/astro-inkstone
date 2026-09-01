@@ -144,6 +144,8 @@ node scripts/probe.mjs ui                # render-layer probe, en+zh trees (need
 node scripts/probe.mjs contrast          # WCAG contrast, en+zh trees, both themes
 node scripts/probe.mjs ui --all          # every locale's tree — before a release,
 node scripts/probe.mjs contrast --all    #   and after any language-shaped change
+PLAYGROUND=1 npm run build               # the Pages shape: stamped blocks + sources manifest
+node ../scripts/playground_probe.mjs dist    # the browser-local editor end to end, every note's block map
 ```
 
 Library changes go through the unit tests; style/component changes through a
@@ -156,7 +158,13 @@ per-language labels — because the failures such a change causes live only
 in the other locales' trees. CI runs ui_probe over everything on every
 push; the contrast probe runs there only on manual dispatch (the
 `contrast` input) — pixel-sampling every page in both themes is too slow
-for every push at the demo's size.
+for every push at the demo's size. The playground probe is the bar after
+any change to the engine's block stamping, the playground, or a component
+that renders note content: it drives the browser-local editor in headless
+Chrome and, on every note page, verifies that activation leaves the build's
+block map intact (each block keeps its source range). The Pages workflow
+runs it on the artifact it deploys; a local run needs a `PLAYGROUND=1`
+build (`--exclude` narrows the every-page sweep, as for the other probes).
 Comments and documentation are written in English; the README ships in
 English and Simplified Chinese (`README.zh-CN.md`) — keep both in sync.
 Commit messages: English, entirely — subject and body.

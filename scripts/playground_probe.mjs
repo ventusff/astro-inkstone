@@ -4,28 +4,39 @@
  * the badge on a clean visit, activation, the block editor with its local
  * preview, save → reload → persistence, revision history, reset, component
  * blocks (dev parity, honest display), the frontmatter block (YAML in, kept
- * and reopened, body stamps re-based, the slot's note), and zh strings on a
- * zh page. Every check is PASS/FAIL; any FAIL fails the process.
+ * and reopened, body stamps re-based, the slot's note), a footnote
+ * definition (a block of its own, edited where it renders — document order
+ * is not source order), zh strings on a zh page, and then EVERY note page:
+ * activation must leave the build's block map exactly as built (each
+ * stamped node keeps its range, ranges well-formed, disjoint and within the
+ * note's source, every anchor bound to the element it precedes). Every
+ * check is PASS/FAIL; any FAIL fails the process.
  *
- *   node scripts/playground_probe.mjs <root> [base]
+ *   node scripts/playground_probe.mjs <root> [base] [--exclude <route regex>]
  *
- *     root   directory to serve (the demo's probe-root, or dist for base /)
- *     base   URL prefix the site was built for, default "/"
+ *     root       directory to serve (the demo's probe-root, or dist for base /)
+ *     base       URL prefix the site was built for, default "/"
+ *     --exclude  note pages whose route matches are left out of the
+ *                every-page sweep (a local run over a locale subset)
  *
  *   env CHROME_PATH   Chrome/Chromium executable, default /usr/bin/google-chrome
  *
- * The demo's getting-started note (en and its zh mirror) is the fixture:
- * its taxonomy strip is the frontmatter slot, its body has paragraphs and a
- * Hero component.
+ * The demo's getting-started note (en and its zh mirror) is the fixture
+ * for the editing flows: its taxonomy strip is the frontmatter slot, its
+ * body has paragraphs and a Hero component; the zh kitchen-sink note
+ * carries the footnote.
  */
 import { createServer } from 'node:http';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 
 import puppeteer from 'puppeteer-core';
 
-const ROOT = resolve(process.argv[2] || 'dist');
-const BASE = (process.argv[3] || '/').replace(/\/?$/, '/');
+const argv = process.argv.slice(2);
+const excludeAt = argv.indexOf('--exclude');
+const EXCLUDE = excludeAt >= 0 ? new RegExp(argv.splice(excludeAt, 2)[1]) : null;
+const ROOT = resolve(argv[0] || 'dist');
+const BASE = (argv[1] || '/').replace(/\/?$/, '/');
 const CHROME = process.env.CHROME_PATH || '/usr/bin/google-chrome';
 const PORT = 4980;
 const MIME = {
@@ -54,15 +65,19 @@ const waitActive = () => page.waitForFunction(
   { timeout: 30000 },
 );
 const activate = async () => { await page.click('.inkbrush-playground-badge button'); await waitActive(); };
+/* the block is activated by focus (the keyboard path): a hover lands on
+   whatever the pointer crosses on the way, focus names the block exactly */
 const hoverAndEdit = async (handle) => {
-  await page.evaluate((el) => el.scrollIntoView({ block: 'center' }), handle);
-  await handle.asElement().hover();
+  await page.evaluate((el) => { el.scrollIntoView({ block: 'center', behavior: 'instant' }); el.focus({ preventScroll: true }); }, handle);
   await page.waitForSelector('.wiki-handle.show', { timeout: 10000 });
   await sleep(200);
   await (await page.$('.wiki-handle button:first-child')).click();
   await page.waitForSelector('.wiki-editor .cm-content', { timeout: 20000 });
 };
 const editorText = () => page.evaluate(() => [...document.querySelectorAll('.wiki-editor .cm-line')].map((l) => l.textContent).join('\n'));
+/** the block the editor replaced is the one that was activated: its
+ *  handle is gone from the page and the editor sits where it stood */
+const editorReplaced = (handle) => page.evaluate((el) => !el.isConnected || el.hidden || getComputedStyle(el).display === 'none', handle);
 const replaceEditorText = async (text) => {
   await page.click('.wiki-editor .cm-content');
   await page.evaluate((t) => { const el = document.querySelector('.wiki-editor .cm-content'); el.focus(); document.execCommand('selectAll'); document.execCommand('insertText', false, t); }, text);
@@ -107,6 +122,7 @@ const target = await page.evaluateHandle(() => [...document.querySelectorAll('p[
 const originalText = await page.evaluate((el) => el.textContent, target);
 await hoverAndEdit(target);
 ok('the block editor opens', true);
+ok('the editor opens on the activated block', await editorReplaced(target) && (await editorText()).length > 0);
 ok('editor shell is styled (has border)', await page.evaluate(() => { const e = document.querySelector('.wiki-editor'); return !!e && getComputedStyle(e).borderTopWidth !== '0px'; }));
 const NEW_TEXT = 'This paragraph was rewritten locally in the playground, and **stays in this browser**.';
 await replaceEditorText(NEW_TEXT);
@@ -180,6 +196,37 @@ await page.keyboard.press('Escape');
 await reset();
 ok('reset clears the frontmatter edit', !/local edit/.test(await badgeText()));
 
+/* ---- a footnote definition: its own block, edited where it renders ---- */
+const SINK = url('/zh/kitchen-sink/');
+await page.goto(SINK, { waitUntil: 'networkidle2' });
+await activate();
+const fnItem = await page.$('section[data-footnotes] li[data-wiki-src]');
+ok('footnote item is a stamped block', !!fnItem);
+const fnStamp = fnItem ? await fnItem.evaluate((el) => el.dataset.wikiSrc) : null;
+ok('footnote section itself carries no stamp', await page.evaluate(() => !document.querySelector('section[data-footnotes][data-wiki-src]')));
+// the keyboard path on a smooth-scrolling site: focus scrolls the block in
+// after focusin fired, and the handle must appear once it has arrived
+await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+await page.evaluate((el) => el.focus(), fnItem);
+ok('a block focused from off-screen gets its handle once scrolled into view', await page.waitForSelector('.wiki-handle.show', { timeout: 5000 }).then(() => true).catch(() => false));
+await hoverAndEdit(fnItem);
+ok('footnote editor opens on its definition', /^\[\^src\]:/.test(await editorText()), (await editorText()).slice(0, 40));
+await page.waitForFunction(() => document.querySelector('.wiki-editor-preview')?.textContent?.includes('脚注渲染在页脚'), { timeout: 20000 })
+  .then(() => ok('footnote preview shows the definition text', true))
+  .catch(() => ok('footnote preview shows the definition text', false));
+await replaceEditorText('[^src]: 脚注在体验场里改过了,回跳链接照旧。');
+await saveAndReload();
+await waitActive();
+ok('edited footnote renders in the footnote section', await page.evaluate(() => (document.querySelector('section[data-footnotes]')?.textContent ?? '').includes('脚注在体验场里改过了')));
+ok('footnote item stays a stamped block after the edit', await page.evaluate((stamp) => document.querySelector('section[data-footnotes] li[data-wiki-src]')?.dataset.wikiSrc === stamp, fnStamp));
+ok('footnote backreference survives the edit', await page.evaluate(() => !!document.querySelector('section[data-footnotes] a[data-footnote-backref]')));
+const sinkHeading = await page.evaluateHandle(() => [...document.querySelectorAll('h2[data-wiki-src]')].find((h) => (h.textContent ?? '').includes('内容守门')));
+await hoverAndEdit(sinkHeading);
+ok('a heading written after the footnote definition opens its own source', (await editorText()).includes('## 内容守门在这页拦什么'), (await editorText()).slice(0, 40));
+await page.keyboard.press('Escape');
+await reset();
+ok('reset restores the built footnote', await page.evaluate(() => (document.querySelector('section[data-footnotes]')?.textContent ?? '').includes('脚注渲染在页脚')));
+
 /* ---- zh mirror ---- */
 await page.goto(url('/zh/getting-started/'), { waitUntil: 'networkidle2' });
 await page.waitForSelector('.inkbrush-playground-badge button', { timeout: 15000 });
@@ -198,6 +245,71 @@ ok('phone badge floats fixed inside the viewport', await page.evaluate(() => {
 }));
 await activate();
 ok('phone activation works from the floating badge', true);
+
+/* ---- every note page: activation keeps the block map exactly as built ---- */
+await page.setViewport({ width: 1280, height: 900 });
+const manifest = JSON.parse(readFileSync(join(ROOT, BASE, 'playground-manifest.json'), 'utf8'));
+const lineCount = new Map(manifest.notes.map((n) => [n.id, n.source.split('\n').length]));
+const notePages = [];
+const walk = (dir, route) => {
+  for (const entry of readdirSync(dir)) {
+    const p = join(dir, entry);
+    if (statSync(p).isDirectory()) walk(p, `${route}${entry}/`);
+    else if (entry === 'index.html') {
+      const id = /<meta name="inkbrush-note" content="([^"]+)"/.exec(readFileSync(p, 'utf8'))?.[1];
+      if (id && !(EXCLUDE && EXCLUDE.test(route))) notePages.push({ route, id });
+    }
+  }
+};
+walk(ROOT, '/');
+const mapOf = () => page.evaluate(() => [...document.querySelectorAll('[data-wiki-src]')].map((n) => {
+  let bound = null;
+  if (n.tagName === 'TEMPLATE' && !('wikiFrontmatter' in n.dataset)) {
+    const el = n.nextElementSibling;
+    bound = el && !el.hasAttribute('data-wiki-src') ? el.tagName.toLowerCase() : null;
+  }
+  return { stamp: n.dataset.wikiSrc, tag: n.tagName.toLowerCase(), bound };
+}));
+const sweepFailures = [];
+for (const { route, id } of notePages) {
+  const problems = [];
+  try {
+    await page.goto(`http://127.0.0.1:${PORT}${route}`, { waitUntil: 'networkidle2', timeout: 60000 });
+    await page.waitForSelector('.inkbrush-playground-badge button', { timeout: 15000 });
+    const before = await mapOf();
+    await activate();
+    const after = await mapOf();
+    if (JSON.stringify(before) !== JSON.stringify(after)) {
+      const i = before.findIndex((b, k) => JSON.stringify(b) !== JSON.stringify(after[k]));
+      problems.push(`stamp changed by activation: ${JSON.stringify(before[i])} → ${JSON.stringify(after[i])}`);
+    }
+    const lines = lineCount.get(id);
+    const ranges = [];
+    for (const { stamp, tag, bound } of after) {
+      const m = /^(\d+)-(\d+)$/.exec(stamp ?? '');
+      const start = m ? Number(m[1]) : NaN;
+      const end = m ? Number(m[2]) : NaN;
+      if (!m || start < 1 || end < start) problems.push(`malformed stamp "${stamp}" on <${tag}>`);
+      else if (lines !== undefined && end > lines) problems.push(`stamp ${stamp} on <${tag}> runs past the note's ${lines} lines`);
+      else ranges.push({ start, end, tag });
+      if (tag === 'template' && bound === null && !problems.some((p) => p.startsWith('anchor'))) {
+        const fm = after.find((n) => n.stamp === stamp && n.tag === 'template');
+        if (fm && !(await page.evaluate((s) => !!document.querySelector(`template[data-wiki-src="${s}"][data-wiki-frontmatter]`), stamp))) {
+          problems.push(`anchor ${stamp} binds nothing (its component rendered nothing, or the next block is stamped)`);
+        }
+      }
+    }
+    ranges.sort((a, b) => a.start - b.start);
+    for (let k = 1; k < ranges.length; k++) {
+      if (ranges[k].start <= ranges[k - 1].end) problems.push(`stamps ${ranges[k - 1].start}-${ranges[k - 1].end} <${ranges[k - 1].tag}> and ${ranges[k].start}-${ranges[k].end} <${ranges[k].tag}> overlap`);
+    }
+    if (after.length === 0) problems.push('no stamped blocks at all');
+  } catch (err) {
+    problems.push(`probe error: ${String(err).split('\n')[0]}`);
+  }
+  if (problems.length > 0) sweepFailures.push(`${route}: ${problems.join('; ')}`);
+}
+ok(`every note page keeps its block map through activation (${notePages.length} pages)`, sweepFailures.length === 0, sweepFailures.slice(0, 5).join(' | '));
 
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));
 
