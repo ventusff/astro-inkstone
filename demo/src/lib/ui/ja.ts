@@ -37,8 +37,7 @@ export const strings: UIStrings = {
   footer: 'astro-inkstone デモ · ノートがそのままマニュアル、マニュアルがそのままデモ',
 
   landingTitle: '紙と墨の庭',
-  landingDesc:
-    'astro-inkstone のデモサイト — ノートそのものがこのパッケージのマニュアルになっている、分類の庭。',
+  landingDesc: "astro-inkstone — 書き込める Astro wiki。ドキュメント、wiki、デジタルガーデンのための紙とインクのタイポグラフィに、astro-inkbrush によるその場編集。このデモサイトはパッケージ自身で書かれたマニュアルです。",
 
   speakLabel: '平たく言えば →',
   diffLabel: '従来との違い →',

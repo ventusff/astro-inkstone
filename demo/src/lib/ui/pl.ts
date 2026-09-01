@@ -47,7 +47,7 @@ export const strings: UIStrings = {
   footer: 'Demo astro-inkstone · notatki są podręcznikiem, a podręcznik — demem',
 
   landingTitle: 'Ogród z papieru i tuszu',
-  landingDesc: 'Demo astro-inkstone — ogród notatek z taksonomią, w którym notatki są podręcznikiem samego pakietu.',
+  landingDesc: "astro-inkstone — wiki Astro, w którym się pisze. Typografia papieru i atramentu dla dokumentacji, wiki i ogrodów cyfrowych, z edycją w miejscu dzięki astro-inkbrush. To demo jest podręcznikiem pakietu, napisanym samym pakietem.",
 
   speakLabel: 'Po ludzku →',
   diffLabel: 'Względem poprzedników →',

@@ -37,7 +37,7 @@ export const strings: UIStrings = {
   footer: 'Demo astro-inkstone · catatannya adalah panduan, panduannya adalah demo',
 
   landingTitle: 'Taman kertas dan tinta',
-  landingDesc: 'Demo astro-inkstone — taman taksonomi yang catatannya merupakan buku panduan paket ini sendiri.',
+  landingDesc: "astro-inkstone — wiki Astro yang bisa Anda tulisi langsung. Tipografi kertas-dan-tinta untuk dokumentasi, wiki, dan taman digital, dengan penyuntingan di tempat lewat astro-inkbrush. Demo ini adalah panduan paket, ditulis dengan paket itu sendiri.",
 
   speakLabel: 'Bahasa awamnya →',
   diffLabel: 'Dibanding yang sebelumnya →',

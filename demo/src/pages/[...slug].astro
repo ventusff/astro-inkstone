@@ -219,6 +219,8 @@ const brandHref = hub ? hub.hubHref : routeTo(entry.id);
   hubPage={hubPage}
   backlinks={backlinks}
   graph={graph}
+  published={entry.data.created}
+  modified={entry.data.updated}
 >
   <Content partLabel={hubPage?.crumbLabel} toc={toc} />
 </NoteLayout>

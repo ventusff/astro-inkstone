@@ -65,6 +65,9 @@ interface Props {
   backlinks?: BacklinkItem[] | undefined;
   /** one-hop link neighbourhood for the sidebar graph; empty = no panel */
   graph?: LocalGraphNeighbor[] | undefined;
+  /** the note's frontmatter dates, for the page's article metadata */
+  published?: Date | undefined;
+  modified?: Date | undefined;
 }
 const {
   title,
@@ -83,6 +86,8 @@ const {
   hubPage,
   backlinks = [],
   graph = [],
+  published,
+  modified,
 } = Astro.props;
 const t = UI[locale];
 ---
@@ -94,6 +99,8 @@ const t = UI[locale];
   crumbs={crumbs}
   alternates={alternates}
   noteId={noteId}
+  published={published}
+  modified={modified}
   hasSidebar
 >
   <div class="layout">

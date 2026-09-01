@@ -37,8 +37,7 @@ export const strings: UIStrings = {
   footer: 'Bản demo astro-inkstone · ghi chú chính là tài liệu, tài liệu chính là bản demo',
 
   landingTitle: 'Khu vườn giấy và mực',
-  landingDesc:
-    'Bản demo của astro-inkstone — một khu vườn ghi chú có phân loại, nơi chính các ghi chú là tài liệu hướng dẫn của gói.',
+  landingDesc: "astro-inkstone — wiki Astro mà bạn viết ngay trên trang. Kiểu chữ giấy-và-mực cho tài liệu, wiki và vườn số, chỉnh sửa tại chỗ với astro-inkbrush. Bản demo này chính là sổ tay của gói, viết bằng chính gói đó.",
 
   speakLabel: 'Nói đơn giản là →',
   diffLabel: 'So với trước đây →',

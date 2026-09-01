@@ -37,7 +37,7 @@ export const strings: UIStrings = {
   footer: 'astro-inkstone 示范站 · 笔记即手册，手册即示范',
 
   landingTitle: '纸与墨的园地',
-  landingDesc: 'astro-inkstone 示范站——一座笔记园地，笔记本身就是这个包的使用手册。',
+  landingDesc: "astro-inkstone——写得进去的 Astro 维基。为文档站、维基与数字花园准备的纸墨排版，搭配 astro-inkbrush 就地编辑。这个示范站就是这个包的使用手册，用它自己写成。",
 
   speakLabel: '说人话 →',
   diffLabel: '相比前作 →',

@@ -37,7 +37,7 @@ export const strings: UIStrings = {
   footer: 'astro-inkstone-demo · de notities zijn de handleiding, de handleiding is de demo',
 
   landingTitle: 'Een tuin van papier en inkt',
-  landingDesc: 'De astro-inkstone-demo – een taxonomietuin waarvan de notities zelf de handleiding van het pakket zijn.',
+  landingDesc: "astro-inkstone — de Astro-wiki waarin je schrijft. Papier-en-inkt-typografie voor documentatie, wiki's en digitale tuinen, met bewerken ter plekke via astro-inkbrush. Deze demo is de handleiding van het pakket, geschreven met het pakket zelf.",
 
   speakLabel: 'In gewone taal →',
   diffLabel: 'Vergeleken met eerder →',

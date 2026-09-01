@@ -40,8 +40,7 @@ export const strings: UIStrings = {
   footer: 'Demo do astro-inkstone · as notas são o manual; o manual, a demo',
 
   landingTitle: 'Um jardim de papel e tinta',
-  landingDesc:
-    'A demo do astro-inkstone: um jardim taxonômico cujas notas são o manual do próprio pacote.',
+  landingDesc: "astro-inkstone — o wiki Astro em que você escreve. Tipografia de papel e tinta para documentação, wikis e jardins digitais, com edição no lugar via astro-inkbrush. Esta demo é o manual do pacote, escrito com o próprio pacote.",
 
   speakLabel: 'Em bom português →',
   diffLabel: 'Comparado ao anterior →',

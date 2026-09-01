@@ -37,7 +37,7 @@ export const strings: UIStrings = {
   footer: 'astro-inkstone demosu · notlar kılavuz, kılavuz da demo',
 
   landingTitle: 'Kâğıt ve mürekkepten bir bahçe',
-  landingDesc: 'astro-inkstone demosu — notları, paketin kendi kılavuzu olan bir taksonomi bahçesi.',
+  landingDesc: "astro-inkstone — içine yazabildiğiniz Astro wiki'si. Belgeler, wiki'ler ve dijital bahçeler için kâğıt-mürekkep tipografisi, astro-inkbrush ile yerinde düzenleme. Bu demo, paketin kendisiyle yazılmış kullanım kılavuzudur.",
 
   speakLabel: 'Sade dille →',
   diffLabel: 'Öncekilere göre →',

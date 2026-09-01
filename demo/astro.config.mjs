@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
+import sitemap from '@astrojs/sitemap';
 import { buildWikilinkResolver, cachedScan } from 'astro-inkbrush/wikilinks';
 
 // The demo consumes the package one directory up via `file:..`; the package's
@@ -48,6 +49,14 @@ export default defineConfig({
   trailingSlash: 'ignore',
   integrations: [
     mdx(),
+    // sitemap-index.xml at the deploy root, every page with its hreflang
+    // twins — the locale table is the site registry's
+    sitemap({
+      i18n: {
+        defaultLocale: LOCALE_DEFS.find((l) => l.prefix === '')?.code ?? 'en',
+        locales: Object.fromEntries(LOCALE_DEFS.map((l) => [l.code, l.htmlLang])),
+      },
+    }),
     // The CMS preview and save gate get the page's own plugin set (table
     // wrapper, callouts, math, …) rather than the bare dialect; numbering
     // and reading time need the whole document, and the engine mounts its

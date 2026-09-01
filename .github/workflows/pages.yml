@@ -76,3 +76,15 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+      # the IndexNow engines (Bing, Yandex, Naver, Seznam) learn every URL
+      # of the live sitemap right after the deploy; a hiccup there is not a
+      # failed deploy. Google reads the sitemap through Search Console.
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Submit the live sitemap to IndexNow
+        continue-on-error: true
+        run: node scripts/indexnow.mjs https://ventusff.github.io/astro-inkstone/ 3f1375780fc3865e2427696dfe661323

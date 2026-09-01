@@ -37,7 +37,7 @@ export const strings: UIStrings = {
   footer: 'astro-inkstone 데모 · 노트가 곧 매뉴얼, 매뉴얼이 곧 데모',
 
   landingTitle: '종이와 먹의 정원',
-  landingDesc: 'astro-inkstone 데모 사이트 — 노트 하나하나가 곧 이 패키지의 매뉴얼인, 분류로 가꾼 정원.',
+  landingDesc: "astro-inkstone — 직접 써 넣을 수 있는 Astro 위키. 문서 사이트, 위키, 디지털 가든을 위한 종이와 잉크의 타이포그래피, astro-inkbrush로 제자리 편집. 이 데모 사이트는 패키지 자신으로 쓴 패키지 매뉴얼입니다.",
 
   speakLabel: '쉽게 말하면 →',
   diffLabel: '기존 방식과의 차이 →',
