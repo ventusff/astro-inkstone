@@ -115,6 +115,9 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    /* long unbreakable runs (paper names joined by arrows/slashes) must wrap
+       inside the clamp box instead of being cut off at its right edge */
+    overflow-wrap: anywhere;
   }
 
   .meta {
@@ -147,5 +150,6 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    overflow-wrap: anywhere;
   }
 </style>
