@@ -4,7 +4,7 @@
  * contractual order:
  * - remark: gemoji → math → headingAttrs → callouts → readingTime → wikilinks
  * - rehype: numbering (chapters/sections — before katex, so ToC labels keep
- *   their raw TeX) → katex → tblWrap → mermaidClient → (baseLinks) →
+ *   their raw TeX) → katex → tblWrap → taskLists → mermaidClient → (baseLinks) →
  *   wikiBlocks always last (inkbrush contract: stamp final top-level blocks
  *   with source line ranges).
  *
@@ -29,6 +29,7 @@ import { rehypeBaseLinks } from './rehype-base-links.ts';
 import { rehypeChapters, slugify } from './rehype-chapters.ts';
 import { rehypeMermaidClient } from './rehype-mermaid-client.ts';
 import { rehypeSections } from './rehype-sections.ts';
+import { rehypeTaskLists } from './rehype-task-lists.ts';
 import { rehypeTblWrap } from './rehype-tbl-wrap.ts';
 import { remarkCallouts } from './remark-callouts.ts';
 import { remarkHeadingAttrs } from './remark-heading-attrs.ts';
@@ -156,6 +157,7 @@ export function sitePluginSets(opts: SiteMarkdownOptions = {}): SitePluginSet {
     ...(numbering === 'sections' ? [rehypeSections as RehypePlugin] : []),
     ...(math ? [[rehypeKatex, { output: 'htmlAndMathml' }] as RehypePlugin] : []),
     rehypeTblWrap as RehypePlugin,
+    rehypeTaskLists as RehypePlugin,
     ...(mermaid ? [rehypeMermaidClient as RehypePlugin] : []),
     ...rehypePlugins,
     ...(base ? [[rehypeBaseLinks, { base, exempt: baseExempt }] as RehypePlugin] : []),
