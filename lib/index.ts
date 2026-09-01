@@ -23,6 +23,7 @@ export {
   type TocEntry as SectionsTocEntry,
 } from './rehype-sections.ts';
 export { rehypeTblWrap } from './rehype-tbl-wrap.ts';
+export { rehypeTaskLists } from './rehype-task-lists.ts';
 export { rehypeBaseLinks } from './rehype-base-links.ts';
 export { rehypeMermaidClient } from './rehype-mermaid-client.ts';
 export { remarkHeadingAttrs } from './remark-heading-attrs.ts';
