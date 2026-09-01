@@ -140,6 +140,22 @@ astro-inkstone   砚——呈现：token、正文样式、组件、管线预设�
 
 </details>
 
+## 横向对比
+
+- **[Starlight](https://starlight.astro.build/)** 是 Astro 官方的文档框架:侧栏、
+  搜索、多语言开箱即用,内容在编辑器里写。Inkstone 是一层设计层,带维基的
+  形制——分类面、`[[双链]]`、反向链接、局部链接图——配上 Inkbrush 就能在页面上
+  直接改。做产品文档站选 Starlight;想要一座能一直写下去的维基或数字花园,
+  或者只想把这套排版和管线用在任意 Astro 站上,选 Inkstone。
+- **[Quartz](https://quartz.jzhao.xyz/) 与 Obsidian Publish** 把 Obsidian 仓库
+  原样发布。Inkbrush 的收件箱也能导入 vault 目录,但站点仍是普通的 Astro 项目——
+  管线、组件、路由都是你自己的——而且改动发生在已发布的页面上,不必回到 Obsidian。
+- **基于 git 的 CMS**(Decap、Tina、Pages CMS)在 Markdown 前面架一个后台。
+  Inkbrush 没有后台:页面本身就是编辑器,预览跑的是站点自己的 remark / rehype
+  插件,生产构建里零 CMS 字节——每次构建 `check-dist` 都会证实这一点。
+- **维基引擎**(MediaWiki、Wiki.js、Outline)需要数据库和常驻服务。这里 Markdown
+  文件就是数据库,git 就是历史,读者拿到的是静态站。
+
 ## 常见问题
 
 **为什么不发 npm？**——设计层会和使用它的站点同步演进。submodule 能精确锁定到 commit，源码可以直接看，本地改起来也方便；按 tag 引入同样可行。

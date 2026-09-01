@@ -1,0 +1,23 @@
+name: Feature request
+description: Something the package should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do, and what stands in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you propose
+      description: The change as you would like to see it; alternatives you considered.
+    validations:
+      required: true
+  - type: textarea
+    id: layer
+    attributes:
+      label: Which layer
+      description: The appearance layer (astro-inkstone), the editing engine (astro-inkbrush), or a site's own code — see "Who does what" in the README. A request in the wrong layer is redirected, not lost.

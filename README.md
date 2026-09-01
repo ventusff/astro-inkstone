@@ -234,6 +234,28 @@ renders wrong" cannot happen.
 
 </details>
 
+## How it compares
+
+- **[Starlight](https://starlight.astro.build/)** is Astro's documentation
+  framework: sidebars, search and i18n out of the box, and you write in your
+  editor. Inkstone is a design layer with a wiki shape — taxonomy facets,
+  `[[wikilinks]]`, backlinks, a local link graph — and, with Inkbrush,
+  editing on the page itself. Reach for Starlight for a product docs site;
+  reach for Inkstone for a wiki or a garden you keep writing in, or for its
+  typography and pipeline on any Astro site.
+- **[Quartz](https://quartz.jzhao.xyz/) and Obsidian Publish** publish an
+  Obsidian vault as it is. Inkbrush's inbox imports a vault folder too, but
+  the site stays an ordinary Astro project — its pipeline, components and
+  routes are yours — and edits happen on the published page, not in
+  Obsidian.
+- **Git-based CMSs** (Decap, Tina, Pages CMS) put an admin app in front of
+  your Markdown. Inkbrush has no admin app: the page is the editor, the
+  preview runs your site's own remark and rehype plugins, and the production
+  build carries zero CMS bytes — `check-dist` proves it on every build.
+- **Wiki engines** (MediaWiki, Wiki.js, Outline) need a database and an
+  always-on server. Here the Markdown files are the database, git is the
+  history, and readers get a static site.
+
 ## FAQ
 
 **Why no npm package?** — Inkstone is designed to evolve in lockstep with the sites that use
