@@ -138,9 +138,14 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
     border-color: currentColor;
   }
 
+  /* clamped like .desc: a card is a summary, and no field may set its height */
   .source {
     margin: 0;
     font: 400 11.5px/1.5 var(--wb-sans);
     color: var(--wb-text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 </style>
