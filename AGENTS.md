@@ -162,18 +162,24 @@ release and after any language-shaped change — the locale registry, the ui
 strings files, fonts, per-language CSS, a component that lays out
 per-language labels — because the failures such a change causes live only
 in the other locales' trees. Both probes load each page once and sweep it
-in place, one browser process per worker (`PROBE_WORKERS`, default one
-per core) — the full every-locale sweep is under a minute for ui_probe and
-a few minutes for contrast_probe on a 24-core machine. CI runs ui_probe over
-everything and the contrast probe over the en+zh trees on every push; the
-every-locale contrast sweep runs there on manual dispatch (the `contrast`
-input). The playground probe is the bar after
+in place, `PROBE_WORKERS` tabs at a time (default one per core), each tab
+an incognito context: of one browser for ui_probe, of a few browser
+processes (`PROBE_BROWSERS`, default 4) for contrast_probe, since
+screenshots serialize inside a browser and a process costs hundreds of MB
+of shared memory under the system temp dir. The full every-locale sweep is
+under a minute for ui_probe and a few minutes for contrast_probe on a
+24-core machine. CI runs ui_probe over everything and
+the contrast probe over the en+zh trees on every push; the every-locale
+contrast sweep runs there on manual dispatch (the `contrast` input). The
+playground probe is the bar after
 any change to the engine's block stamping, the playground, or a component
 that renders note content: it drives the browser-local editor in headless
 Chrome and, on every note page, verifies that activation leaves the build's
 block map intact (each block keeps its source range). The Pages workflow
 runs it on the artifact it deploys; a local run needs a `PLAYGROUND=1`
-build (`--exclude` narrows the every-page sweep, as for the other probes).
+build (`--exclude` narrows the every-page sweep, as for the other probes;
+the sweep runs `PROBE_WORKERS` tabs at a time, the editing flows in order
+on one tab).
 Comments and documentation are written in English; the README ships in
 English and Simplified Chinese (`README.zh-CN.md`) — keep both in sync.
 Commit messages: English, entirely — subject and body.

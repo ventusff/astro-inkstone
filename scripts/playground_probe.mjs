@@ -14,7 +14,10 @@
  * wire (the server gzips what a static host gzips): activation must stay
  * within its byte budget, the index manifest must carry no sources, and
  * the editor chunk must be prefetched in the idle time after activation.
- * Every check is PASS/FAIL; any FAIL fails the process.
+ * Every check is PASS/FAIL; any FAIL fails the process. The editing flows
+ * run in order on one tab; the every-page sweep runs concurrently, each
+ * worker a tab in its own incognito context of the same browser (storage
+ * in memory, nothing written to disk).
  *
  *   node scripts/playground_probe.mjs <root> [base] [--exclude <route regex>]
  *
@@ -23,7 +26,8 @@
  *     --exclude  note pages whose route matches are left out of the
  *                every-page sweep (a local run over a locale subset)
  *
- *   env CHROME_PATH   Chrome/Chromium executable, default /usr/bin/google-chrome
+ *   env CHROME_PATH     Chrome/Chromium executable, default /usr/bin/google-chrome
+ *       PROBE_WORKERS   tabs sweeping concurrently, default one per core
  *
  * The demo's getting-started note (en and its zh mirror) is the fixture
  * for the editing flows: its taxonomy strip is the frontmatter slot, its
@@ -32,6 +36,7 @@
  */
 import { createServer } from 'node:http';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { availableParallelism } from 'node:os';
 import { extname, join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
@@ -43,7 +48,9 @@ const EXCLUDE = excludeAt >= 0 ? new RegExp(argv.splice(excludeAt, 2)[1]) : null
 const ROOT = resolve(argv[0] || 'dist');
 const BASE = (argv[1] || '/').replace(/\/?$/, '/');
 const CHROME = process.env.CHROME_PATH || '/usr/bin/google-chrome';
-const PORT = 4980;
+// one worker per core: a tab's work is latency-bound, so fewer leaves cores
+// idle
+const WORKERS = Math.max(1, Number(process.env.PROBE_WORKERS) || availableParallelism());
 /** wire bytes a first activation may transfer (its chunk, the index manifest);
  *  the site's plugin graph and the editor are idle-time loads, never part of it */
 const ACTIVATION_BUDGET = 96 * 1024;
@@ -63,18 +70,21 @@ const server = createServer((req, res) => {
   res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream', ...(gzip ? { 'content-encoding': 'gzip' } : {}) });
   res.end(gzip ? gzipSync(body) : body);
 });
-await new Promise((r) => server.listen(PORT, r));
+await new Promise((r) => server.listen(0, '127.0.0.1', r));
+const PORT = server.address().port;
 
 const url = (path) => `http://127.0.0.1:${PORT}${BASE}${path.replace(/^\//, '')}`;
 const results = [];
 const ok = (name, cond, extra = '') => { results.push([cond ? 'PASS' : 'FAIL', name, extra]); if (!cond) process.exitCode = 1; };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const badgeText = () => page.$eval('.inkbrush-playground-badge button', (b) => b.textContent ?? '');
-const waitActive = () => page.waitForFunction(
+const waitActiveOn = (p) => p.waitForFunction(
   () => /Editing locally|本地编辑中/.test(document.querySelector('.inkbrush-playground-badge button')?.textContent ?? ''),
   { timeout: 30000 },
 );
-const activate = async () => { await page.click('.inkbrush-playground-badge button'); await waitActive(); };
+const activateOn = async (p) => { await p.click('.inkbrush-playground-badge button'); await waitActiveOn(p); };
+const waitActive = () => waitActiveOn(page);
+const activate = () => activateOn(page);
 /** the network between the click and the badge turning active: wire bytes and requests */
 const measureActivation = async () => {
   const cdp = await page.createCDPSession();
@@ -298,7 +308,7 @@ const walk = (dir, route) => {
   }
 };
 walk(ROOT, '/');
-const mapOf = () => page.evaluate(() => [...document.querySelectorAll('[data-wiki-src]')].map((n) => {
+const mapOf = (p) => p.evaluate(() => [...document.querySelectorAll('[data-wiki-src]')].map((n) => {
   let bound = null;
   if (n.tagName === 'TEMPLATE' && !('wikiFrontmatter' in n.dataset)) {
     const el = n.nextElementSibling;
@@ -307,17 +317,18 @@ const mapOf = () => page.evaluate(() => [...document.querySelectorAll('[data-wik
   return { stamp: n.dataset.wikiSrc, tag: n.tagName.toLowerCase(), bound };
 }));
 const sweepFailures = [];
-for (const { route, id, island } of notePages) {
+/** one note page on tab `p`: its source island, and its block map before and after activation */
+const checkNote = async (p, { route, id, island }) => {
   const problems = [];
   const lines = island && typeof island.source === 'string' ? island.source.split('\n').length : undefined;
   if (!island) problems.push('no source island in the page head');
   else if (!['md', 'mdx'].some((ext) => (island.file ?? '').endsWith(`/${id}/index.${ext}`))) problems.push(`source island names ${island.file}, not this note's file`);
   try {
-    await page.goto(`http://127.0.0.1:${PORT}${route}`, { waitUntil: 'networkidle2', timeout: 60000 });
-    await page.waitForSelector('.inkbrush-playground-badge button', { timeout: 15000 });
-    const before = await mapOf();
-    await activate();
-    const after = await mapOf();
+    await p.goto(`http://127.0.0.1:${PORT}${route}`, { waitUntil: 'networkidle2', timeout: 60000 });
+    await p.waitForSelector('.inkbrush-playground-badge button', { timeout: 15000 });
+    const before = await mapOf(p);
+    await activateOn(p);
+    const after = await mapOf(p);
     if (JSON.stringify(before) !== JSON.stringify(after)) {
       const i = before.findIndex((b, k) => JSON.stringify(b) !== JSON.stringify(after[k]));
       problems.push(`stamp changed by activation: ${JSON.stringify(before[i])} → ${JSON.stringify(after[i])}`);
@@ -332,7 +343,7 @@ for (const { route, id, island } of notePages) {
       else ranges.push({ start, end, tag });
       if (tag === 'template' && bound === null && !problems.some((p) => p.startsWith('anchor'))) {
         const fm = after.find((n) => n.stamp === stamp && n.tag === 'template');
-        if (fm && !(await page.evaluate((s) => !!document.querySelector(`template[data-wiki-src="${s}"][data-wiki-frontmatter]`), stamp))) {
+        if (fm && !(await p.evaluate((s) => !!document.querySelector(`template[data-wiki-src="${s}"][data-wiki-frontmatter]`), stamp))) {
           problems.push(`anchor ${stamp} binds nothing (its component rendered nothing, or the next block is stamped)`);
         }
       }
@@ -346,7 +357,25 @@ for (const { route, id, island } of notePages) {
     problems.push(`probe error: ${String(err).split('\n')[0]}`);
   }
   if (problems.length > 0) sweepFailures.push(`${route}: ${problems.join('; ')}`);
-}
+};
+// a worker is a tab in an incognito context of its own, taking note pages
+// off the shared list until it is empty; its page errors count with the
+// flows'
+let next = 0;
+const sweepWorker = async () => {
+  const context = await browser.createBrowserContext();
+  const p = await context.newPage();
+  await p.setViewport({ width: 1280, height: 900 });
+  p.on('dialog', (d) => void d.accept());
+  p.on('pageerror', (e) => errors.push(String(e)));
+  try {
+    for (let i = next++; i < notePages.length; i = next++) await checkNote(p, notePages[i]);
+  } finally {
+    await context.close();
+  }
+};
+await Promise.all(Array.from({ length: Math.min(WORKERS, notePages.length) }, sweepWorker));
+sweepFailures.sort();
 ok(`every note page carries its source and keeps its block map through activation (${notePages.length} pages)`, sweepFailures.length === 0, sweepFailures.slice(0, 5).join(' | '));
 
 ok('no page errors', errors.length === 0, errors.slice(0, 3).join(' | '));

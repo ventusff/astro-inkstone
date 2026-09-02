@@ -43,8 +43,10 @@
  * A route is loaded once per tab and re-measured in place: the theme is
  * switched by attribute, the viewport resized, the glyph-hiding rules
  * removed again after each sweep. Routes are probed concurrently, longest
- * pages first: each worker is a browser process of its own (screenshots
- * serialize inside one browser) with a thread decoding its screenshots.
+ * pages first: each worker is a tab in an incognito context (storage in
+ * memory, nothing written to disk) with a thread decoding its screenshots.
+ * The tabs spread over a few browser processes, since screenshots
+ * serialize inside one browser.
  *
  * Thresholds are WCAG 2.2 AA: 4.5:1 for text, 3:1 for large text (24px, or
  * 18.66px at weight 700).
@@ -60,6 +62,7 @@
  *     PROBE_THEMES   comma-separated data-theme values, default "light,dark"
  *     PROBE_WIDTHS   comma-separated viewport widths, default "1440,430"
  *     PROBE_WORKERS  tabs probing concurrently, default one per core
+ *     PROBE_BROWSERS browser processes the tabs spread over, default 4
  * Green means the last line reads TEXT BELOW AA: 0. Progress is written to
  * stderr.
  */
@@ -82,8 +85,13 @@ const DIST = __argv[0] || resolve('dist');
 const THEMES = (process.env.PROBE_THEMES || 'light,dark').split(',').map((s) => s.trim()).filter(Boolean);
 const WIDTHS = (process.env.PROBE_WIDTHS || '1440,430').split(',').map((s) => Number(s.trim())).filter(Boolean);
 // one worker per core: a tab's work is latency-bound, so fewer leaves cores
-// idle; many more starves the renderers
+// idle
 const WORKERS = Math.max(1, Number(process.env.PROBE_WORKERS) || availableParallelism());
+// Screenshots serialize inside a browser, so the tabs spread over several
+// browser processes — a few, not one per tab: a process holds hundreds of MB
+// of shared memory under the system temp dir and two inotify instances, and
+// a machine's quotas on both are finite.
+const BROWSERS = Math.max(1, Math.min(WORKERS, Number(process.env.PROBE_BROWSERS) || 4));
 const VIEW = 900; // the one viewport height: collection and screenshots share it
 const OVERLAP = 120; // sticky chrome at a shot's top is sampled from the previous shot
 // the address pages are loaded from: an already-running server, or the one
@@ -641,16 +649,19 @@ if (isMainThread) {
       console.error(`contrast_probe: ${done}/${routeList.length} routes · ${Math.round((Date.now() - t0) / 1000)}s`);
   };
 
+  const launch = () => puppeteer.launch({
+    executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
+    headless: true,
+    args: ['--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--font-render-hinting=none'],
+  });
+  const browsers = await Promise.all(Array.from({ length: Math.min(BROWSERS, work.length) }, launch));
   try {
-    // A worker is a browser of its own plus one decode thread, taking
-    // routes off the shared work list until it is empty.
-    const worker = async () => {
-      const browser = await puppeteer.launch({
-        executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
-        headless: true,
-        args: ['--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--font-render-hinting=none'],
-      });
-      const page = await browser.newPage();
+    // A worker is a tab in an incognito context of one of the browsers plus
+    // one decode thread, taking routes off the shared work list until it is
+    // empty.
+    const worker = async (n) => {
+      const context = await browsers[n % browsers.length].createBrowserContext();
+      const page = await context.newPage();
       const dec = decoder();
       // Quiet-period wait keyed on request ARRIVALS, not on the in-flight
       // count: a request that never settles must cost its own page at most
@@ -672,11 +683,12 @@ if (isMainThread) {
         }
       } finally {
         await dec.close();
-        await browser.close();
+        await context.close();
       }
     };
-    await Promise.all(Array.from({ length: Math.min(WORKERS, work.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(WORKERS, work.length) }, (_, n) => worker(n)));
   } finally {
+    await Promise.all(browsers.map((b) => b.close()));
     server?.close();
   }
 

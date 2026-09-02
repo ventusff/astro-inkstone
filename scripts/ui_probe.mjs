@@ -15,8 +15,9 @@
  * layout checks (page overflow, container breaks) run at every width; the
  * markup checks (classes, headings, alt, ids, anchors, aria-controls) do not
  * depend on the viewport and run once per route, reported with the last
- * width. Routes are probed concurrently, longest pages first, one browser
- * process per worker.
+ * width. Routes are probed concurrently, longest pages first, each worker
+ * a tab in its own incognito context of one browser (storage in memory,
+ * nothing written to disk).
  *
  * Usage (site-agnostic — everything site-specific arrives via args/env):
  *   node scripts/ui_probe.mjs [distDir] [baseUrl] [outFile] [--exclude <route regex>]
@@ -47,7 +48,7 @@ const EXCLUDE = __ex >= 0 ? new RegExp(__argv.splice(__ex, 2)[1]) : null;
 const DIST = __argv[0] || resolve('dist');
 const WIDTHS = [1440, 1024, 768, 430];
 // one worker per core: a tab's work is latency-bound, so fewer leaves cores
-// idle; many more starves the renderers
+// idle
 const WORKERS = Math.max(1, Number(process.env.PROBE_WORKERS) || availableParallelism());
 
 // Serve DIST ourselves unless the caller points us at a running server.
@@ -318,15 +319,16 @@ const progress = () => {
     console.error(`ui_probe: ${done}/${routeList.length} routes · ${Math.round((Date.now() - t0) / 1000)}s`);
 };
 
+const browser = await puppeteer.launch({
+  executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
+  args: ['--no-sandbox', '--hide-scrollbars'],
+});
 try {
-  // A worker is a browser of its own, taking routes off the shared work
-  // list until it is empty.
+  // A worker is a tab in an incognito context of its own, taking routes off
+  // the shared work list until it is empty.
   const worker = async () => {
-    const browser = await puppeteer.launch({
-      executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
-      args: ['--no-sandbox', '--hide-scrollbars'],
-    });
-    const page = await browser.newPage();
+    const context = await browser.createBrowserContext();
+    const page = await context.newPage();
     // Quiet-period wait keyed on request ARRIVALS, not on the in-flight
     // count: puppeteer's waitForNetworkIdle can be poisoned by a request a
     // navigation interrupted (it stays "in flight" forever), after which
@@ -346,11 +348,12 @@ try {
         progress();
       }
     } finally {
-      await browser.close();
+      await context.close();
     }
   };
   await Promise.all(Array.from({ length: Math.min(WORKERS, work.length) }, worker));
 } finally {
+  await browser.close();
   server?.close();
 }
 
