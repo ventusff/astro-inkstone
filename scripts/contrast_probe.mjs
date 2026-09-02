@@ -59,7 +59,7 @@
  *     CHROME_PATH    Chrome/Chromium executable, default /usr/bin/google-chrome
  *     PROBE_THEMES   comma-separated data-theme values, default "light,dark"
  *     PROBE_WIDTHS   comma-separated viewport widths, default "1440,430"
- *     PROBE_WORKERS  tabs probing concurrently, default half the machine's cores
+ *     PROBE_WORKERS  tabs probing concurrently, default one per core
  * Green means the last line reads TEXT BELOW AA: 0. Progress is written to
  * stderr.
  */
@@ -81,7 +81,9 @@ const EXCLUDE = __ex >= 0 ? new RegExp(__argv.splice(__ex, 2)[1]) : null;
 const DIST = __argv[0] || resolve('dist');
 const THEMES = (process.env.PROBE_THEMES || 'light,dark').split(',').map((s) => s.trim()).filter(Boolean);
 const WIDTHS = (process.env.PROBE_WIDTHS || '1440,430').split(',').map((s) => Number(s.trim())).filter(Boolean);
-const WORKERS = Math.max(1, Number(process.env.PROBE_WORKERS) || Math.floor(availableParallelism() / 2));
+// one worker per core: a tab's work is latency-bound, so fewer leaves cores
+// idle; many more starves the renderers
+const WORKERS = Math.max(1, Number(process.env.PROBE_WORKERS) || availableParallelism());
 const VIEW = 900; // the one viewport height: collection and screenshots share it
 const OVERLAP = 120; // sticky chrome at a shot's top is sampled from the previous shot
 // the address pages are loaded from: an already-running server, or the one

@@ -26,7 +26,7 @@
  *     outFile  report file, default ui-probe.txt
  *   Environment:
  *     CHROME_PATH    Chrome/Chromium executable, default /usr/bin/google-chrome
- *     PROBE_WORKERS  tabs probing concurrently, default half the machine's cores
+ *     PROBE_WORKERS  tabs probing concurrently, default one per core
  * Green means the last line reads SAMPLES WITH FINDINGS: 0. A sample is one
  * route at one width; the line also names how many distinct pages the
  * findings touch. Progress is written to stderr.
@@ -46,7 +46,9 @@ const EXCLUDE = __ex >= 0 ? new RegExp(__argv.splice(__ex, 2)[1]) : null;
 
 const DIST = __argv[0] || resolve('dist');
 const WIDTHS = [1440, 1024, 768, 430];
-const WORKERS = Math.max(1, Number(process.env.PROBE_WORKERS) || Math.floor(availableParallelism() / 2));
+// one worker per core: a tab's work is latency-bound, so fewer leaves cores
+// idle; many more starves the renderers
+const WORKERS = Math.max(1, Number(process.env.PROBE_WORKERS) || availableParallelism());
 
 // Serve DIST ourselves unless the caller points us at a running server.
 let server = null;

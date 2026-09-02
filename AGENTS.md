@@ -162,8 +162,8 @@ release and after any language-shaped change — the locale registry, the ui
 strings files, fonts, per-language CSS, a component that lays out
 per-language labels — because the failures such a change causes live only
 in the other locales' trees. Both probes load each page once and sweep it
-in place, one browser process per worker (`PROBE_WORKERS`, default half
-the cores) — the full every-locale sweep is about a minute for ui_probe and
+in place, one browser process per worker (`PROBE_WORKERS`, default one
+per core) — the full every-locale sweep is under a minute for ui_probe and
 a few minutes for contrast_probe on a 24-core machine. CI runs ui_probe over
 everything and the contrast probe over the en+zh trees on every push; the
 every-locale contrast sweep runs there on manual dispatch (the `contrast`
