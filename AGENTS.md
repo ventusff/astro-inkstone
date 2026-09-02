@@ -161,10 +161,13 @@ the package scripts); `--all` covers every locale and is the bar before a
 release and after any language-shaped change — the locale registry, the ui
 strings files, fonts, per-language CSS, a component that lays out
 per-language labels — because the failures such a change causes live only
-in the other locales' trees. CI runs ui_probe over everything on every
-push; the contrast probe runs there only on manual dispatch (the
-`contrast` input) — pixel-sampling every page in both themes is too slow
-for every push at the demo's size. The playground probe is the bar after
+in the other locales' trees. Both probes load each page once and sweep it
+in place, one browser process per worker (`PROBE_WORKERS`, default half
+the cores) — the full every-locale sweep is about a minute for ui_probe and
+a few minutes for contrast_probe on a 24-core machine. CI runs ui_probe over
+everything and the contrast probe over the en+zh trees on every push; the
+every-locale contrast sweep runs there on manual dispatch (the `contrast`
+input). The playground probe is the bar after
 any change to the engine's block stamping, the playground, or a component
 that renders note content: it drives the browser-local editor in headless
 Chrome and, on every note page, verifies that activation leaves the build's

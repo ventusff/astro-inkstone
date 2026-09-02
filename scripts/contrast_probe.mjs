@@ -40,6 +40,12 @@
  * run whose color cannot be parsed or whose ground cannot be sampled is a
  * finding, never a skip.
  *
+ * A route is loaded once per tab and re-measured in place: the theme is
+ * switched by attribute, the viewport resized, the glyph-hiding rules
+ * removed again after each sweep. Routes are probed concurrently, longest
+ * pages first: each worker is a browser process of its own (screenshots
+ * serialize inside one browser) with a thread decoding its screenshots.
+ *
  * Thresholds are WCAG 2.2 AA: 4.5:1 for text, 3:1 for large text (24px, or
  * 18.66px at weight 700).
  *
@@ -50,15 +56,19 @@
  *              probe serves distDir itself on an ephemeral port
  *     outFile  report file, default contrast-probe.txt
  *   Environment:
- *     CHROME_PATH   Chrome/Chromium executable, default /usr/bin/google-chrome
- *     PROBE_THEMES  comma-separated data-theme values, default "light,dark"
- *     PROBE_WIDTHS  comma-separated viewport widths, default "1440,430"
- * Green means the last line reads TEXT BELOW AA: 0.
+ *     CHROME_PATH    Chrome/Chromium executable, default /usr/bin/google-chrome
+ *     PROBE_THEMES   comma-separated data-theme values, default "light,dark"
+ *     PROBE_WIDTHS   comma-separated viewport widths, default "1440,430"
+ *     PROBE_WORKERS  tabs probing concurrently, default half the machine's cores
+ * Green means the last line reads TEXT BELOW AA: 0. Progress is written to
+ * stderr.
  */
 import puppeteer from 'puppeteer-core';
 import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
+import { availableParallelism } from 'node:os';
 import { extname, join, resolve, sep } from 'node:path';
+import { Worker, isMainThread, parentPort } from 'node:worker_threads';
 import { inflateSync } from 'node:zlib';
 
 // --exclude <regex>: routes matching it are not probed. A site with many
@@ -71,51 +81,12 @@ const EXCLUDE = __ex >= 0 ? new RegExp(__argv.splice(__ex, 2)[1]) : null;
 const DIST = __argv[0] || resolve('dist');
 const THEMES = (process.env.PROBE_THEMES || 'light,dark').split(',').map((s) => s.trim()).filter(Boolean);
 const WIDTHS = (process.env.PROBE_WIDTHS || '1440,430').split(',').map((s) => Number(s.trim())).filter(Boolean);
+const WORKERS = Math.max(1, Number(process.env.PROBE_WORKERS) || Math.floor(availableParallelism() / 2));
 const VIEW = 900; // the one viewport height: collection and screenshots share it
 const OVERLAP = 120; // sticky chrome at a shot's top is sampled from the previous shot
-
-/* ---------------------------------------------------------------- serve */
-let server = null;
-let BASE = __argv[1];
-if (!BASE) {
-  const MIME = {
-    '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
-    '.mjs': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml',
-    '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp',
-    '.avif': 'image/avif', '.ico': 'image/x-icon', '.woff2': 'font/woff2',
-  };
-  // requests are confined to DIST: no traversal segments, and every resolved
-  // path must stay inside it
-  const root = resolve(DIST);
-  server = createServer((req, res) => {
-    let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-    if (p.endsWith('/')) p += 'index.html';
-    for (const candidate of [p, `${p}/index.html`]) {
-      const abs = resolve(root, `.${candidate}`);
-      if (candidate.split('/').includes('..') || abs !== root && !abs.startsWith(root + sep)) break;
-      try {
-        const buf = readFileSync(abs);
-        res.setHeader('content-type', MIME[extname(candidate)] ?? 'application/octet-stream');
-        return res.end(buf);
-      } catch { /* try next */ }
-    }
-    res.statusCode = 404;
-    res.end('not found');
-  });
-  await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  BASE = `http://127.0.0.1:${server.address().port}`;
-}
-
-function routes(dir, prefix = '') {
-  let out = [];
-  for (const e of readdirSync(dir)) {
-    const p = join(dir, e);
-    if (statSync(p).isDirectory()) out = out.concat(routes(p, `${prefix}/${e}`));
-    else if (e === 'index.html') out.push(`${prefix}/`);
-    else if (e.endsWith('.html')) out.push(`${prefix}/${e}`); // flat pages, 404.html
-  }
-  return out.sort(); // deterministic order — the dialog pass runs on the first route
-}
+// the address pages are loaded from: an already-running server, or the one
+// the main thread starts over DIST
+let BASE = null;
 
 /* ------------------------------------------------------------ png decode */
 /** Minimal PNG decoder for Chrome screenshots (8-bit RGB/RGBA, non-interlaced). */
@@ -165,12 +136,52 @@ function decodePng(buf) {
     }
     prev = cur;
   }
-  const at = (x, y) => {
+  return { width, height, bpp, px };
+}
+
+/** A decoded shot: `at(x, y)` is the pixel's [r, g, b], null outside. */
+const image = ({ width, height, bpp, px }) => ({
+  at: (x, y) => {
     if (x < 0 || y < 0 || x >= width || y >= height) return null;
-    const i = y * stride + x * bpp;
+    const i = (y * width + x) * bpp;
     return bpp >= 3 ? [px[i], px[i + 1], px[i + 2]] : [px[i], px[i], px[i]];
+  },
+});
+
+/** A decode thread: PNG bytes in, the pixel buffer out (transferred). */
+function decoder() {
+  const thread = new Worker(new URL(import.meta.url));
+  const pending = new Map();
+  let seq = 0;
+  thread.on('message', (m) => {
+    const p = pending.get(m.id);
+    pending.delete(m.id);
+    if (m.error) p.reject(new Error(m.error));
+    else p.resolve(image(m));
+  });
+  thread.on('error', (e) => {
+    for (const p of pending.values()) p.reject(e);
+    pending.clear();
+  });
+  return {
+    decode: (png) => new Promise((resolve, reject) => {
+      const id = ++seq;
+      pending.set(id, { resolve, reject });
+      thread.postMessage({ id, png });
+    }),
+    close: () => thread.terminate(),
   };
-  return { width, height, at };
+}
+
+if (!isMainThread) {
+  parentPort.on('message', ({ id, png }) => {
+    try {
+      const { width, height, bpp, px } = decodePng(Buffer.from(png.buffer, png.byteOffset, png.byteLength));
+      parentPort.postMessage({ id, width, height, bpp, px }, [px.buffer]);
+    } catch (e) {
+      parentPort.postMessage({ id, error: String(e) });
+    }
+  });
 }
 
 /* ---------------------------------------------------------------- color */
@@ -193,348 +204,491 @@ function parseColor(s) {
 }
 const over = (fg, bg) => fg.slice(0, 3).map((v, i) => v * fg[3] + bg[i] * (1 - fg[3]));
 
+/* ------------------------------------------------------- page-side steps */
+// Evaluated inside the page: each function is self-contained.
+
+/** The probe's stylesheet, by state. `base` is in force for the whole
+ *  visit; `glyphs` is appended for a sweep (-webkit-text-fill-color hides
+ *  glyphs while `color` still paints currentColor borders and icons — the
+ *  ground keeps every non-text ink); `fixed` hides the marked overlays. */
+const RULES = {
+  base: '*,*::before,*::after{transition:none!important;animation:none!important}',
+  glyphs: '*{-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important}svg text{fill:transparent!important}',
+  fixed: '[data-probe-fixed]{visibility:hidden!important}',
+};
+const setTheme = (t, base) => {
+  document.documentElement.dataset.theme = t;
+  // theme-reactive renderers (canvas demos, mermaid) listen for this
+  window.dispatchEvent(new CustomEvent('themechange', { detail: t }));
+  let st = document.getElementById('__probe');
+  if (!st) {
+    st = document.createElement('style');
+    st.id = '__probe';
+    document.head.append(st);
+  }
+  st.textContent = base;
+};
+const appendRule = (rule) => { document.getElementById('__probe').textContent += rule; };
+const resetRules = (base) => { document.getElementById('__probe').textContent = base; };
+const mermaidRendered = () => [...document.querySelectorAll('pre.mermaid')].every((b) => b.querySelector('svg'));
+const twoFrames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+const scrollTop = () => window.scrollTo(0, 0);
+
+/** open every marked dialog; a search box inside gets a query so result
+ *  rows render and are measured too */
+const openDialogs = () => {
+  const dialogs = [...document.querySelectorAll('dialog[data-probe-open]:not([open])')];
+  for (const d of dialogs) {
+    try { d.showModal(); } catch { d.setAttribute('open', ''); }
+    const input = d.querySelector('input[type="search"], input[type="text"], input:not([type])');
+    if (input) {
+      input.value = 'the';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+  return dialogs.length;
+};
+const closeDialogs = () => {
+  for (const d of document.querySelectorAll('dialog[data-probe-open][open]')) {
+    try { d.close(); } catch { /* not a dialog the UA can close */ }
+    d.removeAttribute('open');
+  }
+};
+/** open every marked popover (in its own pass — a modal dialog would sit
+ *  in the same top layer and shadow the sample points) */
+const openPopovers = () => {
+  const pops = [...document.querySelectorAll('[popover][data-probe-open]')];
+  for (const p of pops) {
+    try { p.showPopover(); } catch { /* unsupported or already open */ }
+  }
+  return pops.length;
+};
+const closePopovers = () => {
+  for (const p of document.querySelectorAll('[popover][data-probe-open]')) {
+    try { p.hidePopover(); } catch { /* not open */ }
+  }
+};
+
+/** Fixed-position overlays float over whatever scrolls past — their face
+ *  is the ground of their own text only. Marked (outermost element only)
+ *  so their runs are sampled from a dedicated shot and the sweep hides
+ *  them; re-marked per sample, since a rule can fix an element at one
+ *  width only. Returns how many are marked. */
+const markFixed = () => {
+  for (const el of document.querySelectorAll('[data-probe-fixed]')) el.removeAttribute('data-probe-fixed');
+  let n = 0;
+  for (const el of document.body.querySelectorAll('*')) {
+    if (el.closest('dialog, [popover], [data-probe-fixed]')) continue;
+    if (getComputedStyle(el).position !== 'fixed') continue;
+    el.setAttribute('data-probe-fixed', '');
+    n++;
+  }
+  return n;
+};
+
+/** collect text runs in document coordinates (scrollY = 0) */
+const collectRuns = (scope) => {
+  const out = [];
+  const skipTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'TITLE', 'OPTION', 'TEXTAREA']);
+  const hiddenScope =
+    scope === 'dialogs' ? '.sr-only, .visually-hidden' : '.sr-only, .visually-hidden, dialog:not([open])';
+  const inScope = (el) =>
+    scope === 'dialogs'
+      ? Boolean(el.closest('dialog[open]'))
+      : scope === 'popovers'
+        ? Boolean(el.closest('[popover]'))
+        : true;
+  // effective opacity: the product over the element and its ancestors
+  const alphaCache = new Map();
+  const effAlpha = (el) => {
+    if (!el || el === document.documentElement) return 1;
+    let a = alphaCache.get(el);
+    if (a === undefined) {
+      a = (+getComputedStyle(el).opacity || 0) * effAlpha(el.parentElement);
+      alphaCache.set(el, a);
+    }
+    return a;
+  };
+  const sel = (el) => {
+    const parts = [];
+    let e = el;
+    while (e && e !== document.body && parts.length < 4) {
+      let s = e.tagName.toLowerCase();
+      if (e.classList.length) s += '.' + [...e.classList].slice(0, 2).join('.');
+      parts.unshift(s);
+      e = e.parentElement;
+    }
+    return parts.join(' > ');
+  };
+  const visible = (cs) => cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity !== 0;
+  // A run scrolled out of view inside a scroll box (a long code line on
+  // a phone, a result row below a palette's list) has that box's
+  // ground: its sample point is clamped into the box's visible
+  // interior, on each scrolling axis.
+  const groundPoint = (el, x, y) => {
+    for (let n = el.parentElement; n; n = n.parentElement) {
+      const cs = getComputedStyle(n);
+      const b = n.getBoundingClientRect();
+      if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && (x < b.left + 1 || x > b.right - 1)) {
+        x = Math.min(Math.max(b.left + b.width / 2, 1), window.innerWidth - 2);
+      }
+      if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && (y < b.top + 1 || y > b.bottom - 1)) {
+        y = Math.min(Math.max(y, b.top + 8), b.bottom - 8);
+      }
+    }
+    return [x, y];
+  };
+  const isSvgText = (el) => el.namespaceURI === 'http://www.w3.org/2000/svg';
+  // The visible portion of a rect: its intersection with every
+  // clipping ancestor's content box (client metrics — borders and
+  // classic scrollbars excluded). A glyph a scroll box or an
+  // ellipsis clipped away is not rendered text, and a sample offset
+  // stepping past the clip edge lands on border hairlines — the rect
+  // that gets sampled must be the rect the reader can see.
+  const visibleRect = (el, rect) => {
+    let L = rect.left, T = rect.top, R = rect.right, B = rect.bottom;
+    for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+      const c = getComputedStyle(n);
+      const clips =
+        c.overflowX !== 'visible' || c.overflowY !== 'visible' || c.clip !== 'auto' || c.clipPath !== 'none';
+      if (!clips) continue;
+      const b = n.getBoundingClientRect();
+      const cl = b.left + n.clientLeft;
+      const ct = b.top + n.clientTop;
+      if (c.overflowX !== 'visible' || c.clip !== 'auto' || c.clipPath !== 'none') {
+        L = Math.max(L, cl);
+        R = Math.min(R, cl + n.clientWidth);
+      }
+      if (c.overflowY !== 'visible' || c.clip !== 'auto' || c.clipPath !== 'none') {
+        T = Math.max(T, ct);
+        B = Math.min(B, ct + n.clientHeight);
+      }
+    }
+    return { left: L, top: T, width: R - L, height: B - T };
+  };
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const text = (n.nodeValue || '').replace(/\s+/g, ' ').trim();
+    if (!text) continue;
+    const el = n.parentElement;
+    if (!el || skipTags.has(el.tagName)) continue;
+    if (el.closest(hiddenScope) || !inScope(el)) continue;
+    const cs = getComputedStyle(el);
+    if (!visible(cs)) continue;
+    const alpha = effAlpha(el);
+    if (alpha === 0) continue;
+    const range = document.createRange();
+    range.selectNodeContents(n);
+    // every line box is a sample: wrapped text can cross grounds
+    for (const raw of range.getClientRects()) {
+      if (raw.width < 1 || raw.height < 1) continue;
+      const rect = visibleRect(el, raw);
+      if (rect.width < 1 || rect.height < 1) continue;
+      out.push({
+        text: text.slice(0, 40),
+        selector: sel(el),
+        color: isSvgText(el) ? cs.fill : cs.color,
+        alpha,
+        fontSize: parseFloat(cs.fontSize),
+        fontWeight: +cs.fontWeight || 400,
+        fixd: Boolean(el.closest('[data-probe-fixed]')),
+        ...(() => {
+          const cx = rect.left + rect.width / 2;
+          const [gx, gy] = groundPoint(el, cx, rect.top + rect.height / 2);
+          // a clamped point sits in a scroll box: only its own pixel is
+          // safe; the sweep width shrinks past the clip edges too
+          return { x: gx + window.scrollX, y: gy + window.scrollY, w: gx === cx ? rect.width - 2 : 0 };
+        })(),
+      });
+    }
+  }
+  // ::before / ::after text: measured at the start / end of the owner's
+  // box, where the generated text sits
+  for (const el of document.body.querySelectorAll('*')) {
+    if (skipTags.has(el.tagName) || el.closest(hiddenScope) || !inScope(el)) continue;
+    for (const pseudo of ['::before', '::after']) {
+      const cs = getComputedStyle(el, pseudo);
+      const content = cs.content;
+      if (!content || content === 'none' || content === 'normal' || !/^["']/.test(content)) continue;
+      const text = content.slice(1, -1).replace(/\\(["'])/g, '$1').trim();
+      if (!text || !visible(cs)) continue;
+      const alpha = (+cs.opacity || 0) * effAlpha(el);
+      if (alpha === 0) continue;
+      const box = visibleRect(el, el.getBoundingClientRect());
+      if (box.width < 1 || box.height < 1) continue;
+      const inset = Math.min(parseFloat(cs.fontSize) * 0.6, box.width / 2);
+      out.push({
+        text: text.slice(0, 40),
+        selector: sel(el) + pseudo,
+        color: cs.color,
+        alpha,
+        fontSize: parseFloat(cs.fontSize),
+        fontWeight: +cs.fontWeight || 400,
+        fixd: Boolean(el.closest('[data-probe-fixed]')),
+        ...(() => {
+          const [gx, gy] = groundPoint(
+            el,
+            pseudo === '::before' ? box.left + inset : box.left + box.width - inset,
+            box.top + Math.min(box.height / 2, parseFloat(cs.lineHeight) / 2 || box.height / 2),
+          );
+          return { x: gx + window.scrollX, y: gy + window.scrollY, w: 0 };
+        })(),
+      });
+    }
+  }
+  return out;
+};
+
+/* ---------------------------------------------------------- measurement */
+/** every run against the ground under it; findings go to `push` */
+function measure(runs, shots, fixedShot, where, push) {
+  const sample = (x, y) => {
+    // prefer the slice where the point is not in the sticky band at the top
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const s = shots[i];
+      const localY = y - s.top;
+      if (localY < 0 || localY >= s.height) continue;
+      if (i > 0 && localY < OVERLAP) continue;
+      return s.png.at(Math.round(x), Math.min(Math.round(localY), s.height - 1));
+    }
+    const s = shots.find((s) => y >= s.top && y < s.top + s.height);
+    return s ? s.png.at(Math.round(x), Math.min(Math.round(y - s.top), s.height - 1)) : null;
+  };
+  let measured = 0;
+  for (const run of runs) {
+    const fg = parseColor(run.color);
+    measured += 1;
+    const large = run.fontSize >= 24 || (run.fontSize >= 18.66 && run.fontWeight >= 700);
+    const min = large ? 3 : 4.5;
+    // the worst pixel wins: a line box over a gradient or a seam is
+    // sampled at several points across its width
+    const half = Math.max((run.w ?? 0) / 2 - 2, 0);
+    const offsets = half > 4 ? [-half, -half / 2, 0, half / 2, half] : [0];
+    // a fixed overlay's runs come from its dedicated shot (viewport
+    // coordinates — the collection scroll was 0)
+    const px = (x, y) =>
+      run.fixd && fixedShot
+        ? fixedShot.at(Math.round(x), Math.min(Math.round(y), VIEW - 1))
+        : sample(x, y);
+    let worst = null;
+    let worstBg = null;
+    for (const dx of offsets) {
+      const bg = px(run.x + dx, run.y);
+      if (!bg) continue;
+      worstBg = bg;
+      if (!fg) break;
+      const a = fg[3] * (run.alpha ?? 1);
+      const fgOn = a < 1 ? over([fg[0], fg[1], fg[2], a], bg) : fg.slice(0, 3);
+      const c = ratio(fgOn, bg);
+      if (worst === null || c < worst.ratio) worst = { ratio: c, fgOn, bg };
+    }
+    if (!fg || worst === null) {
+      push({ ...where, ...run, fg: fg ? hex(fg) : `unparsed: ${run.color}`, bg: worstBg ? hex(worstBg) : 'unsampled', ratio: 0, min });
+      continue;
+    }
+    if (worst.ratio < min) {
+      push({ ...where, ...run, fg: hex(worst.fgOn), bg: hex(worst.bg), ratio: worst.ratio, min });
+    }
+  }
+  return measured;
+}
+
 /* ---------------------------------------------------------------- probe */
-const browser = await puppeteer.launch({
-  executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
-  headless: true,
-  args: ['--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--font-render-hinting=none'],
-});
-const page = await browser.newPage();
+/**
+ * One route on one tab: load once, then for every theme and width sweep
+ * the document — and, on the representative route, the open dialogs and
+ * the open popovers in passes of their own. Returns the number of runs
+ * measured; findings go to `push`.
+ */
+async function probeRoute(page, tools, route, isFirst) {
+  const { quiet, decode, push } = tools;
+  const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
+  // a slice is captured before the tab scrolls on; the decode thread works
+  // on it while the next slice is captured
+  const shoot = () => page.screenshot({ type: 'png', optimizeForSpeed: true });
+  const scopes = isFirst ? ['document', 'dialogs', 'popovers'] : ['document'];
+  let measured = 0;
 
-const findings = [];
-let measured = 0;
-const routeList = routes(DIST).filter((r) => !EXCLUDE || !EXCLUDE.test(r));
-for (const r of routeList) {
+  await page.setViewport({ width: WIDTHS[0], height: VIEW, deviceScaleFactor: 1 });
+  await page.goto(BASE + route, { waitUntil: 'load', timeout: 60_000 });
+  await page.evaluate(() => document.fonts.ready);
   for (const theme of THEMES) {
+    await page.evaluate(setTheme, theme, RULES.base);
+    // client-rendered diagrams: every mermaid placeholder must have become an svg
+    await page.waitForFunction(mermaidRendered, { timeout: 15_000 }).catch(() => {
+      push({ route, theme, width: WIDTHS[0], text: '(mermaid diagram)', selector: 'pre.mermaid', color: '', fontSize: 0, fontWeight: 0, x: 0, y: 0, fg: 'diagram not rendered within 15s', bg: '-', ratio: 0, min: 4.5 });
+    });
+    // theme-reactive renderers redraw on the event with no completion signal
+    await sleep(150);
     for (const width of WIDTHS) {
-      // every page in its default state; on the first route further passes
-      // open the dialogs, then the popovers, and measure the text inside
-      const scopes = r === routeList[0] ? ['document', 'dialogs', 'popovers'] : ['document'];
-      for (const scope of scopes) {
       await page.setViewport({ width, height: VIEW, deviceScaleFactor: 1 });
-      await page.goto(BASE + r, { waitUntil: 'load', timeout: 60000 });
-      // theme by attribute, transitions off, every glyph transparent: what
-      // remains in the screenshot is exactly the ground each text sits on
-      await page.evaluate((t) => {
-        document.documentElement.dataset.theme = t;
-        // theme-reactive renderers (canvas demos, mermaid) listen for this
-        window.dispatchEvent(new CustomEvent('themechange', { detail: t }));
-        const st = document.createElement('style');
-        st.id = '__probe';
-        st.textContent = `*,*::before,*::after{transition:none!important;animation:none!important}`;
-        document.head.append(st);
-      }, theme);
-      await page.evaluate(() => document.fonts.ready);
-      // client-rendered diagrams: every mermaid placeholder must have become an svg
-      await new Promise((res) => setTimeout(res, 150));
-      await page.waitForFunction(
-        () => [...document.querySelectorAll('pre.mermaid')].every((b) => b.querySelector('svg')),
-        { timeout: 15000 },
-      ).catch(() => {
-        findings.push({ route: r, theme, width, text: '(mermaid diagram)', selector: 'pre.mermaid', color: '', fontSize: 0, fontWeight: 0, x: 0, y: 0, fg: 'diagram not rendered within 15s', bg: '-', ratio: 0, min: 4.5 });
-      });
-      await new Promise((res) => setTimeout(res, 120));
-      if (scope === 'dialogs') {
-        // open every marked dialog; a search box inside gets a query so
-        // result rows render and are measured too
-        const opened = await page.evaluate(() => {
-          const dialogs = [...document.querySelectorAll('dialog[data-probe-open]:not([open])')];
-          for (const d of dialogs) {
-            try { d.showModal(); } catch { d.setAttribute('open', ''); }
-            const input = d.querySelector('input[type="search"], input[type="text"], input:not([type])');
-            if (input) {
-              input.value = 'the';
-              input.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-          }
-          return dialogs.length;
-        });
-        if (!opened) continue;
-        // a search box fetches its index and renders rows; wait for the
-        // network to settle instead of guessing a delay
-        await page.waitForNetworkIdle({ idleTime: 300, timeout: 5000 }).catch(() => {});
-        await new Promise((res) => setTimeout(res, 150));
-      } else if (scope === 'popovers') {
-        // open every marked popover (in its own pass — a modal dialog would
-        // sit in the same top layer and shadow the sample points)
-        const opened = await page.evaluate(() => {
-          const pops = [...document.querySelectorAll('[popover][data-probe-open]')];
-          for (const p of pops) {
-            try { p.showPopover(); } catch { /* unsupported or already open */ }
-          }
-          return pops.length;
-        });
-        if (!opened) continue;
-        await new Promise((res) => setTimeout(res, 150));
-      }
+      await page.evaluate(twoFrames);
+      await quiet(150, 2_000);
+      for (const scope of scopes) {
+        await page.evaluate(scrollTop);
+        if (scope === 'dialogs') {
+          if (!(await page.evaluate(openDialogs))) continue;
+          // a search box fetches its index and renders rows: wait for the
+          // network to settle instead of guessing a delay
+          await quiet(300, 5_000);
+          await sleep(150);
+        } else if (scope === 'popovers') {
+          if (!(await page.evaluate(openPopovers))) continue;
+          await sleep(150);
+        }
+        const overlays = await page.evaluate(markFixed);
+        const runs = await page.evaluate(collectRuns, scope);
 
-      // fixed-position overlays float over whatever scrolls past — their
-      // face is the ground of their own text only. Marked so their runs are
-      // sampled from a dedicated shot and the sweep hides them.
-      const overlays = await page.evaluate(() => {
-        let n = 0;
-        for (const el of document.body.querySelectorAll('*')) {
-          if (el.closest('dialog, [popover], [data-probe-fixed]')) continue;
-          if (getComputedStyle(el).position !== 'fixed') continue;
-          el.setAttribute('data-probe-fixed', '');
-          n++;
+        // hide every glyph and screenshot the document in slices
+        await page.evaluate(appendRule, RULES.glyphs);
+        // fixed overlays: one shot with them in place — the ground of their
+        // own text — then hidden for the sweep, so their face never stands
+        // in as the ground of text they merely occlude
+        let fixedShot = null;
+        if (overlays > 0) {
+          await page.evaluate(scrollTop);
+          await page.evaluate(twoFrames);
+          fixedShot = decode(await shoot());
+          await page.evaluate(appendRule, RULES.fixed);
         }
-        return n;
-      });
+        // a modal dialog sits in the top layer at viewport coordinates: its
+        // pass keeps the collection viewport so nothing moves between the
+        // run collection and the screenshot
+        const docHeight = scope === 'dialogs' ? VIEW : await page.evaluate(() => document.documentElement.scrollHeight);
+        const shots = [];
+        for (let top = 0; top < docHeight; top += VIEW - OVERLAP) {
+          await page.evaluate((y) => window.scrollTo(0, y), top);
+          await page.evaluate(twoFrames);
+          const actualTop = await page.evaluate(() => window.scrollY);
+          shots.push({ top: actualTop, height: VIEW, png: decode(await shoot()) });
+          if (actualTop + VIEW >= docHeight) break;
+        }
+        await page.evaluate(resetRules, RULES.base);
+        if (scope === 'dialogs') await page.evaluate(closeDialogs);
+        else if (scope === 'popovers') await page.evaluate(closePopovers);
 
-      // 1) collect text runs in document coordinates (scrollY = 0)
-      const runs = await page.evaluate((scope) => {
-        const out = [];
-        const skipTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'TITLE', 'OPTION', 'TEXTAREA']);
-        const hiddenScope =
-          scope === 'dialogs' ? '.sr-only, .visually-hidden' : '.sr-only, .visually-hidden, dialog:not([open])';
-        const inScope = (el) =>
-          scope === 'dialogs'
-            ? Boolean(el.closest('dialog[open]'))
-            : scope === 'popovers'
-              ? Boolean(el.closest('[popover]'))
-              : true;
-        // effective opacity: the product over the element and its ancestors
-        const alphaCache = new Map();
-        const effAlpha = (el) => {
-          if (!el || el === document.documentElement) return 1;
-          let a = alphaCache.get(el);
-          if (a === undefined) {
-            a = (+getComputedStyle(el).opacity || 0) * effAlpha(el.parentElement);
-            alphaCache.set(el, a);
-          }
-          return a;
-        };
-        const sel = (el) => {
-          const parts = [];
-          let e = el;
-          while (e && e !== document.body && parts.length < 4) {
-            let s = e.tagName.toLowerCase();
-            if (e.classList.length) s += '.' + [...e.classList].slice(0, 2).join('.');
-            parts.unshift(s);
-            e = e.parentElement;
-          }
-          return parts.join(' > ');
-        };
-        const visible = (cs) => cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity !== 0;
-        // A run scrolled out of view inside a scroll box (a long code line on
-        // a phone, a result row below a palette's list) has that box's
-        // ground: its sample point is clamped into the box's visible
-        // interior, on each scrolling axis.
-        const groundPoint = (el, x, y) => {
-          for (let n = el.parentElement; n; n = n.parentElement) {
-            const cs = getComputedStyle(n);
-            const b = n.getBoundingClientRect();
-            if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && (x < b.left + 1 || x > b.right - 1)) {
-              x = Math.min(Math.max(b.left + b.width / 2, 1), window.innerWidth - 2);
-            }
-            if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && (y < b.top + 1 || y > b.bottom - 1)) {
-              y = Math.min(Math.max(y, b.top + 8), b.bottom - 8);
-            }
-          }
-          return [x, y];
-        };
-        const isSvgText = (el) => el.namespaceURI === 'http://www.w3.org/2000/svg';
-        // The visible portion of a rect: its intersection with every
-        // clipping ancestor's content box (client metrics — borders and
-        // classic scrollbars excluded). A glyph a scroll box or an
-        // ellipsis clipped away is not rendered text, and a sample offset
-        // stepping past the clip edge lands on border hairlines — the rect
-        // that gets sampled must be the rect the reader can see.
-        const visibleRect = (el, rect) => {
-          let L = rect.left, T = rect.top, R = rect.right, B = rect.bottom;
-          for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
-            const c = getComputedStyle(n);
-            const clips =
-              c.overflowX !== 'visible' || c.overflowY !== 'visible' || c.clip !== 'auto' || c.clipPath !== 'none';
-            if (!clips) continue;
-            const b = n.getBoundingClientRect();
-            const cl = b.left + n.clientLeft;
-            const ct = b.top + n.clientTop;
-            if (c.overflowX !== 'visible' || c.clip !== 'auto' || c.clipPath !== 'none') {
-              L = Math.max(L, cl);
-              R = Math.min(R, cl + n.clientWidth);
-            }
-            if (c.overflowY !== 'visible' || c.clip !== 'auto' || c.clipPath !== 'none') {
-              T = Math.max(T, ct);
-              B = Math.min(B, ct + n.clientHeight);
-            }
-          }
-          return { left: L, top: T, width: R - L, height: B - T };
-        };
-        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-          const text = (n.nodeValue || '').replace(/\s+/g, ' ').trim();
-          if (!text) continue;
-          const el = n.parentElement;
-          if (!el || skipTags.has(el.tagName)) continue;
-          if (el.closest(hiddenScope) || !inScope(el)) continue;
-          const cs = getComputedStyle(el);
-          if (!visible(cs)) continue;
-          const alpha = effAlpha(el);
-          if (alpha === 0) continue;
-          const range = document.createRange();
-          range.selectNodeContents(n);
-          // every line box is a sample: wrapped text can cross grounds
-          for (const raw of range.getClientRects()) {
-            if (raw.width < 1 || raw.height < 1) continue;
-            const rect = visibleRect(el, raw);
-            if (rect.width < 1 || rect.height < 1) continue;
-            out.push({
-              text: text.slice(0, 40),
-              selector: sel(el),
-              color: isSvgText(el) ? cs.fill : cs.color,
-              alpha,
-              fontSize: parseFloat(cs.fontSize),
-              fontWeight: +cs.fontWeight || 400,
-              fixd: Boolean(el.closest('[data-probe-fixed]')),
-              ...(() => {
-                const cx = rect.left + rect.width / 2;
-                const [gx, gy] = groundPoint(el, cx, rect.top + rect.height / 2);
-                // a clamped point sits in a scroll box: only its own pixel is
-                // safe; the sweep width shrinks past the clip edges too
-                return { x: gx + window.scrollX, y: gy + window.scrollY, w: gx === cx ? rect.width - 2 : 0 };
-              })(),
-            });
-          }
-        }
-        // ::before / ::after text: measured at the start / end of the owner's
-        // box, where the generated text sits
-        for (const el of document.body.querySelectorAll('*')) {
-          if (skipTags.has(el.tagName) || el.closest(hiddenScope) || !inScope(el)) continue;
-          for (const pseudo of ['::before', '::after']) {
-            const cs = getComputedStyle(el, pseudo);
-            const content = cs.content;
-            if (!content || content === 'none' || content === 'normal' || !/^["']/.test(content)) continue;
-            const text = content.slice(1, -1).replace(/\\(["'])/g, '$1').trim();
-            if (!text || !visible(cs)) continue;
-            const alpha = (+cs.opacity || 0) * effAlpha(el);
-            if (alpha === 0) continue;
-            const box = visibleRect(el, el.getBoundingClientRect());
-            if (box.width < 1 || box.height < 1) continue;
-            const inset = Math.min(parseFloat(cs.fontSize) * 0.6, box.width / 2);
-            out.push({
-              text: text.slice(0, 40),
-              selector: sel(el) + pseudo,
-              color: cs.color,
-              alpha,
-              fontSize: parseFloat(cs.fontSize),
-              fontWeight: +cs.fontWeight || 400,
-              fixd: Boolean(el.closest('[data-probe-fixed]')),
-              ...(() => {
-                const [gx, gy] = groundPoint(
-                  el,
-                  pseudo === '::before' ? box.left + inset : box.left + box.width - inset,
-                  box.top + Math.min(box.height / 2, parseFloat(cs.lineHeight) / 2 || box.height / 2),
-                );
-                return { x: gx + window.scrollX, y: gy + window.scrollY, w: 0 };
-              })(),
-            });
-          }
-        }
-        return out;
-      }, scope);
-
-      // 2) hide every glyph and screenshot the document in slices
-      await page.evaluate(() => {
-        const st = document.getElementById('__probe');
-        // -webkit-text-fill-color hides glyphs while `color` still paints
-        // currentColor borders and icons - the ground keeps every non-text ink
-        st.textContent += `*{-webkit-text-fill-color:transparent!important;text-shadow:none!important;caret-color:transparent!important}svg text{fill:transparent!important}`;
-      });
-      // fixed overlays: one shot with them in place — the ground of their
-      // own text — then hidden for the sweep, so their face never stands in
-      // as the ground of text they merely occlude
-      let fixedShot = null;
-      if (overlays > 0) {
-        await page.evaluate(() => window.scrollTo(0, 0));
-        await new Promise((res) => setTimeout(res, 60));
-        fixedShot = decodePng(await page.screenshot({ type: 'png' }));
-        await page.evaluate(() => {
-          document.getElementById('__probe').textContent +=
-            '[data-probe-fixed]{visibility:hidden!important}';
-        });
-      }
-
-      // a modal dialog sits in the top layer at viewport coordinates: its
-      // pass keeps the collection viewport so nothing moves between the run
-      // collection and the screenshot
-      const docHeight = scope === 'dialogs' ? VIEW : await page.evaluate(() => document.documentElement.scrollHeight);
-      const shots = [];
-      for (let top = 0; top < docHeight; top += VIEW - OVERLAP) {
-        await page.evaluate((y) => window.scrollTo(0, y), top);
-        await new Promise((res) => setTimeout(res, 60));
-        const actualTop = await page.evaluate(() => window.scrollY);
-        const png = decodePng(await page.screenshot({ type: 'png' }));
-        shots.push({ top: actualTop, height: VIEW, png });
-        if (actualTop + VIEW >= docHeight) break;
-      }
-
-      const sample = (x, y) => {
-        // prefer the slice where the point is not in the sticky band at the top
-        for (let i = shots.length - 1; i >= 0; i--) {
-          const s = shots[i];
-          const localY = y - s.top;
-          if (localY < 0 || localY >= s.height) continue;
-          if (i > 0 && localY < OVERLAP) continue;
-          return s.png.at(Math.round(x), Math.min(Math.round(localY), s.height - 1));
-        }
-        const s = shots.find((s) => y >= s.top && y < s.top + s.height);
-        return s ? s.png.at(Math.round(x), Math.min(Math.round(y - s.top), s.height - 1)) : null;
-      };
-
-      for (const run of runs) {
-        const fg = parseColor(run.color);
-        measured += 1;
-        const large = run.fontSize >= 24 || (run.fontSize >= 18.66 && run.fontWeight >= 700);
-        const min = large ? 3 : 4.5;
-        // the worst pixel wins: a line box over a gradient or a seam is
-        // sampled at several points across its width
-        const half = Math.max((run.w ?? 0) / 2 - 2, 0);
-        const offsets = half > 4 ? [-half, -half / 2, 0, half / 2, half] : [0];
-        // a fixed overlay's runs come from its dedicated shot (viewport
-        // coordinates — the collection scroll was 0)
-        const px = (x, y) =>
-          run.fixd && fixedShot
-            ? fixedShot.at(Math.round(x), Math.min(Math.round(y), VIEW - 1))
-            : sample(x, y);
-        let worst = null;
-        let worstBg = null;
-        for (const dx of offsets) {
-          const bg = px(run.x + dx, run.y);
-          if (!bg) continue;
-          worstBg = bg;
-          if (!fg) break;
-          const a = fg[3] * (run.alpha ?? 1);
-          const fgOn = a < 1 ? over([fg[0], fg[1], fg[2], a], bg) : fg.slice(0, 3);
-          const c = ratio(fgOn, bg);
-          if (worst === null || c < worst.ratio) worst = { ratio: c, fgOn, bg };
-        }
-        if (!fg || worst === null) {
-          findings.push({ route: r, theme, width, ...run, fg: fg ? hex(fg) : `unparsed: ${run.color}`, bg: worstBg ? hex(worstBg) : 'unsampled', ratio: 0, min });
-          continue;
-        }
-        if (worst.ratio < min) {
-          findings.push({ route: r, theme, width, ...run, fg: hex(worst.fgOn), bg: hex(worst.bg), ratio: worst.ratio, min });
-        }
-      }
+        for (const s of shots) s.png = await s.png;
+        measured += measure(runs, shots, await fixedShot, { route, theme, width }, push);
       }
     }
   }
+  return measured;
 }
-await browser.close();
-server?.close();
 
-/* --------------------------------------------------------------- report */
-const lines = [];
-let last = '';
-for (const f of findings.sort((a, b) => a.route.localeCompare(b.route) || a.theme.localeCompare(b.theme) || a.width - b.width || a.ratio - b.ratio)) {
-  const head = `${f.route} [${f.theme} @${f.width}]`;
-  if (head !== last) { lines.push(head); last = head; }
-  lines.push(`    ${f.ratio.toFixed(2)}:1 < ${f.min}  ${f.fg} on ${f.bg}  ${f.fontSize}px/${f.fontWeight}  ${f.selector}  "${f.text}"`);
+if (isMainThread) {
+  /* -------------------------------------------------------------- serve */
+  let server = null;
+  BASE = __argv[1];
+  if (!BASE) {
+    const MIME = {
+      '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript',
+      '.mjs': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml',
+      '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp',
+      '.avif': 'image/avif', '.ico': 'image/x-icon', '.woff2': 'font/woff2',
+    };
+    // requests are confined to DIST: no traversal segments, and every resolved
+    // path must stay inside it
+    const root = resolve(DIST);
+    server = createServer((req, res) => {
+      let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+      if (p.endsWith('/')) p += 'index.html';
+      for (const candidate of [p, `${p}/index.html`]) {
+        const abs = resolve(root, `.${candidate}`);
+        if (candidate.split('/').includes('..') || abs !== root && !abs.startsWith(root + sep)) break;
+        try {
+          const buf = readFileSync(abs);
+          res.setHeader('content-type', MIME[extname(candidate)] ?? 'application/octet-stream');
+          return res.end(buf);
+        } catch { /* try next */ }
+      }
+      res.statusCode = 404;
+      res.end('not found');
+    });
+    await new Promise((r) => server.listen(0, '127.0.0.1', r));
+    BASE = `http://127.0.0.1:${server.address().port}`;
+  }
+
+  const routes = (dir, prefix = '') => {
+    let out = [];
+    for (const e of readdirSync(dir)) {
+      const p = join(dir, e);
+      if (statSync(p).isDirectory()) out = out.concat(routes(p, `${prefix}/${e}`));
+      else if (e === 'index.html') out.push(`${prefix}/`);
+      else if (e.endsWith('.html')) out.push(`${prefix}/${e}`); // flat pages, 404.html
+    }
+    return out.sort(); // deterministic order — the dialog pass runs on the first route
+  };
+
+  /* -------------------------------------------------------------- sweep */
+  const routeList = routes(DIST).filter((r) => !EXCLUDE || !EXCLUDE.test(r));
+  // the work list: longest pages first, so no worker is left sweeping a
+  // long page alone at the end (the representative route stays the first
+  // route in sorted order)
+  const size = (r) => statSync(join(DIST, r.endsWith('/') ? `${r}index.html` : r)).size;
+  const work = [...routeList].sort((a, b) => size(b) - size(a));
+  const findings = [];
+  const push = (f) => { findings.push(f); };
+  let measured = 0;
+  const t0 = Date.now();
+  let next = 0;
+  let done = 0;
+  const progress = () => {
+    done += 1;
+    const step = Math.max(1, Math.ceil(routeList.length / 10));
+    if (done % step === 0 || done === routeList.length)
+      console.error(`contrast_probe: ${done}/${routeList.length} routes · ${Math.round((Date.now() - t0) / 1000)}s`);
+  };
+
+  try {
+    // A worker is a browser of its own plus one decode thread, taking
+    // routes off the shared work list until it is empty.
+    const worker = async () => {
+      const browser = await puppeteer.launch({
+        executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
+        headless: true,
+        args: ['--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--font-render-hinting=none'],
+      });
+      const page = await browser.newPage();
+      const dec = decoder();
+      // Quiet-period wait keyed on request ARRIVALS, not on the in-flight
+      // count: a request that never settles must cost its own page at most
+      // once — never the whole run.
+      let lastRequest = Date.now();
+      page.on('request', () => { lastRequest = Date.now(); });
+      const quiet = async (idleMs, capMs) => {
+        const start = Date.now();
+        while (Date.now() - lastRequest < idleMs && Date.now() - start < capMs) {
+          await new Promise((res) => setTimeout(res, 50));
+        }
+      };
+      const tools = { quiet, decode: dec.decode, push };
+      try {
+        for (let i = next++; i < work.length; i = next++) {
+          const n = await probeRoute(page, tools, work[i], work[i] === routeList[0]);
+          measured += n;
+          progress();
+        }
+      } finally {
+        await dec.close();
+        await browser.close();
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(WORKERS, work.length) }, worker));
+  } finally {
+    server?.close();
+  }
+
+  /* ------------------------------------------------------------- report */
+  const lines = [];
+  let last = '';
+  for (const f of findings.sort((a, b) => a.route.localeCompare(b.route) || a.theme.localeCompare(b.theme) || a.width - b.width || a.ratio - b.ratio)) {
+    const head = `${f.route} [${f.theme} @${f.width}]`;
+    if (head !== last) { lines.push(head); last = head; }
+    lines.push(`    ${f.ratio.toFixed(2)}:1 < ${f.min}  ${f.fg} on ${f.bg}  ${f.fontSize}px/${f.fontWeight}  ${f.selector}  "${f.text}"`);
+  }
+  lines.push('', `text runs measured: ${measured}`, `TEXT BELOW AA: ${findings.length}`);
+  writeFileSync(__argv[2] || 'contrast-probe.txt', lines.join('\n') + '\n');
+  console.log(lines.slice(0, 80).join('\n'));
+  if (lines.length > 80) console.log(`… (${lines.length - 80} more lines in the report)`);
+  process.exitCode = findings.length ? 1 : 0;
 }
-lines.push('', `text runs measured: ${measured}`, `TEXT BELOW AA: ${findings.length}`);
-writeFileSync(__argv[2] || 'contrast-probe.txt', lines.join('\n') + '\n');
-console.log(lines.slice(0, 80).join('\n'));
-if (lines.length > 80) console.log(`… (${lines.length - 80} more lines in the report)`);
-process.exitCode = findings.length ? 1 : 0;
