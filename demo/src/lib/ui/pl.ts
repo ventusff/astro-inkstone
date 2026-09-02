@@ -40,6 +40,7 @@ export const strings: UIStrings = {
   copied: 'Kod skopiowany do schowka',
   copyFailed: 'Nie udało się skopiować — schowek jest niedostępny',
   theme: 'Przełącz motyw jasny / ciemny',
+  github: 'Kod źródłowy na GitHubie',
   menu: 'Menu',
   skip: 'Przejdź do treści',
   partLabel: (roman) => `Część ${roman}`,

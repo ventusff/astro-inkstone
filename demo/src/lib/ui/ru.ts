@@ -45,6 +45,7 @@ export const strings: UIStrings = {
   copied: 'Код скопирован в буфер обмена',
   copyFailed: 'Не удалось скопировать — буфер обмена недоступен',
   theme: 'Переключить светлую / тёмную тему',
+  github: 'Исходный код на GitHub',
   menu: 'Меню',
   skip: 'Перейти к содержимому',
   partLabel: (roman) => `Часть ${roman}`,

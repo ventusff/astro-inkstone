@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: '코드가 클립보드에 복사되었습니다',
   copyFailed: '복사하지 못했습니다 — 클립보드를 사용할 수 없습니다',
   theme: '라이트 / 다크 테마 전환',
+  github: 'GitHub 소스 코드',
   menu: '메뉴',
   skip: '본문 바로가기',
   partLabel: (roman) => `제${roman}부`,

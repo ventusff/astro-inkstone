@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: 'Kode disalin ke papan klip',
   copyFailed: 'Gagal menyalin — papan klip tidak tersedia',
   theme: 'Ganti tema terang / gelap',
+  github: 'Kode sumber di GitHub',
   menu: 'Menu',
   skip: 'Langsung ke konten',
   partLabel: (roman) => `Bagian ${roman}`,

@@ -33,6 +33,7 @@ export const strings: UIStrings = {
   copied: 'Código copiado al portapapeles',
   copyFailed: 'No se pudo copiar: el portapapeles no está disponible',
   theme: 'Cambiar entre tema claro y oscuro',
+  github: 'Código fuente en GitHub',
   menu: 'Menú',
   skip: 'Saltar al contenido',
   partLabel: (roman) => `Parte ${roman}`,

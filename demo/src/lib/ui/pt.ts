@@ -33,6 +33,7 @@ export const strings: UIStrings = {
   copied: 'Código copiado para a área de transferência',
   copyFailed: 'Falha ao copiar — a área de transferência não está disponível',
   theme: 'Alternar entre tema claro e escuro',
+  github: 'Código-fonte no GitHub',
   menu: 'Menu',
   skip: 'Pular para o conteúdo',
   partLabel: (roman) => `Parte ${roman}`,

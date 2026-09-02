@@ -40,6 +40,7 @@ export const strings: UIStrings = {
   copied: 'Code copied to the clipboard',
   copyFailed: 'Copy failed — the clipboard is not available',
   theme: 'Toggle light / dark theme',
+  github: 'Source on GitHub',
   menu: 'Menu',
   skip: 'Skip to content',
   partLabel: (roman) => `Part ${roman}`,

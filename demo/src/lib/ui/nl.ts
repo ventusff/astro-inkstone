@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: 'Code gekopieerd naar het klembord',
   copyFailed: 'Kopiëren mislukt – het klembord is niet beschikbaar',
   theme: 'Wissel tussen licht en donker thema',
+  github: 'Broncode op GitHub',
   menu: 'Menu',
   skip: 'Direct naar de inhoud',
   partLabel: (roman) => `Deel ${roman}`,

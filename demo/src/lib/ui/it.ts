@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: 'Codice copiato negli appunti',
   copyFailed: 'Copia non riuscita — gli appunti non sono disponibili',
   theme: 'Alterna tema chiaro e scuro',
+  github: 'Codice sorgente su GitHub',
   menu: 'Menu',
   skip: 'Salta al contenuto',
   partLabel: (roman) => `Parte ${roman}`,

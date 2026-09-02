@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: 'Code in die Zwischenablage kopiert',
   copyFailed: 'Kopieren fehlgeschlagen – die Zwischenablage ist nicht verfügbar',
   theme: 'Helles / dunkles Farbschema umschalten',
+  github: 'Quellcode auf GitHub',
   menu: 'Menü',
   skip: 'Zum Inhalt springen',
   partLabel: (roman) => `Teil ${roman}`,

@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: 'คัดลอกโค้ดไปยังคลิปบอร์ดแล้ว',
   copyFailed: 'คัดลอกไม่สำเร็จ — ใช้งานคลิปบอร์ดไม่ได้',
   theme: 'สลับธีมสว่าง / มืด',
+  github: 'ซอร์สโค้ดบน GitHub',
   menu: 'เมนู',
   skip: 'ข้ามไปยังเนื้อหา',
   partLabel: (roman) => `ภาค ${roman}`,

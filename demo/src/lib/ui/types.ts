@@ -53,6 +53,8 @@ export interface UIStrings {
   copied: string;
   copyFailed: string;
   theme: string;
+  /** accessible name of the nav bar's repository link (the GitHub mark) */
+  github: string;
   menu: string;
   skip: string;
   /** chapter numeral label: partLabel('II') → 'Part II' / '第 II 部' */

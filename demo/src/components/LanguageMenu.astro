@@ -8,8 +8,8 @@
  *
  * A native popover: the trigger works without JavaScript (the panel then
  * centers, the UA's default popover placement); the small script only
- * anchors it under the trigger. Light dismiss and Esc come from the popover
- * itself. Each row navigates to this page's twin in that locale, or to that
+ * anchors it under the trigger, inside the viewport. Light dismiss and Esc
+ * come from the popover itself. Each row navigates to this page's twin in that locale, or to that
  * locale's landing page when the twin does not exist.
  */
 import { href, landingRoute, LOCALES, localeDef, UI, type Alternate, type Locale } from '../lib/i18n';
@@ -84,15 +84,23 @@ const items = LOCALES.map((l) => ({
 <script>
   // Anchor the panel under its trigger (top-layer popovers position like
   // fixed elements; without this the UA centers the panel — an acceptable
-  // no-JS fallback, not the design).
+  // no-JS fallback, not the design). The panel hangs from the trigger's
+  // right edge and never leaves the viewport: where the trigger sits too
+  // far left for the panel's width (a phone), the panel keeps an 8px inset
+  // from the viewport's left edge instead. Its width is a computed length,
+  // readable while the panel is still closed.
+  const INSET = 8;
   const btn = document.querySelector<HTMLButtonElement>('button[popovertarget="lang-menu"]');
   const pop = document.getElementById('lang-menu');
   if (btn && pop) {
     pop.addEventListener('beforetoggle', (e) => {
       if ((e as ToggleEvent).newState !== 'open') return;
       const r = btn.getBoundingClientRect();
-      pop.style.top = `${Math.round(r.bottom + 8)}px`;
-      pop.style.right = `${Math.max(8, Math.round(window.innerWidth - r.right))}px`;
+      const width = parseFloat(getComputedStyle(pop).width) || 0;
+      const underTrigger = Math.round(window.innerWidth - r.right);
+      const fitsLeftEdge = Math.round(window.innerWidth - INSET - width);
+      pop.style.top = `${Math.round(r.bottom + INSET)}px`;
+      pop.style.right = `${Math.max(INSET, Math.min(underTrigger, fitsLeftEdge))}px`;
       pop.style.left = 'auto';
       pop.style.bottom = 'auto';
       pop.style.margin = '0';

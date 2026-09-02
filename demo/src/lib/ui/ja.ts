@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: 'コードをクリップボードにコピーしました',
   copyFailed: 'コピーに失敗しました（クリップボードを利用できません）',
   theme: 'ライト / ダークテーマの切り替え',
+  github: 'GitHub のソースコード',
   menu: 'メニュー',
   skip: '本文へスキップ',
   partLabel: (roman) => `第${roman}部`,

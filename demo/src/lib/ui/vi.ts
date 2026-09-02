@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: 'Đã sao chép mã vào bảng nhớ tạm',
   copyFailed: 'Sao chép thất bại — không truy cập được bảng nhớ tạm',
   theme: 'Chuyển giao diện sáng / tối',
+  github: 'Mã nguồn trên GitHub',
   menu: 'Menu',
   skip: 'Chuyển đến nội dung chính',
   partLabel: (roman) => `Phần ${roman}`,

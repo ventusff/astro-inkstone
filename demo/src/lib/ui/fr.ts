@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: 'Code copié dans le presse-papiers',
   copyFailed: 'Échec de la copie — le presse-papiers n’est pas disponible',
   theme: 'Basculer entre les thèmes clair et sombre',
+  github: 'Code source sur GitHub',
   menu: 'Menu',
   skip: 'Aller au contenu',
   partLabel: (roman) => `Partie ${roman}`,

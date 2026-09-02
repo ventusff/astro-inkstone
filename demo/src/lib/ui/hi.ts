@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: 'कोड क्लिपबोर्ड पर कॉपी हो गया',
   copyFailed: 'कॉपी नहीं हो सका — क्लिपबोर्ड उपलब्ध नहीं है',
   theme: 'लाइट / डार्क थीम बदलें',
+  github: 'GitHub पर स्रोत कोड',
   menu: 'मेनू',
   skip: 'मुख्य सामग्री पर जाएँ',
   partLabel: (roman) => `भाग ${roman}`,

@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: 'Kod panoya kopyalandı',
   copyFailed: 'Kopyalanamadı — panoya erişilemiyor',
   theme: 'Açık / koyu temayı değiştir',
+  github: "GitHub'daki kaynak kodu",
   menu: 'Menü',
   skip: 'İçeriğe atla',
   partLabel: (roman) => `${roman}. Kısım`,

@@ -30,6 +30,7 @@ export const strings: UIStrings = {
   copied: '代码已复制到剪贴板',
   copyFailed: '复制失败，剪贴板不可用',
   theme: '切换浅色 / 深色主题',
+  github: 'GitHub 源码仓库',
   menu: '菜单',
   skip: '跳到正文',
   partLabel: (roman) => `第 ${roman} 部`,
