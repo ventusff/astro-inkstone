@@ -324,7 +324,11 @@ const checkNote = async (p, { route, id, island }) => {
   if (!island) problems.push('no source island in the page head');
   else if (!['md', 'mdx'].some((ext) => (island.file ?? '').endsWith(`/${id}/index.${ext}`))) problems.push(`source island names ${island.file}, not this note's file`);
   try {
-    await p.goto(`http://127.0.0.1:${PORT}${route}`, { waitUntil: 'networkidle2', timeout: 60000 });
+    // 'load' + the badge: the badge is the playground module's own signal
+    // that the page is ready to activate. A network-idle wait is not — a
+    // prefetch the previous navigation interrupted can stay "in flight"
+    // forever and cost every later page the full timeout.
+    await p.goto(`http://127.0.0.1:${PORT}${route}`, { waitUntil: 'load', timeout: 60000 });
     await p.waitForSelector('.inkbrush-playground-badge button', { timeout: 15000 });
     const before = await mapOf(p);
     await activateOn(p);
