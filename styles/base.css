@@ -83,6 +83,13 @@ h4 {
   font-family: var(--font-ui);
   letter-spacing: -0.012em;
 }
+/* the reading column: a run with no break opportunity (a long URL, a
+   slash-joined name chain) breaks inside the run instead of widening the
+   column — and contributes no min-content width, so a grid or flex track
+   holding prose never grows past the viewport */
+.col {
+  overflow-wrap: anywhere;
+}
 .col h1 {
   font-size: 44px;
   line-height: 1.05;
@@ -197,7 +204,6 @@ h4 {
   border-radius: 3px;
   /* the text tier: inline code is small type on the soft surface */
   color: var(--color-accent-text);
-  overflow-wrap: break-word;
 }
 .col pre.astro-code {
   padding: 18px 22px;
@@ -922,7 +928,7 @@ details.callout[open] > summary.callout-title::before {
 }
 /* solo form: pure measurement with nothing documented to compare against */
 .measured.solo .measured-body {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
 }
 /* a lone pane spans the full row: the two-column form exists only when both
    panes are present, so a single-pane body never strands an empty column */
@@ -932,7 +938,7 @@ details.callout[open] > summary.callout-title::before {
 /* narrow screens: the two panes stack (below 620px the column is the viewport) */
 @media (max-width: 620px) {
   .measured-body {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -997,7 +1003,7 @@ details.callout[open] > summary.callout-title::before {
 @media (max-width: 720px) {
   .grid-cols-2,
   .grid-cols-3 {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

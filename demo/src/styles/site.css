@@ -221,7 +221,7 @@ main.note-main {
 
 @media (max-width: 1024px) {
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     /* no sidebar column, so no tinted band either */
     background: none;
   }
@@ -262,7 +262,7 @@ main.note-main {
     padding: 32px 22px 80px;
   }
   .pagination {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
