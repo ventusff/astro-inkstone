@@ -406,6 +406,16 @@ pre.astro-code:focus-visible {
   overflow-x: auto;
   margin: 18px 0;
 }
+/* an inline formula never breaks inside a bracketed group, so one longer than
+   the column scrolls in place instead of widening the page. inline-flex, not
+   inline-block: a flex container keeps its content's baseline when it is a
+   scroll box (an inline-block scroll box drops to its bottom edge) */
+.col .katex:not(.katex-display > .katex) {
+  display: inline-flex;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
 
 
 /* ==================================================== page furniture === */
@@ -678,6 +688,16 @@ table.tbl {
 /* wide tables keep their natural width and scroll; columns are never squeezed */
 .tbl-wrap.wide table.tbl {
   min-width: max-content;
+}
+/* a table that reaches a narrow page without the wrapper pair (rendered by a
+   component, not by the Markdown pipeline) is its own scroll box: the table
+   element becomes a block and its row groups form an anonymous table inside */
+@media (max-width: 720px) {
+  .col :not(.tbl-scroll) > table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
 }
 
 /* ----- narrow container: one row, one card -----------------------------

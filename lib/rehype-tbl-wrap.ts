@@ -1,6 +1,8 @@
 /**
- * rehype-tbl-wrap — give every markdown table its own scroll box, and the
- * markup it needs to be re-laid-out as cards.
+ * rehype-tbl-wrap — give every table in the content its own scroll box, and
+ * the markup it needs to be re-laid-out as cards. Markdown tables arrive as
+ * hast elements; a `<table>` written by hand in MDX arrives as JSX and is
+ * normalized to elements first (see `fromJsx`).
  *
  * Emits `<div class="tbl-wrap [wide|wide-narrow]"><div class="tbl-scroll">`
  * around the table and tags it `.tbl`. Six-or-more-column tables get `.wide`,
@@ -19,9 +21,49 @@
  * cell (a table's first column is the row's key); the card form uses it as
  * the card's title.
  */
+import { h } from 'hastscript';
 import type { Element, Root } from 'hast';
 
 type AnyNode = { type: string; children?: AnyNode[] } & Record<string, unknown>;
+type JsxAttribute = { type: 'mdxJsxAttribute'; name: string; value?: string | null | { type: string } };
+type JsxNode = AnyNode & { name?: string | null; attributes?: Array<{ type: string }> };
+
+const isJsx = (node: AnyNode | undefined, name?: string): boolean =>
+  !!node &&
+  (node.type === 'mdxJsxFlowElement' || node.type === 'mdxJsxTextElement') &&
+  (!name || (node as JsxNode).name === name);
+
+/**
+ * A `<table>` written by hand in MDX is a JSX subtree, not a hast element.
+ * When every tag is a plain HTML tag and every attribute a literal, the
+ * subtree becomes the element tree the wrapper works on, so the author gets
+ * the same frame, roles and card form as a Markdown table. A component, an
+ * expression attribute or an expression child anywhere inside leaves the
+ * table as it is: the stylesheet's own-scroll-box fallback covers it.
+ */
+function fromJsx(node: AnyNode): AnyNode | null {
+  if (node.type === 'text' || node.type === 'comment') return node;
+  if (node.type === 'element' || isJsx(node)) {
+    const children: AnyNode[] = [];
+    for (const c of node.children ?? []) {
+      const converted = fromJsx(c);
+      if (!converted) return null;
+      children.push(converted);
+    }
+    if (node.type === 'element') return { ...node, children };
+    const jsx = node as JsxNode;
+    if (!jsx.name || !/^[a-z][a-z0-9]*$/.test(jsx.name)) return null;
+    const props: Record<string, string | boolean> = {};
+    for (const attr of jsx.attributes ?? []) {
+      if (attr.type !== 'mdxJsxAttribute') return null;
+      const { name, value } = attr as JsxAttribute;
+      if (value !== null && value !== undefined && typeof value !== 'string') return null;
+      props[name] = value ?? true;
+    }
+    return h(jsx.name, props, children as never) as unknown as AnyNode;
+  }
+  return null;
+}
 
 /** from this many columns the table reflows into cards below the wide threshold */
 const WIDE_AT = 6;
@@ -121,8 +163,12 @@ export function rehypeTblWrap() {
       const children = node.children;
       if (!children) return;
       for (let i = 0; i < children.length; i++) {
-        const child = children[i];
+        let child = children[i];
         if (!child) continue;
+        if (isJsx(child, 'table')) {
+          const converted = fromJsx(child);
+          if (converted) children[i] = child = converted;
+        }
         if (isEl(child, 'table')) {
           const table = child as unknown as Element;
           const props = (table.properties ??= {});

@@ -47,3 +47,47 @@ test('rowspan="0" spans all remaining rows per HTML — the table has no card fo
     assert.deepEqual(classes(w), ['tbl-wrap']);
   }
 });
+
+type Jsx = { type: 'mdxJsxFlowElement' | 'mdxJsxTextElement'; name: string; attributes: unknown[]; children: unknown[] };
+const jsx = (name: string, attributes: Record<string, unknown>, children: unknown[], text = false): Jsx => ({
+  type: text ? 'mdxJsxTextElement' : 'mdxJsxFlowElement',
+  name,
+  attributes: Object.entries(attributes).map(([n, value]) => ({ type: 'mdxJsxAttribute', name: n, value })),
+  children,
+});
+const wrapAny = (node: unknown): Element => {
+  const tree = { type: 'root', children: [node] } as unknown as Root;
+  rehypeTblWrap()(tree);
+  return tree.children[0] as Element;
+};
+
+test('a <table> written by hand in MDX gets the same frame as a Markdown table', () => {
+  const row = (cells: unknown[]) => jsx('tr', {}, cells);
+  const t = jsx('table', { class: 'tbl' }, [
+    jsx('thead', {}, [row([jsx('th', {}, [{ type: 'text', value: 'Name' }]), jsx('th', {}, [{ type: 'text', value: 'Size' }])])]),
+    { type: 'text', value: '\n' },
+    jsx('tbody', {}, [row([jsx('td', {}, [jsx('b', {}, [{ type: 'text', value: 'a' }], true)]), jsx('td', { colspan: '1' }, [{ type: 'text', value: '1' }])])]),
+  ]);
+  const w = wrapAny(t);
+  assert.deepEqual(classes(w), ['tbl-wrap']);
+  const table = (w.children[0] as Element).children[0] as Element;
+  assert.equal(table.type, 'element');
+  assert.equal(table.tagName, 'table');
+  assert.deepEqual(classes(table), ['tbl']);
+  assert.equal(table.properties?.['role'], 'table');
+  const body = table.children[2] as Element;
+  const cells = (body.children[0] as Element).children as Element[];
+  assert.equal(cells[0]!.properties?.['role'], 'rowheader');
+  assert.equal((cells[0]!.children[0] as Element).tagName, 'b');
+  assert.equal(cells[1]!.properties?.['colSpan'], 1);
+  assert.equal(cells[1]!.properties?.['data-label'], 'Size');
+});
+
+test('a hand-written table holding an expression or a component is left as it is', () => {
+  const expr = jsx('table', {}, [jsx('tbody', {}, [jsx('tr', {}, [jsx('td', {}, [{ type: 'mdxTextExpression', value: 'x' }])])])]);
+  assert.equal((wrapAny(expr) as unknown as Jsx).type, 'mdxJsxFlowElement');
+  const component = jsx('table', {}, [jsx('tbody', {}, [jsx('Row', {}, [])])]);
+  assert.equal((wrapAny(component) as unknown as Jsx).type, 'mdxJsxFlowElement');
+  const dynamic = jsx('table', { class: { type: 'mdxJsxAttributeValueExpression', value: 'c' } }, []);
+  assert.equal((wrapAny(dynamic) as unknown as Jsx).type, 'mdxJsxFlowElement');
+});
