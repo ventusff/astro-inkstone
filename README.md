@@ -218,7 +218,8 @@ renders wrong" cannot happen.
   sans are named `@fontsource` families the demo self-hosts.
 - **Search** — a build-time index endpoint factory plus a tiny dependency-free client.
 - **Render-layer probes** — `ui_probe` (every page at four widths: overflow, unstyled classes,
-  dead anchors, missing alt text, skipped headings, duplicate ids, dangling `aria-controls`) and
+  dead anchors, missing alt text, skipped headings, duplicate ids, dangling `aria-controls`;
+  redirect stubs from Astro's `redirects` are skipped) and
   `contrast_probe` (every rendered text run, both themes, sampled from pixels). Unit tests cover
   the library.
 - **No separate build step** — plain TypeScript and CSS, consumed as source by your site's Vite

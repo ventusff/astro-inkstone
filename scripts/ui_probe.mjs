@@ -83,13 +83,20 @@ if (!BASE) {
   BASE = `http://127.0.0.1:${server.address().port}`;
 }
 
+/** an Astro `redirects` entry: a stub page whose only job is a meta refresh */
+const REDIRECT_STUB = /<meta\s+http-equiv=["']refresh["']/i;
+const isRedirectStub = (file) => REDIRECT_STUB.test(readFileSync(file, 'utf8').slice(0, 2048));
+
 function routes(dir, prefix = '') {
   let out = [];
   for (const e of readdirSync(dir)) {
     const p = join(dir, e);
     if (statSync(p).isDirectory()) out = out.concat(routes(p, `${prefix}${e}/`));
-    else if (e === 'index.html') out.push(`/${prefix}`);
-    else if (e.endsWith('.html')) out.push(`/${prefix}${e}`); // flat pages, 404.html
+    // Redirect stubs navigate away as soon as they load, which tears down the
+    // page's execution context under the checks; they render nothing of their
+    // own, so there is nothing to probe.
+    else if (e === 'index.html') { if (!isRedirectStub(p)) out.push(`/${prefix}`); }
+    else if (e.endsWith('.html')) { if (!isRedirectStub(p)) out.push(`/${prefix}${e}`); } // flat pages, 404.html
   }
   return out.sort();
 }
