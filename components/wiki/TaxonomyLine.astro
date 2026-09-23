@@ -1,7 +1,8 @@
 ---
 /**
  * TaxonomyLine — one restrained meta strip at the top of a note page:
- * kind badge · domain chips · status dot · updated date · reading time.
+ * kind badge · domain chips · status dot · updated date · reading time ·
+ * provenance (a note synced in from another wiki says where from).
  * Renders nothing when the note carries none of them.
  *
  * Purely presentational: the site resolves registry defs and URLs (e.g. with
@@ -25,13 +26,22 @@ interface Props extends Omit<HTMLAttributes<'div'>, 'class'> {
   updated?: string | undefined;
   /** Pre-formatted reading time (e.g. "6 min read"). */
   reading?: string | undefined;
+  /** Provenance of a copy synced from another wiki: the visible text
+   *  (e.g. "Synced from notes-lab") and an optional tooltip (when, which
+   *  revision). */
+  origin?: { label: string; title?: string | undefined } | undefined;
   /** Display strings; pass localized overrides. */
   labels?: { updated?: string | undefined } | undefined;
 }
-const { kind, domains = [], status, updated, reading, labels = {}, ...rest } = Astro.props;
+const { kind, domains = [], status, updated, reading, origin, labels = {}, ...rest } = Astro.props;
 const dateLabel = labels.updated ?? 'updated';
 const show =
-  kind !== undefined || domains.length > 0 || status !== undefined || updated !== undefined || reading !== undefined;
+  kind !== undefined ||
+  domains.length > 0 ||
+  status !== undefined ||
+  updated !== undefined ||
+  reading !== undefined ||
+  origin !== undefined;
 ---
 
 {
@@ -48,6 +58,11 @@ const show =
         </span>
       )}
       {reading && <span class="date">{reading}</span>}
+      {origin && (
+        <span class="date" title={origin.title}>
+          {origin.label}
+        </span>
+      )}
     </div>
   )
 }
