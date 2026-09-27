@@ -34,8 +34,10 @@
  * holding an image) carries no marker and is reviewed by eye.
  *
  * What is not measured, by design: visually-hidden helper text (.sr-only,
- * .visually-hidden), closed <details>, and hover/focus states — those are
- * reviewed, not probed. aria-hidden text IS measured when it renders:
+ * .visually-hidden), the hidden MathML copy KaTeX emits (.katex-mathml),
+ * the body of a closed <details> (Chrome keeps its layout for find-in-page,
+ * so its text still reports line boxes; only the summary is visible), and
+ * hover/focus states — those are reviewed, not probed. aria-hidden text IS measured when it renders:
  * hiding from the accessibility tree does not hide from sighted readers. A
  * run whose color cannot be parsed or whose ground cannot be sampled is a
  * finding, never a skip.
@@ -301,7 +303,12 @@ const collectRuns = (scope) => {
   const out = [];
   const skipTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'TITLE', 'OPTION', 'TEXTAREA']);
   const hiddenScope =
-    scope === 'dialogs' ? '.sr-only, .visually-hidden' : '.sr-only, .visually-hidden, dialog:not([open])';
+    scope === 'dialogs' ? '.sr-only, .visually-hidden, .katex-mathml' : '.sr-only, .visually-hidden, .katex-mathml, dialog:not([open])';
+  // inside a closed <details> only its own <summary> renders
+  const inClosedDetails = (el) => {
+    const closed = el.closest('details:not([open])');
+    return Boolean(closed) && el.closest('summary')?.parentElement !== closed;
+  };
   const inScope = (el) =>
     scope === 'dialogs'
       ? Boolean(el.closest('dialog[open]'))
@@ -382,7 +389,7 @@ const collectRuns = (scope) => {
     if (!text) continue;
     const el = n.parentElement;
     if (!el || skipTags.has(el.tagName)) continue;
-    if (el.closest(hiddenScope) || !inScope(el)) continue;
+    if (el.closest(hiddenScope) || inClosedDetails(el) || !inScope(el)) continue;
     const cs = getComputedStyle(el);
     if (!visible(cs)) continue;
     const alpha = effAlpha(el);
