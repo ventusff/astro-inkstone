@@ -205,7 +205,7 @@ renders wrong" cannot happen.
   instant filters, tag cloud.
 - **26 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
   `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `SearchPalette` (the ⌘K overlay), `LanguageMenu`
-  (autonym rows, optional cross-site preference cookie), `LocalGraph`, the faceted wiki set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational
+  (autonym rows; links per language, or a form that records the reader's language), `LocalGraph`, the faceted wiki set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational
   and token-driven.
 - **Digital-garden machinery** — a taxonomy factory (kinds / domains / tags / status, hub notes
   with numbered chapters, locale mirrors for any number of languages), a backlink-index
@@ -215,6 +215,8 @@ renders wrong" cannot happen.
   Interface text lives in one ICU MessageFormat catalog per language (`lib/messages.ts`): a
   key written in one language reads through to the default language until the others catch
   up, and `missing()` names what each language still lacks.
+  `lib/locale-negotiation.ts` keeps every page a reader opens in the reader's language: a
+  page request under another locale's prefix is redirected to theirs.
 - **`siteMarkdown()`** — GFM, CJK-friendly emphasis, KaTeX (dual-theme), Mermaid, Obsidian-style
   callouts, `[[wikilinks]]`, reading time, auto-numbered headings with ToC extraction,
   base-prefix link rewriting, and the build-time content guard.

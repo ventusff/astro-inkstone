@@ -14,18 +14,19 @@
  * from the popover itself. Up to six languages list in one column, more in
  * two.
  *
- * `remember` names a cookie that a chosen row's code is written to before
- * navigating — a choice other pages and other sites under the cookie's
- * domain can read. It lasts the browser session unless `days` is given, so
- * a standing default (say, one assigned to the reader's account) resumes in
- * the next session. Without `remember` nothing is stored.
+ * Two ways a row acts. Without `setter`, each row is a link to `href` —
+ * a site whose address carries the language. With `setter`, the language is
+ * a property of the reader: each row is a form that POSTs the code (field
+ * `lang`) and the page the reader is on (field `return`) to `setter.action`,
+ * which records the reader's language and sends them back; the site then
+ * serves every page in it.
  *
  * Presentational like every wiki component: second-tier tokens only, every
  * label a prop, and the panel carries `data-probe-open` so the render probes
  * sample it open.
  */
 export interface LanguageMenuItem {
-  /** language code, the value a remembered preference stores */
+  /** language code — what a setter records */
   code: string;
   /** the language's name in itself */
   label: string;
@@ -45,16 +46,11 @@ interface Props {
   label: string;
   /** popover id — unique per page; change it only to mount two menus */
   id?: string;
-  remember?: {
-    cookie: string;
-    /** cookie domain, e.g. '.example.com' to share across subdomains */
-    domain?: string;
-    /** lifetime in days; omitted, the cookie lasts the browser session */
-    days?: number;
-  };
+  /** where a chosen language is recorded for the reader (see above) */
+  setter?: { action: string };
 }
 
-const { items, current, label, id = 'lang-menu', remember } = Astro.props;
+const { items, current, label, id = 'lang-menu', setter } = Astro.props;
 const here = items.find((i) => i.code === current);
 if (!here) throw new Error(`LanguageMenu: current language "${current}" is not among the items`);
 const cols = items.length > 6 ? 2 : 1;
@@ -85,9 +81,6 @@ const cols = items.length > 6 ? 2 : 1;
   popover
   data-probe-open
   data-cols={cols}
-  data-remember-cookie={remember?.cookie}
-  data-remember-domain={remember?.domain}
-  data-remember-days={remember?.days !== undefined ? String(remember.days) : undefined}
 >
   <nav aria-label={label}>
     <ul>
@@ -109,14 +102,29 @@ const cols = items.length > 6 ? 2 : 1;
             </li>
           ) : (
             <li>
-              <a class="row" href={item.href} hreflang={item.htmlLang} lang={item.htmlLang} data-lang-code={item.code}>
-                <span class="name">{item.label}</span>
-                {item.englishName && (
-                  <span class="alt" lang="en">
-                    {item.englishName}
-                  </span>
-                )}
-              </a>
+              {setter ? (
+                <form class="set" method="post" action={setter.action}>
+                  <input type="hidden" name="lang" value={item.code} />
+                  <input type="hidden" name="return" value={item.href} data-return />
+                  <button class="row" type="submit" lang={item.htmlLang}>
+                    <span class="name">{item.label}</span>
+                    {item.englishName && (
+                      <span class="alt" lang="en">
+                        {item.englishName}
+                      </span>
+                    )}
+                  </button>
+                </form>
+              ) : (
+                <a class="row" href={item.href} hreflang={item.htmlLang} lang={item.htmlLang}>
+                  <span class="name">{item.label}</span>
+                  {item.englishName && (
+                    <span class="alt" lang="en">
+                      {item.englishName}
+                    </span>
+                  )}
+                </a>
+              )}
             </li>
           ),
         )
@@ -150,19 +158,8 @@ const cols = items.length > 6 ? 2 : 1;
       pop.style.margin = '0';
     });
 
-    // A remembered preference is written as the row is followed, so the
-    // page it leads to already sees it.
-    const cookie = pop.dataset.rememberCookie;
-    if (!cookie) continue;
-    const parts = ['path=/', 'SameSite=Lax'];
-    if (pop.dataset.rememberDays) parts.push(`max-age=${Number(pop.dataset.rememberDays) * 86400}`);
-    if (pop.dataset.rememberDomain) parts.push(`domain=${pop.dataset.rememberDomain}`);
-    if (location.protocol === 'https:') parts.push('Secure');
-    pop.addEventListener('click', (e) => {
-      const row = (e.target as Element).closest<HTMLAnchorElement>('a[data-lang-code]');
-      if (!row) return;
-      document.cookie = [`${cookie}=${encodeURIComponent(row.dataset.langCode ?? '')}`, ...parts].join('; ');
-    });
+    // A recorded choice returns the reader to the page they are on.
+    for (const input of pop.querySelectorAll<HTMLInputElement>('input[data-return]')) input.value = location.href;
   }
 </script>
 
@@ -229,7 +226,19 @@ const cols = items.length > 6 ? 2 : 1;
     text-decoration: none;
     color: inherit;
   }
-  a.row:hover {
+  .set {
+    display: contents;
+  }
+  button.row {
+    width: 100%;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  a.row:hover,
+  button.row:hover {
     background: color-mix(in srgb, var(--color-accent) 10%, transparent);
   }
   .name {
