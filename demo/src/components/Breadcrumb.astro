@@ -49,7 +49,6 @@ const twin = new Map(alternates.map((a) => [a.code, a.route]));
 const languages = LOCALES.map((l) => ({
   code: l.code,
   label: l.label,
-  englishName: l.englishName,
   htmlLang: l.htmlLang,
   href: href(twin.get(l.code) ?? landingRoute(l.code)),
 }));

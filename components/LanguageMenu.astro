@@ -2,9 +2,10 @@
 /**
  * LanguageMenu — a site's one language control for its nav bar.
  *
- * Each row names a language in itself (its autonym), with its English name as
- * a second line: a reader who cannot read the current page's language must
- * still be able to find their own. The site supplies every row, including
+ * Each row names a language in itself (its autonym) — a reader who cannot
+ * read the current page's language still finds their own — and, as a second
+ * line, in the page's language (Intl.DisplayNames), left out where the two
+ * coincide. Nothing else in the menu is in a language other than the page's. The site supplies every row, including
  * where it leads — usually this page's twin in that language, or that
  * language's landing page when no twin exists — so routing stays site-owned.
  *
@@ -38,8 +39,6 @@ export interface LanguageMenuItem {
   code: string;
   /** the language's name in itself */
   label: string;
-  /** the language's name in English — the row's second line */
-  englishName?: string;
   /** value for the row's `lang` and `hreflang` */
   htmlLang: string;
   /** where choosing this language leads */
@@ -66,6 +65,12 @@ const { items, current, label, id = 'lang-menu', setter } = Astro.props;
 const here = items.find((i) => i.code === current);
 if (!here) throw new Error(`LanguageMenu: current language "${current}" is not among the items`);
 const cols = items.length > 6 ? 2 : 1;
+// each language's name in the page's language: the rows' second line
+const names = new Intl.DisplayNames([here.htmlLang], { type: 'language' });
+const gloss = (item: LanguageMenuItem): string | undefined => {
+  const name = names.of(item.code);
+  return name && name !== item.label ? name : undefined;
+};
 const busy = items.some((i) => i.status && i.status.kind !== 'failed');
 const failed = items.some((i) => i.status?.kind === 'failed');
 const signal = busy ? 'busy' : failed ? 'failed' : undefined;
@@ -111,9 +116,9 @@ const signalText = items
             <li data-lang-code={item.code} data-lang-status={item.status?.kind}>
               <span class="row here" aria-current="true" lang={item.htmlLang}>
                 <span class="name">{item.label}</span>
-                {item.englishName && (
-                  <span class="alt" lang="en">
-                    {item.englishName}
+                {gloss(item) && (
+                  <span class="alt" lang={here.htmlLang}>
+                    {gloss(item)}
                   </span>
                 )}
                 <span class="state">{item.status?.label}</span>
@@ -130,9 +135,9 @@ const signalText = items
                   <input type="hidden" name="return" value={item.href} data-return />
                   <button class="row" type="submit" lang={item.htmlLang}>
                     <span class="name">{item.label}</span>
-                    {item.englishName && (
-                      <span class="alt" lang="en">
-                        {item.englishName}
+                    {gloss(item) && (
+                      <span class="alt" lang={here.htmlLang}>
+                        {gloss(item)}
                       </span>
                     )}
                     <span class="state">{item.status?.label}</span>
@@ -141,9 +146,9 @@ const signalText = items
               ) : (
                 <a class="row" href={item.href} hreflang={item.htmlLang} lang={item.htmlLang}>
                   <span class="name">{item.label}</span>
-                  {item.englishName && (
-                    <span class="alt" lang="en">
-                      {item.englishName}
+                  {gloss(item) && (
+                    <span class="alt" lang={here.htmlLang}>
+                      {gloss(item)}
                     </span>
                   )}
                   <span class="state">{item.status?.label}</span>

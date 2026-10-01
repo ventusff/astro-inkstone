@@ -1,0 +1,84 @@
+---
+/**
+ * TranslationPending — what a page shows in a language that has no text for
+ * it yet: a note, in that language, that the page is being translated. Never
+ * another language's text in its place.
+ *
+ * The page checks its own address every `pollSeconds` and reloads once the
+ * answer no longer carries this placeholder, i.e. once its text has arrived.
+ * When `prioritize` names an endpoint, the page asks it once (POST, with the
+ * page's address as `page`) to move this page to the front of the
+ * translation queue; a failed request is ignored.
+ *
+ * Presentational like every wiki component: second-tier tokens only, and
+ * every word is a prop.
+ */
+interface Props {
+  title: string;
+  body: string;
+  pollSeconds?: number;
+  prioritize?: string | undefined;
+}
+const { title, body, pollSeconds = 30, prioritize } = Astro.props;
+---
+
+<section
+  class="translation-pending"
+  data-translation-pending
+  data-poll-seconds={pollSeconds}
+  data-prioritize={prioritize}
+  role="status"
+>
+  <p class="title">{title}</p>
+  <p class="body">{body}</p>
+</section>
+
+<script>
+  const MARK = 'data-translation-pending';
+  const el = document.querySelector<HTMLElement>(`[${MARK}]`);
+  if (el) {
+    const every = Math.max(5, Number(el.dataset.pollSeconds) || 30) * 1000;
+    const endpoint = el.dataset.prioritize;
+    if (endpoint) {
+      const form = new URLSearchParams({ page: location.href });
+      void fetch(endpoint, { method: 'POST', body: form, credentials: 'include' }).catch(() => undefined);
+    }
+    const check = async (): Promise<void> => {
+      try {
+        const res = await fetch(location.href, { cache: 'no-store' });
+        if (res.ok && !(await res.text()).includes(MARK)) {
+          location.reload();
+          return;
+        }
+      } catch {
+        // offline for a moment: the next check retries
+      }
+      setTimeout(() => void check(), every);
+    };
+    setTimeout(() => void check(), every);
+  }
+</script>
+
+<style>
+  .translation-pending {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 32px 0;
+    padding: 22px 24px;
+    border: 1px dashed var(--color-line);
+    border-radius: var(--radius);
+    font-family: var(--font-ui);
+  }
+  .translation-pending p {
+    margin: 0;
+  }
+  .title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .body {
+    color: var(--color-ink-soft);
+  }
+</style>

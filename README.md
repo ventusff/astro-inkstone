@@ -203,10 +203,11 @@ renders wrong" cannot happen.
   and reading paths, reference lists, reduced-motion handling, a print stylesheet that turns any
   page into a clean PDF. **`browse.css`** — masthead, ruled shelves, card grid, status legend,
   instant filters, tag cloud.
-- **26 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
+- **27 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
   `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `SearchPalette` (the ⌘K overlay), `LanguageMenu`
-  (autonym rows with each language's translation state; links per language, or a form that
-  records the reader's language), `LocalGraph`, the faceted wiki set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational
+  (autonym rows glossed in the page's language, with each language's translation state;
+  links per language, or a form that records the reader's language), `TranslationPending`
+  (the page a language has no text for yet: a note in that language that reloads when the text arrives), `LocalGraph`, the faceted wiki set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational
   and token-driven.
 - **Digital-garden machinery** — a taxonomy factory (kinds / domains / tags / status, hub notes
   with numbered chapters, locale mirrors for any number of languages), a backlink-index
