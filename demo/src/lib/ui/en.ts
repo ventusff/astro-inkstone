@@ -52,11 +52,6 @@ export const strings: UIStrings = {
 
   speakLabel: 'In plain words →',
   diffLabel: 'vs prior →',
-  codeCopy: "copy",
-  codeCopyName: "Copy code",
-  codeCopied: "✓ copied",
-  codeExpand: "Expand",
-  codeCollapse: "Collapse",
 
   kinds: facet(KINDS),
   domains: facet(DOMAINS),

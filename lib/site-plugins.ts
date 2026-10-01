@@ -24,6 +24,7 @@ import { rehypeWikiBlocks } from 'astro-inkbrush/wiki-blocks';
 import { type buildWikilinkResolver, remarkWikilinks } from 'astro-inkbrush/wikilinks/core';
 
 import { normalizeBase } from './base.ts';
+import type { CodeFrameLabels } from './code-frame.ts';
 import { rehypeBaseLinks } from './rehype-base-links.ts';
 import { rehypeChapters, slugify } from './rehype-chapters.ts';
 import { rehypeMermaidClient } from './rehype-mermaid-client.ts';
@@ -60,7 +61,7 @@ export interface SiteMarkdownOptions {
   /** code frames (title bar / copy / collapse) + line-annotation
    *  transformers. Pass an object to localize the copy/expand labels.
    *  Default on */
-  codeFrame?: boolean;
+  codeFrame?: boolean | CodeFrameLabels;
   /**
    * [[wikilinks]]: enabled as soon as the site supplies a resolution scope.
    * Build `resolve` with buildWikilinkResolver (notes come from the site's

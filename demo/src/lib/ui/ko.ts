@@ -42,11 +42,6 @@ export const strings: UIStrings = {
 
   speakLabel: '쉽게 말하면 →',
   diffLabel: '기존 방식과의 차이 →',
-  codeCopy: "복사",
-  codeCopyName: "코드 복사",
-  codeCopied: "✓ 복사됨",
-  codeExpand: "펼치기",
-  codeCollapse: "접기",
 
   kinds: {
     guide: { label: '가이드', desc: '작업 흐름을 따라가는 안내: 여기서 시작해 바로 연결합니다' },

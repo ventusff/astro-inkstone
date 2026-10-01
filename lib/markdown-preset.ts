@@ -59,7 +59,7 @@ export function siteMarkdown(opts: SiteMarkdownOptions = {}): MarkdownConfig {
       ...(codeFrame
         ? {
             transformers: [
-              transformerCodeFrame(),
+              transformerCodeFrame(codeFrame === true ? {} : codeFrame),
               transformerMetaHighlight(),
               transformerMetaWordHighlight(),
               transformerNotationDiff(),

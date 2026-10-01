@@ -29,7 +29,7 @@ export { rehypeMermaidClient } from './rehype-mermaid-client.ts';
 export { remarkHeadingAttrs } from './remark-heading-attrs.ts';
 export { remarkCallouts, type CalloutOptions } from './remark-callouts.ts';
 export { remarkReadingTime } from './remark-reading-time.ts';
-export { transformerCodeFrame } from './code-frame.ts';
+export { transformerCodeFrame, type CodeFrameLabels } from './code-frame.ts';
 export { buildSearchIndexEndpoint, type SearchIndexOptions, type SearchIndexSource } from './search-index.ts';
 export { secureFsDeny } from './vite-security.ts';
 export type { DomainDisplay, KindDisplay, StatusDisplay, Tone } from './wiki-display.ts';

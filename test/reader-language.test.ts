@@ -22,6 +22,12 @@ test('a page navigation goes to the reader’s language', () => {
   assert.equal(page('/en/ec2/launch/'), '/ec2/launch/');
 });
 
+test('an .html address is a page like its directory route', () => {
+  assert.equal(page('/en/ec2/launch/index.html', 'chaser_lang=de'), '/de/ec2/launch/index.html');
+  assert.equal(page('/en/404.html', 'chaser_lang=zh'), '/404.html');
+  assert.equal(page('/de/ec2/launch/index.html', 'chaser_lang=de'), null);
+});
+
 test('files, engine endpoints, non-GET and non-HTML requests pass through', () => {
   assert.equal(page('/en/search-index.json', 'chaser_lang=de'), null);
   assert.equal(page('/en/fig.svg', 'chaser_lang=de'), null);

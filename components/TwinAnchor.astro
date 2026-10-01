@@ -1,0 +1,74 @@
+---
+/**
+ * TwinAnchor — a heading anchor that belongs to this page's twin in another
+ * language lands on the matching heading here.
+ *
+ * Heading ids are slugs of the heading text, so the same section has a
+ * different id in each language. A reader sent to their own language
+ * (lib/locale-negotiation.ts) keeps the address's fragment, which then names
+ * a heading of the page they came from. When the fragment names no element
+ * on this page, the script reads the twins, finds the twin whose heading
+ * carries that id and moves to the heading at the same position here
+ * (headings in document order); when no twin has it, or this page has fewer
+ * headings, the reader stays at the top of the page and the dangling
+ * fragment is dropped from the address.
+ *
+ * A site mounts it on every page served once per language, passing this
+ * page's addresses in the other languages.
+ */
+interface Props {
+  /** this page's twins: its address in each other language */
+  twins: readonly string[];
+}
+
+const { twins } = Astro.props;
+---
+
+<span hidden data-twin-anchor={JSON.stringify(twins)}></span>
+
+<script>
+  const HEADINGS = 'h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]';
+
+  /** position of the heading with this id among a document's headings; -1 when absent */
+  const headingIndex = (doc: Document, id: string): number =>
+    [...doc.querySelectorAll(HEADINGS)].findIndex((h) => h.id === id);
+
+  /** the position of `id` in the first twin that has it */
+  async function positionInTwins(twins: string[], id: string): Promise<number> {
+    const found = twins.map(async (href) => {
+      const res = await fetch(href, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error(`${href}: ${res.status}`);
+      const at = headingIndex(new DOMParser().parseFromString(await res.text(), 'text/html'), id);
+      if (at < 0) throw new Error(`${href}: no #${id}`);
+      return at;
+    });
+    return Promise.any(found).catch(() => -1);
+  }
+
+  async function follow(holder: HTMLElement): Promise<void> {
+    let id: string;
+    try {
+      id = decodeURIComponent(location.hash.slice(1));
+    } catch {
+      id = location.hash.slice(1);
+    }
+    if (!id || document.getElementById(id)) return;
+    const arrived = location.hash;
+    const twins = (JSON.parse(holder.dataset.twinAnchor ?? '[]') as string[]).filter(
+      (href) => new URL(href, location.href).origin === location.origin,
+    );
+    const at = await positionInTwins(twins, id);
+    // the reader moved on while the twins loaded: their choice stands
+    if (location.hash !== arrived) return;
+    const target = at < 0 ? undefined : document.querySelectorAll<HTMLElement>(HEADINGS)[at];
+    if (target) {
+      location.replace(`#${encodeURIComponent(target.id)}`);
+    } else {
+      history.replaceState(history.state, '', `${location.pathname}${location.search}`);
+      window.scrollTo(0, 0);
+    }
+  }
+
+  const holder = document.querySelector<HTMLElement>('[data-twin-anchor]');
+  if (holder) void follow(holder);
+</script>

@@ -1,0 +1,23 @@
+---
+/**
+ * PageLabels — the words rendered content carries, in this page's language
+ * (lib/page-labels.ts): the plain-words and vs-prior markers, and the code
+ * frame's copy and fold labels with the copy button's accessible name and
+ * tooltip.
+ *
+ * A site mounts it in the layout of every page whose language differs from
+ * the words its content was built with, passing that language's labels. A
+ * page in the build's language leaves it out and keeps the content exactly
+ * as built. Labels left out keep their built or default text.
+ */
+import { type PageLabels, pageLabelScript, pageLabelStyle } from '../lib/page-labels.ts';
+
+type Props = PageLabels;
+
+const labels = Astro.props;
+const markers = labels.speak !== undefined || labels.diff !== undefined;
+const frames = labels.codeFrame !== undefined && Object.values(labels.codeFrame).some((v) => v !== undefined);
+---
+
+{markers && <style is:inline set:html={pageLabelStyle(labels)} />}
+{frames && <script is:inline set:html={pageLabelScript(labels)} />}

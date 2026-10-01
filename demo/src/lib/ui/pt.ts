@@ -45,11 +45,6 @@ export const strings: UIStrings = {
 
   speakLabel: 'Em bom português →',
   diffLabel: 'Comparado ao anterior →',
-  codeCopy: "copiar",
-  codeCopyName: "Copiar código",
-  codeCopied: "✓ copiado",
-  codeExpand: "Expandir",
-  codeCollapse: "Recolher",
 
   kinds: {
     guide: { label: 'Guia', desc: 'Passo a passo orientado a tarefas: comece aqui e ligue tudo' },

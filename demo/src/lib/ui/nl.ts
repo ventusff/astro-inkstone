@@ -42,11 +42,6 @@ export const strings: UIStrings = {
 
   speakLabel: 'In gewone taal →',
   diffLabel: 'Vergeleken met eerder →',
-  codeCopy: "kopiëren",
-  codeCopyName: "Code kopiëren",
-  codeCopied: "✓ gekopieerd",
-  codeExpand: "Uitklappen",
-  codeCollapse: "Inklappen",
 
   kinds: {
     guide: { label: 'Gids', desc: 'Stap voor stap langs een taak: begin hier en sluit alles aan' },

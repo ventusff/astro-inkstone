@@ -203,12 +203,13 @@ renders wrong" cannot happen.
   and reading paths, reference lists, reduced-motion handling, a print stylesheet that turns any
   page into a clean PDF. **`browse.css`** — masthead, ruled shelves, card grid, status legend,
   instant filters, tag cloud.
-- **27 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
+- **29 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
   `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `SearchPalette` (the ⌘K overlay), `LanguageMenu`
-  (autonym rows glossed in the page's language, with each language's translation state;
-  links per language, or a form that records the reader's language), `TranslationPending`
-  (the page a language has no text for yet: a note in that language that reloads when the text arrives), `LocalGraph`, the faceted wiki set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational
-  and token-driven.
+  (autonym rows glossed in English or in the page's language, with each language's translation
+  state; links per language, or a form that records the reader's language), `TranslationPending`
+  (the page a language has no text for yet: a note in that language that reloads when the text
+  arrives), `PageLabels` and `TwinAnchor` (see below), `LocalGraph`, the faceted wiki set
+  (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational and token-driven.
 - **Digital-garden machinery** — a taxonomy factory (kinds / domains / tags / status, hub notes
   with numbered chapters, locale mirrors for any number of languages), a backlink-index
   builder with context snippets, both bound to your vocabulary in a three-line site module, and
@@ -220,9 +221,12 @@ renders wrong" cannot happen.
   whose catalogs disagree on keys or arguments.
   `lib/locale-negotiation.ts` keeps every page a reader opens in the reader's language: a
   page request under another locale's prefix is redirected to theirs, on the dev server's
-  own request pipeline (`lib/reader-language.ts`, an Astro integration). The words base.css
-  draws itself — code-frame copy and fold labels, the plain-words and diff markers — come
-  from the page's language (`lib/page-labels.ts`).
+  own request pipeline (`lib/reader-language.ts`, an Astro integration), and `TwinAnchor`
+  carries the address's heading anchor over to the same heading in the reader's language.
+  A page in another language than the one its content was built in mounts `PageLabels`
+  (`lib/page-labels.ts`): the words rendered content carries — the code frame's copy and fold
+  labels, accessible name and tooltip included, the plain-words and diff markers — follow the
+  page; a page in the build's language leaves it out and keeps the content exactly as built.
 - **`siteMarkdown()`** — GFM, CJK-friendly emphasis, KaTeX (dual-theme), Mermaid, Obsidian-style
   callouts, `[[wikilinks]]`, reading time, auto-numbered headings with ToC extraction,
   base-prefix link rewriting, and the build-time content guard.

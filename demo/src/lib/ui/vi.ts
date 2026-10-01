@@ -42,11 +42,6 @@ export const strings: UIStrings = {
 
   speakLabel: 'Nói đơn giản là →',
   diffLabel: 'So với trước đây →',
-  codeCopy: "sao chép",
-  codeCopyName: "Sao chép mã",
-  codeCopied: "✓ đã sao chép",
-  codeExpand: "Mở rộng",
-  codeCollapse: "Thu gọn",
 
   kinds: {
     guide: { label: 'Hướng dẫn', desc: 'Chỉ dẫn theo từng việc: bắt đầu ở đây, lắp vào dự án của bạn' },

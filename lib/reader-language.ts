@@ -9,8 +9,13 @@
  * reader and is untouched.
  *
  * Only page navigations move: GET requests that accept HTML, under the
- * deploy base, for paths that are neither files (an extension) nor engine
- * and CMS endpoints (`_…`, `@…`, `api/…`).
+ * deploy base, for page paths — a directory route or an `.html` file, never
+ * another file (an asset's extension) nor an engine or CMS endpoint (`_…`,
+ * `@…`, `api/…`).
+ *
+ * The address's fragment never reaches the server, and the browser keeps it
+ * across the redirect; components/TwinAnchor.astro carries a heading anchor
+ * of the twin over to the matching heading of the page the reader lands on.
  */
 import type { AstroIntegration } from 'astro';
 
@@ -45,7 +50,7 @@ export function readerRedirect(
     req.method === 'GET' &&
     (req.headers.accept ?? '').includes('text/html') &&
     rest !== null &&
-    !/\.[A-Za-z0-9]+$/.test(rest) &&
+    (!/\.[A-Za-z0-9]+$/.test(rest) || /\.html?$/i.test(rest)) &&
     !/^(?:[_@]|api\/)/.test(rest);
   return negotiateLocale({ url, cookies: parseCookies(req.headers.cookie), page, localized: true }, { ...options, base: root })
     .redirect;

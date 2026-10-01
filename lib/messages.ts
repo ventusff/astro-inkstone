@@ -6,8 +6,8 @@
  * A reader only ever reads their own language. A key may exist in some
  * catalogs and not yet in others — text is written in one language and the
  * others are filled in behind it — and where the reader's catalog lacks the
- * key, the lookup answers with that language's `pending` text ("translation
- * in progress"), never with another language. `missing()` lists a
+ * key — or holds it blank — the lookup answers with that language's
+ * `pending` text ("translation in progress"), never with another language. `missing()` lists a
  * language's absent keys; scripts/check-messages.mjs fails a build whose
  * catalogs disagree, so pending text is a transient state of a live site.
  *
@@ -81,9 +81,14 @@ export function createMessages<const C extends Record<string, Catalog>>(
   };
 
   const known = new Set<string>(keys);
+  /** the language's message for the key, unless absent or blank */
+  const written = (locale: L, key: string): string | undefined => {
+    const source = flat.get(locale)!.get(key);
+    return source?.trim() ? source : undefined;
+  };
   const resolve = (locale: L, key: K, values?: MessageValues) => {
     if (!known.has(key)) throw new Error(`messages: no catalog has "${key}"`);
-    const source = flat.get(locale)!.get(key);
+    const source = written(locale, key);
     return source === undefined
       ? { text: pending[locale], pending: true }
       : { text: format(locale, key, source, values), pending: false };
@@ -92,7 +97,7 @@ export function createMessages<const C extends Record<string, Catalog>>(
   return {
     resolve,
     t: (locale, key, values) => resolve(locale, key, values).text,
-    missing: (locale) => keys.filter((k) => !flat.get(locale)!.has(k)),
+    missing: (locale) => keys.filter((k) => written(locale, k) === undefined),
     keys,
   };
 }

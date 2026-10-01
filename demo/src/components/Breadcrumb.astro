@@ -43,13 +43,15 @@ const { locale, crumbs, alternates, hasSidebar = false } = Astro.props;
 const t = UI[locale];
 // the garden's landing page in this locale — the mark and the trail's root
 const home = landingRoute(locale);
-// one menu row per registered language: this page's twin there, or that
-// language's landing page when the twin does not exist
+// one menu row per registered language, glossed with its English name: this
+// page's twin there, or that language's landing page when the twin does not
+// exist
 const twin = new Map(alternates.map((a) => [a.code, a.route]));
 const languages = LOCALES.map((l) => ({
   code: l.code,
   label: l.label,
   htmlLang: l.htmlLang,
+  gloss: l.englishName,
   href: href(twin.get(l.code) ?? landingRoute(l.code)),
 }));
 ---

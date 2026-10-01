@@ -4,10 +4,12 @@
  *
  * Each row names a language in itself (its autonym) — a reader who cannot
  * read the current page's language still finds their own — and, as a second
- * line, in the page's language (Intl.DisplayNames), left out where the two
- * coincide. Nothing else in the menu is in a language other than the page's. The site supplies every row, including
- * where it leads — usually this page's twin in that language, or that
- * language's landing page when no twin exists — so routing stays site-owned.
+ * line, in `glossLang`: English by default, or the page's own language when
+ * the site passes it. The second line is the item's `gloss` when the site
+ * supplies one, otherwise Intl.DisplayNames' name, left out where it
+ * repeats the autonym. The site supplies every row, including where it
+ * leads — usually this page's twin in that language, or that language's
+ * landing page when no twin exists — so routing stays site-owned.
  *
  * A native popover: the trigger works without JavaScript (the panel then
  * centers, the UA's default popover placement); the script only anchors the
@@ -28,7 +30,8 @@
  * translated or queued, the trigger carries a slowly pulsing dot (still under
  * reduced motion), and a failure a steady one. The state is data the site
  * supplies; a script that learns a newer state sets `data-lang-status` and
- * the status text on the row, and the styles follow the attribute.
+ * the status text on the row, and the row, the trigger's dot and its
+ * accessible name follow.
  *
  * Presentational like every wiki component: second-tier tokens only, every
  * label a prop, and the panel carries `data-probe-open` so the render probes
@@ -43,6 +46,8 @@ export interface LanguageMenuItem {
   htmlLang: string;
   /** where choosing this language leads */
   href: string;
+  /** the language's name in `glossLang`; default Intl.DisplayNames' name */
+  gloss?: string | undefined;
   /** this page's state in this language, with its words in the page's language */
   status?: { kind: LanguageStatus; label: string } | undefined;
 }
@@ -59,34 +64,39 @@ interface Props {
   id?: string;
   /** where a chosen language is recorded for the reader (see above) */
   setter?: { action: string };
+  /** BCP 47 tag of the language the rows' second line is written in. Default 'en' */
+  glossLang?: string;
 }
 
-const { items, current, label, id = 'lang-menu', setter } = Astro.props;
+const { items, current, label, id = 'lang-menu', setter, glossLang = 'en' } = Astro.props;
 const here = items.find((i) => i.code === current);
 if (!here) throw new Error(`LanguageMenu: current language "${current}" is not among the items`);
 const cols = items.length > 6 ? 2 : 1;
-// each language's name in the page's language: the rows' second line
-const names = new Intl.DisplayNames([here.htmlLang], { type: 'language' });
+// each language's name in glossLang: the rows' second line
+const names = new Intl.DisplayNames([glossLang], { type: 'language' });
 const gloss = (item: LanguageMenuItem): string | undefined => {
+  if (item.gloss !== undefined) return item.gloss;
   const name = names.of(item.code);
   return name && name !== item.label ? name : undefined;
 };
-const busy = items.some((i) => i.status && i.status.kind !== 'failed');
+const busy = items.some((i) => i.status?.kind === 'updating' || i.status?.kind === 'queued');
 const failed = items.some((i) => i.status?.kind === 'failed');
 const signal = busy ? 'busy' : failed ? 'failed' : undefined;
 const signalText = items
   .filter((i) => i.status)
   .map((i) => `${i.label}: ${i.status!.label}`)
   .join('; ');
+const name = `${label} · ${here.label}`;
 ---
 
 <button
   class="lang-btn"
   type="button"
   popovertarget={id}
-  aria-label={signalText ? `${label} · ${here.label} · ${signalText}` : `${label} · ${here.label}`}
+  aria-label={signalText ? `${name} · ${signalText}` : name}
   title={label}
   data-lang-trigger
+  data-lang-name={name}
   data-lang-signal={signal}
 >
   {/* the 文/A mark: translation, not a flag — flags name countries, not languages */}
@@ -117,11 +127,11 @@ const signalText = items
               <span class="row here" aria-current="true" lang={item.htmlLang}>
                 <span class="name">{item.label}</span>
                 {gloss(item) && (
-                  <span class="alt" lang={here.htmlLang}>
+                  <span class="alt" lang={glossLang}>
                     {gloss(item)}
                   </span>
                 )}
-                <span class="state">{item.status?.label}</span>
+                <span class="state" lang={here.htmlLang}>{item.status?.label}</span>
                 <svg class="check" viewBox="0 0 14 14" width="13" height="13" aria-hidden="true">
                   <path d="M2.5 7.5 6 11l5.5-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
@@ -136,22 +146,22 @@ const signalText = items
                   <button class="row" type="submit" lang={item.htmlLang}>
                     <span class="name">{item.label}</span>
                     {gloss(item) && (
-                      <span class="alt" lang={here.htmlLang}>
+                      <span class="alt" lang={glossLang}>
                         {gloss(item)}
                       </span>
                     )}
-                    <span class="state">{item.status?.label}</span>
+                    <span class="state" lang={here.htmlLang}>{item.status?.label}</span>
                   </button>
                 </form>
               ) : (
                 <a class="row" href={item.href} hreflang={item.htmlLang} lang={item.htmlLang}>
                   <span class="name">{item.label}</span>
                   {gloss(item) && (
-                    <span class="alt" lang={here.htmlLang}>
+                    <span class="alt" lang={glossLang}>
                       {gloss(item)}
                     </span>
                   )}
-                  <span class="state">{item.status?.label}</span>
+                  <span class="state" lang={here.htmlLang}>{item.status?.label}</span>
                 </a>
               )}
             </li>
@@ -171,6 +181,7 @@ const signalText = items
   // viewport's left edge instead. Its width is a computed length, readable
   // while the panel is still closed.
   const INSET = 8;
+  const BUSY = ['updating', 'queued'];
   for (const btn of document.querySelectorAll<HTMLButtonElement>('button[data-lang-trigger]')) {
     const pop = document.getElementById(btn.getAttribute('popovertarget') ?? '');
     if (!pop) continue;
@@ -187,8 +198,32 @@ const signalText = items
       pop.style.margin = '0';
     });
 
-    // A recorded choice returns the reader to the page they are on.
-    for (const input of pop.querySelectorAll<HTMLInputElement>('input[data-return]')) input.value = location.href;
+    // A recorded choice returns the reader to the page they are on, as it
+    // is when they choose.
+    pop.addEventListener('submit', (e) => {
+      const input = (e.target as HTMLElement).querySelector<HTMLInputElement>('input[data-return]');
+      if (input) input.value = location.href;
+    });
+
+    // The trigger's dot and accessible name follow the rows' states.
+    new MutationObserver(() => {
+      const rows = [...pop.querySelectorAll<HTMLElement>('li[data-lang-status]')];
+      const kinds = rows.map((row) => row.dataset.langStatus ?? '');
+      const signal = kinds.some((k) => BUSY.includes(k)) ? 'busy' : kinds.includes('failed') ? 'failed' : undefined;
+      if (signal) btn.dataset.langSignal = signal;
+      else delete btn.dataset.langSignal;
+      const text = rows
+        .map((row) => `${row.querySelector('.name')?.textContent ?? ''}: ${row.querySelector('.state')?.textContent ?? ''}`)
+        .join('; ');
+      const name = btn.dataset.langName ?? '';
+      btn.setAttribute('aria-label', text ? `${name} · ${text}` : name);
+    }).observe(pop, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ['data-lang-status'],
+    });
   }
 </script>
 
@@ -247,7 +282,7 @@ const signalText = items
   .row {
     display: grid;
     grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
     align-items: center;
     column-gap: 8px;
     padding: 6px 10px;
@@ -284,9 +319,6 @@ const signalText = items
     grid-column: 2;
     grid-row: 1 / span 2;
     color: var(--color-accent-text);
-  }
-  .row {
-    grid-template-rows: auto auto auto;
   }
   .state {
     grid-column: 1;

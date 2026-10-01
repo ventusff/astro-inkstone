@@ -5,11 +5,12 @@
  * site's rehype plugins, so the rehype stage never sees the code element.
  *
  * Fence meta: `title="train.py"` names the frame; `collapse` renders it
- * folded.
+ * folded. Every visible and accessible string is a label (English defaults),
+ * written into the note when it is built; a page in another language than
+ * those labels relabels its frames (lib/page-labels.ts).
  *
- * The frame carries no words of its own: the copy button and fold hints are
- * drawn by base.css from page-level custom properties (lib/page-labels.ts),
- * so one rendered note reads in the language of the page that shows it.
+ * Usage (in the site markdown preset's shikiConfig.transformers):
+ *   transformers: [transformerCodeFrame({ copy: '复制' }), ...]
  */
 import type { Element } from 'hast';
 import { h } from 'hastscript';
@@ -20,7 +21,25 @@ import type { transformerMetaHighlight } from '@shikijs/transformers';
  *  type from a transformer's return value instead. */
 type ShikiTransformer = ReturnType<typeof transformerMetaHighlight>;
 
-export function transformerCodeFrame(): ShikiTransformer {
+export interface CodeFrameLabels {
+  /** copy button, idle. Default 'copy' */
+  copy?: string;
+  /** copy button after a successful copy. Default '✓ copied' */
+  copied?: string;
+  /** copy button's accessible name. Default 'Copy code' */
+  copyLabel?: string;
+  /** fold hint while the frame is collapsed. Default 'Expand' */
+  expandLabel?: string;
+  /** fold hint while the frame is open. Default 'Collapse' */
+  collapseLabel?: string;
+}
+
+export function transformerCodeFrame(opts: CodeFrameLabels = {}): ShikiTransformer {
+  const copy = opts.copy ?? 'copy';
+  const copied = opts.copied ?? '✓ copied';
+  const copyLabel = opts.copyLabel ?? 'Copy code';
+  const expandLabel = opts.expandLabel ?? 'Expand';
+  const collapseLabel = opts.collapseLabel ?? 'Collapse';
   return {
     name: 'code-frame',
     root(root) {
@@ -37,18 +56,27 @@ export function transformerCodeFrame(): ShikiTransformer {
       // (and focus inside the block reveals focus-notation-dimmed lines)
       (pre.properties ??= {})['tabIndex'] = 0;
 
-      const copyBtn = h('button', { className: ['code-copy'], type: 'button' }, [
-        h('span', { className: ['code-copy-idle'] }),
-        h('span', { className: ['code-copy-done'] }),
-      ]);
+      const copyBtn = h(
+        'button',
+        {
+          className: ['code-copy'],
+          type: 'button',
+          'aria-label': copyLabel,
+          title: copyLabel,
+        },
+        [
+          h('span', { className: ['code-copy-idle'] }, copy),
+          h('span', { className: ['code-copy-done'] }, copied),
+        ],
+      );
 
       const frame: Element = collapse
         ? h('details', { className: ['code-frame', 'is-collapsible'] }, [
             h('summary', { className: ['code-frame-head'] }, [
               h('span', { className: ['code-lang'] }, title ?? lang),
               h('span', { className: ['code-fold-hint'] }, [
-                h('span', { className: ['code-fold-closed'] }),
-                h('span', { className: ['code-fold-open'] }),
+                h('span', { className: ['code-fold-closed'] }, expandLabel),
+                h('span', { className: ['code-fold-open'] }, collapseLabel),
               ]),
             ]),
             h('div', { className: ['code-frame-body'] }, [

@@ -7,7 +7,7 @@ const m = createMessages(
   {
     zh: { nav: { search: '搜索' }, pages: '{n} 篇', only: { zh: '只有中文' } },
     en: { nav: { search: 'Search' }, pages: '{n, plural, one {# page} other {# pages}}', added: 'Added in English' },
-    de: { nav: { search: 'Suche' } },
+    de: { nav: { search: 'Suche' }, only: { zh: ' ' } },
   },
   {
     pending: { zh: '(正在翻译)', en: '(translation in progress)', de: '(wird übersetzt)' },
@@ -31,6 +31,10 @@ test('a key the language lacks answers with its pending text, never another lang
   assert.equal(m.t('de', 'added'), '(wird übersetzt)');
   assert.equal(m.t('en', 'only.zh'), '(translation in progress)');
   assert.equal(m.t('zh', 'added'), '(正在翻译)');
+});
+
+test('a blank message is a key not yet written', () => {
+  assert.deepEqual(m.resolve('de', 'only.zh'), { text: '(wird übersetzt)', pending: true });
 });
 
 test('missing() lists what a language has yet to be written in', () => {

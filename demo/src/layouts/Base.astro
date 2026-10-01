@@ -137,16 +137,9 @@ if (crumbs.length > 1) {
   });
 }
 
-// the words base.css draws in rendered content follow the page language
-const labelStyle = pageLabelStyle({
-  speak: t.speakLabel,
-  diff: t.diffLabel,
-  codeCopy: t.codeCopy,
-  codeCopyName: t.codeCopyName,
-  codeCopied: t.codeCopied,
-  codeExpand: t.codeExpand,
-  codeCollapse: t.codeCollapse,
-});
+// generated content-layer labels ("in plain words →", "vs prior →") follow
+// the page language through two custom properties read by base.css
+const labelStyle = pageLabelStyle({ speak: t.speakLabel, diff: t.diffLabel });
 
 // The CMS resolves a note's URL from its id with this template; the id↔route
 // identity (route = `${base}${id}/`) is what makes the language-switch jump

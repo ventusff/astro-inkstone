@@ -42,11 +42,6 @@ export const strings: UIStrings = {
 
   speakLabel: 'आसान भाषा में →',
   diffLabel: 'पहले के कामों की तुलना में →',
-  codeCopy: "कॉपी करें",
-  codeCopyName: "कोड कॉपी करें",
-  codeCopied: "✓ कॉपी हो गया",
-  codeExpand: "विस्तार करें",
-  codeCollapse: "समेटें",
 
   kinds: {
     guide: { label: 'गाइड', desc: 'काम के हिसाब से कदम-दर-कदम राह: यहाँ से शुरू करें, जोड़ते चलें' },

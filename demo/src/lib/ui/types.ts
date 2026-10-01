@@ -66,14 +66,9 @@ export interface UIStrings {
   landingTitle: string;
   landingDesc: string;
 
-  /* ---- labels base.css draws in rendered content (lib/page-labels.ts) ---- */
+  /* ---- content-layer generated labels (--speak-label / --diff-label) ---- */
   speakLabel: string;
   diffLabel: string;
-  codeCopy: string;
-  codeCopyName: string;
-  codeCopied: string;
-  codeExpand: string;
-  codeCollapse: string;
 
   /* ---- taxonomy display strings (canonical ids → this language) ---- */
   kinds: Record<KindId, FacetText>;
