@@ -24,10 +24,10 @@ test('catalogs with the same keys and arguments pass', () => {
   assert.equal(r.status, 0, r.out);
 });
 
-test('an absent or blank key is missing', () => {
-  const r = check({ en: { a: 'A', b: 'B' }, de: { a: ' ' } });
+test('an absent key is missing; a blank one is written', () => {
+  const r = check({ en: { a: 'A', b: 'B' }, de: { a: '' } });
   assert.equal(r.status, 1);
-  assert.match(r.out, /de\.json: missing "a" \(blank\)/);
+  assert.doesNotMatch(r.out, /"a"/);
   assert.match(r.out, /de\.json: missing "b"/);
 });
 

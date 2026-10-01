@@ -5,8 +5,8 @@
  *   node vendor/astro-inkstone/scripts/check-messages.mjs src/i18n
  *
  * The directory holds one `<locale>.json` per language (lib/messages.ts).
- * Every catalog must carry the same keys — a blank value counts as a key not
- * yet written — every value must be a well-formed ICU message, and a key's messages must take the same arguments in every
+ * Every catalog must carry the same keys — a blank value is written text: that
+ * language shows nothing there — every value must be a well-formed ICU message, and a key's messages must take the same arguments in every
  * language — a reader never meets text missing from their language, and a
  * caller's values fit every translation. Exits non-zero, naming each problem.
  */
@@ -61,7 +61,6 @@ const argsByKey = new Map();
 for (const [locale, messages] of catalogs) {
   for (const key of keys) {
     if (!messages.has(key)) problems.push(`${locale}.json: missing "${key}"`);
-    else if (messages.get(key).trim() === '') problems.push(`${locale}.json: missing "${key}" (blank)`);
   }
   for (const [key, source] of messages) {
     if (source.trim() === '') continue;
