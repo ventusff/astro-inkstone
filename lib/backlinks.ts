@@ -8,7 +8,11 @@
  * index is memoized per corpus: the docs ARRAY is the cache key, so passing
  * the same array returns the same index, and a freshly built array (a new
  * corpus, a dev rebuild) is indexed anew — build the array once in the site
- * module to share one index across pages:
+ * module to share one index across pages. Indexing anew costs little once
+ * the instance has seen the bodies: parsing a body is the bulk of a build,
+ * and the instance keeps each body's parse from the latest build, so a dev
+ * server that hands every page a fresh array parses only the bodies that
+ * changed since the previous page:
  *
  *   // src/lib/backlinks.ts
  *   import { createBacklinks } from 'astro-inkstone/lib/backlinks';
@@ -28,7 +32,7 @@
  * `index.localGraph(id, titleOf)` turns the same index into the one-hop
  * neighbourhood that components/LocalGraph.astro draws in the sidebar.
  */
-import { buildWikilinkResolver, extractWikilinks, maskNonProse } from 'astro-inkbrush/wikilinks';
+import { buildWikilinkResolver, type ExtractedWikilink, extractWikilinks, maskNonProse } from 'astro-inkbrush/wikilinks';
 
 /** One document in the link corpus. */
 export interface BacklinkDoc {
@@ -156,9 +160,37 @@ export function createBacklinks(options: BacklinksOptions) {
   // mutates a corpus in place must pass a new array.
   const cache = new WeakMap<BacklinkDoc[], BacklinkIndex>();
 
+  // A body's parse — its wikilinks and its prose view — depends on the body
+  // and its grammar alone, so it is kept per grammar and body text. The
+  // parses kept are those of the latest build: a body that changed is parsed
+  // again, one that left the corpus is dropped, and the memory held stays at
+  // one corpus' worth.
+  interface Parse {
+    links: ExtractedWikilink[];
+    masked: string;
+  }
+  interface Parses {
+    md: Map<string, Parse>;
+    mdx: Map<string, Parse>;
+  }
+  const noParses = (): Parses => ({ md: new Map(), mdx: new Map() });
+  let parses = noParses();
+
+  function parseOf(body: string, mdx: boolean, kept: Parses): Parse {
+    const grammar = mdx ? 'mdx' : 'md';
+    let parse = kept[grammar].get(body) ?? parses[grammar].get(body);
+    if (!parse) {
+      const links = extractWikilinks(body, { mdx });
+      parse = { links, masked: links.length > 0 ? maskNonProse(body, { mdx }) : '' };
+    }
+    kept[grammar].set(body, parse);
+    return parse;
+  }
+
   function build(docs: BacklinkDoc[]): BacklinkIndex {
     const cached = cache.get(docs);
     if (cached) return cached;
+    const kept = noParses();
 
     const infos = docs.map(({ id, title, brand, aliases }) => ({ id, title, brand, aliases }));
     const resolve = buildWikilinkResolver({
@@ -177,10 +209,8 @@ export function createBacklinks(options: BacklinksOptions) {
       if (!body) continue;
       // the doc's own grammar: an .mdx body is parsed as MDX, so ESM, JSX
       // attributes and expressions are masked and create no edge
-      const grammar = { mdx: doc.mdx ?? false };
-      const links = extractWikilinks(body, grammar);
+      const { links, masked } = parseOf(body, doc.mdx ?? false, kept);
       if (links.length === 0) continue;
-      const masked = maskNonProse(body, grammar);
       const out: { target: string; resolved: string | null }[] = [];
 
       for (const link of links) {
@@ -228,6 +258,7 @@ export function createBacklinks(options: BacklinksOptions) {
 
     const index: BacklinkIndex = { inbound, outbound, broken, localGraph };
     cache.set(docs, index);
+    parses = kept;
     return index;
   }
 

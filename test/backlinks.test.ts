@@ -54,6 +54,40 @@ test('the index is memoized per docs array: same array, same index; new corpus, 
   assert.deepEqual((first.inbound.get('alpha') ?? []).map((i) => i.sourceId), ['gamma']);
 });
 
+test('a fresh array of an edited corpus indexes the corpus as it is now', () => {
+  const live = createBacklinks({ urlFor: (id) => `/n/${id}/` });
+  const fresh = (docs: BacklinkDoc[]) => createBacklinks({ urlFor: (id) => `/n/${id}/` }).build(docs);
+  const shape = (i: ReturnType<typeof live.build>) => ({ inbound: [...i.inbound], outbound: [...i.outbound], broken: i.broken });
+
+  // the same bodies in a new array: the same index as a cold instance builds
+  live.build(corpus());
+  assert.deepEqual(shape(live.build(corpus())), shape(fresh(corpus())));
+
+  // a body edited, a doc gone, an alias added elsewhere: every change shows
+  const edited: BacklinkDoc[] = [
+    { id: 'alpha', title: 'Alpha Note', aliases: [], body: 'Alpha now cites [[B]] by its alias.' },
+    { id: 'beta', title: 'Beta Note', aliases: ['B', 'Bee'], body: 'Beta stands alone.' },
+    { id: 'delta', title: 'Delta', aliases: [], body: 'Delta points at [[Bee]].' },
+  ];
+  const index = live.build(edited);
+  assert.deepEqual(shape(index), shape(fresh(edited)));
+  assert.deepEqual((index.inbound.get('beta') ?? []).map((i) => i.sourceId), ['alpha', 'delta']);
+  assert.equal(index.inbound.get('alpha'), undefined);
+  assert.deepEqual(index.broken, []);
+});
+
+test('one body text read under both grammars keeps one parse per grammar', () => {
+  const body = 'export const meta = "[[t]]";\n\nProse cites [[t]].';
+  const docs = (mdx: boolean): BacklinkDoc[] => [
+    { id: 't', title: 'Target', aliases: [], body: 'plain target note.' },
+    { id: 's', title: 'Source', aliases: [], body, mdx },
+  ];
+  const live = createBacklinks({ urlFor: (id) => `/n/${id}/` });
+  assert.equal(live.build(docs(false)).outbound.get('s')?.length, 2);
+  assert.equal(live.build(docs(true)).outbound.get('s')?.length, 1);
+  assert.equal(live.build(docs(false)).outbound.get('s')?.length, 2);
+});
+
 test('an .mdx doc (mdx: true) grows edges from prose only — ESM and JSX carry none', () => {
   const docs: BacklinkDoc[] = [
     { id: 't', title: 'Target', aliases: [], body: 'plain target note.' },
