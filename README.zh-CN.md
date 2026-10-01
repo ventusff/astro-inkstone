@@ -130,7 +130,7 @@ astro-inkstone   砚——呈现：token、正文样式、组件、管线预设�
 - **简单的主题机制**——浅色是默认主题；深色只通过 `[data-theme='dark']` 激活，要不要提供切换由站点自己决定。
 - **`base.css`**——提供衬线正文、章节分隔线、代码块（标题栏 / 复制 / 折叠 / 行标注 / diff·focus·词高亮）、提示块（含折叠）、图组、学术论文卡、hub 卡片与阅读路径、文献列表、减少动效模式，以及输出简洁 PDF 的打印样式；表格用纯 CSS 容器查询，在窄容器里自动变成卡片。**`browse.css`**——提供页面标题区、带分隔线的书架、卡片栅格、状态图例、即时筛选和标签云。
 - **26 个 Astro 组件**——`Hero`、`Part`、`PartHero`、`Callout`、`Steps`、`Grid`、`PaperCard`、`HubCard`、`Stats`、`LocalToc`、`Backlinks`、`SearchPalette`（⌘K 搜索浮层）、`LanguageMenu`（每种语言用它自己的名字列出，可选跨站记住偏好的 cookie）、`LocalGraph`、wiki 导览组件（`NoteCard`、`FacetNav`、`TaxonomyLine`……）等。这些组件只负责展示，样式由 token 驱动。
-- **数字花园机制**——taxonomy 工厂支持按形式 / 方向 / 标签 / 状态分类，并提供带编号章节的 hub 笔记和不限语种数量的多语言镜像；反链索引构建器生成带上下文摘录的反链。站点只需三行代码就能接入自己的分类词表。译文会记下自己依据的原文版本（`translatedFrom.revision`，即原文文件的 git blob id），`lib/translation.ts` 据此判断译文是否跟上了原文。
+- **数字花园机制**——taxonomy 工厂支持按形式 / 方向 / 标签 / 状态分类，并提供带编号章节的 hub 笔记和不限语种数量的多语言镜像；反链索引构建器生成带上下文摘录的反链。站点只需三行代码就能接入自己的分类词表。译文会记下自己依据的原文版本（`translatedFrom.revision`，即原文文件的 git blob id），`lib/translation.ts` 据此判断译文是否跟上了原文。界面文字每种语言一份 ICU MessageFormat 文字表(`lib/messages.ts`):某个键只写了一种语言时,其他语言先显示缺省语言的文字,`missing()` 列出每种语言还缺哪些键。
 - **`siteMarkdown()`**——支持 GFM，能正确解析中日韩文本里的强调语法；还支持 KaTeX（双主题）、Mermaid、Obsidian 风格提示块、`[[双链]]`、阅读时长统计、标题自动编号与目录提取、子路径链接改写，以及构建期内容校验。
 - **中文优先的排版**——中文标点旁的强调语法正常生效，能统计中西混排内容的阅读时长；细致调整过的 Maple Mono CN 子集让汉字正好占两格宽。标题用的衬线字体和界面用的无衬线字体由示范站通过 `@fontsource` 自托管。
 - **搜索**——提供一个在构建期生成搜索索引的 endpoint 工厂，以及一个零依赖的轻量客户端。

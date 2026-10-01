@@ -212,6 +212,9 @@ renders wrong" cannot happen.
   builder with context snippets, both bound to your vocabulary in a three-line site module, and
   translation freshness: a mirror records the git blob id of the source it renders
   (`translatedFrom.revision`), and `lib/translation.ts` tells current from behind.
+  Interface text lives in one ICU MessageFormat catalog per language (`lib/messages.ts`): a
+  key written in one language reads through to the default language until the others catch
+  up, and `missing()` names what each language still lacks.
 - **`siteMarkdown()`** — GFM, CJK-friendly emphasis, KaTeX (dual-theme), Mermaid, Obsidian-style
   callouts, `[[wikilinks]]`, reading time, auto-numbered headings with ToC extraction,
   base-prefix link rewriting, and the build-time content guard.

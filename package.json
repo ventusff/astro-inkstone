@@ -67,6 +67,7 @@
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
     "hastscript": "^9.0.0",
+    "intl-messageformat": "^12.1.2",
     "katex": "^0.17.0",
     "puppeteer-core": "^24.0.0",
     "rehype-katex": "^7.0.1",
