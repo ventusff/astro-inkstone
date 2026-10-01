@@ -7,7 +7,7 @@ import { transformerCodeFrame } from '../lib/code-frame.ts';
 
 const run = (meta: string, lang = 'py'): Root => {
   const root: Root = { type: 'root', children: [h('pre', [h('code', 'x = 1')])] };
-  const t = transformerCodeFrame({ copy: 'copy', copied: 'done' });
+  const t = transformerCodeFrame();
   const ctx = { options: { meta: { __raw: meta }, lang } };
   return (t.root as (this: typeof ctx, r: Root) => Root).call(ctx, root);
 };
@@ -60,4 +60,14 @@ test('an untitled fence shows its language; `collapse` renders a folded details'
   assert.equal((folded.children[0] as Element).tagName, 'summary');
   assert.ok(find(folded, 'code-fold-hint'));
   assert.ok(find(folded, 'code-frame-body'));
+});
+
+test('the frame carries no words: labels are the page’s (base.css custom properties)', () => {
+  const frame = run('collapse').children[0] as Element;
+  for (const cls of ['code-copy-idle', 'code-copy-done', 'code-fold-closed', 'code-fold-open']) {
+    assert.deepEqual(find(frame, cls)?.children, [], cls);
+  }
+  const btn = find(frame, 'code-copy')!;
+  assert.equal(btn.properties?.['ariaLabel'], undefined);
+  assert.equal(btn.properties?.['title'], undefined);
 });

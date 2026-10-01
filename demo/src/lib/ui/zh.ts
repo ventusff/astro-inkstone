@@ -42,6 +42,11 @@ export const strings: UIStrings = {
 
   speakLabel: '说人话 →',
   diffLabel: '相比前作 →',
+  codeCopy: "复制",
+  codeCopyName: "复制代码",
+  codeCopied: "✓ 已复制",
+  codeExpand: "展开",
+  codeCollapse: "收起",
 
   kinds: {
     guide: { label: '指南', desc: '按任务走的教程：从这里开始，把它接起来' },

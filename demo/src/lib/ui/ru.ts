@@ -57,6 +57,11 @@ export const strings: UIStrings = {
 
   speakLabel: 'Простыми словами →',
   diffLabel: 'Отличия от предшественников →',
+  codeCopy: "копировать",
+  codeCopyName: "Копировать код",
+  codeCopied: "✓ скопировано",
+  codeExpand: "Развернуть",
+  codeCollapse: "Свернуть",
 
   kinds: {
     guide: { label: 'Инструкция', desc: 'Пошаговые разборы под задачу: начните здесь и соберите всё вместе' },

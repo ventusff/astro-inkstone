@@ -42,6 +42,11 @@ export const strings: UIStrings = {
 
   speakLabel: 'Im Klartext →',
   diffLabel: 'Gegenüber Vorarbeiten →',
+  codeCopy: "kopieren",
+  codeCopyName: "Code kopieren",
+  codeCopied: "✓ kopiert",
+  codeExpand: "Ausklappen",
+  codeCollapse: "Einklappen",
 
   kinds: {
     guide: { label: 'Leitfaden', desc: 'Schritt für Schritt an einer Aufgabe entlang: hier anfangen, dann verdrahten' },

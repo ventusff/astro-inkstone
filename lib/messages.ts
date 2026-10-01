@@ -3,12 +3,13 @@
  *
  * Each language's catalog is a JSON object (nested freely) whose leaves are
  * ICU MessageFormat strings: `"pages": "{n, plural, one {# page} other {# pages}}"`.
- * A key may exist in any subset of the catalogs — text is written in one
- * language and the others are filled in later — so a lookup falls back:
- * the requested language, then the default language, then the remaining
- * languages in the order given. `resolve()` reports which language actually
- * answered (for `lang` attributes on fallback text) and `missing()` lists a
- * language's absent keys (for showing that its text is still being written).
+ * A reader only ever reads their own language. A key may exist in some
+ * catalogs and not yet in others — text is written in one language and the
+ * others are filled in behind it — and where the reader's catalog lacks the
+ * key, the lookup answers with that language's `pending` text ("translation
+ * in progress"), never with another language. `missing()` lists a
+ * language's absent keys; scripts/check-messages.mjs fails a build whose
+ * catalogs disagree, so pending text is a transient state of a live site.
  *
  * The key type is the union of every catalog's key paths, so a key added to
  * a single catalog type-checks everywhere.
@@ -29,10 +30,10 @@ export type KeyPath<T> = T extends string
 export type MessageValues = Record<string, string | number | boolean | Date | null | undefined>;
 
 export interface Messages<L extends string, K extends string> {
-  /** the text for `key` in `locale`, or the first fallback language that has it */
+  /** the text for `key` in `locale`; the language's pending text while it lacks the key */
   t(locale: L, key: K, values?: MessageValues): string;
-  /** the text and the language it came from; `null` when no catalog has the key */
-  resolve(locale: L, key: K, values?: MessageValues): { text: string; locale: L } | null;
+  /** the text, and whether it is the pending text */
+  resolve(locale: L, key: K, values?: MessageValues): { text: string; pending: boolean };
   /** keys present in some catalog but absent from `locale`'s */
   missing(locale: L): K[];
   /** every key, sorted */
@@ -49,25 +50,25 @@ function flatten(catalog: Catalog, prefix = '', out = new Map<string, string>())
 }
 
 /**
- * Bind the catalogs of a site. `catalogs` lists the languages in fallback
- * order after the default; `formatLocales` maps a language code to the BCP 47
- * tag ICU formats it with (plural rules, numbers, dates) when the two differ.
+ * Bind the catalogs of a site. `pending` gives each language its words for
+ * text not yet written in it; `formatLocales` maps a language code to the
+ * BCP 47 tag ICU formats it with (plural rules, numbers, dates) when the two
+ * differ.
  */
 export function createMessages<const C extends Record<string, Catalog>>(
   catalogs: C,
-  options: { defaultLocale: keyof C & string; formatLocales?: Partial<Record<keyof C & string, string>> },
+  options: {
+    pending: Record<keyof C & string, string>;
+    formatLocales?: Partial<Record<keyof C & string, string>>;
+  },
 ): Messages<keyof C & string, { [L in keyof C]: KeyPath<C[L]> }[keyof C]> {
   type L = keyof C & string;
   type K = { [X in keyof C]: KeyPath<C[X]> }[keyof C];
-  const { defaultLocale } = options;
+  const { pending } = options;
   const formatLocales: Partial<Record<L, string>> = options.formatLocales ?? {};
   const locales = Object.keys(catalogs) as L[];
-  if (!locales.includes(defaultLocale)) {
-    throw new Error(`createMessages: defaultLocale "${defaultLocale}" has no catalog`);
-  }
   const flat = new Map(locales.map((l) => [l, flatten(catalogs[l]!)] as const));
   const keys = [...new Set(locales.flatMap((l) => [...flat.get(l)!.keys()]))].sort() as K[];
-  const order = (locale: L): L[] => [locale, defaultLocale, ...locales].filter((l, i, a) => a.indexOf(l) === i);
   const formats = new Map<string, IntlMessageFormat>();
   const format = (locale: L, key: string, source: string, values?: MessageValues): string => {
     const id = `${locale}\u0000${key}`;
@@ -79,21 +80,18 @@ export function createMessages<const C extends Record<string, Catalog>>(
     return String(f.format(values as Record<string, never> | undefined));
   };
 
+  const known = new Set<string>(keys);
   const resolve = (locale: L, key: K, values?: MessageValues) => {
-    for (const l of order(locale)) {
-      const source = flat.get(l)!.get(key);
-      if (source !== undefined) return { text: format(l, key, source, values), locale: l };
-    }
-    return null;
+    if (!known.has(key)) throw new Error(`messages: no catalog has "${key}"`);
+    const source = flat.get(locale)!.get(key);
+    return source === undefined
+      ? { text: pending[locale], pending: true }
+      : { text: format(locale, key, source, values), pending: false };
   };
 
   return {
     resolve,
-    t(locale, key, values) {
-      const hit = resolve(locale, key, values);
-      if (!hit) throw new Error(`messages: no catalog has "${key}"`);
-      return hit.text;
-    },
+    t: (locale, key, values) => resolve(locale, key, values).text,
     missing: (locale) => keys.filter((k) => !flat.get(locale)!.has(k)),
     keys,
   };

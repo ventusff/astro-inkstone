@@ -21,6 +21,14 @@
  * which records the reader's language and sends them back; the site then
  * serves every page in it.
  *
+ * A row may carry the state of this page in that language — being
+ * translated, queued, partly translated, not yet written, failed — shown as
+ * a dot and a line of text under the name; while any language is being
+ * translated or queued, the trigger carries a slowly pulsing dot (still under
+ * reduced motion), and a failure a steady one. The state is data the site
+ * supplies; a script that learns a newer state sets `data-lang-status` and
+ * the status text on the row, and the styles follow the attribute.
+ *
  * Presentational like every wiki component: second-tier tokens only, every
  * label a prop, and the panel carries `data-probe-open` so the render probes
  * sample it open.
@@ -36,7 +44,11 @@ export interface LanguageMenuItem {
   htmlLang: string;
   /** where choosing this language leads */
   href: string;
+  /** this page's state in this language, with its words in the page's language */
+  status?: { kind: LanguageStatus; label: string } | undefined;
 }
+
+export type LanguageStatus = 'updating' | 'queued' | 'partial' | 'missing' | 'failed';
 
 interface Props {
   items: LanguageMenuItem[];
@@ -54,15 +66,23 @@ const { items, current, label, id = 'lang-menu', setter } = Astro.props;
 const here = items.find((i) => i.code === current);
 if (!here) throw new Error(`LanguageMenu: current language "${current}" is not among the items`);
 const cols = items.length > 6 ? 2 : 1;
+const busy = items.some((i) => i.status && i.status.kind !== 'failed');
+const failed = items.some((i) => i.status?.kind === 'failed');
+const signal = busy ? 'busy' : failed ? 'failed' : undefined;
+const signalText = items
+  .filter((i) => i.status)
+  .map((i) => `${i.label}: ${i.status!.label}`)
+  .join('; ');
 ---
 
 <button
   class="lang-btn"
   type="button"
   popovertarget={id}
-  aria-label={`${label} · ${here.label}`}
+  aria-label={signalText ? `${label} · ${here.label} · ${signalText}` : `${label} · ${here.label}`}
   title={label}
   data-lang-trigger
+  data-lang-signal={signal}
 >
   {/* the 文/A mark: translation, not a flag — flags name countries, not languages */}
   <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
@@ -70,6 +90,7 @@ const cols = items.length > 6 ? 2 : 1;
     <path d="M11.5 16.5 14.6 8l3.1 8.5M12.6 13.8h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
   </svg>
   <span class="cur" lang={here.htmlLang}>{here.label}</span>
+  <span class="signal" aria-hidden="true"></span>
   <svg class="chev" viewBox="0 0 10 10" width="8" height="8" aria-hidden="true">
     <path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
   </svg>
@@ -87,7 +108,7 @@ const cols = items.length > 6 ? 2 : 1;
       {
         items.map((item) =>
           item.code === current ? (
-            <li>
+            <li data-lang-code={item.code} data-lang-status={item.status?.kind}>
               <span class="row here" aria-current="true" lang={item.htmlLang}>
                 <span class="name">{item.label}</span>
                 {item.englishName && (
@@ -95,13 +116,14 @@ const cols = items.length > 6 ? 2 : 1;
                     {item.englishName}
                   </span>
                 )}
+                <span class="state">{item.status?.label}</span>
                 <svg class="check" viewBox="0 0 14 14" width="13" height="13" aria-hidden="true">
                   <path d="M2.5 7.5 6 11l5.5-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
               </span>
             </li>
           ) : (
-            <li>
+            <li data-lang-code={item.code} data-lang-status={item.status?.kind}>
               {setter ? (
                 <form class="set" method="post" action={setter.action}>
                   <input type="hidden" name="lang" value={item.code} />
@@ -113,6 +135,7 @@ const cols = items.length > 6 ? 2 : 1;
                         {item.englishName}
                       </span>
                     )}
+                    <span class="state">{item.status?.label}</span>
                   </button>
                 </form>
               ) : (
@@ -123,6 +146,7 @@ const cols = items.length > 6 ? 2 : 1;
                       {item.englishName}
                     </span>
                   )}
+                  <span class="state">{item.status?.label}</span>
                 </a>
               )}
             </li>
@@ -255,6 +279,57 @@ const cols = items.length > 6 ? 2 : 1;
     grid-column: 2;
     grid-row: 1 / span 2;
     color: var(--color-accent-text);
+  }
+  .row {
+    grid-template-rows: auto auto auto;
+  }
+  .state {
+    grid-column: 1;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font: 500 10.5px/1.4 var(--font-ui);
+    color: var(--color-ink-soft);
+  }
+  .state::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-accent);
+  }
+  li[data-lang-status] .state:not(:empty) {
+    display: inline-flex;
+  }
+  li[data-lang-status='failed'] .state::before {
+    background: var(--color-accent2);
+  }
+  li[data-lang-status='missing'] .state::before {
+    background: var(--color-ink-faint);
+  }
+
+  .signal {
+    display: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-accent);
+  }
+  .lang-btn[data-lang-signal] .signal {
+    display: inline-block;
+  }
+  .lang-btn[data-lang-signal='failed'] .signal {
+    background: var(--color-accent2);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .lang-btn[data-lang-signal='busy'] .signal {
+      animation: lang-signal 2.4s ease-in-out infinite;
+    }
+  }
+  @keyframes lang-signal {
+    50% {
+      opacity: 0.25;
+    }
   }
   .row.here .name {
     color: var(--color-accent-text);

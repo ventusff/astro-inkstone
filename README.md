@@ -205,7 +205,8 @@ renders wrong" cannot happen.
   instant filters, tag cloud.
 - **26 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
   `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `SearchPalette` (the ⌘K overlay), `LanguageMenu`
-  (autonym rows; links per language, or a form that records the reader's language), `LocalGraph`, the faceted wiki set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational
+  (autonym rows with each language's translation state; links per language, or a form that
+  records the reader's language), `LocalGraph`, the faceted wiki set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational
   and token-driven.
 - **Digital-garden machinery** — a taxonomy factory (kinds / domains / tags / status, hub notes
   with numbered chapters, locale mirrors for any number of languages), a backlink-index
@@ -213,10 +214,14 @@ renders wrong" cannot happen.
   translation freshness: a mirror records the git blob id of the source it renders
   (`translatedFrom.revision`), and `lib/translation.ts` tells current from behind.
   Interface text lives in one ICU MessageFormat catalog per language (`lib/messages.ts`): a
-  key written in one language reads through to the default language until the others catch
-  up, and `missing()` names what each language still lacks.
+  reader only ever reads their own language — a key not yet written in it shows that
+  language's "translation in progress" text — and `scripts/check-messages.mjs` fails a build
+  whose catalogs disagree on keys or arguments.
   `lib/locale-negotiation.ts` keeps every page a reader opens in the reader's language: a
-  page request under another locale's prefix is redirected to theirs.
+  page request under another locale's prefix is redirected to theirs, on the dev server's
+  own request pipeline (`lib/reader-language.ts`, an Astro integration). The words base.css
+  draws itself — code-frame copy and fold labels, the plain-words and diff markers — come
+  from the page's language (`lib/page-labels.ts`).
 - **`siteMarkdown()`** — GFM, CJK-friendly emphasis, KaTeX (dual-theme), Mermaid, Obsidian-style
   callouts, `[[wikilinks]]`, reading time, auto-numbered headings with ToC extraction,
   base-prefix link rewriting, and the build-time content guard.

@@ -42,6 +42,11 @@ export const strings: UIStrings = {
 
   speakLabel: 'Bahasa awamnya →',
   diffLabel: 'Dibanding yang sebelumnya →',
+  codeCopy: "salin",
+  codeCopyName: "Salin kode",
+  codeCopied: "✓ tersalin",
+  codeExpand: "Bentangkan",
+  codeCollapse: "Ciutkan",
 
   kinds: {
     guide: { label: 'Panduan', desc: 'Tuntunan langkah demi langkah per tugas: mulai di sini, lalu rangkai' },

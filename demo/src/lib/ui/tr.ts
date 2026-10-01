@@ -42,6 +42,11 @@ export const strings: UIStrings = {
 
   speakLabel: 'Sade dille →',
   diffLabel: 'Öncekilere göre →',
+  codeCopy: "kopyala",
+  codeCopyName: "Kodu kopyala",
+  codeCopied: "✓ kopyalandı",
+  codeExpand: "Genişlet",
+  codeCollapse: "Daralt",
 
   kinds: {
     guide: { label: 'Rehber', desc: 'Görev odaklı adım adım anlatımlar: buradan başlayın, kurun' },

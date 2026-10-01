@@ -42,6 +42,11 @@ export const strings: UIStrings = {
 
   speakLabel: '平たく言えば →',
   diffLabel: '従来との違い →',
+  codeCopy: "コピー",
+  codeCopyName: "コードをコピー",
+  codeCopied: "✓ コピーしました",
+  codeExpand: "展開",
+  codeCollapse: "折りたたむ",
 
   kinds: {
     guide: { label: 'ガイド', desc: 'タスクに沿って進める手引き。まずここから読んで、組み込むところまで' },

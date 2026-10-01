@@ -285,6 +285,19 @@ h4 {
   display: none;
   color: var(--color-accent2);
 }
+/* the words are the page's (lib/page-labels.ts): visible text / accessible name */
+.code-copy .code-copy-idle::before {
+  content: var(--code-copy, 'copy') / var(--code-copy-name, 'Copy code');
+}
+.code-copy .code-copy-done::before {
+  content: var(--code-copied, '✓ copied');
+}
+details.code-frame .code-fold-closed::before {
+  content: var(--code-expand, 'Expand');
+}
+details.code-frame .code-fold-open::before {
+  content: var(--code-collapse, 'Collapse');
+}
 .code-copy.is-done .code-copy-idle {
   display: none;
 }
