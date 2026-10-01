@@ -23,9 +23,9 @@
  * The fourth surface, the comment section, needs `main.note-main > .col` —
  * see layouts/NoteLayout.astro.
  */
-import LanguageMenu from './LanguageMenu.astro';
+import LanguageMenu from 'astro-inkstone/components/LanguageMenu.astro';
 import ThemeToggle from './ThemeToggle.astro';
-import { GITHUB_URL, href, landingRoute, SITE_NAME, UI, type Alternate, type Locale } from '../lib/i18n';
+import { GITHUB_URL, href, landingRoute, LOCALES, SITE_NAME, UI, type Alternate, type Locale } from '../lib/i18n';
 
 interface Crumb {
   label: string;
@@ -43,6 +43,16 @@ const { locale, crumbs, alternates, hasSidebar = false } = Astro.props;
 const t = UI[locale];
 // the garden's landing page in this locale — the mark and the trail's root
 const home = landingRoute(locale);
+// one menu row per registered language: this page's twin there, or that
+// language's landing page when the twin does not exist
+const twin = new Map(alternates.map((a) => [a.code, a.route]));
+const languages = LOCALES.map((l) => ({
+  code: l.code,
+  label: l.label,
+  englishName: l.englishName,
+  htmlLang: l.htmlLang,
+  href: href(twin.get(l.code) ?? landingRoute(l.code)),
+}));
 ---
 
 <header class="site-nav">
@@ -81,7 +91,7 @@ const home = landingRoute(locale);
       <path d="M13.2 13.2 17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
     </svg>
   </button>
-  <LanguageMenu locale={locale} alternates={alternates} />
+  <LanguageMenu items={languages} current={locale} label={t.languages} />
   <span class="cms-slot" data-inkbrush-slot="share"></span>
   <span class="cms-slot" data-inkbrush-slot="account"></span>
   <ThemeToggle label={t.theme} />

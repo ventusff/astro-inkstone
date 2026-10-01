@@ -1,0 +1,257 @@
+---
+/**
+ * LanguageMenu — a site's one language control for its nav bar.
+ *
+ * Each row names a language in itself (its autonym), with its English name as
+ * a second line: a reader who cannot read the current page's language must
+ * still be able to find their own. The site supplies every row, including
+ * where it leads — usually this page's twin in that language, or that
+ * language's landing page when no twin exists — so routing stays site-owned.
+ *
+ * A native popover: the trigger works without JavaScript (the panel then
+ * centers, the UA's default popover placement); the script only anchors the
+ * panel under its trigger, inside the viewport. Light dismiss and Esc come
+ * from the popover itself. Up to six languages list in one column, more in
+ * two.
+ *
+ * `remember` names a cookie that a chosen row's code is written to before
+ * navigating — a preference other pages and other sites under the cookie's
+ * domain can read. Without it nothing is stored.
+ *
+ * Presentational like every wiki component: second-tier tokens only, every
+ * label a prop, and the panel carries `data-probe-open` so the render probes
+ * sample it open.
+ */
+export interface LanguageMenuItem {
+  /** language code, the value a remembered preference stores */
+  code: string;
+  /** the language's name in itself */
+  label: string;
+  /** the language's name in English — the row's second line */
+  englishName?: string;
+  /** value for the row's `lang` and `hreflang` */
+  htmlLang: string;
+  /** where choosing this language leads */
+  href: string;
+}
+
+interface Props {
+  items: LanguageMenuItem[];
+  /** code of the page's current language */
+  current: string;
+  /** accessible name of the control and its panel, e.g. "Languages" */
+  label: string;
+  /** popover id — unique per page; change it only to mount two menus */
+  id?: string;
+  remember?: {
+    cookie: string;
+    /** cookie domain, e.g. '.example.com' to share across subdomains */
+    domain?: string;
+    /** lifetime in days (default 365) */
+    days?: number;
+  };
+}
+
+const { items, current, label, id = 'lang-menu', remember } = Astro.props;
+const here = items.find((i) => i.code === current);
+if (!here) throw new Error(`LanguageMenu: current language "${current}" is not among the items`);
+const cols = items.length > 6 ? 2 : 1;
+---
+
+<button
+  class="lang-btn"
+  type="button"
+  popovertarget={id}
+  aria-label={`${label} · ${here.label}`}
+  title={label}
+  data-lang-trigger
+>
+  {/* the 文/A mark: translation, not a flag — flags name countries, not languages */}
+  <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+    <path d="M3 5h7M6.5 3v2M9.3 5c-.8 2.8-2.9 5.2-5.8 6.7M4.6 7.4c1.2 2.3 3.2 4 5.6 4.8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M11.5 16.5 14.6 8l3.1 8.5M12.6 13.8h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+  </svg>
+  <span class="cur" lang={here.htmlLang}>{here.label}</span>
+  <svg class="chev" viewBox="0 0 10 10" width="8" height="8" aria-hidden="true">
+    <path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+  </svg>
+</button>
+
+<div
+  class="lang-pop"
+  id={id}
+  popover
+  data-probe-open
+  data-cols={cols}
+  data-remember-cookie={remember?.cookie}
+  data-remember-domain={remember?.domain}
+  data-remember-days={remember ? String(remember.days ?? 365) : undefined}
+>
+  <nav aria-label={label}>
+    <ul>
+      {
+        items.map((item) =>
+          item.code === current ? (
+            <li>
+              <span class="row here" aria-current="true" lang={item.htmlLang}>
+                <span class="name">{item.label}</span>
+                {item.englishName && (
+                  <span class="alt" lang="en">
+                    {item.englishName}
+                  </span>
+                )}
+                <svg class="check" viewBox="0 0 14 14" width="13" height="13" aria-hidden="true">
+                  <path d="M2.5 7.5 6 11l5.5-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+            </li>
+          ) : (
+            <li>
+              <a class="row" href={item.href} hreflang={item.htmlLang} lang={item.htmlLang} data-lang-code={item.code}>
+                <span class="name">{item.label}</span>
+                {item.englishName && (
+                  <span class="alt" lang="en">
+                    {item.englishName}
+                  </span>
+                )}
+              </a>
+            </li>
+          ),
+        )
+      }
+    </ul>
+  </nav>
+</div>
+
+<script>
+  // Anchor each panel under its trigger (top-layer popovers position like
+  // fixed elements; without this the UA centers the panel — an acceptable
+  // no-JS fallback, not the design). The panel hangs from the trigger's right
+  // edge and never leaves the viewport: where the trigger sits too far left
+  // for the panel's width (a phone), the panel keeps an 8px inset from the
+  // viewport's left edge instead. Its width is a computed length, readable
+  // while the panel is still closed.
+  const INSET = 8;
+  for (const btn of document.querySelectorAll<HTMLButtonElement>('button[data-lang-trigger]')) {
+    const pop = document.getElementById(btn.getAttribute('popovertarget') ?? '');
+    if (!pop) continue;
+    pop.addEventListener('beforetoggle', (e) => {
+      if ((e as ToggleEvent).newState !== 'open') return;
+      const r = btn.getBoundingClientRect();
+      const width = parseFloat(getComputedStyle(pop).width) || 0;
+      const underTrigger = Math.round(window.innerWidth - r.right);
+      const fitsLeftEdge = Math.round(window.innerWidth - INSET - width);
+      pop.style.top = `${Math.round(r.bottom + INSET)}px`;
+      pop.style.right = `${Math.max(INSET, Math.min(underTrigger, fitsLeftEdge))}px`;
+      pop.style.left = 'auto';
+      pop.style.bottom = 'auto';
+      pop.style.margin = '0';
+    });
+
+    // A remembered preference is written as the row is followed, so the
+    // page it leads to already sees it.
+    const cookie = pop.dataset.rememberCookie;
+    if (!cookie) continue;
+    const parts = [`path=/`, `max-age=${Number(pop.dataset.rememberDays) * 86400}`, 'SameSite=Lax'];
+    if (pop.dataset.rememberDomain) parts.push(`domain=${pop.dataset.rememberDomain}`);
+    if (location.protocol === 'https:') parts.push('Secure');
+    pop.addEventListener('click', (e) => {
+      const row = (e.target as Element).closest<HTMLAnchorElement>('a[data-lang-code]');
+      if (!row) return;
+      document.cookie = [`${cookie}=${encodeURIComponent(row.dataset.langCode ?? '')}`, ...parts].join('; ');
+    });
+  }
+</script>
+
+<style>
+  .lang-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    background: none;
+    color: var(--color-ink-soft);
+    font: 500 11.5px/1 var(--font-ui);
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .lang-btn:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+  .chev {
+    opacity: 0.7;
+  }
+
+  .lang-pop {
+    /* top-layer panel; the inline script anchors it under the trigger */
+    width: min(92vw, 220px);
+    max-height: min(72vh, 560px);
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    background: var(--color-bg-card);
+    color: var(--color-ink);
+    box-shadow: 0 14px 40px color-mix(in srgb, var(--color-ink) 14%, transparent);
+  }
+  .lang-pop[data-cols='2'] {
+    width: min(92vw, 400px);
+  }
+  .lang-pop ul {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1px 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .lang-pop[data-cols='2'] ul {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: inherit;
+  }
+  a.row:hover {
+    background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  }
+  .name {
+    grid-column: 1;
+    font: 550 13px/1.5 var(--font-ui);
+    color: var(--color-ink);
+  }
+  .alt {
+    grid-column: 1;
+    font: 400 10.5px/1.4 var(--font-ui);
+    color: var(--color-ink-soft);
+  }
+  .check {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    color: var(--color-accent-text);
+  }
+  .row.here .name {
+    color: var(--color-accent-text);
+  }
+
+  @media (max-width: 720px) {
+    .lang-btn .cur {
+      /* the bar is tight on phones: the mark alone names the control */
+      display: none;
+    }
+  }
+</style>

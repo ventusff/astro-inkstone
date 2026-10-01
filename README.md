@@ -203,13 +203,15 @@ renders wrong" cannot happen.
   and reading paths, reference lists, reduced-motion handling, a print stylesheet that turns any
   page into a clean PDF. **`browse.css`** — masthead, ruled shelves, card grid, status legend,
   instant filters, tag cloud.
-- **25 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
-  `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `SearchPalette` (the ⌘K overlay), `LocalGraph`,
-  the faceted wiki set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational
+- **26 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
+  `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `SearchPalette` (the ⌘K overlay), `LanguageMenu`
+  (autonym rows, optional cross-site preference cookie), `LocalGraph`, the faceted wiki set (`NoteCard`, `FacetNav`, `TaxonomyLine`, …) and more — presentational
   and token-driven.
 - **Digital-garden machinery** — a taxonomy factory (kinds / domains / tags / status, hub notes
-  with numbered chapters, locale mirrors for any number of languages) and a backlink-index
-  builder with context snippets, both bound to your vocabulary in a three-line site module.
+  with numbered chapters, locale mirrors for any number of languages), a backlink-index
+  builder with context snippets, both bound to your vocabulary in a three-line site module, and
+  translation freshness: a mirror records the git blob id of the source it renders
+  (`translatedFrom.revision`), and `lib/translation.ts` tells current from behind.
 - **`siteMarkdown()`** — GFM, CJK-friendly emphasis, KaTeX (dual-theme), Mermaid, Obsidian-style
   callouts, `[[wikilinks]]`, reading time, auto-numbered headings with ToC extraction,
   base-prefix link rewriting, and the build-time content guard.
