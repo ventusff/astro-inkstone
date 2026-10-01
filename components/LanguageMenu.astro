@@ -15,8 +15,10 @@
  * two.
  *
  * `remember` names a cookie that a chosen row's code is written to before
- * navigating — a preference other pages and other sites under the cookie's
- * domain can read. Without it nothing is stored.
+ * navigating — a choice other pages and other sites under the cookie's
+ * domain can read. It lasts the browser session unless `days` is given, so
+ * a standing default (say, one assigned to the reader's account) resumes in
+ * the next session. Without `remember` nothing is stored.
  *
  * Presentational like every wiki component: second-tier tokens only, every
  * label a prop, and the panel carries `data-probe-open` so the render probes
@@ -47,7 +49,7 @@ interface Props {
     cookie: string;
     /** cookie domain, e.g. '.example.com' to share across subdomains */
     domain?: string;
-    /** lifetime in days (default 365) */
+    /** lifetime in days; omitted, the cookie lasts the browser session */
     days?: number;
   };
 }
@@ -85,7 +87,7 @@ const cols = items.length > 6 ? 2 : 1;
   data-cols={cols}
   data-remember-cookie={remember?.cookie}
   data-remember-domain={remember?.domain}
-  data-remember-days={remember ? String(remember.days ?? 365) : undefined}
+  data-remember-days={remember?.days !== undefined ? String(remember.days) : undefined}
 >
   <nav aria-label={label}>
     <ul>
@@ -152,7 +154,8 @@ const cols = items.length > 6 ? 2 : 1;
     // page it leads to already sees it.
     const cookie = pop.dataset.rememberCookie;
     if (!cookie) continue;
-    const parts = [`path=/`, `max-age=${Number(pop.dataset.rememberDays) * 86400}`, 'SameSite=Lax'];
+    const parts = ['path=/', 'SameSite=Lax'];
+    if (pop.dataset.rememberDays) parts.push(`max-age=${Number(pop.dataset.rememberDays) * 86400}`);
     if (pop.dataset.rememberDomain) parts.push(`domain=${pop.dataset.rememberDomain}`);
     if (location.protocol === 'https:') parts.push('Secure');
     pop.addEventListener('click', (e) => {
