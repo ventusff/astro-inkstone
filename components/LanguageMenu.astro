@@ -24,11 +24,12 @@
  * which records the reader's language and sends them back; the site then
  * serves every page in it.
  *
- * A row may carry the state of this page in that language — being
- * translated, queued, partly translated, not yet written, failed — shown as
- * a dot and a line of text under the name; while any language is being
- * translated or queued, the trigger carries a slowly pulsing dot (still under
- * reduced motion), and a failure a steady one. The state is data the site
+ * A row may carry the state of this page in that language — queued, being
+ * translated, published and about to go live, partly translated, not yet
+ * written, failed (lib/language-status.ts) — shown as a dot and a line of
+ * text under the name; while a newer version of any language is on its way
+ * (queued, being translated or published), the trigger carries a slowly
+ * pulsing dot (still under reduced motion), and a failure a steady one. The state is data the site
  * supplies; a script that learns a newer state sets `data-lang-status` and
  * the status text on the row, and the row, the trigger's dot and its
  * accessible name follow.
@@ -37,6 +38,10 @@
  * label a prop, and the panel carries `data-probe-open` so the render probes
  * sample it open.
  */
+import { languageSignal, type LanguageStatus } from '../lib/language-status.ts';
+
+export type { LanguageStatus };
+
 export interface LanguageMenuItem {
   /** language code — what a setter records */
   code: string;
@@ -51,8 +56,6 @@ export interface LanguageMenuItem {
   /** this page's state in this language, with its words in the page's language */
   status?: { kind: LanguageStatus; label: string } | undefined;
 }
-
-export type LanguageStatus = 'updating' | 'queued' | 'partial' | 'missing' | 'failed';
 
 interface Props {
   items: LanguageMenuItem[];
@@ -79,9 +82,7 @@ const gloss = (item: LanguageMenuItem): string | undefined => {
   const name = names.of(item.code);
   return name && name !== item.label ? name : undefined;
 };
-const busy = items.some((i) => i.status?.kind === 'updating' || i.status?.kind === 'queued');
-const failed = items.some((i) => i.status?.kind === 'failed');
-const signal = busy ? 'busy' : failed ? 'failed' : undefined;
+const signal = languageSignal(items.map((i) => i.status?.kind));
 const signalText = items
   .filter((i) => i.status)
   .map((i) => `${i.label}: ${i.status!.label}`)
@@ -173,6 +174,8 @@ const name = `${label} · ${here.label}`;
 </div>
 
 <script>
+  import { languageSignal } from 'astro-inkstone/lib/language-status';
+
   // Anchor each panel under its trigger (top-layer popovers position like
   // fixed elements; without this the UA centers the panel — an acceptable
   // no-JS fallback, not the design). The panel hangs from the trigger's right
@@ -181,7 +184,6 @@ const name = `${label} · ${here.label}`;
   // viewport's left edge instead. Its width is a computed length, readable
   // while the panel is still closed.
   const INSET = 8;
-  const BUSY = ['updating', 'queued'];
   for (const btn of document.querySelectorAll<HTMLButtonElement>('button[data-lang-trigger]')) {
     const pop = document.getElementById(btn.getAttribute('popovertarget') ?? '');
     if (!pop) continue;
@@ -208,8 +210,7 @@ const name = `${label} · ${here.label}`;
     // The trigger's dot and accessible name follow the rows' states.
     new MutationObserver(() => {
       const rows = [...pop.querySelectorAll<HTMLElement>('li[data-lang-status]')];
-      const kinds = rows.map((row) => row.dataset.langStatus ?? '');
-      const signal = kinds.some((k) => BUSY.includes(k)) ? 'busy' : kinds.includes('failed') ? 'failed' : undefined;
+      const signal = languageSignal(rows.map((row) => row.dataset.langStatus));
       if (signal) btn.dataset.langSignal = signal;
       else delete btn.dataset.langSignal;
       const text = rows
