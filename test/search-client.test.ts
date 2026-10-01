@@ -77,3 +77,10 @@ test('limit must be a positive integer', () => {
   assert.throws(() => search(docs, 'body', 'en', 2.5), /limit must be a positive integer/);
   assert.throws(() => search(docs, 'body', 'en', -1), /limit must be a positive integer/);
 });
+
+test('a hit carries the site document object itself, extra fields included', () => {
+  const page = { id: 'a', route: 'a/', locale: 'de', title: 'Preisliste', crumb: '', headings: [], text: 'Spot', lang: 'de' };
+  const [hit] = search([page], 'preis', 'de');
+  assert.equal(hit?.doc, page);
+  assert.equal(hit?.doc.lang, 'de');
+});

@@ -22,8 +22,9 @@ export interface SearchDoc {
   text: string;
 }
 
-export interface Hit {
-  doc: SearchDoc;
+/** a match; `doc` is the site's own document object, extra fields included */
+export interface Hit<D extends SearchDoc = SearchDoc> {
+  doc: D;
   score: number;
   /** body excerpt around the first match, with the match wrapped in <mark> */
   snippet: string;
@@ -110,14 +111,14 @@ function makeSnippet(text: string, term: string): string {
 }
 
 /** `limit` caps the returned hits and must be a positive integer. */
-export function search(docs: SearchDoc[], query: string, locale: string, limit = 20): Hit[] {
+export function search<D extends SearchDoc>(docs: D[], query: string, locale: string, limit = 20): Hit<D>[] {
   if (!Number.isInteger(limit) || limit < 1) {
     throw new Error(`search: limit must be a positive integer, got ${String(limit)}`);
   }
   const { words, phrase } = termsOf(query);
   if (words.length === 0) return [];
 
-  const hits: Hit[] = [];
+  const hits: Hit<D>[] = [];
   for (const doc of docs) {
     if (doc.locale !== 'any' && doc.locale !== locale) continue;
     const title = norm(doc.title);
