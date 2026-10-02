@@ -51,7 +51,7 @@ const css = ordered
 ---
 
 <section class="wb-shelf recent-shelf" aria-label={title}>
-  <div class="wb-shelf-head">
+  <div class="wb-shelf-head head">
     <h2 class="wb-shelf-title">{title}</h2>
     {subtitle && <span class="wb-shelf-en">{subtitle}</span>}
     <fieldset class="windows" aria-label={switchLabel}>
@@ -80,6 +80,11 @@ const css = ordered
 <style is:inline set:html={css}></style>
 
 <style>
+  /* the switch drops to its own row before the title has to wrap */
+  .head {
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
   .windows {
     margin: 0 0 0 auto;
     padding: 2px;
