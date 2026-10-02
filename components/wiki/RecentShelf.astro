@@ -41,7 +41,7 @@ const inputId = (w: RecentWindow) => `${id}-${w.days}`;
 // per window: hide cards older than it, show its empty message
 const css = ordered
   .map((w) => {
-    const within = Array.from({ length: w.days + 1 }, (_, age) => `[data-age="${age}"]`).join('');
+    const within = Array.from({ length: w.days + 1 }, (_, age) => `[data-age="${age}"]`).join(', ');
     return [
       `.recent-shelf:has(#${inputId(w)}:checked) .wb-grid > li:not(${within}) { display: none; }`,
       `.recent-shelf:has(#${inputId(w)}:checked) .empty[data-days="${w.days}"] { display: block; }`,
