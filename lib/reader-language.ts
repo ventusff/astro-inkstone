@@ -16,6 +16,14 @@
  * The address's fragment never reaches the server, and the browser keeps it
  * across the redirect; components/TwinAnchor.astro carries a heading anchor
  * of the twin over to the matching heading of the page the reader lands on.
+ *
+ * A page in the reader's language formats its interface text with
+ * lib/messages in the browser too (a search palette loads its strings when
+ * it opens). Vite's startup dependency scan does not read the scripts of
+ * .astro files, so the formatter it imports is pre-bundled here: found only
+ * when a page first loads it, it would make Vite re-optimize in the middle of
+ * that visit — the modules the page already requested answer 504 and every
+ * open page reloads.
  */
 import type { AstroIntegration } from 'astro';
 
@@ -56,10 +64,17 @@ export function readerRedirect(
     .redirect;
 }
 
+/** the packages lib/messages imports, resolved from this package's own
+ *  directory: under pnpm's strict layout they exist only in its node_modules */
+export const MESSAGES_DEPENDENCIES = ['intl-messageformat'];
+
 export function readerLanguage(options: NegotiationOptions): AstroIntegration {
   return {
     name: 'astro-inkstone/reader-language',
     hooks: {
+      'astro:config:setup': ({ updateConfig }) => {
+        updateConfig({ vite: { optimizeDeps: { include: MESSAGES_DEPENDENCIES.map((dep) => `astro-inkstone > ${dep}`) } } });
+      },
       'astro:server:setup': ({ server }) => {
         server.middlewares.use((req, res, next) => {
           const to = readerRedirect(req, options);

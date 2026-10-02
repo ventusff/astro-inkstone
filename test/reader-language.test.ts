@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { test } from 'node:test';
 
-import { parseCookies, readerRedirect } from '../lib/reader-language.ts';
+import { MESSAGES_DEPENDENCIES, parseCookies, readerLanguage, readerRedirect } from '../lib/reader-language.ts';
 
 const options = {
   locales: [
@@ -45,4 +46,29 @@ test('a deploy base scopes the redirect', () => {
 
 test('cookie parsing tolerates malformed percent-encoding', () => {
   assert.deepEqual(parseCookies('a=1; b=%E4%B8%AD; c=%zz; bare'), { a: '1', b: '中', c: '%zz' });
+});
+
+test('the packages lib/messages loads are pre-bundled through this package', async () => {
+  // the packages loading lib/messages actually resolves from inside lib/ (module-hook trace)
+  const libUrl = new URL('../lib/', import.meta.url).href;
+  const script = `
+    import { registerHooks } from 'node:module';
+    const packages = new Set();
+    registerHooks({
+      resolve(specifier, context, next) {
+        if (context.parentURL?.startsWith(${JSON.stringify(libUrl)}) && !/^(?:[./]|node:)/.test(specifier)) packages.add(specifier);
+        return next(specifier, context);
+      },
+    });
+    await import(${JSON.stringify(new URL('messages.ts', libUrl).href)});
+    console.log(JSON.stringify([...packages].sort()));
+  `;
+  const loaded = JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8' })) as string[];
+  assert.deepEqual([...MESSAGES_DEPENDENCIES].sort(), loaded);
+
+  const updates: unknown[] = [];
+  const hook = readerLanguage(options).hooks['astro:config:setup'];
+  assert.ok(hook);
+  await hook({ updateConfig: (u: unknown) => updates.push(u) } as never);
+  assert.deepEqual(updates, [{ vite: { optimizeDeps: { include: MESSAGES_DEPENDENCIES.map((dep) => `astro-inkstone > ${dep}`) } } }]);
 });
