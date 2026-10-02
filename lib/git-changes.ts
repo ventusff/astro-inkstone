@@ -7,9 +7,12 @@
  *
  * One `git log --name-only` over the whole history yields every path's
  * latest commit; a path modified or added in the working tree but not yet
- * committed is reported with its file mtime and no author. The result is
- * cached per repo and reused while HEAD and the working-tree status are
- * unchanged, so a page render costs two cheap git calls, not a log walk.
+ * committed is reported with its file mtime and no author. Commits by
+ * excluded authors — services that derive content from what people wrote,
+ * a translation sync for one — are skipped, so a path's change is the last
+ * one a person made. The result is cached per repo and reused while HEAD
+ * and the working-tree status are unchanged, so a page render costs two
+ * cheap git calls, not a log walk.
  */
 import { execFile } from 'node:child_process';
 import { statSync } from 'node:fs';
@@ -28,6 +31,11 @@ export interface FileChange {
 
 /** repo-relative path (posix) → latest change */
 export type FileChanges = Map<string, FileChange>;
+
+export interface FileChangesOptions {
+  /** author names or emails whose commits do not count as a change */
+  excludeAuthors?: readonly string[] | undefined;
+}
 
 interface CacheEntry {
   key: string;
@@ -51,13 +59,14 @@ function under(path: string, base: string): string | undefined {
 }
 
 /** latest change per path across the whole history: newest commit first, first sighting of a path wins */
-function parseLog(out: string, base = ''): FileChanges {
+function parseLog(out: string, base = '', excluded: ReadonlySet<string> = new Set()): FileChanges {
   const changes: FileChanges = new Map();
   for (const record of out.split(RECORD)) {
     if (record.trim() === '') continue;
     const [header, ...paths] = record.split('\n');
-    const [iso, by] = (header ?? '').split(FIELD);
+    const [iso, by, email] = (header ?? '').split(FIELD);
     if (!iso) continue;
+    if (excluded.has(by ?? '') || excluded.has(email ?? '')) continue;
     const at = new Date(iso);
     for (const raw of paths) {
       const path = under(raw.trim(), base);
@@ -91,8 +100,9 @@ function parseStatus(out: string, base = ''): string[] {
  * is not inside a git work tree yields an empty map — callers fall back to
  * frontmatter dates.
  */
-export async function fileChanges(root: string | URL): Promise<FileChanges> {
+export async function fileChanges(root: string | URL, options: FileChangesOptions = {}): Promise<FileChanges> {
   const dir = resolve(typeof root === 'string' ? root : fileURLToPath(root));
+  const excluded = new Set(options.excludeAuthors ?? []);
   let top: string;
   let head: string;
   let status: string;
@@ -105,13 +115,13 @@ export async function fileChanges(root: string | URL): Promise<FileChanges> {
   } catch {
     return new Map();
   }
-  const key = `${head.trim()}\n${status}`;
+  const key = `${head.trim()}\n${[...excluded].sort().join(',')}\n${status}`;
   const hit = cache.get(dir);
   if (hit && hit.key === key) return hit.changes;
 
   const base = relative(top.trim(), dir).split('\\').join('/');
-  const log = await git(dir, ['log', `--format=${RECORD}%cI${FIELD}%an`, '--name-only', '--no-renames']);
-  const changes = parseLog(log, base);
+  const log = await git(dir, ['log', `--format=${RECORD}%cI${FIELD}%an${FIELD}%ae`, '--name-only', '--no-renames']);
+  const changes = parseLog(log, base, excluded);
   for (const path of parseStatus(status, base)) {
     try {
       changes.set(path, { at: statSync(join(dir, path)).mtime });

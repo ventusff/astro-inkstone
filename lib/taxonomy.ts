@@ -49,6 +49,12 @@ export interface CollectionTaxonomyOptions extends TaxonomyOptions {
    * units sort by that. Without it, frontmatter dates order the units.
    */
   contentDir?: string | URL;
+  /**
+   * Author names or emails whose commits do not count as a note's change:
+   * services that derive content from what people wrote, such as a
+   * translation sync. A note they touched keeps the last change a person made.
+   */
+  excludeAuthors?: readonly string[];
 }
 
 export function createTaxonomy<
@@ -60,7 +66,7 @@ export function createTaxonomy<
   registry: { kinds: readonly K[]; domains: readonly D[]; statuses: readonly S[] },
   options: CollectionTaxonomyOptions = {},
 ) {
-  const { collection = 'notes', contentDir, ...rest } = options;
+  const { collection = 'notes', contentDir, excludeAuthors, ...rest } = options;
   const core = createTaxonomyCore<K, D, S, E>(registry, rest);
   return {
     ...core,
@@ -68,7 +74,7 @@ export function createTaxonomy<
     async getWikiUnits() {
       const [notes, changes] = await Promise.all([
         getCollection(collection as Parameters<typeof getCollection>[0]) as unknown as Promise<E[]>,
-        contentDir ? fileChanges(contentDir) : undefined,
+        contentDir ? fileChanges(contentDir, { excludeAuthors }) : undefined,
       ]);
       return core.unitsOf(notes, changes);
     },
