@@ -54,6 +54,7 @@ const css = ordered
   <div class="wb-shelf-head head">
     <h2 class="wb-shelf-title">{title}</h2>
     {subtitle && <span class="wb-shelf-en">{subtitle}</span>}
+    <span class="break" aria-hidden="true"></span>
     <fieldset class="windows" aria-label={switchLabel}>
       {ordered.map((w) => (
         <Fragment>
@@ -80,10 +81,15 @@ const css = ordered
 <style is:inline set:html={css}></style>
 
 <style>
-  /* the switch drops to its own row before the title has to wrap */
+  /* on narrow screens the switch drops to its own row, at its own width, before the title has to wrap */
   .head {
     flex-wrap: wrap;
     row-gap: 10px;
+  }
+  .break {
+    display: none;
+    flex-basis: 100%;
+    height: 0;
   }
   .windows {
     margin: 0 0 0 auto;
@@ -169,9 +175,11 @@ const css = ordered
   }
 
   @media (max-width: 560px) {
+    .break {
+      display: block;
+    }
     .windows {
       margin-left: 0;
-      flex-basis: 100%;
     }
   }
 </style>
