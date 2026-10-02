@@ -16,6 +16,10 @@
  *    (the prefix is stripped to find the canonical id).
  *  - Browse units = primary-language top-level entries. A hub counts as one
  *    unit; chapters and mirrors are not listed separately.
+ *  - A unit's latest change is the newest commit touching any file of it —
+ *    its own directory, its chapters and every locale mirror — when the
+ *    caller passes the repo's file changes (lib/git-changes.ts); otherwise
+ *    the frontmatter `updated` (falling back to `created`) stands in.
  */
 
 /** Minimal shape of one vocabulary definition. Extra fields pass through. */
@@ -53,6 +57,12 @@ export interface TaxonomyLocale {
   prefix: string;
 }
 
+/** one file's latest change — the shape lib/git-changes.ts reports */
+export interface ChangeRecord {
+  at: Date;
+  by?: string | undefined;
+}
+
 export interface TaxonomyOptions {
   /**
    * MIRROR locales only: each entry is a mirror's id prefix (non-empty,
@@ -85,8 +95,10 @@ export interface ResolvedNote<
   tags: string[];
   status?: S['id'] | undefined;
   created?: Date | undefined;
-  /** falls back to created */
+  /** frontmatter `updated`, falling back to `created` */
   updated?: Date | undefined;
+  /** latest commit touching any file of the unit (own directory, chapters, mirrors); unset without repo history */
+  changed?: ChangeRecord | undefined;
   sources: SourceRecord[];
   aliases: string[];
   /** locales this note exists in: the primary when its entry exists, plus every mirror */
@@ -191,13 +203,41 @@ export function createTaxonomyCore<
   }
 
   /** The browse units of a collection: primary-locale top-level entries
-   *  (hubs included), excluding chapters and mirrors; newest first. */
-  function unitsOf(notes: E[]): Resolved[] {
+   *  (hubs included), excluding chapters and mirrors; newest first by
+   *  `latestOf`. `changes` (repo-relative path → latest change) attaches
+   *  each unit's latest commit across its own directory and every mirror. */
+  function unitsOf(notes: E[], changes?: ReadonlyMap<string, ChangeRecord>): Resolved[] {
     const byId = new Map(notes.map((n) => [n.id, n]));
-    const units = notes.filter((n) => !n.id.includes('/')).map((n) => resolveTaxonomy(n, byId));
+    const changedBy = changes ? latestChangesByUnit(changes) : undefined;
+    const units = notes
+      .filter((n) => !n.id.includes('/'))
+      .map((n) => {
+        const unit = resolveTaxonomy(n, byId);
+        const changed = changedBy?.get(unit.id);
+        return changed ? { ...unit, changed } : unit;
+      });
     return units.sort(
-      (a, b) => (b.updated?.getTime() ?? 0) - (a.updated?.getTime() ?? 0) || a.id.localeCompare(b.id),
+      (a, b) => (latestOf(b)?.getTime() ?? 0) - (latestOf(a)?.getTime() ?? 0) || a.id.localeCompare(b.id),
     );
+  }
+
+  /** unit id of a repo-relative file path: the first segment after any mirror prefix */
+  function unitOfPath(path: string): string | undefined {
+    const { baseId } = stripLocale(path);
+    const top = baseId.split('/')[0];
+    return top && top !== baseId ? top : undefined;
+  }
+
+  /** the newest change among all files of each unit */
+  function latestChangesByUnit(changes: ReadonlyMap<string, ChangeRecord>): Map<string, ChangeRecord> {
+    const latest = new Map<string, ChangeRecord>();
+    for (const [path, change] of changes) {
+      const id = unitOfPath(path);
+      if (!id) continue;
+      const seen = latest.get(id);
+      if (!seen || change.at.getTime() > seen.at.getTime()) latest.set(id, change);
+    }
+    return latest;
   }
 
   /* Grouping helpers — registry order is stable; notes stay updated-desc. */
@@ -267,8 +307,50 @@ export function createTaxonomyCore<
   };
 }
 
+/** When a unit last changed: its latest commit, else its frontmatter date. */
+export function latestOf(unit: { updated?: Date | undefined; changed?: ChangeRecord | undefined }): Date | undefined {
+  return unit.changed?.at ?? unit.updated;
+}
+
+/** Units whose latest change falls within the last `days` days (calendar days in `timeZone`, see ageDays); order kept. */
+export function recentUnits<U extends { updated?: Date | undefined; changed?: ChangeRecord | undefined }>(
+  units: U[],
+  window: { days: number; now?: Date | undefined; timeZone?: string | undefined },
+): U[] {
+  return units.filter((u) => {
+    const age = ageDays(latestOf(u), window);
+    return age !== undefined && age <= window.days;
+  });
+}
+
 /** YYYY.MM (UTC fields; `z.coerce.date` parses a YYYY-MM-DD string as UTC midnight). */
 export function fmtMonth(d: Date | undefined): string {
   if (!d) return '';
   return `${d.getUTCFullYear()}.${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+/** calendar day of `d` in `timeZone` as YYYY-MM-DD (UTC when no zone is given) */
+function dayOf(d: Date, timeZone: string | undefined): string {
+  if (!timeZone) return d.toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+/** YYYY.MM.DD of `d` as a calendar day in `timeZone` (UTC fields without one). */
+export function fmtDay(d: Date | undefined, timeZone?: string): string {
+  if (!d) return '';
+  return dayOf(d, timeZone).replaceAll('-', '.');
+}
+
+/**
+ * Whole calendar days from `d` to now in `timeZone` — 0 is today, 1 is
+ * yesterday — or undefined without a date. A change at 23:50 counts as
+ * yesterday from 00:10 on, the way people read "yesterday".
+ */
+export function ageDays(d: Date | undefined, opts: { now?: Date | undefined; timeZone?: string | undefined } = {}): number | undefined {
+  if (!d) return undefined;
+  const now = opts.now ?? new Date();
+  const day = (x: Date) => Date.parse(`${dayOf(x, opts.timeZone)}T00:00:00Z`);
+  return Math.round((day(now) - day(d)) / 86_400_000);
 }

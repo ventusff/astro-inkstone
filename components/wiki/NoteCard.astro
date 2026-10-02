@@ -1,12 +1,14 @@
 ---
 /**
- * NoteCard — note card for browse pages: title / description / kind badge /
- * domain chips / status dot / source line / date / locale mirrors / chapter
- * count for collections. Lives on the browse shelf (browse.css, `--wb-*`).
+ * NoteCard — note card for browse pages: short-name badge / kind badge /
+ * chapter count / date and author of the latest change / title /
+ * description / domain chips / status dot / locale mirrors / source line.
+ * Lives on the browse shelf (browse.css, `--wb-*`).
  *
  * Purely presentational: the site resolves registry defs and URLs (e.g. with
  * the `createTaxonomy` helpers from `astro-inkstone/lib/taxonomy`) and passes
- * a display-ready object in.
+ * a display-ready object in. The short-name badge takes the first domain's
+ * tone, so a shelf of cards reads as a row of project labels.
  */
 import DomainChip from './DomainChip.astro';
 import KindBadge from './KindBadge.astro';
@@ -17,13 +19,19 @@ export interface NoteCardData {
   /** Canonical note id — emitted on data-* attributes for styling/filter hooks. */
   id: string;
   href: string;
+  /** the note's short name (a project or series name), shown as the card's badge */
+  brand?: string | undefined;
   title: string;
   description?: string | undefined;
   kind?: KindDisplay | undefined;
   domains: DomainDisplay[];
   status?: StatusDisplay | undefined;
-  /** Pre-formatted display date, "YYYY.MM". */
+  /** Pre-formatted display date of the latest change ("2026.10.02", "today", …). */
   updated?: string | undefined;
+  /** who made the latest change, shown after the date */
+  changedBy?: string | undefined;
+  /** whole days since the latest change — emitted as data-age for the recent shelf's window filter */
+  ageDays?: number | undefined;
   /** Chapter count, for multi-chapter collection notes. */
   chapterCount?: number | undefined;
   /** Other-locale mirrors of this note, e.g. [{ label: 'EN', href: '/en/note/' }]. */
@@ -39,6 +47,8 @@ interface Props {
 }
 const { note, labels = {} } = Astro.props;
 const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
+const tone = note.domains[0]?.tone;
+const brandStyle = tone ? `--brand-bg:${tone.bg}; --brand-fg:${tone.fg};` : undefined;
 ---
 
 <li
@@ -47,11 +57,18 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
   data-kind={note.kind?.id}
   data-domains={note.domains.map((d) => d.id).join(' ')}
   data-status={note.status?.id}
+  data-age={note.ageDays}
 >
   <div class="head">
+    {note.brand && <span class="brand" style={brandStyle}>{note.brand}</span>}
     {note.kind && <KindBadge def={note.kind} />}
     {note.chapterCount !== undefined && <span class="chapters">{chaptersLabel(note.chapterCount)}</span>}
-    {note.updated && <span class="date">{note.updated}</span>}
+    {note.updated && (
+      <span class="date">
+        {note.updated}
+        {note.changedBy && <span class="by">· {note.changedBy}</span>}
+      </span>
+    )}
   </div>
   <a class="title" href={note.href}>{note.title}</a>
   {note.description && <p class="desc">{note.description}</p>}
@@ -83,7 +100,25 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
   .head {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
+  }
+  .brand {
+    display: inline-block;
+    max-width: 100%;
+    font: 700 11.5px/1 var(--font-ui);
+    letter-spacing: 0.02em;
+    color: var(--brand-fg, var(--color-accent-text));
+    background: var(--brand-bg, var(--color-accent-soft));
+    border-radius: 4px;
+    padding: 4px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  :global(:root[data-theme='dark']) .brand {
+    background: color-mix(in srgb, var(--brand-fg, var(--color-accent)) 22%, transparent);
+    color: color-mix(in srgb, var(--brand-fg, var(--color-accent)) 50%, var(--color-ink));
   }
   .chapters {
     font: 500 11px/1 var(--wb-sans);
@@ -93,6 +128,11 @@ const chaptersLabel = labels.chapters ?? ((n: number) => `${n} chapters`);
     margin-left: auto;
     font: 500 11px/1 var(--wb-sans);
     color: var(--wb-text-muted);
+    white-space: nowrap;
+  }
+  .by {
+    font-weight: 400;
+    color: var(--wb-text-dim);
   }
 
   .title {

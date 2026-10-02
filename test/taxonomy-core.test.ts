@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { createTaxonomyCore, fmtMonth, type TaxonomyNoteEntry } from '../lib/taxonomy-core.ts';
+import { ageDays, createTaxonomyCore, fmtDay, fmtMonth, latestOf, recentUnits, type TaxonomyNoteEntry } from '../lib/taxonomy-core.ts';
 
 const registry = {
   kinds: [{ id: 'guide', label: 'Guide' }, { id: 'reference', label: 'Reference' }],
@@ -89,4 +89,50 @@ test('aliases are entry-local: neither a chapter nor a mirror inherits them', ()
   assert.deepEqual(t.resolveTaxonomy(chapter, byId).aliases, []);
   assert.deepEqual(t.resolveTaxonomy(en, byId).aliases, ['tok']);
   assert.deepEqual(t.resolveTaxonomy(zh, byId).aliases, []);
+});
+
+test('repo changes attach each unit\'s newest commit across its directory, chapters and mirrors, and order the units', () => {
+  const notes = [
+    note('old', { updated: new Date('2026-03-01') }),
+    note('new', { updated: new Date('2026-01-01') }),
+    note('new/chapter', {}),
+    note('zh/new', {}),
+    note('untracked', { updated: new Date('2026-02-01') }),
+  ];
+  const { t } = bind(notes);
+  const changes = new Map([
+    ['old/index.mdx', { at: new Date('2026-04-01T08:00:00Z'), by: 'A' }],
+    ['new/index.mdx', { at: new Date('2026-04-02T08:00:00Z'), by: 'B' }],
+    ['zh/new/index.mdx', { at: new Date('2026-04-03T08:00:00Z'), by: 'C' }],
+    ['new/chapter/figure.svg', { at: new Date('2026-04-02T09:00:00Z'), by: 'D' }],
+    ['README.md', { at: new Date('2026-05-01T08:00:00Z'), by: 'E' }],
+  ]);
+  const units = t.unitsOf(notes, changes);
+  assert.deepEqual(units.map((u) => u.id), ['new', 'old', 'untracked']);
+  assert.deepEqual(units[0]!.changed, { at: new Date('2026-04-03T08:00:00Z'), by: 'C' });
+  assert.equal(units[2]!.changed, undefined);
+  assert.equal(latestOf(units[2]!)?.toISOString(), '2026-02-01T00:00:00.000Z');
+  assert.deepEqual(t.unitsOf(notes).map((u) => u.id), ['old', 'untracked', 'new']);
+});
+
+test('ages are calendar days in the given zone; recentUnits keeps what changed within the window', () => {
+  const now = new Date('2026-10-02T00:30:00Z'); // 02:30 in Berlin
+  assert.equal(ageDays(new Date('2026-10-01T22:30:00Z'), { now, timeZone: 'Europe/Berlin' }), 0);
+  assert.equal(ageDays(new Date('2026-10-01T21:30:00Z'), { now, timeZone: 'Europe/Berlin' }), 1);
+  assert.equal(ageDays(new Date('2026-10-01T21:30:00Z'), { now }), 1);
+  assert.equal(ageDays(new Date('2026-09-02T12:00:00Z'), { now, timeZone: 'Europe/Berlin' }), 30);
+  assert.equal(ageDays(undefined, { now }), undefined);
+  assert.equal(fmtDay(new Date('2026-10-01T22:30:00Z'), 'Europe/Berlin'), '2026.10.02');
+  assert.equal(fmtDay(new Date('2026-10-01T22:30:00Z')), '2026.10.01');
+
+  const units = [
+    { id: 'today', changed: { at: new Date('2026-10-01T23:00:00Z') } },
+    { id: 'week', changed: { at: new Date('2026-09-26T12:00:00Z') } },
+    { id: 'month', updated: new Date('2026-09-10') },
+    { id: 'stale', updated: new Date('2026-08-01') },
+    { id: 'undated' },
+  ];
+  const window = { now, timeZone: 'Europe/Berlin' };
+  assert.deepEqual(recentUnits(units, { days: 7, ...window }).map((u) => u.id), ['today', 'week']);
+  assert.deepEqual(recentUnits(units, { days: 30, ...window }).map((u) => u.id), ['today', 'week', 'month']);
 });

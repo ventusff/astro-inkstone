@@ -19,6 +19,7 @@
  */
 import { getCollection } from 'astro:content';
 
+import { fileChanges } from './git-changes.ts';
 import {
   createTaxonomyCore,
   type TaxonomyDef,
@@ -35,11 +36,19 @@ export type {
   TaxonomyNoteEntry,
   TaxonomyOptions,
 } from './taxonomy-core.ts';
-export { fmtMonth } from './taxonomy-core.ts';
+export type { ChangeRecord } from './taxonomy-core.ts';
+export { ageDays, fmtDay, fmtMonth, latestOf, recentUnits } from './taxonomy-core.ts';
 
 export interface CollectionTaxonomyOptions extends TaxonomyOptions {
   /** content collection read by getWikiUnits(). Default 'notes'. */
   collection?: string;
+  /**
+   * Root of the note files inside their git work tree (path or file URL,
+   * e.g. `new URL('../content/notes/', import.meta.url)`). With it, every
+   * unit carries `changed`: the latest commit touching any of its files, and
+   * units sort by that. Without it, frontmatter dates order the units.
+   */
+  contentDir?: string | URL;
 }
 
 export function createTaxonomy<
@@ -51,14 +60,17 @@ export function createTaxonomy<
   registry: { kinds: readonly K[]; domains: readonly D[]; statuses: readonly S[] },
   options: CollectionTaxonomyOptions = {},
 ) {
-  const { collection = 'notes', ...rest } = options;
+  const { collection = 'notes', contentDir, ...rest } = options;
   const core = createTaxonomyCore<K, D, S, E>(registry, rest);
   return {
     ...core,
-    /** All browse units of the collection, newest first (core.unitsOf over getCollection). */
+    /** All browse units of the collection, newest first (core.unitsOf over getCollection, with the repo's changes when `contentDir` is set). */
     async getWikiUnits() {
-      const notes = (await getCollection(collection as Parameters<typeof getCollection>[0])) as unknown as E[];
-      return core.unitsOf(notes);
+      const [notes, changes] = await Promise.all([
+        getCollection(collection as Parameters<typeof getCollection>[0]) as unknown as Promise<E[]>,
+        contentDir ? fileChanges(contentDir) : undefined,
+      ]);
+      return core.unitsOf(notes, changes);
     },
   };
 }

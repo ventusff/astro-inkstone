@@ -1,0 +1,172 @@
+---
+/**
+ * RecentShelf — the "recently updated" shelf of a wiki landing page: every
+ * note changed within a window of days, nothing truncated, with a switch
+ * between windows (7 days / 30 days, say). The cards come in through the
+ * default slot as NoteCard items carrying `data-age` (whole days since the
+ * latest change); the switch is a radio group and the filtering is CSS, so
+ * the shelf works without any script and the whole list is in the HTML.
+ *
+ * The window checked at first is the smallest one that has any card, so
+ * the shelf never opens empty while a wider window has something to show.
+ */
+export interface RecentWindow {
+  days: number;
+  /** switch label, e.g. "7 天" */
+  label: string;
+  /** cards whose age is within the window */
+  count: number;
+}
+
+interface Props {
+  title: string;
+  subtitle?: string | undefined;
+  /** ascending by days; at least one */
+  windows: RecentWindow[];
+  /** message shown when the checked window has no card; receives its days */
+  empty: (days: number) => string;
+  /** link under the shelf to the full, time-ordered list */
+  more?: { href: string; label: string } | undefined;
+  /** accessible name of the window switch */
+  switchLabel?: string | undefined;
+  /** distinguishes the radio group when a page holds several shelves */
+  id?: string | undefined;
+}
+const { title, subtitle, windows, empty, more, switchLabel, id = 'recent' } = Astro.props;
+if (windows.length === 0) throw new Error('RecentShelf: at least one window is required');
+const ordered = [...windows].sort((a, b) => a.days - b.days);
+const initial = ordered.find((w) => w.count > 0) ?? ordered[ordered.length - 1]!;
+const inputId = (w: RecentWindow) => `${id}-${w.days}`;
+
+// per window: hide cards older than it, show its empty message
+const css = ordered
+  .map((w) => {
+    const within = Array.from({ length: w.days + 1 }, (_, age) => `[data-age="${age}"]`).join('');
+    return [
+      `.recent-shelf:has(#${inputId(w)}:checked) .wb-grid > li:not(${within}) { display: none; }`,
+      `.recent-shelf:has(#${inputId(w)}:checked) .empty[data-days="${w.days}"] { display: block; }`,
+    ].join('\n');
+  })
+  .join('\n');
+---
+
+<section class="wb-shelf recent-shelf" aria-label={title}>
+  <div class="wb-shelf-head">
+    <h2 class="wb-shelf-title">{title}</h2>
+    {subtitle && <span class="wb-shelf-en">{subtitle}</span>}
+    <fieldset class="windows" aria-label={switchLabel}>
+      {ordered.map((w) => (
+        <Fragment>
+          <input type="radio" name={id} id={inputId(w)} value={w.days} checked={w === initial} />
+          <label for={inputId(w)}>
+            {w.label}
+            <b>{w.count}</b>
+          </label>
+        </Fragment>
+      ))}
+    </fieldset>
+  </div>
+  <ul class="wb-grid">
+    <slot />
+  </ul>
+  {ordered.filter((w) => w.count === 0).map((w) => <p class="empty" data-days={w.days}>{empty(w.days)}</p>)}
+  {more && (
+    <p class="more">
+      <a href={more.href}>{more.label}</a>
+    </p>
+  )}
+</section>
+
+<style is:inline set:html={css}></style>
+
+<style>
+  .windows {
+    margin: 0 0 0 auto;
+    padding: 2px;
+    border: 1px solid var(--wb-border);
+    border-radius: 999px;
+    display: inline-flex;
+    gap: 2px;
+    align-self: center;
+    background: var(--wb-bg);
+  }
+  .windows input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .windows label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font: 500 12px/1 var(--wb-sans);
+    color: var(--wb-text-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
+  }
+  .windows label b {
+    font-weight: 600;
+    font-size: 11px;
+    min-width: 1.6em;
+    text-align: center;
+    padding: 2px 5px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--wb-text) 8%, transparent);
+    color: var(--wb-text-dim);
+  }
+  .windows label:hover {
+    color: var(--wb-text);
+  }
+  .windows input:checked + label {
+    background: var(--wb-text);
+    color: var(--wb-bg);
+  }
+  .windows input:checked + label b {
+    background: color-mix(in srgb, var(--wb-bg) 22%, transparent);
+    color: var(--wb-bg);
+  }
+  .windows input:focus-visible + label {
+    outline: 2px solid var(--wb-wine);
+    outline-offset: 1px;
+  }
+
+  .empty {
+    display: none;
+    margin: 1.1rem 0 0;
+    padding: 18px;
+    border: 1px dashed var(--wb-border);
+    border-radius: var(--radius);
+    font: 400 13.5px/1.6 var(--wb-sans);
+    color: var(--wb-text-dim);
+    text-align: center;
+  }
+
+  .more {
+    margin: 0.9rem 0 0;
+    text-align: right;
+    font: 500 12px/1 var(--wb-sans);
+  }
+  .more a {
+    color: var(--wb-wine);
+    text-decoration: none;
+  }
+  .more a:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 560px) {
+    .windows {
+      margin-left: 0;
+      flex-basis: 100%;
+    }
+  }
+</style>
