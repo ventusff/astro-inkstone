@@ -6,20 +6,26 @@
  * (e.g. from a wikilink scan) and passes them in.
  */
 import type { BacklinkItem } from '../lib/backlinks.ts';
+import { componentWords } from '../lib/component-words.ts';
 
 /** what one row renders: the index's item minus the source id */
 export type BacklinkRow = Pick<BacklinkItem, 'href' | 'title' | 'before' | 'label' | 'after'>;
 
 interface Props {
   items: BacklinkRow[];
-  /** Panel heading. Pass a localized string to override. */
+  /** Panel heading; defaults to the page language's word for it. */
   heading?: string | undefined;
-  /** Optional secondary heading (e.g. an English subtitle on a localized page). */
+  /** Secondary heading (e.g. the English term beside a localized heading); defaults with `heading`. */
   sub?: string | undefined;
+  /** the page's language (BCP 47) for the default words; defaults to `Astro.currentLocale` */
+  locale?: string | undefined;
   /** element id, for a skip link or an in-page reference */
   id?: string | undefined;
 }
-const { items, heading = 'Linked mentions', sub = '', id } = Astro.props;
+const words = componentWords(Astro.props.locale ?? Astro.currentLocale).backlinks;
+const { items, id } = Astro.props;
+const heading = Astro.props.heading ?? words.heading;
+const sub = Astro.props.sub ?? (Astro.props.heading === undefined ? words.sub : '');
 ---
 
 {

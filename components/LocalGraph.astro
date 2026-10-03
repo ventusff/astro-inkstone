@@ -9,6 +9,8 @@
  * passes them in; a neighbour may carry its own `color` (any CSS color,
  * e.g. a per-collection token) — the default is the accent.
  */
+import { componentWords } from '../lib/component-words.ts';
+
 export interface LocalGraphNeighbor {
   id: string;
   title: string;
@@ -21,10 +23,13 @@ interface Props {
   /** Title of the note at the centre — names the graph for assistive technology. */
   centerTitle: string;
   neighbors: LocalGraphNeighbor[];
-  /** Panel heading; pass a localized string to override. */
+  /** Panel heading; defaults to the page language's word for it. */
   label?: string | undefined;
+  /** the page's language (BCP 47) for the default words; defaults to `Astro.currentLocale` */
+  locale?: string | undefined;
 }
-const { centerTitle, neighbors, label = 'Local graph' } = Astro.props;
+const { centerTitle, neighbors } = Astro.props;
+const label = Astro.props.label ?? componentWords(Astro.props.locale ?? Astro.currentLocale).localGraph;
 
 const W = 236;
 const H = 184;

@@ -105,7 +105,8 @@ whose content is the package's own manual.
 - `components/LocalToc.astro` accepts both ToC shapes (`entries`/`items`).
 - Wiki components are presentational: sites bind data with
   `createTaxonomy()` from `lib/taxonomy.ts` and pass props (including label
-  strings — defaults are English). `lib/backlinks.ts` ships the matching
+  strings — a label left out is the page language's word from
+  `lib/component-words.ts`: Chinese, English or German, else English). `lib/backlinks.ts` ships the matching
   backlink-index builder (`createBacklinks`) on the engine's own resolver.
 - The demo is the wiki-shape reference implementation: a taxonomy garden
   (registry in `demo/src/content/notes/_meta/`, browse routes under

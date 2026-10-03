@@ -12,6 +12,7 @@
  * (e.g. top 10), with the rest reachable via the "all" page.
  */
 import { normalizeBase } from '../../lib/base.ts';
+import { componentWords } from '../../lib/component-words.ts';
 import type { KindDisplay, Tone } from '../../lib/wiki-display.ts';
 
 /** a facet value: a kind, or a domain with its tone */
@@ -29,7 +30,9 @@ interface Props {
    *  any spelling ('/wiki', 'wiki/', …) — it is normalized here. */
   base: string;
   active?: { dim: 'kind' | 'domain' | 'status' | 'tag' | 'all'; value?: string | undefined } | undefined;
-  /** Row labels; pass localized strings to override. */
+  /** the page's language (BCP 47) for the default row labels; defaults to `Astro.currentLocale` */
+  locale?: string | undefined;
+  /** Row labels; each defaults to the page language's word for it. */
   labels?:
     | {
         kind?: string | undefined;
@@ -46,13 +49,14 @@ const root = normalizeBase(base);
 /** browse route for one facet value; the value is data, so it is URL-encoded */
 const facetHref = (dim: string, value: string): string =>
   `${root}/${dim}/${encodeURIComponent(value)}/`;
+const words = componentWords(Astro.props.locale ?? Astro.currentLocale).facets;
 const label = {
-  kind: labels.kind ?? 'Kind',
-  domain: labels.domain ?? 'Domain',
-  status: labels.status ?? 'Status',
-  tag: labels.tag ?? 'Tags',
-  all: labels.all ?? 'All →',
-  aria: labels.aria ?? 'Browse index',
+  kind: labels.kind ?? words.kind,
+  domain: labels.domain ?? words.domain,
+  status: labels.status ?? words.status,
+  tag: labels.tag ?? words.tag,
+  all: labels.all ?? words.all,
+  aria: labels.aria ?? words.aria,
 };
 
 const isActive = (dim: string, value: string): boolean =>

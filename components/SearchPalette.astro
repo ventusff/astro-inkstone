@@ -11,11 +11,14 @@
  *     stays site-owned; ⌘K / Ctrl+K always works;
  *   - `scopes` narrows results by the crumb label the index assigned each
  *     document (a scope without `crumb` shows everything);
- *   - every label is a prop; defaults are English.
+ *   - every label is a prop; a label left out is the page language's word
+ *     for it (`locale`, else `Astro.currentLocale`).
  *
  * Presentational like every wiki component: second-tier tokens only, and the
  * dialog carries `data-probe-open` so the render probes sample it open.
  */
+import { componentWords } from '../lib/component-words.ts';
+
 interface Scope {
   id: string;
   label: string;
@@ -26,7 +29,7 @@ interface Scope {
 interface Props {
   /** endpoint route of the JSON index (a buildSearchIndexEndpoint page) */
   indexUrl?: string;
-  /** locale passed to the matcher; 'any'-locale documents always match */
+  /** the page's language: the matcher's locale ('any'-locale documents always match) and the default words' language */
   locale?: string;
   scopes?: Scope[];
   labels?: {
@@ -42,22 +45,11 @@ interface Props {
   };
 }
 
-const {
-  indexUrl = '/search-index.json',
-  locale = 'en',
-  scopes = [],
-  labels = {},
-} = Astro.props;
+const { indexUrl = '/search-index.json', scopes = [], labels = {} } = Astro.props;
+const locale = Astro.props.locale ?? Astro.currentLocale ?? 'en';
 
 const t = {
-  dialog: 'Site search',
-  input: 'Search',
-  results: 'Search results',
-  placeholder: 'Search…',
-  hint: 'Type to search · ↑↓ to choose · Enter to open',
-  empty: 'No results.',
-  unavailable: 'Search index unavailable.',
-  unit: 'pages',
+  ...componentWords(locale).search,
   ...labels,
 };
 ---
