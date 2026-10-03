@@ -24,7 +24,10 @@
  *     past the right edge of the `<rect>` it starts in (the "words out of the box" defect);
  *   - images: `<img>` that did not load;
  *   - math: KaTeX error nodes; mermaid: fences that did not render;
- *   - overflowX: the page scrolls sideways.
+ *   - overflowX: the page scrolls sideways;
+ *   - errorPage: the page answered 200 but shows an error in place of its content —
+ *     the dev server's error overlay (`vite-error-overlay`, Astro's `astro-dev-overlay`
+ *     error window) or a site's own "this page has a problem" block (`[data-page-trouble]`).
  * A page with none of these is `ok`. `--shots` saves a full-page screenshot of
  * every page that is not ok (PNG, named by path), `--shots-all 1` of every page.
  * Exit code 1 when any page is not ok.
@@ -112,6 +115,12 @@ const PROBE = `(() => {
   }
   const de = document.documentElement;
   out.overflowX = Math.max(0, de.scrollWidth - de.clientWidth);
+  const overlay = document.querySelector('vite-error-overlay');
+  const astroErr = document.querySelector('astro-dev-toolbar')?.shadowRoot?.querySelector('astro-dev-toolbar-window[data-error], .error-window');
+  const trouble = document.querySelector('[data-page-trouble]');
+  out.errorPage = overlay ? ('overlay: ' + (overlay.shadowRoot?.querySelector('.message')?.textContent || '').trim().slice(0, 200))
+    : astroErr ? 'astro error window'
+    : trouble ? ('trouble block: ' + (trouble.textContent || '').trim().slice(0, 120)) : '';
   return out;
 })()`;
 
@@ -217,7 +226,7 @@ async function audit(path) {
     }
     rec.reloads = Math.max(0, navigations - 1);
     rec.ok = rec.status < 400 && rec.status > 0 && rec.reloads < 2 && !Object.keys(rec.console).length && !rec.failed.length
-      && !rec.demos?.length && !rec.flows?.length && !rec.svgText?.length && !rec.images?.length && !rec.math && !rec.mermaid && !(rec.overflowX > 4);
+      && !rec.demos?.length && !rec.flows?.length && !rec.svgText?.length && !rec.images?.length && !rec.math && !rec.mermaid && !(rec.overflowX > 4) && !rec.errorPage;
     if (args.shots && (!rec.ok || args['shots-all'])) {
       const { cssContentSize } = await send('Page.getLayoutMetrics');
       await send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: Math.min(Math.ceil(cssContentSize.height), 16000), deviceScaleFactor: 1, mobile: false });
@@ -253,6 +262,7 @@ await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
       rec.demos?.length && `demos not mounted ${rec.demos.length}`, rec.flows?.length && `flow wires missing ${rec.flows.length}`,
       rec.svgText?.length && `svg text out of box ${rec.svgText.length}`, rec.images?.length && `broken images ${rec.images.length}`,
       rec.math && `math errors ${rec.math}`, rec.mermaid && `mermaid ${rec.mermaid}`, rec.overflowX > 4 && `page overflows sideways ${rec.overflowX}px`,
+      rec.errorPage && `error shown instead of content (${rec.errorPage})`,
     ].filter(Boolean);
     console.log(`${rec.ok ? '✓' : '✗'} ${path}${flags.length ? '  — ' + flags.join(' · ') : ''}`);
   }
