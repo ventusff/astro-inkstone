@@ -4,9 +4,12 @@
  * what a reader would see broken: figures and interactive demos first.
  *
  *   node scripts/page_audit.mjs --base http://127.0.0.1:4321 --paths paths.txt [--out audit.json]
+ *   node scripts/page_audit.mjs --base http://127.0.0.1:4321 --crawl / [--max 500] [--out audit.json]
  *        [--width 1280] [--settle 2500] [--shots dir] [--shots-all 1] [--concurrency 4] [--chrome google-chrome]
  *
  * `paths.txt` holds one path per line (`/wiki/foo/`); `#` starts a comment.
+ * `--crawl <start>` needs no list: it starts at that path and follows every
+ * same-origin page link it meets (files, API and asset paths left out), up to `--max` pages.
  * Chrome is driven over the DevTools protocol with Node's own WebSocket, so
  * the script has no dependencies.
  *
@@ -34,15 +37,28 @@ import { join } from 'node:path';
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((acc, a, i, all) => (a.startsWith('--') ? [...acc, [a.slice(2), all[i + 1]]] : acc), []),
 );
-if (!args.base || !args.paths) {
-  console.error('usage: page_audit.mjs --base <origin> --paths <file> [--out file] [--width n] [--settle ms] [--shots dir] [--concurrency n] [--chrome bin]');
+if (!args.base || (!args.paths && !args.crawl)) {
+  console.error('usage: page_audit.mjs --base <origin> (--paths <file> | --crawl <start path>) [--max n] [--out file] [--width n] [--settle ms] [--shots dir] [--shots-all 1] [--concurrency n] [--chrome bin]');
   process.exit(2);
 }
 const BASE = args.base.replace(/\/$/, '');
 const WIDTH = Number(args.width ?? 1280);
 const SETTLE = Number(args.settle ?? 2500);
 const CONCURRENCY = Number(args.concurrency ?? 4);
-const paths = readFileSync(args.paths, 'utf8').split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean);
+const MAX = Number(args.max ?? 500);
+const paths = args.crawl
+  ? [args.crawl]
+  : readFileSync(args.paths, 'utf8').split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean);
+const seen = new Set(paths);
+/** a link worth following: a page on this origin, not a file, an API route or a dev-server internal */
+function pagePath(href) {
+  let u;
+  try { u = new URL(href); } catch { return null; }
+  if (u.origin !== new URL(BASE).origin) return null;
+  const p = u.pathname;
+  if (/\.[a-z0-9]{2,5}$/i.test(p) || /^\/(api|_|@|node_modules|src)\b/.test(p) || p.includes('/api/')) return null;
+  return p;
+}
 if (args.shots) mkdirSync(args.shots, { recursive: true });
 
 /** what runs inside the page once it has settled */
@@ -192,6 +208,13 @@ async function audit(path) {
     await sleep(800);
     const { result } = await send('Runtime.evaluate', { expression: PROBE, returnByValue: true });
     Object.assign(rec, result.value ?? {});
+    if (args.crawl) {
+      const links = await send('Runtime.evaluate', { expression: `[...document.querySelectorAll('a[href]')].map((a) => a.href)`, returnByValue: true });
+      for (const href of links.result.value ?? []) {
+        const next = pagePath(href);
+        if (next && !seen.has(next) && seen.size < MAX) { seen.add(next); paths.push(next); }
+      }
+    }
     rec.reloads = Math.max(0, navigations - 1);
     rec.ok = rec.status < 400 && rec.status > 0 && rec.reloads < 2 && !Object.keys(rec.console).length && !rec.failed.length
       && !rec.demos?.length && !rec.flows?.length && !rec.svgText?.length && !rec.images?.length && !rec.math && !rec.mermaid && !(rec.overflowX > 4);
@@ -215,10 +238,14 @@ async function audit(path) {
 
 const results = [];
 let next = 0;
-await Promise.all(Array.from({ length: Math.min(CONCURRENCY, paths.length) }, async () => {
-  while (next < paths.length) {
+let active = 0;
+await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
+  // a crawl grows the list while pages are open: a worker with nothing to take waits for the busy ones
+  while (next < paths.length || active > 0) {
+    if (next >= paths.length) { await sleep(200); continue; }
     const path = paths[next++];
-    const rec = await audit(path);
+    active += 1;
+    const rec = await audit(path).finally(() => { active -= 1; });
     results.push(rec);
     const flags = [
       rec.error && `error: ${rec.error}`, rec.status >= 400 && `HTTP ${rec.status}`, rec.reloads >= 2 && `reloads ${rec.reloads}`,
@@ -235,6 +262,7 @@ if (args.out) writeFileSync(args.out, JSON.stringify(results, null, 1));
 const bad = results.filter((r) => !r.ok);
 console.log(`\n${results.length} pages, ${bad.length} with findings`);
 browser.close();
-chrome.kill();
-rmSync(profile, { recursive: true, force: true });
+// the profile directory can only go once Chrome has let go of it
+await new Promise((resolve) => { chrome.once('exit', resolve); chrome.kill(); });
+rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
 process.exit(bad.length ? 1 : 0);
