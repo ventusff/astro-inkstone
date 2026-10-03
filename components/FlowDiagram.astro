@@ -1,0 +1,45 @@
+---
+/**
+ * A box-and-arrow diagram whose boxes are HTML and size themselves to
+ * their text; the arrows are drawn in the browser from the boxes' measured
+ * positions (lib/flow-diagram.ts). Use it for anything that is boxes with
+ * words in them — architecture, pipelines, swimlanes. A hand-positioned
+ * `<svg>` with `<text>` belongs in `LineageSvg` only when it carries no
+ * text that a font could widen out of its shape.
+ *
+ *   <FlowDiagram title="Fig. — the pipeline" spec={{
+ *     cols: 3,
+ *     nodes: [
+ *       { id: 'a', title: 'tokens.css', col: 1, row: 1 },
+ *       { id: 'b', title: 'base.css', lines: ['reading column'], col: 2, row: 1 },
+ *       { id: 'c', title: 'components', col: 3, row: 1, tone: 'machine' },
+ *     ],
+ *     edges: [{ from: 'a', to: 'b' }, { from: 'b', to: 'c', label: 'imports' }],
+ *   }} />
+ *
+ * `lanes` adds a label column and dashed separators between rows; `heads`
+ * adds a small heading row; a node's `tone` is a semantic name
+ * (colleague / admin / machine / blocked / plain) or a CSS color; `ghost`
+ * dashes the box, `mono` sets its small lines in the mono font.
+ */
+import { type FlowSpec, renderFlowDiagram } from '../lib/flow-diagram.ts';
+
+interface Props {
+  spec: FlowSpec;
+  title?: string | undefined;
+}
+const { spec, title } = Astro.props;
+const html = renderFlowDiagram(spec);
+---
+
+<figure class="flow">
+  {title && <figcaption class="flow-title">{title}</figcaption>}
+  <Fragment set:html={html} />
+  {Astro.slots.has('default') && <figcaption class="flow-caption"><slot /></figcaption>}
+</figure>
+
+<script>
+  import { mountFlowDiagrams } from '../lib/flow-diagram.ts';
+  mountFlowDiagrams();
+  document.addEventListener('astro:page-load', () => mountFlowDiagrams());
+</script>

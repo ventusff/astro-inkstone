@@ -6,7 +6,7 @@ navLabel: Інтерактив і обрамлення
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
 - `HubCard` і `.hub-grid` — посадкові картки хаба; `.path` — його рамка маршруту читання; обидва — на [[components|оглядовій сторінці цієї галереї]].
 - `LocalToc` рендерить список переходів у межах сторінки; він приймає обидві форми ToC, які видають два пресети нумерації, і ховає себе, коли рядків менше за налаштовуваний мінімум. Нижче — наживо, на ToC цього ж розділу.
 - `SidebarMemory` зберігає прокручування бічної панелі між переходами сторінок і центрує поточний пункт (за замовчуванням `[aria-current="page"]`), щойно той опинився б поза видимістю. Покладіть його всередину прокручуваного контейнера панелі, після розмітки навігації; він відпрацьовує до першого малювання, тож панель ніколи не блимає вгорі. Бічна панель цього демо його й несе.
-- `LineageSvg` обрамлює намальований вручну SVG (родовід методу, дерево таксономії) як картку — одна така нижче.
+- `LineageSvg` обрамлює SVG без слів — дерево походження, таксономію — як картку; схема зі словами — це `FlowDiagram`, нижче.
 - `PageFooter` — дрібний друк унизу нотатки: рядок під кожною нотаткою тут.
 - Деталі перегляду живуть у [[components/wiki|розділі про вікі]]; Markdown-бік галереї — [[kitchen-sink|демонстраційний стенд]].
 
-## LocalToc і LineageSvg наживо
+## LocalToc і FlowDiagram наживо
 
 `LocalToc`, якому згодовано зібраний під час збірки ToC цієї ж сторінки — ті самі дані, що споживає бічна панель, передані нотатці як `props.toc`:
 
 <LocalToc toc={props.toc} label="У цьому розділі" />
 
-А ось `LineageSvg` довкола авторської діаграми, натушованої самими лише семантичними токенами, — тому вона доречна в обох темах:
+Та сама схема як `FlowDiagram` — блоки це HTML, що підлаштовується під свої слова, стрілки вимірюються після розкладки, тож у жодному шрифті нічого не виходить за рамку:
 
-<LineageSvg title="Рис. — де сидить шар оформлення">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css живить base.css і browse.css, а вони — кожен компонент" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="Рис. — де лежить шар вигляду" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['колонка читання'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['полиця перегляду'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['використовують обидва'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'живить' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — блоки за розміром своїх слів
+
+Схема зі словами — це `FlowDiagram` (або блок `mermaid`). Вручну розставлений `<svg>` з `<text>` намальований під один шрифт і ламається на наступному, ширшому — а кожен сайт рендерить своїм; `LineageSvg` лишається для SVG без тексту, який шрифт міг би видавити з форми. Специфікація — дані: `cols`, `nodes` (`col` / `row` / `span`, `tone`, `lines`, `tag`, `ghost` для пунктирної нотатки, `mono` для шляхів), `edges` (`label`, `dashed`, `off` для обірваного зв'язку), необов'язкові `lanes` і `heads`:
+
+<FlowDiagram title="Рис. — одна зміна, три доріжки" spec={{
+  cols: 3,
+  lanes: [{ text: 'Автор', tone: 'colleague' }, { text: 'Рев\'ю', tone: 'admin' }, { text: 'Збірка', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'Написати', lines: ['нотатку або компонент'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'Відкрити PR', lines: ['одна гілка'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'Перевірити', lines: ['схвалити або запитати'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'Зібрати й розгорнути', lines: ['при злитті'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  Доріжки підписують рядки й малюють роздільники; tone фарбує рамку та мітку блока; підпис на лінії пропускається, коли проміжок вужчий за слова.
+</FlowDiagram>
 
 ## Обрамлення без компонента
 

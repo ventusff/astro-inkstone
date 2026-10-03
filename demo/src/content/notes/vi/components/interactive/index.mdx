@@ -6,7 +6,7 @@ navLabel: "Tương tác & phụ kiện"
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ Các thành phần còn lại đóng khung ghi chú thay vì lấp đầy nó:
 - `HubCard` và `.hub-grid` là dàn thẻ cửa ngõ của hub; `.path` là hộp lộ trình đọc của nó — cả hai đều có mặt trên [[components|trang tổng quan của phòng trưng bày này]].
 - `LocalToc` render danh sách nhảy trong trang; nó nhận cả hai dạng ToC mà hai preset đánh số sinh ra, và tự ẩn khi ít mục hơn ngưỡng cấu hình. Ngay bên dưới, chạy thật trên ToC của chính chương này.
 - `SidebarMemory` giữ thanh bên đang cuộn đúng chỗ người đọc rời đi, xuyên qua các lần tải trang, và canh giữa mục hiện tại (mặc định `[aria-current="page"]`) mỗi khi nó lọt khỏi tầm nhìn. Đặt nó trong hộp cuộn của thanh bên, sau phần markup điều hướng; nó chạy trước lượt vẽ đầu tiên, nên thanh bên không bao giờ chớp về đầu. Thanh bên của bản demo này đang mang nó.
-- `LineageSvg` đóng khung một SVG vẽ tay (phả hệ phương pháp, cây phân loại) thành tấm thẻ — có một tấm ngay bên dưới.
+- `LineageSvg` đóng khung một SVG không có chữ — cây phả hệ, cây phân loại — thành thẻ; sơ đồ có chữ thì là `FlowDiagram`, bên dưới.
 - `PageFooter` là dòng chữ in nhỏ dưới chân ghi chú — chính dòng nằm dưới mọi ghi chú nơi đây.
 - Các mảnh ghép duyệt nằm ở [[components/wiki|chương wiki]]; còn phía Markdown của phòng trưng bày là [[kitchen-sink|trình diễn tổng hợp]].
 
-## LocalToc và LineageSvg, chạy thật
+## LocalToc và FlowDiagram, chạy thật
 
 `LocalToc` được đút cho ToC sinh lúc build của chính trang này — cùng dữ liệu thanh bên tiêu thụ, trao cho ghi chú qua `props.toc`:
 
 <LocalToc toc={props.toc} label="Trong chương này" />
 
-Và `LineageSvg` bao quanh một sơ đồ vẽ tay, chấm mực toàn bằng token ngữ nghĩa nên ngồi vững trên cả hai giao diện:
+Cùng hình đó dưới dạng `FlowDiagram` — các ô là HTML tự co giãn theo chữ, mũi tên được đo sau khi dàn trang, nên với bất kỳ phông nào chữ cũng không tràn khỏi ô:
 
-<LineageSvg title="Hình — lớp dáng vẻ đứng ở đâu">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css nuôi base.css và browse.css, hai tệp này nuôi mọi thành phần" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="Hình — lớp giao diện nằm ở đâu" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['cột đọc'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['kệ duyệt'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['dùng cả hai'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'cấp cho' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — ô co giãn theo chữ
+
+Sơ đồ có chữ thì dùng `FlowDiagram` (hoặc khối `mermaid`). `<svg>` đặt tọa độ bằng tay kèm `<text>` được vẽ theo một phông và vỡ ở phông rộng hơn — mà mỗi site dùng phông riêng; `LineageSvg` chỉ dành cho SVG không có chữ mà phông có thể làm méo. Đặc tả là dữ liệu: `cols`, `nodes` (`col` / `row` / `span`, `tone`, `lines`, `tag`, `ghost` cho ghi chú nét đứt, `mono` cho đường dẫn), `edges` (`label`, `dashed`, `off` cho liên kết đứt), `lanes` và `heads` tùy chọn:
+
+<FlowDiagram title="Hình — một thay đổi, ba làn" spec={{
+  cols: 3,
+  lanes: [{ text: 'Tác giả', tone: 'colleague' }, { text: 'Rà soát', tone: 'admin' }, { text: 'Build', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'Viết', lines: ['một ghi chú hoặc một thành phần'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'Mở PR', lines: ['một nhánh'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'Rà soát', lines: ['duyệt hoặc hỏi'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'Build và triển khai', lines: ['khi merge'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  Làn gắn nhãn cho hàng và vẽ đường phân cách; tone tô viền và nhãn của ô; nhãn trên dây bị bỏ khi khoảng trống hẹp hơn chữ.
+</FlowDiagram>
 
 ## Phụ kiện không cần thành phần
 

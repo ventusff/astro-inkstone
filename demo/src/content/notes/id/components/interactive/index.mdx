@@ -6,7 +6,7 @@ navLabel: Interaktif & perabot
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ Komponen-komponen selebihnya membingkai catatan, bukan mengisinya:
 - `HubCard` dan `.hub-grid` adalah kartu beranda milik hub; `.path` kotak jalur bacanya — keduanya ada di [[components|ikhtisar galeri ini]].
 - `LocalToc` merender daftar loncat dalam-halaman; ia menerima kedua bentuk ToC yang dihasilkan dua preset penomoran, dan menyembunyikan diri di bawah ambang minimum yang dapat diatur. Di bawah, langsung, dengan ToC bab ini sendiri.
 - `SidebarMemory` menjaga bilah sisi yang bisa digulir tetap di posisi terakhir pembaca lintas pemuatan halaman, dan menengahkan butir aktif (bawaannya `[aria-current="page"]`) setiap kali ia bakal keluar pandangan. Letakkan di dalam kotak gulir bilah sisi, setelah markup navigasi; ia berjalan sebelum lukisan pertama, jadi bilah sisi tak pernah berkedip di puncak. Bilah sisi demo ini sendiri membawanya.
-- `LineageSvg` membingkai SVG gambar tangan (silsilah metode, pohon taksonomi) sebagai kartu — satu di bawah.
+- `LineageSvg` membingkai SVG tanpa kata — pohon silsilah, taksonomi — sebagai kartu; diagram yang berisi kata adalah `FlowDiagram`, di bawah.
 - `PageFooter` adalah cetakan kecil di kaki catatan — baris di bawah setiap catatan di sini.
 - Kepingan jelajah ada di [[components/wiki|bab wiki]]; sisi Markdown dari galeri ini adalah [[kitchen-sink|halaman serba ada]].
 
-## LocalToc dan LineageSvg, langsung
+## LocalToc dan FlowDiagram, langsung
 
 `LocalToc` disuapi ToC saat-build milik halaman ini sendiri — data yang sama yang dikonsumsi bilah sisi, dioper ke catatan sebagai `props.toc`:
 
 <LocalToc toc={props.toc} label="Dalam bab ini" />
 
-Dan `LineageSvg` mengelilingi diagram yang ditulis tangan, ditintai seluruhnya dengan token semantik sehingga duduk nyaman di kedua tema:
+Gambar yang sama sebagai `FlowDiagram` — kotaknya HTML yang menyesuaikan diri dengan kata-katanya, panahnya diukur setelah tata letak, sehingga dalam font apa pun tak ada yang keluar dari kotak:
 
-<LineageSvg title="Gbr. — posisi lapisan tampilan">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css memasok base.css dan browse.css, yang memasok semua komponen" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="Gbr. — letak lapisan tampilan" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['kolom baca'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['rak jelajah'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['memakai keduanya'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'mengisi' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — kotak seukuran kata-katanya
+
+Diagram yang memuat kata adalah `FlowDiagram` (atau blok `mermaid`). `<svg>` yang diposisikan manual dengan `<text>` digambar untuk satu font dan rusak di font berikutnya yang lebih lebar — dan setiap situs merender dengan fontnya sendiri; `LineageSvg` tetap untuk SVG tanpa teks yang bisa didorong font keluar dari bentuknya. Spesifikasinya data: `cols`, `nodes` (`col` / `row` / `span`, `tone`, `lines`, `tag`, `ghost` untuk catatan putus-putus, `mono` untuk path), `edges` (`label`, `dashed`, `off` untuk tautan putus), `lanes` dan `heads` opsional:
+
+<FlowDiagram title="Gbr. — satu perubahan, tiga jalur" spec={{
+  cols: 3,
+  lanes: [{ text: 'Penulis', tone: 'colleague' }, { text: 'Tinjauan', tone: 'admin' }, { text: 'Build', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'Menulis', lines: ['sebuah catatan atau komponen'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'Buka PR', lines: ['satu cabang'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'Tinjau', lines: ['setujui atau tanyakan'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'Build dan deploy', lines: ['saat merge'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  Jalur memberi label baris dan menggambar pemisah; tone mewarnai tepi dan tag kotak; label pada garis dihilangkan bila celahnya lebih sempit dari kata-katanya.
+</FlowDiagram>
 
 ## Perabot tanpa komponen
 

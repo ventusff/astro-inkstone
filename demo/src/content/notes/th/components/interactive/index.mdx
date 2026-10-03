@@ -6,7 +6,7 @@ navLabel: อินเทอร์แอกทีฟและอุปกรณ�
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
 - `HubCard` กับ `.hub-grid` คือการ์ดหน้าแรกของฮับ ส่วน `.path` คือกล่องเส้นทางการอ่านของมัน — ทั้งคู่อยู่บน[[components|หน้าภาพรวมของแกลเลอรีนี้]]
 - `LocalToc` เรนเดอร์รายการกระโดดในหน้า รับ ToC ได้ทั้งสองทรงที่พรีเซ็ตกำหนดเลขสองแบบผลิต และซ่อนตัวเองเมื่อรายการน้อยกว่าเกณฑ์ที่ตั้งได้ ดูของจริงข้างล่าง บน ToC ของบทนี้เอง
 - `SidebarMemory` จำตำแหน่งเลื่อนของแถบข้างไว้ให้ข้ามการโหลดหน้า และจัดรายการปัจจุบัน (`[aria-current="page"]` โดยปริยาย) ให้อยู่กลางจอเมื่อใดที่มันจะหลุดสายตา วางไว้ในกล่องเลื่อนของแถบข้าง หลังมาร์กอัปนำทาง มันรันก่อนการวาดหน้าจอครั้งแรก แถบข้างจึงไม่มีวันกะพริบขึ้นไปอยู่บนสุด แถบข้างของเดโมนี้ก็ติดตั้งไว้
-- `LineageSvg` ใส่กรอบการ์ดให้ SVG วาดมือ (สายตระกูลของวิธีการ ต้นไม้หมวดหมู่) — มีตัวอย่างข้างล่าง
+- `LineageSvg` ใส่กรอบ SVG ที่ไม่มีตัวอักษร — ต้นไม้สายตระกูล อนุกรมวิธาน — เป็นการ์ด; แผนภาพที่มีตัวอักษรคือ `FlowDiagram` ด้านล่าง
 - `PageFooter` คือตัวพิมพ์เล็กท้ายบันทึก — บรรทัดใต้ทุกบันทึกที่นี่
 - ชิ้นส่วนฝั่งเลือกดูอยู่ใน[[components/wiki|บทวิกิ]] ส่วนฝั่ง Markdown ของแกลเลอรีคือ[[kitchen-sink|รวมทุกองค์ประกอบ]]
 
-## LocalToc กับ LineageSvg ของจริง
+## LocalToc กับ FlowDiagram ของจริง
 
 `LocalToc` ป้อนด้วย ToC ของหน้านี้เองที่สร้างตอนบิลด์ — ข้อมูลชุดเดียวกับที่แถบข้างใช้ ส่งให้บันทึกในชื่อ `props.toc`:
 
 <LocalToc toc={props.toc} label="ในบทนี้" />
 
-และ `LineageSvg` ครอบไดอะแกรมที่วาดเอง ลงหมึกด้วยโทเคนเชิงความหมายล้วน ๆ มันจึงนั่งได้บนทั้งสองธีม:
+ภาพเดียวกันในรูป `FlowDiagram` — กล่องเป็น HTML ที่ขยายตามตัวอักษร ลูกศรวัดตำแหน่งหลังจัดวาง จึงไม่มีอะไรล้นออกจากกล่องไม่ว่าใช้ฟอนต์ใด:
 
-<LineageSvg title="ภาพ — ชั้นหน้าตาอยู่ตรงไหน">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css ป้อน base.css กับ browse.css ซึ่งป้อนคอมโพเนนต์ทุกตัวต่อ" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="ภาพ — ชั้นรูปลักษณ์อยู่ตรงไหน" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['คอลัมน์อ่าน'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['ชั้นเรียกดู'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['ใช้ทั้งสอง'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'ป้อนให้' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — กล่องที่ขยายตามตัวอักษร
+
+แผนภาพที่มีตัวอักษรให้ใช้ `FlowDiagram` (หรือบล็อก `mermaid`) `<svg>` ที่กำหนดพิกัดด้วยมือพร้อม `<text>` ถูกวาดสำหรับฟอนต์เดียวและพังเมื่อเจอฟอนต์ที่กว้างกว่า — และแต่ละไซต์เรนเดอร์ด้วยฟอนต์ของตัวเอง; `LineageSvg` เก็บไว้สำหรับ SVG ที่ไม่มีข้อความซึ่งฟอนต์อาจดันให้เสียรูป สเปกคือข้อมูล: `cols`, `nodes` (`col` / `row` / `span`, `tone`, `lines`, `tag`, `ghost` สำหรับโน้ตเส้นประ, `mono` สำหรับพาธ), `edges` (`label`, `dashed`, `off` สำหรับเส้นที่ขาด), `lanes` และ `heads` ตามต้องการ:
+
+<FlowDiagram title="ภาพ — หนึ่งการเปลี่ยนแปลง สามเลน" spec={{
+  cols: 3,
+  lanes: [{ text: 'ผู้เขียน', tone: 'colleague' }, { text: 'รีวิว', tone: 'admin' }, { text: 'บิลด์', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'เขียน', lines: ['โน้ตหรือคอมโพเนนต์'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'เปิด PR', lines: ['หนึ่งสาขา'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'รีวิว', lines: ['อนุมัติหรือถาม'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'บิลด์และดีพลอย', lines: ['เมื่อ merge'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  เลนติดป้ายให้แถวและวาดเส้นคั่น; tone ให้สีขอบและป้ายของกล่อง; ป้ายบนเส้นจะถูกตัดออกเมื่อช่องว่างแคบกว่าตัวอักษร
+</FlowDiagram>
 
 ## อุปกรณ์ที่ไม่มีคอมโพเนนต์
 

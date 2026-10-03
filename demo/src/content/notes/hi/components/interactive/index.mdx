@@ -6,7 +6,7 @@ navLabel: इंटरैक्टिव और साज़ो-सामान
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
 - `HubCard` और `.hub-grid` हब के लैंडिंग-कार्ड हैं; `.path` उसका पढ़ने-का-रास्ता बक्सा — दोनों [[components|इस गैलरी के अवलोकन]] पर।
 - `LocalToc` पन्ना-भीतर जंप-लिस्ट रेंडर करता है; दोनों क्रमांकन-प्रीसेटों के ToC-आकार स्वीकारता है, और तय-योग्य न्यूनतम से नीचे खुद छिप जाता है। नीचे जीवंत — इसी अध्याय के अपने ToC पर।
 - `SidebarMemory` स्क्रॉल होने वाले साइडबार को पन्ना बदलने पर वहीं रखता है जहाँ पाठक छोड़ गया था, और मौजूदा प्रविष्टि (डिफ़ॉल्ट `[aria-current="page"]`) जब भी नज़र से बाहर होती, उसे बीच में ले आता है। साइडबार के स्क्रॉल-बॉक्स के भीतर, नेविगेशन-मार्कअप के बाद रखिए; यह पहले paint से पहले चलता है, इसलिए साइडबार कभी ऊपर से झिलमिलाकर शुरू नहीं होता। डेमो का अपना साइडबार इसे ढोता है।
-- `LineageSvg` हाथ से बने SVG (कोई पद्धति-वंशावली, कोई वर्गीकरण-वृक्ष) को कार्ड की चौखट देता है — एक नीचे है।
+- `LineageSvg` बिना शब्दों वाले SVG — वंश-वृक्ष, वर्गीकरण — को कार्ड की तरह घेरता है; शब्दों वाला आरेख `FlowDiagram` है, नीचे।
 - `PageFooter` नोट के पैर की महीन छपाई है — यहाँ हर नोट के नीचे की पंक्ति।
 - ब्राउज़ के हिस्से [[components/wiki|विकी अध्याय]] में रहते हैं; गैलरी का Markdown-पक्ष [[kitchen-sink]] है।
 
-## LocalToc और LineageSvg, जीवंत
+## LocalToc और FlowDiagram, जीवंत
 
 `LocalToc` को इसी पन्ने का बिल्ड-समय ToC थमाया गया — वही डेटा जो साइडबार बरतता है, नोट को `props.toc` के रूप में मिला हुआ:
 
 <LocalToc toc={props.toc} label="इस अध्याय में" />
 
-और `LineageSvg` हाथ से लिखे आरेख के इर्द-गिर्द, जिसकी स्याही पूरी तरह semantic टोकनों की है — इसलिए वह दोनों थीमों पर बैठता है:
+वही चित्र `FlowDiagram` के रूप में — बक्से HTML हैं जो अपने शब्दों के अनुसार आकार लेते हैं, तीर लेआउट के बाद मापे जाते हैं, इसलिए किसी भी फ़ॉन्ट में कुछ भी बक्से से बाहर नहीं जाता:
 
-<LineageSvg title="चित्र — रूप-परत कहाँ बैठती है">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css से base.css और browse.css बनती हैं, और उनसे हर कंपोनेंट" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="चित्र — रूप-परत कहाँ बैठती है" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['पढ़ने का स्तंभ'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['ब्राउज़ शेल्फ़'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['दोनों का उपयोग'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'देता है' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — शब्दों के नाप के बक्से
+
+शब्दों वाला आरेख `FlowDiagram` होता है (या `mermaid` ब्लॉक)। हाथ से रखे `<text>` वाला `<svg>` एक फ़ॉन्ट के लिए बनता है और अगले चौड़े फ़ॉन्ट में टूट जाता है — और हर साइट अपने फ़ॉन्ट से रेंडर करती है; `LineageSvg` उस SVG के लिए है जिसमें ऐसा कोई पाठ नहीं जिसे फ़ॉन्ट आकार से बाहर धकेल सके। विनिर्देश डेटा है: `cols`, `nodes` (`col` / `row` / `span`, `tone`, `lines`, `tag`, बिंदीदार नोट के लिए `ghost`, पथों के लिए `mono`), `edges` (`label`, `dashed`, टूटे संबंध के लिए `off`), वैकल्पिक `lanes` और `heads`:
+
+<FlowDiagram title="चित्र — एक बदलाव, तीन लेन" spec={{
+  cols: 3,
+  lanes: [{ text: 'लेखक', tone: 'colleague' }, { text: 'समीक्षा', tone: 'admin' }, { text: 'बिल्ड', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'लिखना', lines: ['एक नोट या एक घटक'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'PR खोलना', lines: ['एक शाखा'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'समीक्षा', lines: ['स्वीकृति या प्रश्न'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'बिल्ड और डिप्लॉय', lines: ['मर्ज पर'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  लेन पंक्तियों को लेबल देती हैं और विभाजक खींचती हैं; tone बक्से की सीमा और टैग को रंगता है; तार का लेबल तब छोड़ दिया जाता है जब अंतर शब्दों से संकरा हो।
+</FlowDiagram>
 
 ## बिना कंपोनेंट का साज़ो-सामान
 

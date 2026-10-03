@@ -6,7 +6,7 @@ navLabel: インタラクティブと調度
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ canvas 上でポインタ入力を受け取るデモは `interactive` を渡し�
 - `HubCard` と `.hub-grid` はハブのランディングカード、`.path` はその順路ボックス——どちらも[[components|このギャラリーの概要]]にあります。
 - `LocalToc` はページ内ジャンプリストを描画します。二つの番号付けプリセットが作る二種類の ToC 形をどちらも受け付け、項目数が設定可能な下限を割ると自分から隠れます。下で、この章自身の ToC を使って実演します。
 - `SidebarMemory` は、スクロールするサイドバーの位置をページをまたいで覚えておき、現在の項目(既定では `[aria-current="page"]`)が視界から外れそうなときに中央へ寄せます。サイドバーのスクロールボックスの中、ナビゲーションのマークアップの後に置いてください。最初の描画より前に走るので、サイドバーが一瞬だけ先頭にフラッシュすることはありません。このデモのサイドバーにも入っています。
-- `LineageSvg` は手描きの SVG(手法の系譜図、分類の樹形図)をカードとして額装します——下に一枚。
+- `LineageSvg` は文字を含まない SVG(系統樹、分類)をカードとして囲みます。文字のある図は下の `FlowDiagram` で。
 - `PageFooter` はノートの足元の小さな文字——ここの各ノートの下にあるあの一行です。
 - ブラウズ系の部品は[[components/wiki|wiki の章]]に。このギャラリーの Markdown 側は[[kitchen-sink|全部入りデモ]]です。
 
-## LocalToc と LineageSvg の実演
+## LocalToc と FlowDiagram の実演
 
 `LocalToc` に、このページ自身のビルド時 ToC を与えたものです——サイドバーが消費するのと同じデータで、`props.toc` としてノートに渡ってきます:
 
 <LocalToc toc={props.toc} label="この章の内容" />
 
-そして `LineageSvg` が手描きの図を額装します。線も文字もすべて意味トークンで引いてあるので、どちらのテーマにも馴染みます:
+同じ図を `FlowDiagram` で——枠は HTML で文字に合わせて大きさが決まり、矢印はレイアウト後に位置を測って描くので、どのフォントでも文字が枠からはみ出しません:
 
-<LineageSvg title="図 — 外観レイヤーの位置">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css が base.css と browse.css を養い、その二つがすべてのコンポーネントを養う" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="図 — 外観レイヤーの位置" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['本文カラム'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['閲覧棚'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['両方を使う'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: '供給' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — 文字に合わせて伸縮する枠
+
+文字を含む図は `FlowDiagram`(または `mermaid` コードブロック)で描きます。座標を手で決めた `<svg>` と `<text>` は一つのフォントに合わせて描かれ、より幅広いフォントでは崩れます——サイトごとにフォントは違います。`LineageSvg` はフォント幅で形が変わらない、文字のない SVG のためのものです。仕様はデータです:`cols`、`nodes`(`col` / `row` / `span`、`tone`、`lines`、`tag`、点線の注記 `ghost`、等幅の `mono`)、`edges`(`label`、`dashed`、切れた線 `off`)、任意の `lanes` と `heads`:
+
+<FlowDiagram title="図 — 一つの変更、三つのレーン" spec={{
+  cols: 3,
+  lanes: [{ text: '著者', tone: 'colleague' }, { text: 'レビュー', tone: 'admin' }, { text: 'ビルド', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: '書く', lines: ['ノートかコンポーネント'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'PR を開く', lines: ['ブランチ一つ'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'レビュー', lines: ['承認か質問'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'ビルドとデプロイ', lines: ['マージ時'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  レーンは行にラベルを付け区切り線を引きます。tone は枠の縁とタグに色を付けます。線のラベルは隙間が文字より狭いと描かれません。
+</FlowDiagram>
 
 ## コンポーネントを持たない調度
 

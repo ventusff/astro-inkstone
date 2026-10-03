@@ -6,7 +6,7 @@ navLabel: "Interactif & mobilier"
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ Les composants restants n’emplissent pas une note : ils l’encadrent.
 - `HubCard` et `.hub-grid` sont les cartes d’accueil d’un hub ; `.path` est sa boîte de chemin de lecture — les deux sont sur [[components|la vue d’ensemble de cette galerie]].
 - `LocalToc` rend une liste de sauts dans la page ; il accepte les deux formes de ToC que produisent les deux préréglages de numérotation, et se masque de lui-même sous un minimum configurable. Ci-dessous, en direct, sur le ToC de ce chapitre même.
 - `SidebarMemory` garde une barre latérale défilante là où le lecteur l’a laissée d’une page à l’autre, et centre l’élément courant (`[aria-current="page"]` par défaut) dès qu’il sortirait de la vue. Déposez-le dans la boîte de défilement de la barre latérale, après le balisage de navigation ; il s’exécute avant le premier rendu, la barre ne clignote donc jamais en haut. La barre latérale de cette démo le porte.
-- `LineageSvg` met en carte un SVG dessiné à la main (une filiation de méthodes, un arbre de taxonomie) — il y en a un plus bas.
+- `LineageSvg` encadre un SVG sans mots — un arbre de filiation, une taxonomie — dans une carte ; un schéma avec des mots est un `FlowDiagram`, ci-dessous.
 - `PageFooter` est la petite ligne au pied d’une note — celle qui clôt chaque note ici.
 - Les pièces de parcours vivent dans [[components/wiki|le chapitre wiki]] ; le versant Markdown de la galerie, c’est la [[kitchen-sink|démonstration intégrale]].
 
-## LocalToc et LineageSvg, en direct
+## LocalToc et FlowDiagram, en direct
 
 `LocalToc`, nourri du ToC de cette page généré au build — les mêmes données que consomme la barre latérale, remises à la note en `props.toc` :
 
 <LocalToc toc={props.toc} label="Dans ce chapitre" />
 
-Et `LineageSvg` autour d’un schéma écrit à la main, encré uniquement en tokens sémantiques pour se tenir sur les deux thèmes :
+La même figure en `FlowDiagram` — les boîtes sont du HTML qui s'ajuste à ses mots, les flèches sont mesurées après la mise en page, rien ne sort donc de sa boîte quelle que soit la police :
 
-<LineageSvg title="Fig. — la place de la couche d’apparence">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css alimente base.css et browse.css, qui alimentent chaque composant" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="Fig. — où se place la couche d'apparence" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['la colonne de lecture'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['l\'étagère de navigation'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['consomment les deux'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'alimente' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — des boîtes à la taille de leurs mots
+
+Un schéma qui porte des mots est un `FlowDiagram` (ou un bloc `mermaid`). Un `<svg>` positionné à la main avec des `<text>` est dessiné pour une police et casse avec la suivante, plus large — et chaque site rend avec la sienne ; `LineageSvg` reste pour le SVG sans texte qu'une police pourrait déformer. La spécification est une donnée : `cols`, `nodes` (`col` / `row` / `span`, un `tone`, des `lines`, un `tag`, `ghost` pour une note en pointillés, `mono` pour des chemins), `edges` (`label`, `dashed`, `off` pour un lien rompu), `lanes` et `heads` optionnels :
+
+<FlowDiagram title="Fig. — un changement, trois couloirs" spec={{
+  cols: 3,
+  lanes: [{ text: 'Auteur', tone: 'colleague' }, { text: 'Relecture', tone: 'admin' }, { text: 'Build', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'Écrire', lines: ['une note ou un composant'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'Ouvrir une PR', lines: ['une branche'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'Relire', lines: ['approuver ou demander'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'Construire et déployer', lines: ['au merge'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  Les couloirs étiquettent les lignes et tracent les séparations ; un tone colore la bordure et l'étiquette d'une boîte ; l'étiquette d'un fil disparaît quand l'espace est plus étroit que les mots.
+</FlowDiagram>
 
 ## Du mobilier sans composant
 

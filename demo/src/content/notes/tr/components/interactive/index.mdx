@@ -6,7 +6,7 @@ navLabel: Etkileşim ve donatılar
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ Kalan bileşenler bir notu doldurmaz, çerçeveler:
 - `HubCard` ile `.hub-grid` bir hub’ın açılış kartlarıdır; `.path` onun okuma rotası kutusudur — ikisi de [[components|bu galerinin genel bakışında]].
 - `LocalToc` sayfa içi bir atlama listesi çizer; iki numaralandırma ön ayarının ürettiği her iki ToC biçimini de kabul eder ve ayarlanabilir bir alt sınırın altında kendini gizler. Aşağıda, bu bölümün kendi ToC’siyle, canlı.
 - `SidebarMemory`, kayan bir kenar çubuğunu sayfa geçişleri arasında okurun bıraktığı yerde tutar ve geçerli öge görünümden çıkacaksa onu ortalar (varsayılan olarak `[aria-current="page"]`). Kenar çubuğunun kaydırma kutusunun içine, gezinme işaretlemesinin ardına koyun; ilk boyamadan önce çalışır, kenar çubuğu asla tepede parlamaz. Demonun kendi kenar çubuğu onu taşır.
-- `LineageSvg`, elle çizilmiş bir SVG’yi (bir yöntem soyağacı, bir taksonomi ağacı) kart olarak çerçeveler — bir örneği aşağıda.
+- `LineageSvg`, sözcük içermeyen bir SVG'yi — bir soy ağacı, bir sınıflandırma — kart olarak çerçeveler; sözcük içeren bir şema aşağıdaki `FlowDiagram`dır.
 - `PageFooter`, notun dibindeki küçük punto satırıdır — buradaki her notun altındaki satır.
 - Göz atma parçaları [[components/wiki|wiki bölümünde]] yaşar; galerinin Markdown tarafı ise [[kitchen-sink|hepsi bir arada]].
 
-## LocalToc ve LineageSvg, canlı
+## LocalToc ve FlowDiagram, canlı
 
 `LocalToc`, bu sayfanın derleme zamanı ToC’siyle beslenmiş hâlde — kenar çubuğunun tükettiği verinin aynısı, nota `props.toc` olarak verilir:
 
 <LocalToc toc={props.toc} label="Bu bölümde" />
 
-Ve `LineageSvg`, elle yazılmış bir diyagramın çevresinde — baştan sona anlamsal token’larla mürekkeplendiği için iki temada da oturur:
+Aynı şekil `FlowDiagram` olarak — kutular sözcüklerine göre boyutlanan HTML'dir, oklar yerleşimden sonra ölçülür, dolayısıyla hiçbir yazı tipinde hiçbir şey kutusundan taşmaz:
 
-<LineageSvg title="Şekil — görünüm katmanının yeri">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css, base.css ile browse.css dosyalarını besler; onlar da her bileşeni besler" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">bileşenler</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="Şek. — görünüm katmanının yeri" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['okuma sütunu'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['gezinme rafı'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['ikisini de kullanır'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'besler' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — sözcüklerine göre boyutlanan kutular
+
+Sözcük taşıyan bir şema `FlowDiagram`dır (ya da bir `mermaid` bloğu). Elle konumlandırılmış `<text>` içeren bir `<svg>` tek bir yazı tipine göre çizilir ve daha geniş olanda bozulur — her site kendi yazı tipiyle çizer; `LineageSvg`, bir yazı tipinin biçimini bozamayacağı, metinsiz SVG içindir. Tanım veridir: `cols`, `nodes` (`col` / `row` / `span`, `tone`, `lines`, `tag`, kesik çizgili not için `ghost`, yollar için `mono`), `edges` (`label`, `dashed`, kopuk bağlantı için `off`), isteğe bağlı `lanes` ve `heads`:
+
+<FlowDiagram title="Şek. — bir değişiklik, üç şerit" spec={{
+  cols: 3,
+  lanes: [{ text: 'Yazar', tone: 'colleague' }, { text: 'İnceleme', tone: 'admin' }, { text: 'Derleme', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'Yaz', lines: ['bir not ya da bir bileşen'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'PR aç', lines: ['bir dal'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'İncele', lines: ['onayla ya da sor'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'Derle ve dağıt', lines: ['birleştirmede'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  Şeritler satırları etiketler ve ayırıcıları çizer; tone bir kutunun kenarını ve etiketini renklendirir; bir telin etiketi, boşluk sözcüklerden darsa çizilmez.
+</FlowDiagram>
 
 ## Bileşensiz donatılar
 

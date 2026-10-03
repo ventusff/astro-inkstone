@@ -6,7 +6,7 @@ part: 3
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
 - `HubCard` 与 `.hub-grid` 是 hub 落地页的卡片,`.path` 是它的阅读路径框——两样都在[[components|本合集的总览页]]上。
 - `LocalToc` 渲染页内跳转列表;两种编号预设产出的两种 ToC 形状它都接受,条目数低于可配置的下限时自动隐藏。下面就拿本章自己的 ToC 现场演示。
 - `SidebarMemory` 让可滚动的侧栏跨页面记住读者上次停的位置,当前项(默认认 `[aria-current="page"]`)快要滚出视野时自动居中。把它放进侧栏的滚动盒里、导航标记之后;它在首次绘制前运行,侧栏不会先闪到顶部再跳回来。本站的侧栏就装着它。
-- `LineageSvg` 给手绘 SVG(方法脉络图、分类树)配一个卡片框——下面有一幅。
+- `LineageSvg` 把不含文字的 SVG(谱系树、分类树)装成卡片;带文字的图用 `FlowDiagram`,见下文。
 - `PageFooter` 是笔记脚下那行小字——本站每篇笔记底下那行就是。
 - 导览类组件在[[components/wiki|wiki 与导览一章]];本合集的 markdown 侧则是[[kitchen-sink|全要素演示]]。
 
-## LocalToc 与 LineageSvg 现场演示
+## LocalToc 与 FlowDiagram 现场演示
 
 把本页构建期生成的 ToC 喂给 `LocalToc`——和侧栏消费的是同一份数据,以 `props.toc` 递给笔记:
 
 <LocalToc toc={props.toc} label="本章内容" />
 
-再看 `LineageSvg` 框住一幅手绘示意图,通篇只用语义 token 上墨,两套主题都坐得住:
+同一张图改成 `FlowDiagram`——框是 HTML、按字自适应大小,箭头在布局之后量位置画,换任何字体字都不会出框:
 
-<LineageSvg title="图 · 纸面层的位置">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css 供给 base.css 与 browse.css,二者再供给全部组件" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="图 — 外观层在哪一层" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['阅读栏'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['浏览书架'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['两边都吃'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: '喂给' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram——按字自适应的框
+
+带文字的图一律用 `FlowDiagram`(或 `mermaid` 代码块)。手写坐标的 `<svg>` 加 `<text>` 是对着一种字体画的,换一种更宽的字体就出框——而每个站用的字体都不一样;`LineageSvg` 只留给不含文字、字体宽窄影响不了形状的 SVG。图的内容是数据:`cols`、`nodes`(`col` / `row` / `span`、`tone`、`lines`、`tag`、虚线说明框 `ghost`、等宽小字 `mono`)、`edges`(`label`、`dashed`、断线 `off`),可选 `lanes` 与 `heads`:
+
+<FlowDiagram title="图 — 一次改动,三条泳道" spec={{
+  cols: 3,
+  lanes: [{ text: '作者', tone: 'colleague' }, { text: '评审', tone: 'admin' }, { text: '构建', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: '写', lines: ['一篇笔记或一个组件'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: '提 PR', lines: ['一个分支'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: '评审', lines: ['通过或提问'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: '构建并部署', lines: ['合并即跑'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  泳道给行加标签、画分隔线;tone 给框的边和标签上色;线上的标注在空隙比字窄时自动不画。
+</FlowDiagram>
 
 ## 没有组件形态的配件
 

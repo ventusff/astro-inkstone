@@ -6,7 +6,7 @@ navLabel: "Interactief & meubilair"
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ De resterende componenten omlijsten een notitie in plaats van haar te vullen:
 - `HubCard` en `.hub-grid` zijn de landingskaarten van een hub; `.path` is zijn leesroutekader — beide op [[components|het overzicht van deze galerij]].
 - `LocalToc` rendert een springlijst binnen de pagina; het accepteert beide ToC-vormen die de twee nummeringspresets produceren en verbergt zichzelf onder een instelbaar minimum. Hieronder, live, op de ToC van dit hoofdstuk zelf.
 - `SidebarMemory` houdt een scrollende zijbalk over paginaladingen heen waar de lezer hem achterliet, en centreert het huidige item (standaard `[aria-current="page"]`) zodra het anders buiten beeld zou vallen. Zet het in de scrollbak van de zijbalk, na de navigatiemarkup; het draait vóór de eerste paint, dus de zijbalk flitst nooit eerst naar boven. De zijbalk van deze demo draagt het zelf.
-- `LineageSvg` lijst een handgetekende SVG (een methodestamboom, een taxonomieboom) in als kaart — er staat er één hieronder.
+- `LineageSvg` omlijst een SVG zonder woorden — een stamboom, een taxonomie — als kaart; een diagram met woorden is een `FlowDiagram`, hieronder.
 - `PageFooter` is de kleine lettertjes aan de voet van een notitie — de regel onder elke notitie hier.
 - De bladeronderdelen wonen in [[components/wiki|het wiki-hoofdstuk]]; de Markdown-kant van de galerij is de [[kitchen-sink|staalkaart]].
 
-## LocalToc en LineageSvg, live
+## LocalToc en FlowDiagram, live
 
 `LocalToc`, gevoed met de buildtijd-ToC van deze pagina zelf — dezelfde data die de zijbalk consumeert, aan de notitie doorgegeven als `props.toc`:
 
 <LocalToc toc={props.toc} label="In dit hoofdstuk" />
 
-En `LineageSvg` rond een handgeschreven diagram, volledig geïnkt in semantische tokens zodat het op beide thema's past:
+Dezelfde figuur als `FlowDiagram` — de vakken zijn HTML dat zich naar zijn woorden voegt, de pijlen worden na de lay-out gemeten, dus niets loopt in welk lettertype dan ook uit zijn vak:
 
-<LineageSvg title="Fig. — waar de uiterlijklaag zit">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css voedt base.css en browse.css, en die voeden elk component" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="Fig. — waar de uiterlijklaag zit" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['de leeskolom'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['de bladerplank'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['gebruiken beide'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'voedt' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — vakken op maat van hun woorden
+
+Een diagram met woorden is een `FlowDiagram` (of een `mermaid`-blok). Een handmatig gepositioneerde `<svg>` met `<text>` is tegen één lettertype getekend en breekt bij het volgende, bredere — en elke site rendert met het zijne; `LineageSvg` blijft voor SVG zonder tekst die een lettertype uit vorm kan duwen. De specificatie is data: `cols`, `nodes` (`col` / `row` / `span`, een `tone`, `lines`, een `tag`, `ghost` voor een gestippelde notitie, `mono` voor paden), `edges` (`label`, `dashed`, `off` voor een verbroken verbinding), optionele `lanes` en `heads`:
+
+<FlowDiagram title="Fig. — één wijziging, drie banen" spec={{
+  cols: 3,
+  lanes: [{ text: 'Auteur', tone: 'colleague' }, { text: 'Review', tone: 'admin' }, { text: 'Build', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'Schrijven', lines: ['een notitie of een component'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'PR openen', lines: ['één branch'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'Reviewen', lines: ['goedkeuren of vragen'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'Bouwen en uitrollen', lines: ['bij merge'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  Banen labelen de rijen en tekenen de scheidingslijnen; een tone kleurt rand en tag van een vak; het label op een lijn vervalt als de ruimte smaller is dan de woorden.
+</FlowDiagram>
 
 ## Meubilair zonder component
 

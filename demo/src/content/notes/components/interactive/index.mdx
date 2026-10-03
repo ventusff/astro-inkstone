@@ -6,7 +6,7 @@ navLabel: Interactive & furniture
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ The remaining components frame a note rather than fill it:
 - `HubCard` and `.hub-grid` are a hub's landing cards; `.path` is its reading-path box — both on [[components|the overview of this gallery]].
 - `LocalToc` renders an in-page jump list; it accepts both ToC shapes the two numbering presets produce, and hides itself under a configurable minimum. Below, live, on this chapter's own ToC.
 - `SidebarMemory` keeps a scrolling sidebar where the reader left it across page loads, and centres the current item (`[aria-current="page"]` by default) whenever it would otherwise be out of view. Drop it inside the sidebar's scroll box, after the navigation markup; it runs before first paint, so the sidebar never flashes at the top. The demo's own sidebar carries it.
-- `LineageSvg` frames a hand-drawn SVG (a method lineage, a taxonomy tree) as a card — one below.
+- `LineageSvg` frames an SVG that carries no words — a lineage tree, a taxonomy — as a card; a diagram with words in it is a `FlowDiagram`, below.
 - `PageFooter` is the small print at a note's foot — the line under every note here.
 - The browse pieces live in [[components/wiki|the wiki chapter]]; the Markdown side of the gallery is the [[kitchen-sink]].
 
-## LocalToc and LineageSvg, live
+## LocalToc and FlowDiagram, live
 
 `LocalToc` fed this page's own build-time ToC — the same data the sidebar consumes, handed to the note as `props.toc`:
 
 <LocalToc toc={props.toc} label="In this chapter" />
 
-And `LineageSvg` around a hand-authored diagram, inked entirely in semantic tokens so it sits on both themes:
+The same figure as a `FlowDiagram` — the boxes are HTML that size to their words, the arrows are measured after layout, so nothing can leave its box in any font:
 
-<LineageSvg title="Fig. — where the appearance layer sits">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css feeds base.css and browse.css, which feed every component" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="Fig. — where the appearance layer sits" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['the reading column'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['the browse shelf'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['consume both'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'feeds' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — boxes that size to their words
+
+A diagram that carries words is a `FlowDiagram` (or a `mermaid` fence). A hand-positioned `<svg>` with `<text>` is drawn against one font and breaks in the next wider one — and every site renders with its own; `LineageSvg` stays for SVG that carries no text a font could widen out of shape. The spec is data: `cols`, `nodes` (`col` / `row` / `span`, a `tone`, `lines`, a `tag`, `ghost` for a dashed note, `mono` for paths), `edges` (`label`, `dashed`, `off` for a broken link), optional `lanes` and `heads`:
+
+<FlowDiagram title="Fig. — one change, three lanes" spec={{
+  cols: 3,
+  lanes: [{ text: 'Author', tone: 'colleague' }, { text: 'Reviewer', tone: 'admin' }, { text: 'Build', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'Write', lines: ['a note or a component'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'Open a PR', lines: ['one branch'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'Review', lines: ['approve or ask'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'Build and deploy', lines: ['on merge'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  Lanes label the rows and draw the separators; a tone colors a box's border and tag; the label on a wire is dropped when the gap is narrower than the words.
+</FlowDiagram>
 
 ## Furniture without a component
 

@@ -55,6 +55,13 @@ whose content is the package's own manual.
   one surface reviewed by eye instead of probed.
 - **Light is the identity**: never read `prefers-color-scheme`; dark styles
   activate only under `[data-theme='dark']`.
+- **A diagram that carries words is a `FlowDiagram`** (or a `mermaid`
+  fence): boxes are HTML that size to their text, the arrows are measured
+  after layout (`lib/flow-diagram.ts`). Never ink a box diagram as a
+  hand-positioned `<svg>` with `<text>` — the first font wider than the one
+  it was drawn against pushes the words out of the boxes, and every site
+  renders with its own fonts. `LineageSvg` is for SVG that carries no
+  text a font could widen out of shape.
 - The table double-wrapper (`.tbl-wrap` container-query container +
   `.tbl-scroll` scroll box) is deliberate — do not "simplify" it.
 - Never add `.line { display: block }` to code blocks (it doubles line

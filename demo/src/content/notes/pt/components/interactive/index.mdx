@@ -6,7 +6,7 @@ navLabel: Interativos e mobiliário
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ Os componentes restantes emolduram a nota em vez de preenchê-la:
 - `HubCard` e `.hub-grid` são os cartões de abertura de um hub; `.path` é sua caixa de caminho de leitura — ambos em [[components|a visão geral desta galeria]].
 - `LocalToc` renderiza uma lista de salto na própria página; aceita os dois formatos de ToC que os dois presets de numeração produzem e se esconde abaixo de um mínimo configurável. Logo abaixo, ao vivo, sobre o ToC deste capítulo.
 - `SidebarMemory` mantém uma barra lateral rolante onde o leitor a deixou, através das trocas de página, e centraliza o item atual (`[aria-current="page"]` por padrão) sempre que ele ficaria fora de vista. Coloque-o dentro da caixa de rolagem da barra lateral, depois da marcação de navegação; ele roda antes da primeira pintura, então a barra nunca pisca no topo. A barra lateral desta demo o carrega.
-- `LineageSvg` emoldura um SVG desenhado à mão (uma linhagem de métodos, uma árvore de taxonomia) como cartão — um logo abaixo.
+- `LineageSvg` emoldura um SVG sem palavras — uma árvore de linhagem, uma taxonomia — como cartão; um diagrama com palavras é um `FlowDiagram`, abaixo.
 - `PageFooter` é a letra miúda ao pé da nota — a linha sob cada nota daqui.
 - As peças de navegação vivem em [[components/wiki|o capítulo wiki]]; o lado Markdown da galeria é a [[kitchen-sink|vitrine completa]].
 
-## LocalToc e LineageSvg, ao vivo
+## LocalToc e FlowDiagram, ao vivo
 
 `LocalToc` alimentado com o ToC de build desta própria página — os mesmos dados que a barra lateral consome, entregues à nota como `props.toc`:
 
 <LocalToc toc={props.toc} label="Neste capítulo" />
 
-E `LineageSvg` ao redor de um diagrama autoral, entintado inteiramente em tokens semânticos para assentar nos dois temas:
+A mesma figura como `FlowDiagram` — as caixas são HTML que se ajusta às suas palavras, as setas são medidas após o layout, portanto nada sai da sua caixa em fonte alguma:
 
-<LineageSvg title="Fig. — onde fica a camada de aparência">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css alimenta base.css e browse.css, que alimentam todos os componentes" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="Fig. — onde fica a camada de aparência" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['a coluna de leitura'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['a estante de navegação'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['consomem ambas'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'alimenta' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — caixas do tamanho das suas palavras
+
+Um diagrama que carrega palavras é um `FlowDiagram` (ou um bloco `mermaid`). Um `<svg>` posicionado à mão com `<text>` é desenhado para uma fonte e quebra na próxima mais larga — e cada site renderiza com a sua; `LineageSvg` fica para SVG sem texto que uma fonte possa deformar. A especificação é dado: `cols`, `nodes` (`col` / `row` / `span`, um `tone`, `lines`, um `tag`, `ghost` para uma nota tracejada, `mono` para caminhos), `edges` (`label`, `dashed`, `off` para um elo quebrado), `lanes` e `heads` opcionais:
+
+<FlowDiagram title="Fig. — uma mudança, três raias" spec={{
+  cols: 3,
+  lanes: [{ text: 'Autor', tone: 'colleague' }, { text: 'Revisão', tone: 'admin' }, { text: 'Build', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'Escrever', lines: ['uma nota ou um componente'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'Abrir um PR', lines: ['um branch'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'Rever', lines: ['aprovar ou perguntar'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'Construir e implantar', lines: ['no merge'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  As raias rotulam as linhas e desenham os separadores; um tone colore a borda e a etiqueta de uma caixa; o rótulo de um fio é omitido quando o vão é mais estreito que as palavras.
+</FlowDiagram>
 
 ## Mobiliário sem componente
 

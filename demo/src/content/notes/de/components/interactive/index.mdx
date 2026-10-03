@@ -6,7 +6,7 @@ navLabel: Interaktiv & Mobiliar
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ Die übrigen Komponenten rahmen eine Notiz, statt sie zu füllen:
 - `HubCard` und `.hub-grid` sind die Startkarten eines Hubs, `.path` sein Lesepfad-Kasten – beide auf [[components|der Übersicht dieser Galerie]].
 - `LocalToc` rendert eine Sprungliste in der Seite; es akzeptiert beide ToC-Formen, die die zwei Nummerierungspresets erzeugen, und versteckt sich unterhalb eines konfigurierbaren Minimums. Unten live, am ToC dieses Kapitels.
 - `SidebarMemory` hält eine scrollende Seitenleiste über Seitenwechsel hinweg dort, wo der Leser sie gelassen hat, und zentriert den aktuellen Eintrag (per Default `[aria-current="page"]`), wann immer er sonst aus dem Blick geriete. In die Scrollbox der Seitenleiste legen, nach dem Navigations-Markup; es läuft vor dem ersten Paint, die Leiste blitzt also nie oben auf. Die Seitenleiste dieser Demo trägt es.
-- `LineageSvg` rahmt eine handgezeichnete SVG (eine Methoden-Ahnentafel, ein Taxonomiebaum) als Karte – eine steht unten.
+- `LineageSvg` rahmt ein SVG ohne Wörter – einen Stammbaum, eine Taxonomie – als Karte; ein Diagramm mit Wörtern ist ein `FlowDiagram`, unten.
 - `PageFooter` ist das Kleingedruckte am Fuß einer Notiz – die Zeile unter jeder Notiz hier.
 - Die Stöber-Bausteine stehen im [[components/wiki|Wiki-Kapitel]]; die Markdown-Seite der Galerie ist [[kitchen-sink|Das volle Programm]].
 
-## LocalToc und LineageSvg, live
+## LocalToc und FlowDiagram, live
 
 `LocalToc`, gefüttert mit dem Build-Zeit-ToC dieser Seite – dieselben Daten, die die Seitenleiste konsumiert, der Notiz als `props.toc` übergeben:
 
 <LocalToc toc={props.toc} label="In diesem Kapitel" />
 
-Und `LineageSvg` um ein handgesetztes Diagramm, vollständig in semantischen Tokens getuscht, sodass es auf beiden Themes sitzt:
+Dieselbe Abbildung als `FlowDiagram` – die Kästen sind HTML und passen sich ihren Wörtern an, die Pfeile werden nach dem Layout vermessen, sodass in keiner Schrift etwas aus dem Kasten läuft:
 
-<LineageSvg title="Abb. – wo die Erscheinungsschicht sitzt">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css speist base.css und browse.css, die jede Komponente speisen" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="Abb. – wo die Erscheinungsschicht sitzt" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['die Lesespalte'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['das Stöberregal'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['nutzen beides'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'speist' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram – Kästen, die sich ihren Wörtern anpassen
+
+Eine Abbildung mit Wörtern ist ein `FlowDiagram` (oder ein `mermaid`-Block). Ein von Hand positioniertes `<svg>` mit `<text>` ist gegen eine Schrift gezeichnet und bricht in der nächsten breiteren – und jede Site rendert mit ihrer eigenen; `LineageSvg` bleibt für SVG ohne Text, den eine Schrift aus der Form drücken könnte. Die Spezifikation ist Daten: `cols`, `nodes` (`col` / `row` / `span`, `tone`, `lines`, `tag`, `ghost` für eine gestrichelte Notiz, `mono` für Pfade), `edges` (`label`, `dashed`, `off` für eine unterbrochene Verbindung), optional `lanes` und `heads`:
+
+<FlowDiagram title="Abb. – eine Änderung, drei Bahnen" spec={{
+  cols: 3,
+  lanes: [{ text: 'Autor', tone: 'colleague' }, { text: 'Review', tone: 'admin' }, { text: 'Build', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'Schreiben', lines: ['eine Notiz oder eine Komponente'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'PR öffnen', lines: ['ein Branch'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'Review', lines: ['freigeben oder nachfragen'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'Bauen und deployen', lines: ['beim Merge'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  Bahnen beschriften die Zeilen und zeichnen die Trennlinien; ein tone färbt Rand und Tag eines Kastens; die Beschriftung einer Linie entfällt, wenn die Lücke schmaler ist als die Wörter.
+</FlowDiagram>
 
 ## Mobiliar ohne Komponente
 

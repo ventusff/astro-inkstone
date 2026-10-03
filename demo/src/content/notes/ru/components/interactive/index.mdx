@@ -6,7 +6,7 @@ navLabel: Интерактив и обрамление
 ---
 
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
-import LineageSvg from 'astro-inkstone/components/LineageSvg.astro';
+import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
 
@@ -38,40 +38,55 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
 - `HubCard` и `.hub-grid` — карточки главной хаба; `.path` — его рамка читательского маршрута; обе — на [[components|обзоре этой галереи]].
 - `LocalToc` отрисовывает список переходов внутри страницы; он принимает обе формы оглавления, которые дают два пресета нумерации, и прячется, пока записей меньше настраиваемого минимума. Ниже — вживую, на оглавлении этой главы.
 - `SidebarMemory` сохраняет прокрутку сайдбара между переходами и центрирует текущий пункт (по умолчанию `[aria-current="page"]`), когда тот оказался бы вне поля зрения. Кладите его внутрь скролл-бокса сайдбара, после разметки навигации; он отрабатывает до первой отрисовки, и сайдбар никогда не мигает, отмотанный к верху. Сайдбар этого демо носит его.
-- `LineageSvg` оправляет нарисованный вручную SVG (родословную метода, дерево таксономии) в карточку — одна такая ниже.
+- `LineageSvg` обрамляет SVG без слов — дерево происхождения, таксономию — как карточку; схема со словами — это `FlowDiagram`, ниже.
 - `PageFooter` — мелкий набор в подвале заметки; строка под каждой здешней заметкой.
 - Навигационные детали живут в [[components/wiki|главе о вики]]; Markdown-сторона галереи — [[kitchen-sink|«Всё и сразу»]].
 
-## LocalToc и LineageSvg — вживую
+## LocalToc и FlowDiagram — вживую
 
 `LocalToc`, которому скормлено собственное, собранное на этапе сборки оглавление этой страницы, — те же данные, что потребляет сайдбар, выданные заметке как `props.toc`:
 
 <LocalToc toc={props.toc} label="В этой главе" />
 
-И `LineageSvg` вокруг нарисованной от руки диаграммы, прокрашенной целиком семантическими токенами, — потому она сидит на обеих темах:
+Та же схема как `FlowDiagram` — блоки это HTML, подстраивающийся под свои слова, стрелки измеряются после раскладки, так что ни в одном шрифте ничего не выходит за рамку:
 
-<LineageSvg title="Рис. — где сидит слой внешнего вида">
-  <svg viewBox="0 0 640 150" role="img" aria-label="tokens.css питает base.css и browse.css, а те — каждый компонент" style="width:100%;height:auto;display:block;font-family:var(--font-ui);font-size:13px">
-    <g fill="var(--color-bg-soft)" stroke="var(--color-line)">
-      <rect x="20" y="55" width="150" height="40" rx="6" />
-      <rect x="245" y="15" width="150" height="40" rx="6" />
-      <rect x="245" y="95" width="150" height="40" rx="6" />
-      <rect x="470" y="55" width="150" height="40" rx="6" />
-    </g>
-    <g fill="none" stroke="var(--color-ink-faint)">
-      <path d="M170 68 C 210 60, 210 42, 245 37" />
-      <path d="M170 82 C 210 90, 210 108, 245 113" />
-      <path d="M395 37 C 430 42, 430 60, 470 68" />
-      <path d="M395 113 C 430 108, 430 90, 470 82" />
-    </g>
-    <g fill="var(--color-ink)" text-anchor="middle">
-      <text x="95" y="80">tokens.css</text>
-      <text x="320" y="40">base.css</text>
-      <text x="320" y="120">browse.css</text>
-      <text x="545" y="80">components</text>
-    </g>
-  </svg>
-</LineageSvg>
+<FlowDiagram title="Рис. — где находится слой внешнего вида" spec={{
+  cols: 3,
+  nodes: [
+    { id: 'tokens', title: 'tokens.css', col: 1, row: 1 },
+    { id: 'base', title: 'base.css', lines: ['колонка чтения'], col: 2, row: 1 },
+    { id: 'browse', title: 'browse.css', lines: ['полка просмотра'], col: 2, row: 2 },
+    { id: 'components', title: 'components', lines: ['используют оба'], col: 3, row: 1, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'tokens', to: 'base', label: 'питает' },
+    { from: 'tokens', to: 'browse' },
+    { from: 'base', to: 'components' },
+    { from: 'browse', to: 'components' },
+  ],
+}} />
+
+## FlowDiagram — блоки по размеру своих слов
+
+Схема со словами — это `FlowDiagram` (или блок `mermaid`). Вручную расставленный `<svg>` с `<text>` нарисован под один шрифт и ломается на следующем, более широком — а каждый сайт рендерит своим; `LineageSvg` остаётся для SVG без текста, который шрифт мог бы выдавить из формы. Спецификация — данные: `cols`, `nodes` (`col` / `row` / `span`, `tone`, `lines`, `tag`, `ghost` для пунктирной заметки, `mono` для путей), `edges` (`label`, `dashed`, `off` для оборванной связи), необязательные `lanes` и `heads`:
+
+<FlowDiagram title="Рис. — одно изменение, три дорожки" spec={{
+  cols: 3,
+  lanes: [{ text: 'Автор', tone: 'colleague' }, { text: 'Ревью', tone: 'admin' }, { text: 'Сборка', tone: 'machine' }],
+  nodes: [
+    { id: 'write', title: 'Написать', lines: ['заметку или компонент'], col: 1, row: 1, tone: 'colleague' },
+    { id: 'pr', title: 'Открыть PR', lines: ['одна ветка'], col: 2, row: 1, tone: 'colleague' },
+    { id: 'review', title: 'Проверить', lines: ['одобрить или спросить'], col: 2, row: 2, tone: 'admin' },
+    { id: 'build', title: 'Собрать и выкатить', lines: ['при слиянии'], col: 3, row: 3, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'write', to: 'pr' },
+    { from: 'pr', to: 'review' },
+    { from: 'review', to: 'build' },
+  ],
+}}>
+  Дорожки подписывают строки и рисуют разделители; tone красит рамку и метку блока; подпись на линии пропускается, когда зазор уже слов.
+</FlowDiagram>
 
 ## Обрамление без компонента
 
