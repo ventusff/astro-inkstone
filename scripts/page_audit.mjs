@@ -6,15 +6,22 @@
  *   node scripts/page_audit.mjs --base http://127.0.0.1:4321 --paths paths.txt [--out audit.json]
  *   node scripts/page_audit.mjs --base http://127.0.0.1:4321 --crawl / [--max 500] [--out audit.json]
  *        [--width 1280] [--settle 2500] [--shots dir] [--shots-all 1] [--concurrency 4] [--chrome google-chrome]
+ *        [--lang-cookie chaser_lang --langs zh,en,de] [--cookie name=value]
  *
  * `paths.txt` holds one path per line (`/wiki/foo/`); `#` starts a comment.
  * `--crawl <start>` needs no list: it starts at that path and follows every
  * same-origin page link it meets (files, API and asset paths left out), up to `--max` pages.
+ *
+ * A site that picks the reader's language from a cookie redirects `/en/…` to the default
+ * language for a reader without it, so the other languages would never be looked at:
+ * `--lang-cookie <name>` sets that cookie for every page to the language its path names (the
+ * first path segment found in `--langs`, else the first of `--langs`). `--cookie name=value`
+ * adds a fixed cookie. A page whose document was redirected is reported, with where it went.
  * Chrome is driven over the DevTools protocol with Node's own WebSocket, so
  * the script has no dependencies.
  *
  * Per page it records:
- *   - status: the HTTP status of the document;
+ *   - status: the HTTP status of the document; redirect: where it was sent, when it was;
  *   - reloads: main-frame navigations after the first (a reload loop shows as many);
  *   - console: errors and uncaught exceptions (deduplicated, with counts);
  *   - failed: same-origin requests that failed or answered 4xx/5xx;
@@ -53,13 +60,27 @@ const paths = args.crawl
   ? [args.crawl]
   : readFileSync(args.paths, 'utf8').split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean);
 const seen = new Set(paths);
+const LANGS = (args.langs ?? 'zh,en,de').split(',').map((l) => l.trim()).filter(Boolean);
+/** the cookies a page is opened with: the language its path names, and any fixed one */
+function cookiesFor(path) {
+  const out = [];
+  if (args['lang-cookie']) {
+    const seg = path.split('/').find((s) => LANGS.includes(s));
+    out.push([args['lang-cookie'], seg ?? LANGS[0]]);
+  }
+  if (args.cookie) {
+    const i = args.cookie.indexOf('=');
+    out.push([args.cookie.slice(0, i), args.cookie.slice(i + 1)]);
+  }
+  return out;
+}
 /** a link worth following: a page on this origin, not a file, an API route or a dev-server internal */
 function pagePath(href) {
   let u;
   try { u = new URL(href); } catch { return null; }
   if (u.origin !== new URL(BASE).origin) return null;
   const p = u.pathname;
-  if (/\.[a-z0-9]{2,5}$/i.test(p) || /^\/(api|_|@|node_modules|src)\b/.test(p) || p.includes('/api/')) return null;
+  if (/\.[a-z0-9]{1,8}$/i.test(p) || /^\/(api|_|@|node_modules|src)\b/.test(p) || p.includes('/api/')) return null;
   return p;
 }
 if (args.shots) mkdirSync(args.shots, { recursive: true });
@@ -170,7 +191,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function audit(path) {
   const url = BASE + path;
-  const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank' });
+  // a browser context of its own: cookies (the reader's language among them) never leak between pages open at once
+  const { browserContextId } = await browser.send('Target.createBrowserContext', { disposeOnDetach: true });
+  const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank', browserContextId });
   const { sessionId } = await browser.send('Target.attachToTarget', { targetId, flatten: true });
   const send = (m, p) => browser.send(m, p, sessionId);
   const rec = { path, status: 0, reloads: 0, console: {}, failed: [], ok: false };
@@ -180,7 +203,10 @@ async function audit(path) {
     if (msg.sessionId !== sessionId) return;
     const p = msg.params;
     if (msg.method === 'Page.frameNavigated' && !p.frame.parentId && p.frame.url !== 'about:blank') navigations += 1;
-    if (msg.method === 'Network.requestWillBeSent') requests.set(p.requestId, p.request.url);
+    if (msg.method === 'Network.requestWillBeSent') {
+      requests.set(p.requestId, p.request.url);
+      if (p.redirectResponse && p.type === 'Document') rec.redirect = `${rec.redirect ? rec.redirect + ' ' : ''}${p.redirectResponse.status} → ${p.request.url.startsWith(BASE) ? p.request.url.slice(BASE.length) : p.request.url}`;
+    }
     if (msg.method === 'Network.responseReceived') {
       // the first document response is the page itself (the main frame's id is not known until it commits)
       if (p.type === 'Document' && !rec.status) rec.status = p.response.status;
@@ -205,6 +231,7 @@ async function audit(path) {
     await send('Runtime.enable');
     await send('Network.enable');
     await send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: 1000, deviceScaleFactor: 1, mobile: false });
+    for (const [name, value] of cookiesFor(path)) await send('Network.setCookie', { name, value, url: BASE + '/' });
     const loaded = new Promise((resolve) => {
       const l = (msg) => { if (msg.sessionId === sessionId && msg.method === 'Page.loadEventFired') { browser.off(l); resolve(); } };
       browser.on(l);
@@ -225,7 +252,7 @@ async function audit(path) {
       }
     }
     rec.reloads = Math.max(0, navigations - 1);
-    rec.ok = rec.status < 400 && rec.status > 0 && rec.reloads < 2 && !Object.keys(rec.console).length && !rec.failed.length
+    rec.ok = rec.status < 400 && rec.status > 0 && !rec.redirect && rec.reloads < 2 && !Object.keys(rec.console).length && !rec.failed.length
       && !rec.demos?.length && !rec.flows?.length && !rec.svgText?.length && !rec.images?.length && !rec.math && !rec.mermaid && !(rec.overflowX > 4) && !rec.errorPage;
     if (args.shots && (!rec.ok || args['shots-all'])) {
       const { cssContentSize } = await send('Page.getLayoutMetrics');
@@ -241,6 +268,7 @@ async function audit(path) {
   } finally {
     browser.off(onEvent);
     await browser.send('Target.closeTarget', { targetId }).catch(() => undefined);
+    await browser.send('Target.disposeBrowserContext', { browserContextId }).catch(() => undefined);
   }
   return rec;
 }
@@ -257,7 +285,7 @@ await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
     const rec = await audit(path).finally(() => { active -= 1; });
     results.push(rec);
     const flags = [
-      rec.error && `error: ${rec.error}`, rec.status >= 400 && `HTTP ${rec.status}`, rec.reloads >= 2 && `reloads ${rec.reloads}`,
+      rec.error && `error: ${rec.error}`, rec.status >= 400 && `HTTP ${rec.status}`, rec.redirect && `redirected ${rec.redirect}`, rec.reloads >= 2 && `reloads ${rec.reloads}`,
       Object.keys(rec.console).length && `console ${Object.keys(rec.console).length}`, rec.failed.length && `failed requests ${rec.failed.length}`,
       rec.demos?.length && `demos not mounted ${rec.demos.length}`, rec.flows?.length && `flow wires missing ${rec.flows.length}`,
       rec.svgText?.length && `svg text out of box ${rec.svgText.length}`, rec.images?.length && `broken images ${rec.images.length}`,
