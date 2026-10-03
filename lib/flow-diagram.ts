@@ -203,8 +203,10 @@ function svgEl<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<strin
 /** draw (and keep drawing) the wires of one rendered `.flow-grid` */
 export function mountFlowDiagram(root: HTMLElement): FlowHandle {
   const data = JSON.parse(root.dataset['flow'] ?? '{}') as FlowData;
-  const wires = root.querySelector<SVGSVGElement>('svg.flow-wires');
-  if (!wires) throw new Error('flow diagram: wire layer missing');
+  const layer = root.querySelector<SVGSVGElement>('svg.flow-wires');
+  if (!layer) throw new Error('flow diagram: wire layer missing');
+  // a binding typed non-null: closures below do not inherit a narrowing from the check above
+  const wires: SVGSVGElement = layer;
   const defs = wires.querySelector('defs');
   const nodes = new Map<string, HTMLElement>();
   for (const el of root.querySelectorAll<HTMLElement>('[data-node]')) nodes.set(el.dataset['node'] ?? '', el);
