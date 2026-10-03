@@ -97,32 +97,32 @@ const PROBE = `(() => {
     let edges = 0; try { edges = JSON.parse(g.dataset.flow).edges.length; } catch {}
     if (edges && g.querySelectorAll('svg.flow-wires .wire').length === 0) out.flows.push(g.closest('figure')?.querySelector('.flow-title')?.textContent ?? 'flow');
   }
+  // measured in screen space (getBoundingClientRect), so rotated axis titles and transformed groups are judged where they really are
   for (const svg of document.querySelectorAll('svg')) {
     if (svg.closest('.flow-grid, .mermaid, .mermaid-block, .katex, button, nav, header, a') || svg.getAttribute('aria-hidden') === 'true') continue;
     const texts = [...svg.querySelectorAll('text')];
     if (!texts.length) continue;
-    const vb = svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width ? svg.viewBox.baseVal : null;
-    const rects = [...svg.querySelectorAll('rect')].map((r) => { try { return r.getBBox(); } catch { return null; } }).filter(Boolean);
+    const view = svg.getBoundingClientRect();
+    if (!view.width || !view.height) continue;
+    const rects = [...svg.querySelectorAll('rect')].map((r) => r.getBoundingClientRect()).filter((r) => r.width >= 24 && r.height >= 12);
     const label = (svg.getAttribute('aria-label') || svg.closest('figure')?.querySelector('figcaption')?.textContent || '').trim().slice(0, 60);
     for (const t of texts) {
-      let b; try { b = t.getBBox(); } catch { continue; }
-      if (!b.width) continue;
+      const b = t.getBoundingClientRect();
+      if (!b.width || getComputedStyle(t).visibility === 'hidden') continue;
       const words = (t.textContent || '').trim().slice(0, 40);
-      if (vb) {
-        const by = Math.max(b.x + b.width - (vb.x + vb.width), vb.x - b.x, b.y + b.height - (vb.y + vb.height), vb.y - b.y);
-        if (by > 2) { out.svgText.push({ kind: 'viewport', by: Math.round(by), words, figure: label }); continue; }
-      }
-      // the smallest rect that holds the point where the text starts
+      const outside = Math.max(b.right - view.right, view.left - b.left, b.bottom - view.bottom, view.top - b.top);
+      if (outside > 2) { out.svgText.push({ kind: 'viewport', by: Math.round(outside), words, figure: label }); continue; }
+      // a rotated text runs along its own axis: only level text is held to the box it starts in
+      if (/rotate|matrix/.test(t.getAttribute('transform') || '') || b.height > b.width) continue;
       const anchor = t.getAttribute('text-anchor');
-      const px = anchor === 'middle' ? b.x + b.width / 2 : anchor === 'end' ? b.x + b.width - 1 : b.x + 1;
-      const py = b.y + b.height / 2;
+      const px = anchor === 'middle' ? b.left + b.width / 2 : anchor === 'end' ? b.right - 1 : b.left + 1;
+      const py = b.top + b.height / 2;
       let box = null;
       for (const r of rects) {
-        if (r.width < 24 || r.height < 12) continue;
-        if (px >= r.x && px <= r.x + r.width && py >= r.y && py <= r.y + r.height && (!box || r.width * r.height < box.width * box.height)) box = r;
+        if (px >= r.left && px <= r.right && py >= r.top && py <= r.bottom && (!box || r.width * r.height < box.width * box.height)) box = r;
       }
       if (box) {
-        const by = Math.max(b.x + b.width - (box.x + box.width), box.x - b.x);
+        const by = Math.max(b.right - box.right, box.left - b.left);
         if (by > 2) out.svgText.push({ kind: 'box', by: Math.round(by), words, figure: label });
       }
     }
