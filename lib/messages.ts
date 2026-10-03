@@ -9,8 +9,8 @@
  * key, the lookup answers with that language's
  * `pending` text ("translation in progress"), never with another language; a
  * blank message is written text, shown as nothing. `missing()` lists a
- * language's absent keys; scripts/check-messages.mjs fails a build whose
- * catalogs disagree, so pending text is a transient state of a live site.
+ * language's absent keys; scripts/check-messages.mjs lists them too and
+ * fails a build whose messages are malformed or disagree on arguments.
  *
  * The key type is the union of every catalog's key paths, so a key added to
  * a single catalog type-checks everywhere.

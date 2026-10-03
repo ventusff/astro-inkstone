@@ -6,20 +6,26 @@
  *
  * The page checks its own address every `pollSeconds` and reloads once the
  * answer no longer carries this placeholder, i.e. once its text has arrived.
- * When `prioritize` names an endpoint, the page asks it once (POST, with the
- * page's address as `page`) to move this page to the front of the
- * translation queue; a failed request is ignored.
+ * When `prioritize` names an endpoint, the page asks it once (POST, JSON
+ * `{ page }` with the page's path) to move this page to the front of the
+ * translation queue; a failed request is ignored. With `sync`, the note
+ * carries the site's "sync translations now" action (TranslationSync): when
+ * the next automatic sync runs, and a button that runs one now.
  *
  * Presentational like every wiki component: second-tier tokens only, and
- * every word is a prop.
+ * every word is a prop (the sync action's words come from its endpoint).
  */
+import TranslationSync from './TranslationSync.astro';
+
 interface Props {
   title: string;
   body: string;
   pollSeconds?: number;
   prioritize?: string | undefined;
+  /** the site's "sync translations now" endpoint (lib/translation-sync.ts) */
+  sync?: { endpoint: string } | undefined;
 }
-const { title, body, pollSeconds = 30, prioritize } = Astro.props;
+const { title, body, pollSeconds = 30, prioritize, sync } = Astro.props;
 ---
 
 <section
@@ -31,6 +37,7 @@ const { title, body, pollSeconds = 30, prioritize } = Astro.props;
 >
   <p class="title">{title}</p>
   <p class="body">{body}</p>
+  {sync && <TranslationSync endpoint={sync.endpoint} />}
 </section>
 
 <script>
@@ -40,8 +47,8 @@ const { title, body, pollSeconds = 30, prioritize } = Astro.props;
     const every = Math.max(5, Number(el.dataset.pollSeconds) || 30) * 1000;
     const endpoint = el.dataset.prioritize;
     if (endpoint) {
-      const form = new URLSearchParams({ page: location.href });
-      void fetch(endpoint, { method: 'POST', body: form, credentials: 'include' }).catch(() => undefined);
+      const body = JSON.stringify({ page: location.pathname });
+      void fetch(endpoint, { method: 'POST', body, headers: { 'content-type': 'application/json' }, credentials: 'include' }).catch(() => undefined);
     }
     const check = async (): Promise<void> => {
       try {

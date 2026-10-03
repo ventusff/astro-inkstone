@@ -34,11 +34,17 @@
  * the status text on the row, and the row, the trigger's dot and its
  * accessible name follow.
  *
+ * With `sync`, the panel ends in the site's "sync translations now" action
+ * (TranslationSync): the button, the progress of the sync it started and
+ * when the next automatic sync runs, read from `sync.endpoint` each time the
+ * panel opens, in the endpoint's own words.
+ *
  * Presentational like every wiki component: second-tier tokens only, every
  * label a prop, and the panel carries `data-probe-open` so the render probes
  * sample it open.
  */
 import { languageSignal, type LanguageStatus } from '../lib/language-status.ts';
+import TranslationSync from './TranslationSync.astro';
 
 export type { LanguageStatus };
 
@@ -69,9 +75,11 @@ interface Props {
   setter?: { action: string };
   /** BCP 47 tag of the language the rows' second line is written in. Default 'en' */
   glossLang?: string;
+  /** the site's "sync translations now" endpoint (lib/translation-sync.ts) */
+  sync?: { endpoint: string } | undefined;
 }
 
-const { items, current, label, id = 'lang-menu', setter, glossLang = 'en' } = Astro.props;
+const { items, current, label, id = 'lang-menu', setter, glossLang = 'en', sync } = Astro.props;
 const here = items.find((i) => i.code === current);
 if (!here) throw new Error(`LanguageMenu: current language "${current}" is not among the items`);
 const cols = items.length > 6 ? 2 : 1;
@@ -171,6 +179,13 @@ const name = `${label} · ${here.label}`;
       }
     </ul>
   </nav>
+  {
+    sync && (
+      <div class="sync">
+        <TranslationSync endpoint={sync.endpoint} lang={here.htmlLang} />
+      </div>
+    )
+  }
 </div>
 
 <script>
@@ -371,6 +386,14 @@ const name = `${label} · ${here.label}`;
   }
   .row.here .name {
     color: var(--color-accent-text);
+  }
+  .sync {
+    margin-top: 6px;
+    padding: 8px 10px 4px;
+    border-top: 1px solid var(--color-line);
+  }
+  .sync:has(> [hidden]) {
+    display: none;
   }
 
   @media (max-width: 720px) {

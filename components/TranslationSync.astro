@@ -1,0 +1,79 @@
+---
+/**
+ * TranslationSync — "sync translations now": a button that asks the site's
+ * translation service to bring every language up to date at once, a line
+ * that follows the sync it started (queued, running, done or failed, and
+ * why), and a line saying when the next automatic sync runs.
+ *
+ * Its words come from the endpoint, already in the reader's language
+ * (lib/translation-sync.ts), so the component takes none: it renders an
+ * empty, hidden block that the script fills and shows once the endpoint
+ * answers — a page whose endpoint is unreachable looks as if the block were
+ * not there. The button shows only for readers the endpoint lets press.
+ * Inside a popover (LanguageMenu) the block reads the endpoint each time the
+ * popover opens; elsewhere (TranslationPending) as the page loads.
+ *
+ * Presentational like every wiki component: second-tier tokens only.
+ */
+interface Props {
+  /** the endpoint: GET reads, POST presses (lib/translation-sync.ts) */
+  endpoint: string;
+  /** BCP 47 tag of the reader's language; default the page's `lang` */
+  lang?: string | undefined;
+}
+const { endpoint, lang } = Astro.props;
+---
+
+<div class="translation-sync" data-translation-sync={endpoint} data-lang={lang} hidden>
+  <p class="next" data-sync-next></p>
+  <p class="state" data-sync-state role="status" aria-live="polite"></p>
+  <button class="press" type="button" data-sync-press hidden></button>
+</div>
+
+<script>
+  import { bindTranslationSync } from 'astro-inkstone/lib/translation-sync';
+
+  for (const el of document.querySelectorAll<HTMLElement>('[data-translation-sync]')) bindTranslationSync(el);
+</script>
+
+<style>
+  .translation-sync {
+    font: 500 11.5px/1.45 var(--font-ui);
+    color: var(--color-ink-soft);
+  }
+  .translation-sync[hidden],
+  .translation-sync [hidden] {
+    display: none;
+  }
+  .translation-sync p {
+    margin: 0;
+  }
+  /* the status line stays in the page while empty, so the first update to it is announced */
+  .state {
+    color: var(--color-ink);
+  }
+  .translation-sync .state:not(:empty) {
+    margin-top: 6px;
+  }
+  .press {
+    display: block;
+    margin-top: 8px;
+    padding: 5px 12px;
+    border: 1px solid var(--color-line);
+    border-radius: 999px;
+    background: none;
+    color: var(--color-accent-text);
+    font: 600 12px/1.2 var(--font-ui);
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .press:hover:not(:disabled) {
+    border-color: var(--color-accent);
+  }
+  .press:disabled {
+    color: var(--color-ink-soft);
+    cursor: progress;
+  }
+</style>

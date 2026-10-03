@@ -203,12 +203,14 @@ renders wrong" cannot happen.
   and reading paths, reference lists, reduced-motion handling, a print stylesheet that turns any
   page into a clean PDF. **`browse.css`** — masthead, ruled shelves, card grid, status legend,
   instant filters, tag cloud.
-- **30 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
+- **31 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
   `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `SearchPalette` (the ⌘K overlay), `LanguageMenu`
   (autonym rows glossed in English or in the page's language, with each language's translation
   state; links per language, or a form that records the reader's language), `TranslationPending`
   (the page a language has no text for yet: a note in that language that reloads when the text
-  arrives), `PageLabels` and `TwinAnchor` (see below), `LocalGraph`, the faceted wiki set
+  arrives), `TranslationSync` (a "sync translations now" button, the progress of the sync it
+  started and when the next automatic one runs, in the words of the site's endpoint; both of the
+  previous two can carry it), `PageLabels` and `TwinAnchor` (see below), `LocalGraph`, the faceted wiki set
   (`NoteCard`, `FacetNav`, `TaxonomyLine`, `RecentShelf` — every note changed within a window of
   days, switchable between windows without a script, …) and more — presentational and token-driven.
 - **Digital-garden machinery** — a taxonomy factory (kinds / domains / tags / status, hub notes
@@ -221,7 +223,8 @@ renders wrong" cannot happen.
   Interface text lives in one ICU MessageFormat catalog per language (`lib/messages.ts`): a
   reader only ever reads their own language — a key not yet written in it shows that
   language's "translation in progress" text — and `scripts/check-messages.mjs` fails a build
-  whose catalogs disagree on keys or arguments.
+  whose messages are malformed or disagree on arguments, and lists the keys a language is
+  still waiting for (`--complete` fails those too).
   `lib/locale-negotiation.ts` keeps every page a reader opens in the reader's language: a
   page request under another locale's prefix is redirected to theirs, on the dev server's
   own request pipeline (`lib/reader-language.ts`, an Astro integration), and `TwinAnchor`
