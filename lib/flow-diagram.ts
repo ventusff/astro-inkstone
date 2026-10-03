@@ -89,18 +89,24 @@ const esc = (s: string): string =>
  * guessed from their measured sizes — a tall box and a short one on the same
  * row are still on the same row.
  *
- *   - same row: a level line between the facing edges, at the middle of the
- *     height the two boxes share;
- *   - another row, columns overlapping: a straight vertical at the middle of
- *     the width they share;
+ *   - same row: a level line between the facing edges;
+ *   - another row, columns overlapping: a straight vertical inside the width
+ *     the two boxes share;
  *   - another row, columns apart: out of the source's near edge, across in
  *     the gap right before the target's row (`gap` is the grid's row gap; the
  *     crossing keeps off its middle, where a lane separator runs), into the
- *     middle of the target's near edge.
+ *     target's near edge.
+ *
+ * `at` places the ends along the sides they touch, as fractions (0.5 = the
+ * middle): when several wires leave or enter one side of a box, each gets
+ * its own point (`portFractions`), so two wires never share a stretch of line.
  */
-export function routeBetween(a: Rect, b: Rect, rows: number, gap = 34): Pt[] {
+export function routeBetween(a: Rect, b: Rect, rows: number, gap = 34, at: { from: number; to: number } = { from: 0.5, to: 0.5 }): Pt[] {
   if (rows === 0) {
-    const y = (Math.max(a.y, b.y) + Math.min(a.y + a.h, b.y + b.h)) / 2;
+    // a level line needs one height inside both boxes: the shared band, placed by the target's fraction
+    const top = Math.max(a.y, b.y);
+    const bottom = Math.min(a.y + a.h, b.y + b.h);
+    const y = top + (bottom - top) * at.to;
     return a.x < b.x ? [[a.x + a.w, y], [b.x, y]] : [[a.x, y], [b.x + b.w, y]];
   }
   const down = rows > 0;
@@ -109,14 +115,33 @@ export function routeBetween(a: Rect, b: Rect, rows: number, gap = 34): Pt[] {
   const left = Math.max(a.x, b.x);
   const right = Math.min(a.x + a.w, b.x + b.w);
   if (right - left > 16) {
-    const x = (left + right) / 2;
+    const x = left + (right - left) * at.to;
     return [[x, sy], [x, ty]];
   }
-  const sx = a.x + a.w / 2;
-  const tx = b.x + b.w / 2;
-  // a third of the gap from the target: clear of a lane separator, which sits mid-gap
+  const sx = a.x + a.w * at.from;
+  const tx = b.x + b.w * at.to;
   const my = down ? ty - gap * 0.35 : ty + gap * 0.35;
   return [[sx, sy], [sx, my], [tx, my], [tx, ty]];
+}
+
+/** which side of each box an edge touches, from the grid rows and the columns */
+export type Side = 'top' | 'bottom' | 'left' | 'right';
+export function sidesOf(a: Rect, b: Rect, rows: number): { from: Side; to: Side } {
+  if (rows === 0) return a.x < b.x ? { from: 'right', to: 'left' } : { from: 'left', to: 'right' };
+  return rows > 0 ? { from: 'bottom', to: 'top' } : { from: 'top', to: 'bottom' };
+}
+
+/**
+ * Spread the wires that meet one side of one box: `ends` lists, per wire, the
+ * coordinate of its far end along that side (x for top and bottom, y for left
+ * and right). Wires are ordered by it so they do not cross at the box, and
+ * spaced evenly: one wire 0.5, two 1/3 and 2/3, and so on.
+ */
+export function portFractions(ends: number[]): number[] {
+  const order = ends.map((v, i) => [v, i] as const).sort((p, q) => p[0] - q[0]);
+  const out = new Array<number>(ends.length);
+  order.forEach(([, i], k) => { out[i] = (k + 1) / (ends.length + 1); });
+  return out;
 }
 
 /** the longest segment of a polyline and where its label goes */
@@ -219,10 +244,35 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
     const o = root.getBoundingClientRect();
     return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
   };
+  const rowsBetween = (from: string, to: string) => (rowOf.get(to) ?? 0) - (rowOf.get(from) ?? 0);
+  /**
+   * Where every edge meets its two boxes: the wires on one side of one box are
+   * spread along it (`portFractions`), ordered by where their other end lies.
+   */
+  const ports = (): Map<FlowEdge, { from: number; to: number }> => {
+    const groups = new Map<string, Array<{ edge: FlowEdge; end: 'from' | 'to'; far: number }>>();
+    for (const e of data.edges) {
+      const a = rect(e.from);
+      const b = rect(e.to);
+      const side = sidesOf(a, b, rowsBetween(e.from, e.to));
+      const along = (r: Rect, s: Side) => (s === 'top' || s === 'bottom' ? r.x + r.w / 2 : r.y + r.h / 2);
+      for (const [end, id, s, far] of [['from', e.from, side.from, along(b, side.from)], ['to', e.to, side.to, along(a, side.to)]] as const) {
+        const key = `${id}\u0000${s}`;
+        groups.set(key, [...(groups.get(key) ?? []), { edge: e, end, far }]);
+      }
+    }
+    const out = new Map<FlowEdge, { from: number; to: number }>();
+    for (const e of data.edges) out.set(e, { from: 0.5, to: 0.5 });
+    for (const members of groups.values()) {
+      const fr = portFractions(members.map((m) => m.far));
+      members.forEach((m, i) => { const at = out.get(m.edge); if (at) at[m.end] = fr[i] ?? 0.5; });
+    }
+    return out;
+  };
   /** the route of one edge: grid rows decide the direction, the measured boxes the coordinates */
-  const route = (from: string, to: string): Pt[] => {
+  const route = (from: string, to: string, at?: { from: number; to: number }): Pt[] => {
     const gap = Number.parseFloat(getComputedStyle(root).rowGap) || 34;
-    return routeBetween(rect(from), rect(to), (rowOf.get(to) ?? 0) - (rowOf.get(from) ?? 0), gap);
+    return routeBetween(rect(from), rect(to), rowsBetween(from, to), gap, at);
   };
 
   function redraw(): void {
@@ -238,8 +288,9 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
         wires.append(svgEl('line', { x1: 0, x2: root.clientWidth, y1: y, y2: y, class: 'sep' }));
       }
     }
+    const placed = ports();
     for (const e of data.edges) {
-      const pts = route(e.from, e.to);
+      const pts = route(e.from, e.to, placed.get(e));
       wires.append(svgEl('path', {
         d: pathOf(pts),
         class: `wire${e.off ? ' off' : ''}${e.dashed ? ' dashed' : ''}`,
