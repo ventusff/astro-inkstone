@@ -50,6 +50,8 @@ export interface FlowEdge {
   /** a broken link: dashed, in the blocked tone */
   off?: boolean;
   dashed?: boolean;
+  /** the wire's colour: a semantic tone, or any CSS color string (default: faint ink) */
+  tone?: FlowTone | string;
 }
 
 export interface FlowSpec {
@@ -124,9 +126,23 @@ export function routeBetween(a: Rect, b: Rect, rows: number, gap = 34, at: { fro
   return [[sx, sy], [sx, my], [tx, my], [tx, ty]];
 }
 
+/**
+ * A wire between two boxes on one row with other boxes of that row in
+ * between: out of the source's bottom, along the gap under the row
+ * (`rowBottom` is the lowest edge of that row's boxes), into the target's
+ * bottom — so it never runs through the boxes it passes.
+ */
+export function detourBelow(a: Rect, b: Rect, rowBottom: number, gap = 34, at: { from: number; to: number } = { from: 0.5, to: 0.5 }): Pt[] {
+  const sx = a.x + a.w * at.from;
+  const tx = b.x + b.w * at.to;
+  const y = rowBottom + gap * 0.4;
+  return [[sx, a.y + a.h], [sx, y], [tx, y], [tx, b.y + b.h]];
+}
+
 /** which side of each box an edge touches, from the grid rows and the columns */
 export type Side = 'top' | 'bottom' | 'left' | 'right';
-export function sidesOf(a: Rect, b: Rect, rows: number): { from: Side; to: Side } {
+export function sidesOf(a: Rect, b: Rect, rows: number, detour = false): { from: Side; to: Side } {
+  if (detour) return { from: 'bottom', to: 'bottom' };
   if (rows === 0) return a.x < b.x ? { from: 'right', to: 'left' } : { from: 'left', to: 'right' };
   return rows > 0 ? { from: 'bottom', to: 'top' } : { from: 'top', to: 'bottom' };
 }
@@ -144,8 +160,8 @@ export function portFractions(ends: number[]): number[] {
   return out;
 }
 
-/** the longest segment of a polyline and where its label goes */
-export function labelAnchor(pts: Pt[]): { x: number; y: number; horizontal: boolean; length: number } {
+/** the longest segment of a polyline and where along it (`t`, 0.5 = the middle) its label goes */
+export function labelAnchor(pts: Pt[], t = 0.5): { x: number; y: number; horizontal: boolean; length: number } {
   let best = -1;
   let p: Pt = pts[0] ?? [0, 0];
   let q: Pt = pts[1] ?? p;
@@ -157,8 +173,8 @@ export function labelAnchor(pts: Pt[]): { x: number; y: number; horizontal: bool
   }
   const horizontal = Math.abs(q[0] - p[0]) > Math.abs(q[1] - p[1]);
   return {
-    x: (p[0] + q[0]) / 2 + (horizontal ? 0 : 8),
-    y: (p[1] + q[1]) / 2 + (horizontal ? -7 : 4),
+    x: p[0] + (q[0] - p[0]) * t + (horizontal ? 0 : 8),
+    y: p[1] + (q[1] - p[1]) * t + (horizontal ? -7 : 4),
     horizontal,
     length: Math.max(best, 0),
   };
@@ -245,6 +261,21 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
     return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
   };
   const rowsBetween = (from: string, to: string) => (rowOf.get(to) ?? 0) - (rowOf.get(from) ?? 0);
+  /** boxes of the same row as `from` and `to` that sit between them: a level wire would run through these */
+  const between = (from: string, to: string): Rect[] => {
+    if (rowsBetween(from, to) !== 0) return [];
+    const a = rect(from);
+    const b = rect(to);
+    const lo = Math.min(a.x + a.w, b.x + b.w);
+    const hi = Math.max(a.x, b.x);
+    return data.rows
+      .filter(([id, row]) => id !== from && id !== to && row === rowOf.get(from))
+      .map(([id]) => rect(id))
+      .filter((r) => r.x < hi && r.x + r.w > lo);
+  };
+  /** the lowest edge of the boxes on `id`'s row */
+  const rowBottom = (id: string): number =>
+    Math.max(...data.rows.filter(([, row]) => row === rowOf.get(id)).map(([n]) => { const r = rect(n); return r.y + r.h; }));
   /**
    * Where every edge meets its two boxes: the wires on one side of one box are
    * spread along it (`portFractions`), ordered by where their other end lies.
@@ -254,7 +285,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
     for (const e of data.edges) {
       const a = rect(e.from);
       const b = rect(e.to);
-      const side = sidesOf(a, b, rowsBetween(e.from, e.to));
+      const side = sidesOf(a, b, rowsBetween(e.from, e.to), between(e.from, e.to).length > 0);
       const along = (r: Rect, s: Side) => (s === 'top' || s === 'bottom' ? r.x + r.w / 2 : r.y + r.h / 2);
       for (const [end, id, s, far] of [['from', e.from, side.from, along(b, side.from)], ['to', e.to, side.to, along(a, side.to)]] as const) {
         const key = `${id}\u0000${s}`;
@@ -272,8 +303,30 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
   /** the route of one edge: grid rows decide the direction, the measured boxes the coordinates */
   const route = (from: string, to: string, at?: { from: number; to: number }): Pt[] => {
     const gap = Number.parseFloat(getComputedStyle(root).rowGap) || 34;
+    if (between(from, to).length) return detourBelow(rect(from), rect(to), rowBottom(from), gap, at);
     return routeBetween(rect(from), rect(to), rowsBetween(from, to), gap, at);
   };
+  /** colour → arrowhead marker id; a marker per colour, made the first time a wire needs it */
+  const markers = new Map<string, string>();
+  const markerFor = (color: string): string => {
+    const known = markers.get(color);
+    if (known) return known;
+    const id = `flow-ar-${Math.random().toString(36).slice(2, 9)}`;
+    const m = svgEl('marker', { id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' });
+    m.append(svgEl('path', { d: 'M0 0L10 5L0 10z', fill: color }));
+    defs?.append(m);
+    markers.set(color, id);
+    return id;
+  };
+  /** what a label must not land on: the boxes and the row headings */
+  const obstacles = (): Rect[] => {
+    const o = root.getBoundingClientRect();
+    return [...root.querySelectorAll<HTMLElement>('[data-node], .flow-head')].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
+    });
+  };
+  const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 
   function redraw(): void {
     for (const c of [...wires.children]) if (c !== defs) c.remove();
@@ -289,19 +342,34 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       }
     }
     const placed = ports();
+    const blocks = obstacles();
     for (const e of data.edges) {
       const pts = route(e.from, e.to, placed.get(e));
-      wires.append(svgEl('path', {
+      const color = e.off ? undefined : toneColor(e.tone);
+      const path = svgEl('path', {
         d: pathOf(pts),
         class: `wire${e.off ? ' off' : ''}${e.dashed ? ' dashed' : ''}`,
-        'marker-end': `url(#${e.off ? 'flow-ar-off' : 'flow-ar'})`,
-      }));
+        'marker-end': `url(#${e.off ? 'flow-ar-off' : color ? markerFor(color) : 'flow-ar'})`,
+      });
+      if (color) path.style.stroke = color;
+      wires.append(path);
       if (!e.label) continue;
-      const at = labelAnchor(pts);
-      const label = svgEl('text', { x: at.x, y: at.y, 'text-anchor': at.horizontal ? 'middle' : 'start', class: `lbl${e.off ? ' off' : ''}` }, e.label);
+      // the label goes at the middle of the longest segment, else a quarter in from either end;
+      // where every spot lands on a box or a heading, or the gap is narrower than the words, it is left out
+      const label = svgEl('text', { class: `lbl${e.off ? ' off' : ''}` }, e.label);
       wires.append(label);
-      // a label wider than the gap it sits in would land on a neighbouring box: leave it out
-      if (at.horizontal && at.length < Math.max(estimateLabelWidth(e.label), label.getComputedTextLength()) + 12) label.remove();
+      let placedLabel = false;
+      for (const t of [0.5, 0.25, 0.75]) {
+        const at = labelAnchor(pts, t);
+        label.setAttribute('x', String(at.x));
+        label.setAttribute('y', String(at.y));
+        label.setAttribute('text-anchor', at.horizontal ? 'middle' : 'start');
+        if (at.horizontal && at.length < Math.max(estimateLabelWidth(e.label), label.getComputedTextLength()) + 12) break;
+        const b = label.getBBox();
+        const box = { x: b.x - 2, y: b.y - 2, w: b.width + 4, h: b.height + 4 };
+        if (!blocks.some((r) => overlaps(box, r))) { placedLabel = true; break; }
+      }
+      if (!placedLabel) label.remove();
     }
   }
 

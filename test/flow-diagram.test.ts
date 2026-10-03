@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { estimateLabelWidth, labelAnchor, portFractions, renderFlowDiagram, routeBetween, sidesOf, toneColor } from '../lib/flow-diagram.ts';
+import { detourBelow, estimateLabelWidth, labelAnchor, portFractions, renderFlowDiagram, routeBetween, sidesOf, toneColor } from '../lib/flow-diagram.ts';
 
 const box = (x: number, y: number, w = 100, h = 40) => ({ x, y, w, h });
 
@@ -27,6 +27,16 @@ test('two wires meeting one side of a box get their own points, ordered so they 
   assert.notDeepEqual(left.at(-1), right.at(-1));
   assert.deepEqual(sidesOf(box(0, 0), target, 1), { from: 'bottom', to: 'top' });
   assert.deepEqual(sidesOf(box(500, 0), box(0, 0), 0), { from: 'left', to: 'right' });
+});
+
+test('a wire past boxes of its own row goes under the row, bottom to bottom', () => {
+  assert.deepEqual(detourBelow(box(0, 0), box(400, 0), 60, 40), [[50, 40], [50, 76], [450, 76], [450, 40]]);
+  assert.deepEqual(sidesOf(box(0, 0), box(400, 0), 0, true), { from: 'bottom', to: 'bottom' });
+});
+
+test('labelAnchor can sit a quarter of the way along', () => {
+  const q = labelAnchor([[0, 10], [100, 10]], 0.25);
+  assert.deepEqual([q.x, q.y], [25, 3]);
 });
 
 test('labelAnchor sits above the longest horizontal segment, beside a vertical one', () => {

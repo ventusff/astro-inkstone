@@ -1853,7 +1853,9 @@ a.hub-card {
   border: 1.5px solid var(--color-line);
   border-radius: 8px;
   background: var(--color-bg-soft);
-  overflow-wrap: anywhere;
+  /* long words break at hyphenation points (per the page language), and only then anywhere */
+  hyphens: auto;
+  overflow-wrap: break-word;
 }
 .flow-node b {
   display: block;
