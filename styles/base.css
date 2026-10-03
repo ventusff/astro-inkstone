@@ -1823,7 +1823,8 @@ a.hub-card {
   position: relative;
   display: grid;
   gap: 34px 36px;
-  align-items: start;
+  /* boxes on one row share its height, so a level wire meets both at mid-height */
+  align-items: stretch;
   font-size: 12.5px;
   line-height: 1.45;
   color: var(--color-ink);

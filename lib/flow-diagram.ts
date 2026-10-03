@@ -84,24 +84,38 @@ const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /**
- * The polyline between two boxes. Boxes on the same row connect by their
- * facing edges at a shared height (the mean of their centre lines, which
- * lies inside both); boxes on different rows leave by the bottom (or top)
- * centre, run across at mid-gap and enter the other box by its centre.
+ * The polyline between two boxes. Which way it goes is decided by where the
+ * boxes sit in the grid (`rows`: the target's row minus the source's), never
+ * guessed from their measured sizes — a tall box and a short one on the same
+ * row are still on the same row.
+ *
+ *   - same row: a level line between the facing edges, at the middle of the
+ *     height the two boxes share;
+ *   - another row, columns overlapping: a straight vertical at the middle of
+ *     the width they share;
+ *   - another row, columns apart: out of the source's near edge, across in
+ *     the gap right before the target's row (`gap` is the grid's row gap; the
+ *     crossing keeps off its middle, where a lane separator runs), into the
+ *     middle of the target's near edge.
  */
-export function routeBetween(a: Rect, b: Rect): Pt[] {
-  const sameRow = Math.abs(a.y + a.h / 2 - (b.y + b.h / 2)) < Math.min(a.h, b.h) / 2;
-  if (sameRow) {
-    const y = (a.y + a.h / 2 + b.y + b.h / 2) / 2;
+export function routeBetween(a: Rect, b: Rect, rows: number, gap = 34): Pt[] {
+  if (rows === 0) {
+    const y = (Math.max(a.y, b.y) + Math.min(a.y + a.h, b.y + b.h)) / 2;
     return a.x < b.x ? [[a.x + a.w, y], [b.x, y]] : [[a.x, y], [b.x + b.w, y]];
   }
-  const down = b.y > a.y;
-  const sx = a.x + a.w / 2;
-  const tx = b.x + b.w / 2;
+  const down = rows > 0;
   const sy = down ? a.y + a.h : a.y;
   const ty = down ? b.y : b.y + b.h;
-  const my = (sy + ty) / 2;
-  if (Math.abs(sx - tx) < 2) return [[sx, sy], [tx, ty]];
+  const left = Math.max(a.x, b.x);
+  const right = Math.min(a.x + a.w, b.x + b.w);
+  if (right - left > 16) {
+    const x = (left + right) / 2;
+    return [[x, sy], [x, ty]];
+  }
+  const sx = a.x + a.w / 2;
+  const tx = b.x + b.w / 2;
+  // a third of the gap from the target: clear of a lane separator, which sits mid-gap
+  const my = down ? ty - gap * 0.35 : ty + gap * 0.35;
   return [[sx, sy], [sx, my], [tx, my], [tx, ty]];
 }
 
@@ -195,12 +209,18 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
   const nodes = new Map<string, HTMLElement>();
   for (const el of root.querySelectorAll<HTMLElement>('[data-node]')) nodes.set(el.dataset['node'] ?? '', el);
 
+  const rowOf = new Map(data.rows);
   const rect = (id: string): Rect => {
     const el = nodes.get(id);
     if (!el) throw new Error(`flow diagram: no node "${id}"`);
     const r = el.getBoundingClientRect();
     const o = root.getBoundingClientRect();
     return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
+  };
+  /** the route of one edge: grid rows decide the direction, the measured boxes the coordinates */
+  const route = (from: string, to: string): Pt[] => {
+    const gap = Number.parseFloat(getComputedStyle(root).rowGap) || 34;
+    return routeBetween(rect(from), rect(to), (rowOf.get(to) ?? 0) - (rowOf.get(from) ?? 0), gap);
   };
 
   function redraw(): void {
@@ -217,7 +237,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       }
     }
     for (const e of data.edges) {
-      const pts = routeBetween(rect(e.from), rect(e.to));
+      const pts = route(e.from, e.to);
       wires.append(svgEl('path', {
         d: pathOf(pts),
         class: `wire${e.off ? ' off' : ''}${e.dashed ? ' dashed' : ''}`,
@@ -247,7 +267,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
         const a = ids[i];
         const b = ids[i + 1];
         if (!a || !b) continue;
-        const pts = routeBetween(rect(a), rect(b));
+        const pts = route(a, b);
         out += out ? pts.map(([x, y]) => `L${x.toFixed(1)} ${y.toFixed(1)}`).join('') : pathOf(pts);
       }
       return out;
