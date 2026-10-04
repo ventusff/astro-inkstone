@@ -20,6 +20,16 @@ test('an answer carries the button, its busy form, the state line and the next-s
   assert.equal(isSyncAnswer({ ...answer(null), words: { ...answer(null).words, next: { text: 'x', at: 5 } } }), false);
 });
 
+test('an answer may carry a heading, a status word, when translations last went live and the wait before pressing again', () => {
+  const w = answer(null).words;
+  const full = { ...w, title: 'Translations', status: { text: 'Up to date', kind: 'ok' }, last: { text: 'Last {time}', at: '2026-10-03T01:00:00.000Z' }, wait: null };
+  assert.equal(isSyncAnswer({ ...answer(null), words: full }), true);
+  assert.equal(isSyncAnswer({ ...answer(null), words: { ...full, last: null, wait: { text: 'From {time}', at: '2026-10-03T09:07:00.000Z' } } }), true);
+  assert.equal(isSyncAnswer({ ...answer(null), words: { ...full, status: { text: 'x', kind: 'paused' } } }), false);
+  assert.equal(isSyncAnswer({ ...answer(null), words: { ...full, title: 3 } }), false);
+  assert.equal(isSyncAnswer({ ...answer(null), words: { ...full, last: 'yesterday' } }), false);
+});
+
 test('a sync is on its way while queued or running', () => {
   assert.deepEqual(['queued', 'running', 'done', 'failed', null].map((p) => busy(answer(p as never))), [true, true, false, false, false]);
 });

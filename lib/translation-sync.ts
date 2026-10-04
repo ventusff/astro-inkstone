@@ -1,8 +1,10 @@
 /**
- * translation-sync.ts — the "sync translations now" action: a reader asks
- * the site's translation service to bring every language up to date at
- * once, sees it go from queued to running to done (or failed, and why),
- * and learns when the next automatic sync runs.
+ * translation-sync.ts — the "sync translations now" action: a reader sees
+ * where the site's translations stand (up to date, N waiting, syncing,
+ * failed), when they last went live and when the next automatic sync runs,
+ * asks the site's translation service to bring every language up to date
+ * at once, and follows the sync from queued to running to done (or failed,
+ * and why).
  *
  * The site names an endpoint; the component (components/TranslationSync)
  * renders an empty, hidden block and this module binds it. The endpoint
@@ -35,12 +37,34 @@ export interface SyncAnswer {
     action: string;
     /** the button while a sync is queued or running */
     busy: string;
-    /** where the last sync stands */
+    /** where the sync the reader asked for stands, or why it failed */
     state: SyncLine | null;
-    /** when the next automatic sync runs */
+    /** when the next automatic sync runs (while syncing: when this one started) */
     next: SyncLine;
+    /** the block's heading; an endpoint without one shows no heading */
+    title?: string;
+    /** one word on where the translations stand, and its kind */
+    status?: SyncStatus;
+    /** when the translations last went live; null when never */
+    last?: SyncLine | null;
+    /** the button while the reader must wait before pressing again: it stays disabled with these words */
+    wait?: SyncLine | null;
   };
 }
+
+/** one word on where the translations stand */
+export interface SyncStatus {
+  text: string;
+  kind: 'ok' | 'waiting' | 'busy' | 'failed';
+}
+
+const KINDS: ReadonlySet<unknown> = new Set(['ok', 'waiting', 'busy', 'failed']);
+
+const status = (v: unknown): v is SyncStatus => {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return typeof o['text'] === 'string' && KINDS.has(o['kind']);
+};
 
 const line = (v: unknown): v is SyncLine => {
   if (!v || typeof v !== 'object') return false;
@@ -62,7 +86,11 @@ export function isSyncAnswer(v: unknown): v is SyncAnswer {
     typeof w['action'] === 'string' &&
     typeof w['busy'] === 'string' &&
     line(w['next']) &&
-    (w['state'] === null || line(w['state']))
+    (w['state'] === null || line(w['state'])) &&
+    (w['title'] === undefined || typeof w['title'] === 'string') &&
+    (w['status'] === undefined || status(w['status'])) &&
+    (w['last'] === undefined || w['last'] === null || line(w['last'])) &&
+    (w['wait'] === undefined || w['wait'] === null || line(w['wait']))
   );
 }
 
@@ -104,6 +132,11 @@ export function bindTranslationSync(root: HTMLElement): void {
   if (!endpoint) return;
   const lang = root.dataset.lang || document.documentElement.lang || 'en';
   const url = `${endpoint}${endpoint.includes('?') ? '&' : '?'}lang=${encodeURIComponent(lang)}`;
+  const head = root.querySelector<HTMLElement>('[data-sync-head]');
+  const title = root.querySelector<HTMLElement>('[data-sync-title]');
+  const status = root.querySelector<HTMLElement>('[data-sync-status]');
+  const bar = root.querySelector<HTMLElement>('[data-sync-bar]');
+  const last = root.querySelector<HTMLElement>('[data-sync-last]');
   const next = root.querySelector<HTMLElement>('[data-sync-next]');
   const state = root.querySelector<HTMLElement>('[data-sync-state]');
   const button = root.querySelector<HTMLButtonElement>('[data-sync-press]');
@@ -118,13 +151,25 @@ export function bindTranslationSync(root: HTMLElement): void {
   };
 
   const show = (a: SyncAnswer): void => {
+    const w = a.words;
     root.hidden = false;
-    if (next) next.textContent = lineText(a.words.next, lang);
-    if (state) state.textContent = a.words.state ? lineText(a.words.state, lang) : '';
+    if (head) head.hidden = !w.title;
+    if (title) title.textContent = w.title ?? '';
+    if (status) {
+      status.textContent = w.status?.text ?? '';
+      if (w.status) status.dataset.kind = w.status.kind;
+      else delete status.dataset.kind;
+    }
+    if (bar) bar.hidden = !busy(a);
+    if (last) last.textContent = w.last ? lineText(w.last, lang) : '';
+    if (next) next.textContent = lineText(w.next, lang);
+    if (state) state.textContent = w.state ? lineText(w.state, lang) : '';
     if (button) {
       button.hidden = !a.can;
-      button.disabled = busy(a);
-      button.textContent = busy(a) ? a.words.busy : a.words.action;
+      button.disabled = busy(a) || !!w.wait;
+      button.textContent = busy(a) ? w.busy : w.wait ? lineText(w.wait, lang) : w.action;
+      if (busy(a)) button.dataset.busy = '';
+      else delete button.dataset.busy;
     }
     following = busy(a);
     schedule();

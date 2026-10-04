@@ -1,17 +1,21 @@
 ---
 /**
- * TranslationSync — "sync translations now": a button that asks the site's
- * translation service to bring every language up to date at once, a line
- * that follows the sync it started (queued, running, done or failed, and
- * why), and a line saying when the next automatic sync runs.
+ * TranslationSync — "sync translations now": a heading with one word on
+ * where this site's translations stand (up to date, N waiting, syncing,
+ * failed), when they last went live and when the next automatic sync runs,
+ * the progress of a sync the reader started (and why it failed), and the
+ * button that starts one. While a sync is on its way a thin bar slides
+ * under the heading.
  *
  * Its words come from the endpoint, already in the reader's language
  * (lib/translation-sync.ts), so the component takes none: it renders an
  * empty, hidden block that the script fills and shows once the endpoint
  * answers — a page whose endpoint is unreachable looks as if the block were
- * not there. The button shows only for readers the endpoint lets press.
- * Inside a popover (LanguageMenu) the block reads the endpoint each time the
- * popover opens; elsewhere (TranslationPending) as the page loads.
+ * not there. The button shows only for readers the endpoint lets press, and
+ * stays disabled, naming the moment, while the reader must wait before
+ * pressing again. Inside a popover (LanguageMenu) the block reads the
+ * endpoint each time the popover opens; elsewhere (TranslationPending) as
+ * the page loads.
  *
  * Presentational like every wiki component: second-tier tokens only.
  */
@@ -25,7 +29,15 @@ const { endpoint, lang } = Astro.props;
 ---
 
 <div class="translation-sync" data-translation-sync={endpoint} data-lang={lang} hidden>
-  <p class="next" data-sync-next></p>
+  <p class="head" data-sync-head hidden>
+    <span class="title" data-sync-title></span>
+    <span class="status" data-sync-status></span>
+  </p>
+  <div class="bar" data-sync-bar hidden aria-hidden="true"><span></span></div>
+  <p class="ends">
+    <span data-sync-last></span>
+    <span class="next" data-sync-next></span>
+  </p>
   <p class="state" data-sync-state role="status" aria-live="polite"></p>
   <button class="press" type="button" data-sync-press hidden></button>
 </div>
@@ -38,7 +50,7 @@ const { endpoint, lang } = Astro.props;
 
 <style>
   .translation-sync {
-    font: 500 11.5px/1.45 var(--font-ui);
+    font: 500 11px/1.45 var(--font-ui);
     color: var(--color-ink-soft);
   }
   .translation-sync[hidden],
@@ -47,6 +59,67 @@ const { endpoint, lang } = Astro.props;
   }
   .translation-sync p {
     margin: 0;
+  }
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .title {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .status[data-kind='ok'] {
+    color: var(--color-accent2);
+  }
+  .status[data-kind='busy'],
+  .status[data-kind='failed'] {
+    color: var(--color-accent-text);
+  }
+
+  /* the bar under the heading while a sync is on its way: a short segment sliding back and forth */
+  .bar {
+    position: relative;
+    height: 2px;
+    margin: 4px 0 6px;
+    border-radius: 1px;
+    background: var(--color-accent-soft);
+    overflow: hidden;
+  }
+  .bar span {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 30%;
+    border-radius: 1px;
+    background: var(--color-accent);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .bar span {
+      animation: translation-sync-slide 1.4s ease-in-out infinite alternate;
+    }
+  }
+  @keyframes translation-sync-slide {
+    to {
+      left: 70%;
+    }
+  }
+
+  .ends {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    column-gap: 10px;
+  }
+  .ends .next {
+    text-align: end;
+  }
+  .ends span:empty {
+    display: none;
   }
   /* the status line stays in the page while empty, so the first update to it is announced */
   .state {
@@ -57,9 +130,10 @@ const { endpoint, lang } = Astro.props;
   }
   .press {
     display: block;
+    width: 100%;
     margin-top: 8px;
-    padding: 5px 12px;
-    border: 1px solid var(--color-line);
+    padding: 6px 12px;
+    border: 1px solid var(--color-accent);
     border-radius: 999px;
     background: none;
     color: var(--color-accent-text);
@@ -67,13 +141,18 @@ const { endpoint, lang } = Astro.props;
     cursor: pointer;
     transition:
       color 0.15s ease,
-      border-color 0.15s ease;
+      border-color 0.15s ease,
+      background-color 0.15s ease;
   }
   .press:hover:not(:disabled) {
-    border-color: var(--color-accent);
+    background: var(--color-accent-soft);
   }
   .press:disabled {
-    color: var(--color-ink-soft);
+    border-color: var(--color-line);
+    color: var(--color-ink-faint);
+    cursor: default;
+  }
+  .press[data-busy]:disabled {
     cursor: progress;
   }
 </style>
