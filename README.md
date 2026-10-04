@@ -240,6 +240,10 @@ renders wrong" cannot happen.
   a tuned Maple Mono CN subset where Hanzi sit exactly two cells wide; the display serif and UI
   sans are named `@fontsource` families the demo self-hosts.
 - **Search** — a build-time index endpoint factory plus a tiny dependency-free client.
+- **Media outside the repository** — `mediaStore()` (`lib/media-store.ts`, an Astro integration) mounts a
+  content-addressed store at `/media/<sha256>.<ext>`: the dev and preview servers hand those addresses to
+  the store's origin, as the deployment's reverse proxy does in production, and a build refuses a site
+  that carries video files of its own.
 - **Render-layer probes** — `ui_probe` (every page at four widths: overflow, unstyled classes,
   dead anchors, missing alt text, skipped headings, duplicate ids, dangling `aria-controls`;
   redirect stubs from Astro's `redirects` are skipped) and
