@@ -40,6 +40,8 @@ test('{time} is the clock time of `at`, with the weekday within a week and the d
   assert.equal(lineText(at(new Date(2026, 9, 3, 14, 5)), 'en-GB', now), 'at 14:05');
   assert.equal(lineText(at(new Date(2026, 9, 4, 3, 0)), 'en-GB', now), 'at Sun 03:00');
   assert.equal(lineText(at(new Date(2026, 9, 20, 3, 0)), 'en-GB', now), 'at 20 Oct, 03:00');
+  assert.equal(lineText(at(new Date(2026, 9, 4, 3, 0)), 'zh-CN', now), 'at 周日 03:00');
+  assert.equal(lineText(at(new Date(2026, 9, 20, 3, 0)), 'zh-CN', now), 'at 10月20日 03:00');
   assert.equal(lineText({ text: 'no time here' }, 'en', now), 'no time here');
   assert.equal(lineText({ text: 'at {time}', at: 'never' }, 'en', now), 'at {time}');
 });

@@ -114,7 +114,10 @@ export function lineText(l: SyncLine, lang: string, now: Date = new Date()): str
     : near
       ? { weekday: 'short', hour: '2-digit', minute: '2-digit' }
       : { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-  return l.text.replaceAll('{time}', new Intl.DateTimeFormat(lang, options).format(at));
+  const parts = new Intl.DateTimeFormat(lang, options).formatToParts(at);
+  // a locale whose pattern runs the weekday or date straight into the clock time (zh: 周一03:22) gets a space between them
+  const text = parts.map((p, i) => (i > 0 && p.type === 'hour' && parts[i - 1]!.type !== 'literal' ? ` ${p.value}` : p.value)).join('');
+  return l.text.replaceAll('{time}', text);
 }
 
 /** how often a running sync is read again */
