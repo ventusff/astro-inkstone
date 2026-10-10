@@ -130,7 +130,8 @@ test('a path deleted, or moved away, and then made again belongs to whoever made
 
 test('a file a service created is nobody\'s, and a person who edits it later does not claim it; a service move keeps the person', () => {
   const changes = _internal.changesOf([
-    c(4, 'Bot', [{ kind: 'R', from: 'mine.md', path: 'moved.md' }], false),
+    c(5, 'Bot', [{ kind: 'R', from: 'mine.md', path: 'moved.md' }], false),
+    c(4, 'Gina', [{ kind: 'M', path: 'mine.md' }]),
     c(3, 'Erin', [{ kind: 'M', path: 'bot.md' }]),
     c(2, 'Bot', [{ kind: 'A', path: 'bot.md' }], false),
     c(1, 'Frank', [{ kind: 'A', path: 'mine.md' }]),
@@ -138,7 +139,7 @@ test('a file a service created is nobody\'s, and a person who edits it later doe
   assert.equal(changes.get('bot.md')?.createdBy, undefined);
   assert.equal(changes.get('bot.md')?.at.toISOString(), '2026-01-03T00:00:00.000Z');
   assert.equal(changes.get('moved.md')?.createdBy, 'Frank');
-  assert.equal(changes.get('moved.md')?.at.toISOString(), '2026-01-01T00:00:00.000Z');
+  assert.equal(changes.get('moved.md')?.at.toISOString(), '2026-01-04T00:00:00.000Z');
 });
 
 test('a second uncommitted edit is seen: the mailmap folds the new name at once', async () => {

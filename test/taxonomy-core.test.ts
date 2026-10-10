@@ -141,6 +141,9 @@ test('authors are the people who wrote the primary-language pages: frontmatter f
   assert.deepEqual(byId.get('named'), ['Named Person']);
   const credited = notes.map((n) => (n.id === 'hub' ? note('hub', { ...n.data, authors: ['Series Editor'] }) : n));
   assert.deepEqual(new Map(bind(credited).t.unitsOf(credited, changes).map((u) => [u.id, u.authors])).get('hub'), ['Series Editor']);
+  const uncredited = notes.map((n) => (n.id === 'plain' || n.id === 'hub/a' ? note(n.id, { ...n.data, authors: [] }) : n));
+  const unc = new Map(bind(uncredited).t.unitsOf(uncredited, changes).map((u) => [u.id, u.authors]));
+  assert.deepEqual(unc.get('hub'), ['Hub Author', 'Guest Writer']);
   assert.deepEqual(byId.get('plain'), []);
   assert.deepEqual(new Map(t.unitsOf(notes).map((u) => [u.id, u.authors])).get('hub'), ['Guest Writer']);
 });

@@ -126,22 +126,29 @@ function parseCommits(out: string, excluded: ReadonlySet<string>): Commit[] {
  * or moved has no person as creator, and a later edit does not claim it.
  */
 function changesOf(commits: readonly Commit[], base = ''): FileChanges {
-  /** path → its creator and when they created it; null when a service created it */
-  const creators = new Map<string, { by: string; at: Date } | null>();
+  /** live path → its creator; null when a service created it */
+  const creators = new Map<string, string | null>();
+  /** live path → the latest counted change to its content, carried along renames */
+  const lastCounted = new Map<string, Date>();
   for (let i = commits.length - 1; i >= 0; i -= 1) {
     const commit = commits[i]!;
-    const author = commit.counted ? { by: commit.by, at: commit.at } : null;
+    const author = commit.counted ? commit.by : null;
     for (const { kind, path, from } of commit.touches) {
       if (kind === 'D') {
         creators.delete(path);
-      } else if (kind === 'R') {
+        lastCounted.delete(path);
+        continue;
+      }
+      if (kind === 'R') {
         creators.set(path, creators.has(from!) ? creators.get(from!)! : author);
+        const carried = lastCounted.get(from!);
+        if (carried) lastCounted.set(path, carried);
         creators.delete(from!);
-      } else if (kind === 'A' || kind === 'C') {
-        creators.set(path, author);
-      } else if (!creators.has(path)) {
+        lastCounted.delete(from!);
+      } else if (kind === 'A' || kind === 'C' || !creators.has(path)) {
         creators.set(path, author);
       }
+      if (commit.counted) lastCounted.set(path, commit.at);
     }
   }
   const changes: FileChanges = new Map();
@@ -151,16 +158,17 @@ function changesOf(commits: readonly Commit[], base = ''): FileChanges {
       for (const full of from !== undefined ? [to, from] : [to]) {
         const path = under(full, base);
         if (!path || changes.has(path)) continue;
-        const creator = creators.get(full);
-        changes.set(path, { at: commit.at, ...(creator ? { createdBy: creator.by } : {}) });
+        const createdBy = creators.get(full);
+        changes.set(path, { at: commit.at, ...(createdBy ? { createdBy } : {}) });
       }
     }
   }
-  // a person's file that only a service touched since (moved it, say): dated by its creation
-  for (const [full, creator] of creators) {
+  // a file only a service touched under its current path (moved it, say): its last counted change, carried over
+  for (const [full, at] of lastCounted) {
     const path = under(full, base);
-    if (!path || !creator || changes.has(path)) continue;
-    changes.set(path, { at: creator.at, createdBy: creator.by });
+    if (!path || changes.has(path)) continue;
+    const createdBy = creators.get(full);
+    changes.set(path, { at, ...(createdBy ? { createdBy } : {}) });
   }
   return changes;
 }
