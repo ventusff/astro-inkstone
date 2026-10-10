@@ -213,10 +213,8 @@ export function renderFlowDiagram(spec: FlowSpec): string {
     const tag = n.tag ? `<span class="tag"${color ? ` style="color:${color}"` : ''}>${esc(n.tag)}</span>` : '';
     parts.push(`<div class="${cls}" data-node="${esc(n.id)}" style="${style}"><b>${esc(n.title)}</b>${lines}${tag}</div>`);
   }
-  const wires = '<svg class="flow-wires" aria-hidden="true"><defs>'
-    + '<marker id="flow-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--color-ink-faint)"/></marker>'
-    + '<marker id="flow-ar-off" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--color-accent3)"/></marker>'
-    + '</defs></svg>';
+  // the arrowheads are made in the browser with the wires, one id per diagram (see markerFor)
+  const wires = '<svg class="flow-wires" aria-hidden="true"><defs></defs></svg>';
   const data = esc(JSON.stringify({ lanes: !!spec.lanes, rows: spec.nodes.map((n) => [n.id, n.row]), edges: spec.edges }));
   return `<div class="flow-grid" data-flow="${data}" style="grid-template-columns:${columns}">${wires}${parts.join('')}</div>`;
 }
@@ -242,6 +240,9 @@ function svgEl<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<strin
 }
 
 /** draw (and keep drawing) the wires of one rendered `.flow-grid` */
+/** diagrams mounted on this page so far: numbers each one's arrowhead ids */
+let mounted = 0;
+
 export function mountFlowDiagram(root: HTMLElement): FlowHandle {
   const data = JSON.parse(root.dataset['flow'] ?? '{}') as FlowData;
   const layer = root.querySelector<SVGSVGElement>('svg.flow-wires');
@@ -306,12 +307,14 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
     if (between(from, to).length) return detourBelow(rect(from), rect(to), rowBottom(from), gap, at);
     return routeBetween(rect(from), rect(to), rowsBetween(from, to), gap, at);
   };
-  /** colour → arrowhead marker id; a marker per colour, made the first time a wire needs it */
+  /** colour → arrowhead marker id; a marker per colour, made the first time a wire needs it,
+   *  under an id no other diagram on the page carries */
   const markers = new Map<string, string>();
+  const diagramId = (mounted += 1);
   const markerFor = (color: string): string => {
     const known = markers.get(color);
     if (known) return known;
-    const id = `flow-ar-${Math.random().toString(36).slice(2, 9)}`;
+    const id = `flow-ar-${diagramId}-${markers.size}`;
     const m = svgEl('marker', { id, viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' });
     m.append(svgEl('path', { d: 'M0 0L10 5L0 10z', fill: color }));
     defs?.append(m);
@@ -349,7 +352,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       const path = svgEl('path', {
         d: pathOf(pts),
         class: `wire${e.off ? ' off' : ''}${e.dashed ? ' dashed' : ''}`,
-        'marker-end': `url(#${e.off ? 'flow-ar-off' : color ? markerFor(color) : 'flow-ar'})`,
+        'marker-end': `url(#${markerFor(e.off ? 'var(--color-accent3)' : (color ?? 'var(--color-ink-faint)'))})`,
       });
       if (color) path.style.stroke = color;
       wires.append(path);

@@ -75,7 +75,9 @@ test('renderFlowDiagram: grid columns, lane column, node placement, escaped text
   assert.match(html, /class="flow-head" style="grid-row:2"/);
   assert.match(html, /data-node="x" style="grid-column:2 \/ span 1;grid-row:1;border-color:var\(--color-accent\)"><b>a &lt;b&gt;<\/b><small>one<\/small><small>two<\/small><span class="tag" style="color:var\(--color-accent\)">who<\/span>/);
   assert.match(html, /class="flow-node ghost mono" data-node="y" style="grid-column:3 \/ span 1;grid-row:1"/);
-  assert.match(html, /<svg class="flow-wires" aria-hidden="true"><defs><marker id="flow-ar"/);
+  assert.match(html, /<svg class="flow-wires" aria-hidden="true"><defs><\/defs><\/svg>/);
+  // no ids in the markup: any number of diagrams share a page (arrowheads are made per diagram when it mounts)
+  assert.doesNotMatch(html, /\sid="/);
   const data = JSON.parse(html.match(/data-flow="([^"]+)"/)![1]!.replace(/&quot;/g, '"'));
   assert.deepEqual(data, { lanes: true, rows: [['x', 1], ['y', 1]], edges: [{ from: 'x', to: 'y', label: 'l', off: true }] });
 });
