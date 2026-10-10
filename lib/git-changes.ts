@@ -65,16 +65,19 @@ function under(path: string, base: string): string | undefined {
 }
 
 interface Touch {
+  /** git's status letter: A added, M modified, T type changed, D deleted, R renamed, C copied */
+  kind: string;
   /** the path after the commit */
   path: string;
   /** the path before a rename or copy */
   from?: string | undefined;
-  deleted: boolean;
 }
 
 interface Commit {
   at: Date;
   by: string;
+  /** made by a person; an excluded author's commit is kept only to know which files a service created or moved */
+  counted: boolean;
   touches: Touch[];
 }
 
@@ -89,50 +92,75 @@ function parseCommits(out: string, excluded: ReadonlySet<string>): Commit[] {
     if (record.trim() === '') continue;
     const [header = '', ...rest] = record.split('\0');
     const [iso, by = '', email = ''] = header.split(FIELD);
-    if (!iso || excluded.has(by) || excluded.has(email)) continue;
+    if (!iso) continue;
     const touches: Touch[] = [];
     const tokens = rest.map((t) => t.replace(/^\n/, ''));
     for (let i = 0; i < tokens.length; i += 1) {
       const status = tokens[i]!;
       if (status === '') continue;
-      if (status.startsWith('R') || status.startsWith('C')) {
-        touches.push({ from: tokens[i + 1]!, path: tokens[i + 2]!, deleted: false });
+      const kind = status[0]!;
+      if (kind === 'R' || kind === 'C') {
+        touches.push({ kind, from: tokens[i + 1]!, path: tokens[i + 2]! });
         i += 2;
       } else {
-        touches.push({ path: tokens[i + 1]!, deleted: status.startsWith('D') });
+        touches.push({ kind, path: tokens[i + 1]! });
         i += 1;
       }
     }
-    commits.push({ at: new Date(iso), by, touches });
+    commits.push({ at: new Date(iso), by, counted: !excluded.has(by) && !excluded.has(email), touches });
   }
   return commits;
 }
 
 /**
- * Latest change and creator of every path under `base`. The latest change is
- * the newest commit that touched the path — a deletion or a move away counts,
- * since it changes the note the path belonged to; the creator is the author
- * of the oldest one, and a rename hands the old path's creator to the new path.
+ * Latest change and creator of every path under `base`.
+ *
+ * The latest change is the newest counted commit that touched the path — a
+ * deletion or a move away counts, since it changes the note the path
+ * belonged to.
+ *
+ * The creator is settled oldest first: an add makes its author the creator
+ * (a path deleted and added again belongs to whoever added it again), a
+ * rename hands the old path's creator to the new path, a modification
+ * claims only a path nobody created yet. A file an excluded author created
+ * or moved has no person as creator, and a later edit does not claim it.
  */
 function changesOf(commits: readonly Commit[], base = ''): FileChanges {
-  const creators = new Map<string, string>();
+  /** path → its creator and when they created it; null when a service created it */
+  const creators = new Map<string, { by: string; at: Date } | null>();
   for (let i = commits.length - 1; i >= 0; i -= 1) {
     const commit = commits[i]!;
-    for (const { path, from, deleted } of commit.touches) {
-      if (deleted || creators.has(path)) continue;
-      creators.set(path, (from !== undefined ? creators.get(from) : undefined) ?? commit.by);
+    const author = commit.counted ? { by: commit.by, at: commit.at } : null;
+    for (const { kind, path, from } of commit.touches) {
+      if (kind === 'D') {
+        creators.delete(path);
+      } else if (kind === 'R') {
+        creators.set(path, creators.has(from!) ? creators.get(from!)! : author);
+        creators.delete(from!);
+      } else if (kind === 'A' || kind === 'C') {
+        creators.set(path, author);
+      } else if (!creators.has(path)) {
+        creators.set(path, author);
+      }
     }
   }
   const changes: FileChanges = new Map();
   for (const commit of commits) {
+    if (!commit.counted) continue;
     for (const { path: to, from } of commit.touches) {
       for (const full of from !== undefined ? [to, from] : [to]) {
         const path = under(full, base);
         if (!path || changes.has(path)) continue;
-        const createdBy = creators.get(full);
-        changes.set(path, { at: commit.at, ...(createdBy ? { createdBy } : {}) });
+        const creator = creators.get(full);
+        changes.set(path, { at: commit.at, ...(creator ? { createdBy: creator.by } : {}) });
       }
     }
+  }
+  // a person's file that only a service touched since (moved it, say): dated by its creation
+  for (const [full, creator] of creators) {
+    const path = under(full, base);
+    if (!path || !creator || changes.has(path)) continue;
+    changes.set(path, { at: creator.at, createdBy: creator.by });
   }
   return changes;
 }
@@ -175,20 +203,27 @@ export async function fileChanges(root: string | URL, options: FileChangesOption
   } catch {
     return new Map();
   }
-  const key = `${head.trim()}\n${[...excluded].sort().join(',')}\n${status}`;
+  // uncommitted files (a `.mailmap` edit among them), keyed with their mtimes so a second edit is seen too
+  const repoTop = top.trim();
+  const dirty = parseStatus(status).map((path) => {
+    try {
+      return { path, mtime: statSync(join(repoTop, path)).mtime };
+    } catch {
+      return undefined; // raced deletion: the next render sees the committed state
+    }
+  }).filter((d) => d !== undefined);
+  const key = [head.trim(), [...excluded].sort().join(','), ...dirty.map((d) => `${d.path}@${d.mtime.getTime()}`)].join('\n');
   const hit = cache.get(dir);
   if (hit && hit.key === key) return hit.changes;
 
-  const base = relative(top.trim(), dir).split('\\').join('/');
-  const log = await git(dir, ['log', '--use-mailmap', '-z', `--format=${RECORD}%cI${FIELD}%aN${FIELD}%aE`, '--name-status', '-M']);
+  const base = relative(repoTop, dir).split('\\').join('/');
+  const log = await git(dir, ['log', '--topo-order', '--use-mailmap', '-z', `--format=${RECORD}%cI${FIELD}%aN${FIELD}%aE`, '--name-status', '-M']);
   const changes = changesOf(parseCommits(log, excluded), base);
-  for (const path of parseStatus(status, base)) {
-    try {
-      const createdBy = changes.get(path)?.createdBy;
-      changes.set(path, { at: statSync(join(dir, path)).mtime, ...(createdBy ? { createdBy } : {}) });
-    } catch {
-      // raced deletion: the next render sees the committed state
-    }
+  for (const { path: full, mtime } of dirty) {
+    const path = under(full, base);
+    if (!path) continue;
+    const createdBy = changes.get(path)?.createdBy;
+    changes.set(path, { at: mtime, ...(createdBy ? { createdBy } : {}) });
   }
   cache.set(dir, { key, changes });
   return changes;

@@ -20,10 +20,12 @@
  *    its own directory, its chapters and every locale mirror — when the
  *    caller passes the repo's file changes (lib/git-changes.ts); otherwise
  *    the frontmatter `updated` (falling back to `created`) stands in.
- *  - A unit's authors are the people who wrote its primary-language pages
- *    (its own entry, then its chapters): a page's frontmatter `authors` when
- *    it names them, else the person whose commit created the page's file.
- *    Translations, mirrors and later edits never make someone an author.
+ *  - A unit's authors are the people who wrote its primary-language pages.
+ *    Frontmatter `authors` on the unit's own entry names them for the whole
+ *    unit (chapters inherit it); without it, each page — the entry, then the
+ *    chapters in path order — contributes its own frontmatter `authors`, else
+ *    the person whose commit created the page's file. Translations, mirrors
+ *    and later edits never make someone an author.
  */
 
 /** Minimal shape of one vocabulary definition. Extra fields pass through. */
@@ -241,15 +243,18 @@ export function createTaxonomyCore<
     );
   }
 
-  /** the names behind a unit's primary-language pages, its own entry first:
-   *  each page's frontmatter `authors`, else the creator of the page's file */
+  /** the names behind a unit: its own entry's frontmatter `authors` when it
+   *  names them; else, over its primary-language pages (the entry first, then
+   *  chapters in path order), each page's `authors` or its file's creator */
   function authorsOf(pages: E[], unitId: string, changes?: ReadonlyMap<string, ChangeRecord>): string[] {
+    const named = (page: E) => (page.data.authors ?? []).filter((name) => name.trim() !== '');
+    const own = pages.find((p) => p.id === unitId);
+    if (own && named(own).length > 0) return [...new Set(named(own))];
     const ordered = [...pages].sort((a, b) => Number(b.id === unitId) - Number(a.id === unitId) || a.id.localeCompare(b.id));
     const names: string[] = [];
     for (const page of ordered) {
-      const own = (page.data.authors ?? []).filter((name) => name.trim() !== '');
-      if (own.length > 0) {
-        names.push(...own);
+      if (named(page).length > 0) {
+        names.push(...named(page));
         continue;
       }
       const creator = creatorOf(page.id, changes);

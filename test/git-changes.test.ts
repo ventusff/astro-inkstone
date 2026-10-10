@@ -93,18 +93,65 @@ test('a directory outside any git work tree yields no changes', async () => {
   assert.equal((await fileChanges(dir)).size, 0);
 });
 
-test('log parsing reads status groups, renames included, and skips excluded authors', () => {
+test('log parsing reads status groups, renames included, and marks excluded authors', () => {
   const R = '\u0001';
   const F = '\u001f';
   const out = `${R}2026-02-01T00:00:00Z${F}B${F}b@t\0\nR100\0old.md\0new.md\0D\0gone.md\0${R}2026-01-01T00:00:00Z${F}A${F}a@t\0\nA\0old.md\0A\0gone.md\0`;
   const commits = _internal.parseCommits(out, new Set());
   assert.deepEqual(commits.map((c) => c.by), ['B', 'A']);
-  assert.deepEqual(commits[0]!.touches, [{ from: 'old.md', path: 'new.md', deleted: false }, { path: 'gone.md', deleted: true }]);
+  assert.deepEqual(commits[0]!.touches, [{ kind: 'R', from: 'old.md', path: 'new.md' }, { kind: 'D', path: 'gone.md' }]);
   const changes = _internal.changesOf(commits);
   assert.deepEqual([...changes.keys()], ['new.md', 'old.md', 'gone.md']);
   assert.equal(changes.get('new.md')?.createdBy, 'A');
   assert.equal(changes.get('gone.md')?.at.toISOString(), '2026-02-01T00:00:00.000Z');
-  assert.deepEqual(_internal.parseCommits(out, new Set(['b@t'])).map((c) => c.by), ['A']);
+  assert.deepEqual(_internal.parseCommits(out, new Set(['b@t'])).map((c) => c.counted), [false, true]);
+});
+
+const at = (iso: string) => new Date(iso);
+const c = (day: number, by: string, touches: { kind: string; path: string; from?: string }[], counted = true) => ({
+  at: at(`2026-01-${String(day).padStart(2, '0')}T00:00:00Z`),
+  by,
+  counted,
+  touches,
+});
+
+test('a path deleted, or moved away, and then made again belongs to whoever made it again', () => {
+  const changes = _internal.changesOf([
+    c(5, 'Dave', [{ kind: 'A', path: 'bar.md' }]),
+    c(4, 'Bob', [{ kind: 'R', from: 'bar.md', path: 'baz.md' }]),
+    c(3, 'Carol', [{ kind: 'A', path: 'foo.md' }]),
+    c(2, 'Bob', [{ kind: 'D', path: 'foo.md' }]),
+    c(1, 'Alice', [{ kind: 'A', path: 'foo.md' }, { kind: 'A', path: 'bar.md' }]),
+  ]);
+  assert.equal(changes.get('foo.md')?.createdBy, 'Carol');
+  assert.equal(changes.get('bar.md')?.createdBy, 'Dave');
+  assert.equal(changes.get('baz.md')?.createdBy, 'Alice');
+});
+
+test('a file a service created is nobody\'s, and a person who edits it later does not claim it; a service move keeps the person', () => {
+  const changes = _internal.changesOf([
+    c(4, 'Bot', [{ kind: 'R', from: 'mine.md', path: 'moved.md' }], false),
+    c(3, 'Erin', [{ kind: 'M', path: 'bot.md' }]),
+    c(2, 'Bot', [{ kind: 'A', path: 'bot.md' }], false),
+    c(1, 'Frank', [{ kind: 'A', path: 'mine.md' }]),
+  ]);
+  assert.equal(changes.get('bot.md')?.createdBy, undefined);
+  assert.equal(changes.get('bot.md')?.at.toISOString(), '2026-01-03T00:00:00.000Z');
+  assert.equal(changes.get('moved.md')?.createdBy, 'Frank');
+  assert.equal(changes.get('moved.md')?.at.toISOString(), '2026-01-01T00:00:00.000Z');
+});
+
+test('a second uncommitted edit is seen: the mailmap folds the new name at once', async () => {
+  const dir = repo();
+  commit(dir, { 'a/index.mdx': '1' }, '2026-01-01T10:00:00Z', 'jane.doe', 'jane@wiki.local');
+  writeFileSync(join(dir, '.mailmap'), 'Jane <jane@corp.test> <jane@wiki.local>\n');
+  git(dir, ['add', '.mailmap']);
+  git(dir, ['commit', '-q', '-m', 'mailmap']);
+  writeFileSync(join(dir, '.mailmap'), 'Jane D <jane@corp.test> <jane@wiki.local>\n');
+  assert.equal((await fileChanges(dir)).get('a/index.mdx')?.createdBy, 'Jane D');
+  await new Promise((r) => setTimeout(r, 20));
+  writeFileSync(join(dir, '.mailmap'), 'Jane Doe <jane@corp.test> <jane@wiki.local>\n');
+  assert.equal((await fileChanges(dir)).get('a/index.mdx')?.createdBy, 'Jane Doe');
 });
 
 test('status parsing skips deletions and the source path of a rename', () => {
