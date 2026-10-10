@@ -101,18 +101,46 @@ test('repo changes attach each unit\'s newest commit across its directory, chapt
   ];
   const { t } = bind(notes);
   const changes = new Map([
-    ['old/index.mdx', { at: new Date('2026-04-01T08:00:00Z'), by: 'A' }],
-    ['new/index.mdx', { at: new Date('2026-04-02T08:00:00Z'), by: 'B' }],
-    ['zh/new/index.mdx', { at: new Date('2026-04-03T08:00:00Z'), by: 'C' }],
-    ['new/chapter/figure.svg', { at: new Date('2026-04-02T09:00:00Z'), by: 'D' }],
-    ['README.md', { at: new Date('2026-05-01T08:00:00Z'), by: 'E' }],
+    ['old/index.mdx', { at: new Date('2026-04-01T08:00:00Z'), createdBy: 'A' }],
+    ['new/index.mdx', { at: new Date('2026-04-02T08:00:00Z'), createdBy: 'B' }],
+    ['zh/new/index.mdx', { at: new Date('2026-04-03T08:00:00Z'), createdBy: 'C' }],
+    ['new/chapter/figure.svg', { at: new Date('2026-04-02T09:00:00Z'), createdBy: 'D' }],
+    ['README.md', { at: new Date('2026-05-01T08:00:00Z'), createdBy: 'E' }],
   ]);
   const units = t.unitsOf(notes, changes);
   assert.deepEqual(units.map((u) => u.id), ['new', 'old', 'untracked']);
-  assert.deepEqual(units[0]!.changed, { at: new Date('2026-04-03T08:00:00Z'), by: 'C' });
+  assert.deepEqual(units[0]!.changed, new Date('2026-04-03T08:00:00Z'));
   assert.equal(units[2]!.changed, undefined);
   assert.equal(latestOf(units[2]!)?.toISOString(), '2026-02-01T00:00:00.000Z');
   assert.deepEqual(t.unitsOf(notes).map((u) => u.id), ['old', 'untracked', 'new']);
+});
+
+test('authors are the people who wrote the primary-language pages: frontmatter first, else the creator of each page file', () => {
+  const notes = [
+    note('hub', { nav: [{ group: 'g', pages: ['a', 'b', 'c'] }] }),
+    note('hub/a', {}),
+    note('hub/b', { authors: ['Guest Writer'] }),
+    note('hub/c', {}),
+    note('zh/hub', {}),
+    note('named', { authors: ['Named Person', ' '] }),
+    note('plain', {}),
+  ];
+  const { t } = bind(notes);
+  const at = new Date('2026-04-01T08:00:00Z');
+  const changes = new Map([
+    ['hub/index.mdx', { at, createdBy: 'Hub Author' }],
+    ['hub/a/index.md', { at, createdBy: 'Chapter Author' }],
+    ['hub/b/index.mdx', { at, createdBy: 'Importer' }],
+    ['hub/c/index.mdx', { at, createdBy: 'Hub Author' }],
+    ['hub/c/demo.ts', { at, createdBy: 'Demo Author' }],
+    ['zh/hub/index.mdx', { at, createdBy: 'Translator' }],
+    ['named/index.mdx', { at, createdBy: 'Migrator' }],
+  ]);
+  const byId = new Map(t.unitsOf(notes, changes).map((u) => [u.id, u.authors]));
+  assert.deepEqual(byId.get('hub'), ['Hub Author', 'Chapter Author', 'Guest Writer']);
+  assert.deepEqual(byId.get('named'), ['Named Person']);
+  assert.deepEqual(byId.get('plain'), []);
+  assert.deepEqual(new Map(t.unitsOf(notes).map((u) => [u.id, u.authors])).get('hub'), ['Guest Writer']);
 });
 
 test('ages are calendar days in the given zone; recentUnits keeps what changed within the window', () => {
@@ -126,8 +154,8 @@ test('ages are calendar days in the given zone; recentUnits keeps what changed w
   assert.equal(fmtDay(new Date('2026-10-01T22:30:00Z')), '2026.10.01');
 
   const units = [
-    { id: 'today', changed: { at: new Date('2026-10-01T23:00:00Z') } },
-    { id: 'week', changed: { at: new Date('2026-09-26T12:00:00Z') } },
+    { id: 'today', changed: new Date('2026-10-01T23:00:00Z') },
+    { id: 'week', changed: new Date('2026-09-26T12:00:00Z') },
     { id: 'month', updated: new Date('2026-09-10') },
     { id: 'stale', updated: new Date('2026-08-01') },
     { id: 'undated' },

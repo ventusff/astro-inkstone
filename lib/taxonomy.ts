@@ -46,13 +46,16 @@ export interface CollectionTaxonomyOptions extends TaxonomyOptions {
    * Root of the note files inside their git work tree (path or file URL,
    * e.g. `new URL('../content/notes/', import.meta.url)`). With it, every
    * unit carries `changed`: the latest commit touching any of its files, and
-   * units sort by that. Without it, frontmatter dates order the units.
+   * units sort by that; and a page that does not name its `authors` in
+   * frontmatter is credited to the person whose commit created its file
+   * (identities folded by the repo's `.mailmap`). Without it, frontmatter
+   * dates order the units and only frontmatter names authors.
    */
   contentDir?: string | URL;
   /**
-   * Author names or emails whose commits do not count as a note's change:
-   * services that derive content from what people wrote, such as a
-   * translation sync. A note they touched keeps the last change a person made.
+   * Author names or emails whose commits do not count: services that derive
+   * content from what people wrote, such as a translation sync. A note they
+   * touched keeps the last change a person made, and they never author one.
    */
   excludeAuthors?: readonly string[];
 }

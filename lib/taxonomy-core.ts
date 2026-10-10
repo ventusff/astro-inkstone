@@ -20,6 +20,10 @@
  *    its own directory, its chapters and every locale mirror — when the
  *    caller passes the repo's file changes (lib/git-changes.ts); otherwise
  *    the frontmatter `updated` (falling back to `created`) stands in.
+ *  - A unit's authors are the people who wrote its primary-language pages
+ *    (its own entry, then its chapters): a page's frontmatter `authors` when
+ *    it names them, else the person whose commit created the page's file.
+ *    Translations, mirrors and later edits never make someone an author.
  */
 
 /** Minimal shape of one vocabulary definition. Extra fields pass through. */
@@ -39,6 +43,7 @@ export interface TaxonomyNoteData extends Record<string, unknown> {
   updated?: Date | undefined;
   sources?: SourceRecord[] | undefined;
   aliases?: string[] | undefined;
+  authors?: string[] | undefined;
 }
 
 /** One bibliography/source record; the concrete shape is site-schema-owned. */
@@ -57,10 +62,10 @@ export interface TaxonomyLocale {
   prefix: string;
 }
 
-/** one file's latest change — the shape lib/git-changes.ts reports */
+/** one file's latest change and its creator — the shape lib/git-changes.ts reports */
 export interface ChangeRecord {
   at: Date;
-  by?: string | undefined;
+  createdBy?: string | undefined;
 }
 
 export interface TaxonomyOptions {
@@ -97,8 +102,14 @@ export interface ResolvedNote<
   created?: Date | undefined;
   /** frontmatter `updated`, falling back to `created` */
   updated?: Date | undefined;
-  /** latest commit touching any file of the unit (own directory, chapters, mirrors); unset without repo history */
-  changed?: ChangeRecord | undefined;
+  /** time of the latest commit touching any file of the unit (own directory, chapters, mirrors); unset without repo history */
+  changed?: Date | undefined;
+  /**
+   * who wrote it. resolveTaxonomy reads frontmatter `authors` (own → primary
+   * entry → hub); unitsOf adds the history: one name list over the unit's
+   * primary-language pages, first page first. Empty when neither says.
+   */
+  authors: string[];
   sources: SourceRecord[];
   aliases: string[];
   /** locales this note exists in: the primary when its entry exists, plus every mirror */
@@ -198,27 +209,63 @@ export function createTaxonomyCore<
       // identifies exactly one note, and a chapter or mirror inheriting
       // its hub's aliases would make `[[alias]]` links ambiguous
       aliases: entry.data.aliases ?? [],
+      authors: pick(chain, (d) => d.authors) ?? [],
       locales: present,
     };
   }
 
   /** The browse units of a collection: primary-locale top-level entries
    *  (hubs included), excluding chapters and mirrors; newest first by
-   *  `latestOf`. `changes` (repo-relative path → latest change) attaches
-   *  each unit's latest commit across its own directory and every mirror. */
+   *  `latestOf`. `changes` (repo-relative path → latest change and creator)
+   *  attaches each unit's latest commit across its own directory and every
+   *  mirror, and the authors of its pages. */
   function unitsOf(notes: E[], changes?: ReadonlyMap<string, ChangeRecord>): Resolved[] {
     const byId = new Map(notes.map((n) => [n.id, n]));
-    const changedBy = changes ? latestChangesByUnit(changes) : undefined;
+    const changedAt = changes ? latestChangesByUnit(changes) : undefined;
+    const pagesByUnit = new Map<string, E[]>();
+    for (const n of notes) {
+      if (stripLocale(n.id).baseId !== n.id) continue;
+      const top = n.id.split('/')[0]!;
+      pagesByUnit.set(top, [...(pagesByUnit.get(top) ?? []), n]);
+    }
     const units = notes
       .filter((n) => !n.id.includes('/'))
       .map((n) => {
         const unit = resolveTaxonomy(n, byId);
-        const changed = changedBy?.get(unit.id);
-        return changed ? { ...unit, changed } : unit;
+        const changed = changedAt?.get(unit.id);
+        const authors = authorsOf(pagesByUnit.get(unit.id) ?? [n], unit.id, changes);
+        return { ...unit, authors, ...(changed ? { changed } : {}) };
       });
     return units.sort(
       (a, b) => (latestOf(b)?.getTime() ?? 0) - (latestOf(a)?.getTime() ?? 0) || a.id.localeCompare(b.id),
     );
+  }
+
+  /** the names behind a unit's primary-language pages, its own entry first:
+   *  each page's frontmatter `authors`, else the creator of the page's file */
+  function authorsOf(pages: E[], unitId: string, changes?: ReadonlyMap<string, ChangeRecord>): string[] {
+    const ordered = [...pages].sort((a, b) => Number(b.id === unitId) - Number(a.id === unitId) || a.id.localeCompare(b.id));
+    const names: string[] = [];
+    for (const page of ordered) {
+      const own = (page.data.authors ?? []).filter((name) => name.trim() !== '');
+      if (own.length > 0) {
+        names.push(...own);
+        continue;
+      }
+      const creator = creatorOf(page.id, changes);
+      if (creator) names.push(creator);
+    }
+    return [...new Set(names)];
+  }
+
+  /** who created the file behind an entry id: `<id>/index.mdx`, `<id>/index.md`, `<id>.mdx` or `<id>.md` */
+  function creatorOf(id: string, changes?: ReadonlyMap<string, ChangeRecord>): string | undefined {
+    if (!changes) return undefined;
+    for (const file of [`${id}/index.mdx`, `${id}/index.md`, `${id}.mdx`, `${id}.md`]) {
+      const createdBy = changes.get(file)?.createdBy;
+      if (createdBy) return createdBy;
+    }
+    return undefined;
   }
 
   /** unit id of a repo-relative file path: the first segment after any mirror prefix */
@@ -229,13 +276,13 @@ export function createTaxonomyCore<
   }
 
   /** the newest change among all files of each unit */
-  function latestChangesByUnit(changes: ReadonlyMap<string, ChangeRecord>): Map<string, ChangeRecord> {
-    const latest = new Map<string, ChangeRecord>();
-    for (const [path, change] of changes) {
+  function latestChangesByUnit(changes: ReadonlyMap<string, ChangeRecord>): Map<string, Date> {
+    const latest = new Map<string, Date>();
+    for (const [path, { at }] of changes) {
       const id = unitOfPath(path);
       if (!id) continue;
       const seen = latest.get(id);
-      if (!seen || change.at.getTime() > seen.at.getTime()) latest.set(id, change);
+      if (!seen || at.getTime() > seen.getTime()) latest.set(id, at);
     }
     return latest;
   }
@@ -308,12 +355,12 @@ export function createTaxonomyCore<
 }
 
 /** When a unit last changed: its latest commit, else its frontmatter date. */
-export function latestOf(unit: { updated?: Date | undefined; changed?: ChangeRecord | undefined }): Date | undefined {
-  return unit.changed?.at ?? unit.updated;
+export function latestOf(unit: { updated?: Date | undefined; changed?: Date | undefined }): Date | undefined {
+  return unit.changed ?? unit.updated;
 }
 
 /** Units whose latest change falls within the last `days` days (calendar days in `timeZone`, see ageDays); order kept. */
-export function recentUnits<U extends { updated?: Date | undefined; changed?: ChangeRecord | undefined }>(
+export function recentUnits<U extends { updated?: Date | undefined; changed?: Date | undefined }>(
   units: U[],
   window: { days: number; now?: Date | undefined; timeZone?: string | undefined },
 ): U[] {

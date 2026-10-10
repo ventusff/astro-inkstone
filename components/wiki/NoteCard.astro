@@ -1,7 +1,7 @@
 ---
 /**
  * NoteCard — note card for browse pages: short-name badge / kind badge /
- * chapter count / date and author of the latest change / title /
+ * chapter count / date of the latest change and the authors / title /
  * description / domain chips / status dot / locale mirrors / source line.
  * Lives on the browse shelf (browse.css, `--wb-*`).
  *
@@ -28,8 +28,8 @@ export interface NoteCardData {
   status?: StatusDisplay | undefined;
   /** Pre-formatted display date of the latest change ("2026.10.02", "today", …). */
   updated?: string | undefined;
-  /** who made the latest change, shown after the date */
-  changedBy?: string | undefined;
+  /** who wrote the note, names already joined for the reader's language; shown after the date */
+  authors?: string | undefined;
   /** whole days since the latest change — emitted as data-age for the recent shelf's window filter */
   ageDays?: number | undefined;
   /** Chapter count, for multi-chapter collection notes. */
@@ -66,7 +66,7 @@ const brandStyle = tone ? `--brand-bg:${tone.bg}; --brand-fg:${tone.fg};` : unde
     {note.updated && (
       <span class="date">
         {note.updated}
-        {note.changedBy && <span class="by">· {note.changedBy}</span>}
+        {note.authors && <span class="by">· {note.authors}</span>}
       </span>
     )}
   </div>
@@ -124,15 +124,27 @@ const brandStyle = tone ? `--brand-bg:${tone.bg}; --brand-fg:${tone.fg};` : unde
     font: 500 11px/1 var(--wb-sans);
     color: var(--wb-text-dim);
   }
+  /* the date never breaks; a long author list wraps under it, right-aligned,
+     instead of pushing the card wider than its column */
   .date {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    column-gap: 4px;
+    row-gap: 4px;
+    max-width: 100%;
+    min-width: 0;
     margin-left: auto;
     font: 500 11px/1 var(--wb-sans);
     color: var(--wb-text-muted);
     white-space: nowrap;
   }
   .by {
+    min-width: 0;
     font-weight: 400;
     color: var(--wb-text-dim);
+    white-space: normal;
+    text-align: right;
   }
 
   .title {
