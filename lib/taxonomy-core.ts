@@ -25,7 +25,11 @@
  *    unit (chapters inherit it; an empty list credits nobody); without it, each page — the entry, then the
  *    chapters in path order — contributes its own frontmatter `authors`, else
  *    the person whose commit created the page's file. Translations, mirrors
- *    and later edits never make someone an author.
+ *    and later edits never make someone an author. A site that knows its
+ *    people passes `identify`: a frontmatter name or handle and a commit's
+ *    name and email then become that member — their current name and their
+ *    handle (which links to them); anyone it does not know keeps the name
+ *    as written.
  */
 
 /** Minimal shape of one vocabulary definition. Extra fields pass through. */
@@ -67,8 +71,17 @@ export interface TaxonomyLocale {
 /** one file's latest change and its creator — the shape lib/git-changes.ts reports */
 export interface ChangeRecord {
   at: Date;
-  createdBy?: string | undefined;
+  createdBy?: { name: string; email: string } | undefined;
 }
+
+/** a note's author as shown: a member carries their handle */
+export interface NoteAuthor {
+  name: string;
+  handle?: string | undefined;
+}
+
+/** a trace of a person — a commit author, a frontmatter name or handle — to the member, or undefined for a stranger */
+export type IdentifyAuthor = (who: { name?: string | undefined; email?: string | undefined; handle?: string | undefined }) => NoteAuthor | undefined;
 
 export interface TaxonomyOptions {
   /**
@@ -82,6 +95,8 @@ export interface TaxonomyOptions {
   locales?: TaxonomyLocale[];
   /** locale code reported for unprefixed ids. Default 'zh'. */
   primary?: string;
+  /** who the site's people are (see the module comment); asked on every resolution, so a renamed member shows at once */
+  identify?: IdentifyAuthor | undefined;
 }
 
 export interface ResolvedNote<
@@ -111,7 +126,7 @@ export interface ResolvedNote<
    * entry → hub); unitsOf adds the history: one name list over the unit's
    * primary-language pages, first page first. Empty when neither says.
    */
-  authors: string[];
+  authors: NoteAuthor[];
   sources: SourceRecord[];
   aliases: string[];
   /** locales this note exists in: the primary when its entry exists, plus every mirror */
@@ -211,7 +226,7 @@ export function createTaxonomyCore<
       // identifies exactly one note, and a chapter or mirror inheriting
       // its hub's aliases would make `[[alias]]` links ambiguous
       aliases: entry.data.aliases ?? [],
-      authors: pick(chain, (d) => d.authors) ?? [],
+      authors: authorList(pick(chain, (d) => d.authors) ?? []),
       locales: present,
     };
   }
@@ -243,31 +258,45 @@ export function createTaxonomyCore<
     );
   }
 
-  /** the names behind a unit: its own entry's frontmatter `authors` when it
+  /** a frontmatter `authors` list as shown: each name or handle as the member it names, else as written */
+  function authorList(written: readonly string[]): NoteAuthor[] {
+    const names = written.map((w) => w.trim().replace(/^@/, '')).filter((w) => w !== '');
+    return distinct(names.map((w) => options.identify?.({ handle: w, name: w }) ?? { name: w }));
+  }
+
+  /** one entry per person: a member once by handle, a stranger once by name */
+  function distinct(authors: NoteAuthor[]): NoteAuthor[] {
+    const seen = new Set<string>();
+    return authors.filter((a) => {
+      const key = a.handle !== undefined ? `@${a.handle}` : a.name;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  /** the people behind a unit: its own entry's frontmatter `authors` when it
    *  declares them (an empty list declares that nobody is credited); else,
    *  over its primary-language pages (the entry first, then chapters in path
    *  order), each page's declared `authors` or its file's creator */
-  function authorsOf(pages: E[], unitId: string, changes?: ReadonlyMap<string, ChangeRecord>): string[] {
-    const declared = (page: E) => page.data.authors?.map((name) => name.trim()).filter((name) => name !== '');
+  function authorsOf(pages: E[], unitId: string, changes?: ReadonlyMap<string, ChangeRecord>): NoteAuthor[] {
     const own = pages.find((p) => p.id === unitId);
-    const ownNames = own ? declared(own) : undefined;
-    if (ownNames) return [...new Set(ownNames)];
+    if (own?.data.authors !== undefined) return authorList(own.data.authors);
     const ordered = [...pages].sort((a, b) => Number(b.id === unitId) - Number(a.id === unitId) || a.id.localeCompare(b.id));
-    const names: string[] = [];
+    const authors: NoteAuthor[] = [];
     for (const page of ordered) {
-      const pageNames = declared(page);
-      if (pageNames) {
-        names.push(...pageNames);
+      if (page.data.authors !== undefined) {
+        authors.push(...authorList(page.data.authors));
         continue;
       }
       const creator = creatorOf(page.id, changes);
-      if (creator) names.push(creator);
+      if (creator) authors.push(options.identify?.(creator) ?? { name: creator.name });
     }
-    return [...new Set(names)];
+    return distinct(authors);
   }
 
   /** who created the file behind an entry id: `<id>/index.mdx`, `<id>/index.md`, `<id>.mdx` or `<id>.md` */
-  function creatorOf(id: string, changes?: ReadonlyMap<string, ChangeRecord>): string | undefined {
+  function creatorOf(id: string, changes?: ReadonlyMap<string, ChangeRecord>): { name: string; email: string } | undefined {
     if (!changes) return undefined;
     for (const file of [`${id}/index.mdx`, `${id}/index.md`, `${id}.mdx`, `${id}.md`]) {
       const createdBy = changes.get(file)?.createdBy;

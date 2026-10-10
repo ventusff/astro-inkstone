@@ -23,7 +23,7 @@ export interface ComponentWords {
     /** counter suffix: "12 pages" */
     unit: string;
   };
-  facets: { kind: string; domain: string; status: string; tag: string; all: string; aria: string };
+  facets: { kind: string; domain: string; status: string; tag: string; people: string; all: string; aria: string };
 }
 
 const WORDS = {
@@ -40,7 +40,7 @@ const WORDS = {
       unavailable: 'Search index unavailable.',
       unit: 'pages',
     },
-    facets: { kind: 'Kind', domain: 'Domain', status: 'Status', tag: 'Tags', all: 'All →', aria: 'Browse index' },
+    facets: { kind: 'Kind', domain: 'Domain', status: 'Status', tag: 'Tags', people: 'Authors', all: 'All →', aria: 'Browse index' },
   },
   zh: {
     backlinks: { heading: '反向链接', sub: 'Linked mentions' },
@@ -55,7 +55,7 @@ const WORDS = {
       unavailable: '搜索索引暂时不可用。',
       unit: '页',
     },
-    facets: { kind: '形式', domain: '方向', status: '成熟度', tag: '标签', all: '全部 →', aria: '导览索引' },
+    facets: { kind: '形式', domain: '方向', status: '成熟度', tag: '标签', people: '作者', all: '全部 →', aria: '导览索引' },
   },
   de: {
     backlinks: { heading: 'Backlinks', sub: '' },
@@ -70,7 +70,7 @@ const WORDS = {
       unavailable: 'Der Suchindex ist nicht verfügbar.',
       unit: 'Seiten',
     },
-    facets: { kind: 'Form', domain: 'Richtung', status: 'Reifegrad', tag: 'Tags', all: 'Alle →', aria: 'Index durchstöbern' },
+    facets: { kind: 'Form', domain: 'Richtung', status: 'Reifegrad', tag: 'Tags', people: 'Autoren', all: 'Alle →', aria: 'Index durchstöbern' },
   },
 } satisfies Record<string, ComponentWords>;
 

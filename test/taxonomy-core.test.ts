@@ -127,25 +127,57 @@ test('authors are the people who wrote the primary-language pages: frontmatter f
   ];
   const { t } = bind(notes);
   const at = new Date('2026-04-01T08:00:00Z');
+  const by = (name: string) => ({ name, email: `${name.toLowerCase().replace(/ /g, '.')}@x` });
   const changes = new Map([
-    ['hub/index.mdx', { at, createdBy: 'Hub Author' }],
-    ['hub/a/index.md', { at, createdBy: 'Chapter Author' }],
-    ['hub/b/index.mdx', { at, createdBy: 'Importer' }],
-    ['hub/c/index.mdx', { at, createdBy: 'Hub Author' }],
-    ['hub/c/demo.ts', { at, createdBy: 'Demo Author' }],
-    ['zh/hub/index.mdx', { at, createdBy: 'Translator' }],
-    ['named/index.mdx', { at, createdBy: 'Migrator' }],
+    ['hub/index.mdx', { at, createdBy: by('Hub Author') }],
+    ['hub/a/index.md', { at, createdBy: by('Chapter Author') }],
+    ['hub/b/index.mdx', { at, createdBy: by('Importer') }],
+    ['hub/c/index.mdx', { at, createdBy: by('Hub Author') }],
+    ['hub/c/demo.ts', { at, createdBy: by('Demo Author') }],
+    ['zh/hub/index.mdx', { at, createdBy: by('Translator') }],
+    ['named/index.mdx', { at, createdBy: by('Migrator') }],
   ]);
-  const byId = new Map(t.unitsOf(notes, changes).map((u) => [u.id, u.authors]));
+  const names = (units: { id: string; authors: { name: string }[] }[]) => new Map(units.map((u) => [u.id, u.authors.map((a) => a.name)]));
+  const byId = names(t.unitsOf(notes, changes));
   assert.deepEqual(byId.get('hub'), ['Hub Author', 'Chapter Author', 'Guest Writer']);
   assert.deepEqual(byId.get('named'), ['Named Person']);
-  const credited = notes.map((n) => (n.id === 'hub' ? note('hub', { ...n.data, authors: ['Series Editor'] }) : n));
-  assert.deepEqual(new Map(bind(credited).t.unitsOf(credited, changes).map((u) => [u.id, u.authors])).get('hub'), ['Series Editor']);
-  const uncredited = notes.map((n) => (n.id === 'plain' || n.id === 'hub/a' ? note(n.id, { ...n.data, authors: [] }) : n));
-  const unc = new Map(bind(uncredited).t.unitsOf(uncredited, changes).map((u) => [u.id, u.authors]));
-  assert.deepEqual(unc.get('hub'), ['Hub Author', 'Guest Writer']);
   assert.deepEqual(byId.get('plain'), []);
-  assert.deepEqual(new Map(t.unitsOf(notes).map((u) => [u.id, u.authors])).get('hub'), ['Guest Writer']);
+  assert.deepEqual(names(t.unitsOf(notes)).get('hub'), ['Guest Writer']);
+  const credited = notes.map((n) => (n.id === 'hub' ? note('hub', { ...n.data, authors: ['Series Editor'] }) : n));
+  assert.deepEqual(names(bind(credited).t.unitsOf(credited, changes)).get('hub'), ['Series Editor']);
+  const uncredited = notes.map((n) => (n.id === 'plain' || n.id === 'hub/a' ? note(n.id, { ...n.data, authors: [] }) : n));
+  assert.deepEqual(names(bind(uncredited).t.unitsOf(uncredited, changes)).get('hub'), ['Hub Author', 'Guest Writer']);
+});
+
+test('with identify, authors are the site\'s members by their current name and handle; strangers keep the written name', () => {
+  const members = [
+    { name: 'Hub Author', handle: 'hub.author', emails: ['hub.author@x', 'old@home'] },
+    { name: 'Guest Writer', handle: 'guest', emails: ['guest@x'] },
+  ];
+  const identify = ({ name, email, handle }: { name?: string | undefined; email?: string | undefined; handle?: string | undefined }) => {
+    const m = members.find((p) => (email && p.emails.includes(email)) || (handle && p.handle === handle) || (name && (p.name === name || p.handle === name)));
+    return m ? { name: m.name, handle: m.handle } : undefined;
+  };
+  const notes = [
+    note('hub', { nav: [{ group: 'g', pages: ['a', 'b'] }] }),
+    note('hub/a', {}),
+    note('hub/b', { authors: ['@guest', 'Visitor'] }),
+    note('solo', {}),
+  ];
+  const t = createTaxonomyCore(registry, { locales: [{ code: 'zh', prefix: 'zh/' }], primary: 'en', identify });
+  const at = new Date('2026-04-01T08:00:00Z');
+  const changes = new Map([
+    ['hub/index.mdx', { at, createdBy: { name: 'hub.author', email: 'wiki@local' } }],
+    ['hub/a/index.mdx', { at, createdBy: { name: 'Someone', email: 'old@home' } }],
+    ['solo/index.mdx', { at, createdBy: { name: 'Outside', email: 'out@side' } }],
+  ]);
+  const units = new Map(t.unitsOf(notes, changes).map((u) => [u.id, u.authors]));
+  assert.deepEqual(units.get('hub'), [
+    { name: 'Hub Author', handle: 'hub.author' },
+    { name: 'Guest Writer', handle: 'guest' },
+    { name: 'Visitor' },
+  ]);
+  assert.deepEqual(units.get('solo'), [{ name: 'Outside' }]);
 });
 
 test('ages are calendar days in the given zone; recentUnits keeps what changed within the window', () => {

@@ -26,11 +26,17 @@ import { promisify } from 'node:util';
 
 const execFileP = promisify(execFile);
 
+/** a commit author as git records it (after the mailmap) */
+export interface Author {
+  name: string;
+  email: string;
+}
+
 export interface FileChange {
   /** committer time of the latest commit touching the path; mtime for uncommitted work */
   at: Date;
-  /** author name of the first commit that created the path, followed across renames; absent for a path never committed */
-  createdBy?: string | undefined;
+  /** author (name and email) of the first commit that created the path, followed across renames; absent for a path never committed or a service's */
+  createdBy?: Author | undefined;
 }
 
 /** repo-relative path (posix) → latest change and creator */
@@ -75,7 +81,7 @@ interface Touch {
 
 interface Commit {
   at: Date;
-  by: string;
+  by: Author;
   /** made by a person; an excluded author's commit is kept only to know which files a service created or moved */
   counted: boolean;
   touches: Touch[];
@@ -107,7 +113,7 @@ function parseCommits(out: string, excluded: ReadonlySet<string>): Commit[] {
         i += 1;
       }
     }
-    commits.push({ at: new Date(iso), by, counted: !excluded.has(by) && !excluded.has(email), touches });
+    commits.push({ at: new Date(iso), by: { name: by, email }, counted: !excluded.has(by) && !excluded.has(email), touches });
   }
   return commits;
 }
@@ -127,7 +133,7 @@ function parseCommits(out: string, excluded: ReadonlySet<string>): Commit[] {
  */
 function changesOf(commits: readonly Commit[], base = ''): FileChanges {
   /** live path → its creator; null when a service created it */
-  const creators = new Map<string, string | null>();
+  const creators = new Map<string, Author | null>();
   /** live path → the latest counted change to its content, carried along renames */
   const lastCounted = new Map<string, Date>();
   for (let i = commits.length - 1; i >= 0; i -= 1) {

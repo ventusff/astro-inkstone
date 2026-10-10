@@ -36,7 +36,7 @@ export type {
   TaxonomyNoteEntry,
   TaxonomyOptions,
 } from './taxonomy-core.ts';
-export type { ChangeRecord } from './taxonomy-core.ts';
+export type { ChangeRecord, IdentifyAuthor, NoteAuthor } from './taxonomy-core.ts';
 export { ageDays, fmtDay, fmtMonth, latestOf, recentUnits } from './taxonomy-core.ts';
 
 export interface CollectionTaxonomyOptions extends TaxonomyOptions {

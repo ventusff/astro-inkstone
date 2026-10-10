@@ -2,7 +2,8 @@
  * sitePluginSets — the site-side remark/rehype plugin arrays alone,
  * everything siteMarkdown mounts beyond the engine dialect, in the
  * contractual order:
- * - remark: gemoji → math → headingAttrs → callouts → readingTime → wikilinks
+ * - remark: gemoji → math → headingAttrs → callouts → readingTime → wikilinks →
+ *   mentions
  * - rehype: numbering (chapters/sections — before katex, so ToC labels keep
  *   their raw TeX) → katex → tblWrap → taskLists → mermaidClient → (baseLinks) →
  *   wikiBlocks always last (inkbrush contract: stamp final top-level blocks
@@ -21,6 +22,7 @@ import remarkMath from 'remark-math';
 import type { MarkdownProcessorOptions } from 'astro-inkbrush/markdown';
 import type { SitePluginSet } from 'astro-inkbrush/render-pipeline';
 import { rehypeWikiBlocks } from 'astro-inkbrush/wiki-blocks';
+import { type MentionResolver, remarkMentions } from 'astro-inkbrush/mentions';
 import { type buildWikilinkResolver, remarkWikilinks } from 'astro-inkbrush/wikilinks/core';
 
 import { normalizeBase } from './base.ts';
@@ -75,6 +77,13 @@ export interface SiteMarkdownOptions {
         onBroken?: (info: { file?: string | undefined; target: string; kind: string }) => void;
       };
   /**
+   * `@handle` mentions of the site's members: enabled as soon as the site
+   * supplies `resolve` (handle → name and the member's page; an unknown
+   * handle stays text). Runs after wikilinks, so a mention never lands
+   * inside one. Default off.
+   */
+  mentions?: false | { resolve: MentionResolver };
+  /**
    * Heading-numbering preset: 'chapters' (part/chapter numbering — §1.2,
    * appendix letters, Part markers; the site reads the ToC from frontmatter)
    * | 'sections' (plain auto section numbering + ToC into frontmatter; pair
@@ -111,6 +120,7 @@ export function sitePluginSets(opts: SiteMarkdownOptions = {}): SitePluginSet {
     readingTime = false,
     mermaid = false,
     wikilinks = false,
+    mentions = false,
     numbering = 'chapters',
     appendixLabel,
     remarkPlugins = [],
@@ -143,6 +153,7 @@ export function sitePluginSets(opts: SiteMarkdownOptions = {}): SitePluginSet {
           ] as unknown as RemarkPlugin,
         ]
       : []),
+    ...(mentions ? [[remarkMentions, mentions] as unknown as RemarkPlugin] : []),
     ...remarkPlugins,
   ];
 

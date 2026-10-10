@@ -1976,6 +1976,27 @@ span.wikilink-dead {
 }
 
 
+/* @mention of a member (astro-inkbrush mentions): a person, not a page —
+   so a tinted name in the second accent rather than the wikilink's rule,
+   linking to the member's page; the `@` is drawn, the name is the text */
+a.mention {
+  color: var(--color-accent2);
+  background: color-mix(in srgb, var(--color-accent2) 11%, transparent);
+  border-radius: 0.3em;
+  padding: 0.04em 0.34em 0.08em 0.28em;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+a.mention::before {
+  content: '@';
+  margin-right: 0.06em;
+}
+a.mention:hover {
+  background: color-mix(in srgb, var(--color-accent2) 20%, transparent);
+}
+
 /* ----- spacing for the CMS comment area (astro-inkbrush) ----- */
 .wiki-comments {
   margin-top: 56px;

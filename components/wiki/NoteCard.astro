@@ -28,8 +28,13 @@ export interface NoteCardData {
   status?: StatusDisplay | undefined;
   /** Pre-formatted display date of the latest change ("2026.10.02", "today", …). */
   updated?: string | undefined;
-  /** who wrote the note, names already joined for the reader's language; shown after the date, or alone without one */
-  authors?: string | undefined;
+  /**
+   * who wrote the note, laid out for the reader's language: the names (a
+   * member's linking to their page) and the separators between them, in
+   * order — e.g. from Intl.ListFormat#formatToParts. Shown after the date,
+   * or alone without one.
+   */
+  authors?: { text: string; href?: string | undefined }[] | undefined;
   /** whole days since the latest change — emitted as data-age for the recent shelf's window filter */
   ageDays?: number | undefined;
   /** Chapter count, for multi-chapter collection notes. */
@@ -63,10 +68,15 @@ const brandStyle = tone ? `--brand-bg:${tone.bg}; --brand-fg:${tone.fg};` : unde
     {note.brand && <span class="brand" style={brandStyle}>{note.brand}</span>}
     {note.kind && <KindBadge def={note.kind} />}
     {note.chapterCount !== undefined && <span class="chapters">{chaptersLabel(note.chapterCount)}</span>}
-    {(note.updated || note.authors) && (
+    {(note.updated || note.authors?.length) && (
       <span class="date">
         {note.updated}
-        {note.authors && <span class="by">{note.updated && '· '}{note.authors}</span>}
+        {note.authors?.length ? (
+          <span class="by">
+            {note.updated && '· '}
+            {note.authors.map((part) => (part.href ? <a href={part.href}>{part.text}</a> : part.text))}
+          </span>
+        ) : null}
       </span>
     )}
   </div>
@@ -145,6 +155,15 @@ const brandStyle = tone ? `--brand-bg:${tone.bg}; --brand-fg:${tone.fg};` : unde
     color: var(--wb-text-dim);
     white-space: normal;
     text-align: right;
+  }
+  .by a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .by a:hover {
+    color: var(--wb-text);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
   .title {

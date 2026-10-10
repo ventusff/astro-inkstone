@@ -217,8 +217,10 @@ renders wrong" cannot happen.
   with numbered chapters, locale mirrors for any number of languages; with `contentDir` set, each
   note's date is its latest commit across its directory, chapters and mirrors, and its authors are
   the people whose commits created its pages unless frontmatter `authors` names them — both read
-  from the content repo's git history, one person's identities folded by its `.mailmap`, no
-  frontmatter date to keep bumping), a backlink-index
+  from the content repo's git history, no frontmatter date to keep bumping; a site that knows its
+  people passes `identify` and authors become its members by their current name, linked from
+  `NoteCard` and listed in `FacetNav`'s authors row), `@handle` mentions of those members
+  (`sitePluginSets({ mentions })`, the engine's grammar), a backlink-index
   builder with context snippets, both bound to your vocabulary in a three-line site module, and
   translation freshness: a mirror records the git blob id of the source it renders
   (`translatedFrom.revision`), and `lib/translation.ts` tells current from behind.

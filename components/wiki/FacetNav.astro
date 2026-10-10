@@ -1,8 +1,10 @@
 ---
 /**
  * FacetNav — faceted browse index: rows of value pills (with counts) for
- * kind / domain / status / tag (the status row renders only when the site
- * passes it, i.e. when it routes /status/…). Rendered on every browse page
+ * kind / domain / status / tag / people (the status row renders only when
+ * the site passes it, i.e. when it routes /status/…; the people row only
+ * when the site knows its authors and routes /people/<handle>/, with its
+ * "all" pill to /people/). Rendered on every browse page
  * (the current facet value is highlighted via aria-current); pure static
  * links, zero JS.
  *
@@ -26,10 +28,12 @@ interface Props {
   /** maturity statuses, for sites that route /status/<id>/; omitted = no row */
   statuses?: { def: FacetDef; count: number }[] | undefined;
   tags: { tag: string; count: number }[];
+  /** authors who are the site's members, by how many notes they wrote; omitted = no row */
+  people?: { handle: string; name: string; count: number }[] | undefined;
   /** Mount prefix for browse routes, e.g. "/wiki" → "/wiki/kind/<id>/";
    *  any spelling ('/wiki', 'wiki/', …) — it is normalized here. */
   base: string;
-  active?: { dim: 'kind' | 'domain' | 'status' | 'tag' | 'all'; value?: string | undefined } | undefined;
+  active?: { dim: 'kind' | 'domain' | 'status' | 'tag' | 'people' | 'all'; value?: string | undefined } | undefined;
   /** the page's language (BCP 47) for the default row labels; defaults to `Astro.currentLocale` */
   locale?: string | undefined;
   /** Row labels; each defaults to the page language's word for it. */
@@ -39,12 +43,13 @@ interface Props {
         domain?: string | undefined;
         status?: string | undefined;
         tag?: string | undefined;
+        people?: string | undefined;
         all?: string | undefined;
         aria?: string | undefined;
       }
     | undefined;
 }
-const { kinds, domains, statuses = [], tags, base, active, labels = {} } = Astro.props;
+const { kinds, domains, statuses = [], tags, people = [], base, active, labels = {} } = Astro.props;
 const root = normalizeBase(base);
 /** browse route for one facet value; the value is data, so it is URL-encoded */
 const facetHref = (dim: string, value: string): string =>
@@ -55,6 +60,7 @@ const label = {
   domain: labels.domain ?? words.domain,
   status: labels.status ?? words.status,
   tag: labels.tag ?? words.tag,
+  people: labels.people ?? words.people,
   all: labels.all ?? words.all,
   aria: labels.aria ?? words.aria,
 };
@@ -128,6 +134,27 @@ const isActive = (dim: string, value: string): boolean =>
     </a>
     </span>
   </div>
+  {
+    people.length > 0 && (
+      <div class="row">
+        <span class="dim">{label.people}</span>
+        <span class="pills">
+        {people.map(({ handle, name, count }) => (
+          <a
+            class="pill"
+            href={facetHref('people', handle)}
+            aria-current={isActive('people', handle) ? 'page' : undefined}
+          >
+            {name} <b>{count}</b>
+          </a>
+        ))}
+        <a class="pill more" href={`${root}/people/`} aria-current={active?.dim === 'people' && active.value === undefined ? 'page' : undefined}>
+          {label.all}
+        </a>
+        </span>
+      </div>
+    )
+  }
 </nav>
 
 <style>
