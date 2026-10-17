@@ -228,7 +228,11 @@ renders wrong" cannot happen.
   reader only ever reads their own language — a key not yet written in it shows that
   language's "translation in progress" text — and `scripts/check-messages.mjs` fails a build
   whose messages are malformed or disagree on arguments, and lists the keys a language is
-  still waiting for (`--complete` fails those too).
+  still waiting for (`--complete` fails those too). A page's own script takes its words from
+  the same catalogs through `virtual:page-text` (`lib/page-language.ts`, a Vite plugin): its
+  `t`, `n` and `list` speak the language of the content directory the page sits in, so the
+  script is identical in every language and a translation service that copies code as
+  written carries no word of one language into another (`lib/page-text.ts`).
   `lib/locale-negotiation.ts` keeps every page a reader opens in the reader's language: a
   page request under another locale's prefix is redirected to theirs, on the dev server's
   own request pipeline (`lib/reader-language.ts`, an Astro integration), and `TwinAnchor`
