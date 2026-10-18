@@ -72,6 +72,12 @@ const { endpoint, lang } = Astro.props;
     font-weight: 600;
     color: var(--color-ink);
   }
+  /* the word on where the translations stand keeps to one line beside the title, its count in
+     even-width digits so the word does not shift while a sync is followed */
+  .status {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
   .status[data-kind='ok'] {
     color: var(--color-accent2);
   }
