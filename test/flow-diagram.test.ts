@@ -95,3 +95,9 @@ test('estimateLabelWidth counts Hangul and kana as full width', () => {
   assert.equal(estimateLabelWidth('カナ'), 22);
   assert.equal(estimateLabelWidth('ｱ'), 6.5);
 });
+
+test('estimateLabelWidth counts hexagrams, Yi and supplementary-plane Han as full width', () => {
+  assert.equal(estimateLabelWidth('䷀'), 11);
+  assert.equal(estimateLabelWidth('ꀀ'), 11);
+  assert.equal(estimateLabelWidth('𠀀'), 11);
+});

@@ -157,7 +157,8 @@ const layoutChecks = (scope) => {
     if (b.width === 0 || b.height === 0) continue;
     for (const t of svg.querySelectorAll('text')) {
       const a = t.getBoundingClientRect();
-      if (a.width === 0) continue;
+      // a hidden SVG or text keeps its box but paints nothing
+      if (a.width === 0 || getComputedStyle(t).visibility !== 'visible') continue;
       if (a.left < b.left - 1 || a.right > b.right + 1 || a.top < b.top - 1 || a.bottom > b.bottom + 1)
         out.svgText.push({ svg: ['svg', ...(svg.getAttribute('class') ?? '').split(/\s+/).filter(Boolean)].join('.'), text: t.textContent.trim().slice(0, 40) });
     }
