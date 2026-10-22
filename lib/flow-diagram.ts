@@ -541,9 +541,11 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
             const set = () => setLabel(label, labelLines(at, side, layout), layout.px, width, height).box;
             const { box, moved } = setLabel(label, labelLines(at, side, layout), layout.px, width, height);
             const covered = blocks.reduce((a, r) => a + overlapArea(box, r), 0);
-            const fits = box.w - 4 <= Math.max(room, 0) && box.h <= height;
+            const tall = box.h > height;
+            const fits = box.w - 4 <= Math.max(room, 0) && !tall;
             if (covered === 0 && fits && (at.horizontal || moved === 0)) { best = undefined; break spots; }
-            const cost = covered * 1000 + moved + (fits ? 0 : 1);
+            // taller than the diagram leaves it whatever the shift, so that ranks last
+            const cost = (tall ? 1e9 : 0) + covered * 1000 + moved + (fits ? 0 : 1);
             if (!best || cost < best.cost) best = { cost, set };
           }
         }

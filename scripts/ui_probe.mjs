@@ -174,10 +174,10 @@ const layoutChecks = (scope) => {
     if (g.width === 0 || g.height === 0) continue;
     let spec;
     try { spec = JSON.parse(grid.dataset.flow); } catch { out.lostLabel.push({ label: '(data-flow is not JSON)' }); continue; }
-    // shown: a box, visible, and no ancestor up to the diagram faded out
+    // shown: a box, visible, and neither it nor an ancestor up to the diagram itself faded out
     const shown = (t) => {
       if (t.getBoundingClientRect().width === 0 || getComputedStyle(t).visibility !== 'visible') return false;
-      for (let n = t; n && n !== grid; n = n.parentElement) if (Number(getComputedStyle(n).opacity) === 0) return false;
+      for (let n = t; n && n !== grid.parentElement; n = n.parentElement) if (Number(getComputedStyle(n).opacity) === 0) return false;
       return true;
     };
     const drawn = [...grid.querySelectorAll('.flow-wires .lbl')].filter(shown).map((t) => bare(t.textContent));
