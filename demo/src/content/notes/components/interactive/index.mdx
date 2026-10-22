@@ -85,7 +85,7 @@ A diagram that carries words is a `FlowDiagram` (or a `mermaid` fence). A hand-p
     { from: 'review', to: 'build' },
   ],
 }}>
-  Lanes label the rows and draw the separators; a tone colors a box's border and tag; a wire's label is always drawn: a wire between neighbouring boxes of one row widens their gap for it, and a label wraps or shrinks to the room it finds.
+  Lanes label the rows and draw the separators; a tone colors a box's border and tag; a wire goes around every box it does not join; a wire's label is always drawn: a wire between neighbouring boxes of one row widens their gap for it, a label wraps or shrinks to the room it finds, and a label with no room clear of the boxes and the other wires becomes a numbered key on its wire, its words listed under the diagram.
 </FlowDiagram>
 
 ## Furniture without a component

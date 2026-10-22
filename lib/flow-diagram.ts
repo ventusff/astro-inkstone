@@ -98,15 +98,15 @@ const esc = (s: string): string =>
  *   - another row, columns overlapping: a straight vertical inside the width
  *     the two boxes share;
  *   - another row, columns apart: out of the source's near edge, across in
- *     the gap right before the target's row (`gap` is the grid's row gap; the
- *     crossing keeps off its middle, where a lane separator runs), into the
- *     target's near edge.
+ *     the gap right before the target's row (`early`: right after the
+ *     source's row) — `gap` is the grid's row gap, and the crossing keeps off
+ *     its middle, where a lane separator runs — into the target's near edge.
  *
  * `at` places the ends along the sides they touch, as fractions (0.5 = the
  * middle): when several wires leave or enter one side of a box, each gets
  * its own point (`portFractions`), so two wires never share a stretch of line.
  */
-export function routeBetween(a: Rect, b: Rect, rows: number, gap = 34, at: { from: number; to: number } = { from: 0.5, to: 0.5 }): Pt[] {
+export function routeBetween(a: Rect, b: Rect, rows: number, gap = 34, at: { from: number; to: number } = { from: 0.5, to: 0.5 }, early = false): Pt[] {
   if (rows === 0) {
     // a level line needs one height inside both boxes: the shared band, placed by the target's fraction
     const top = Math.max(a.y, b.y);
@@ -125,7 +125,7 @@ export function routeBetween(a: Rect, b: Rect, rows: number, gap = 34, at: { fro
   }
   const sx = a.x + a.w * at.from;
   const tx = b.x + b.w * at.to;
-  const my = down ? ty - gap * 0.35 : ty + gap * 0.35;
+  const my = early ? (down ? sy + gap * 0.35 : sy - gap * 0.35) : down ? ty - gap * 0.35 : ty + gap * 0.35;
   return [[sx, sy], [sx, my], [tx, my], [tx, ty]];
 }
 
@@ -142,12 +142,119 @@ export function detourBelow(a: Rect, b: Rect, rowBottom: number, gap = 34, at: {
   return [[sx, a.y + a.h], [sx, y], [tx, y], [tx, b.y + b.h]];
 }
 
+/**
+ * A wire between two rows that would run through the boxes of the rows in
+ * between: out of the source's side facing `x`, along the free column of
+ * the grid at `x`, into the target's side facing it.
+ */
+export function detourBeside(a: Rect, b: Rect, x: number, at: { from: number; to: number } = { from: 0.5, to: 0.5 }): Pt[] {
+  const ya = a.y + a.h * at.from;
+  const yb = b.y + b.h * at.to;
+  return [[facing(a, x) === 'right' ? a.x + a.w : a.x, ya], [x, ya], [x, yb], [facing(b, x) === 'right' ? b.x + b.w : b.x, yb]];
+}
+
+/** the side of `r` that faces the vertical line at `x` */
+const facing = (r: Rect, x: number): 'left' | 'right' => (x > r.x + r.w / 2 ? 'right' : 'left');
+
+/**
+ * The strips of the boxes' extent `span` (the leftmost and rightmost edge of
+ * all of them) that no box reaching into the rows from box `a` to box `b`
+ * covers, at least 6px wide, left to right: the column gaps a wire beside
+ * the rows can run down. A strip at the edge of the extent (empty columns)
+ * keeps to the 48px next to the boxes.
+ */
+export function freeColumns(a: Rect, b: Rect, boxes: Rect[], span: [number, number]): Array<[number, number]> {
+  const lo = Math.min(a.y, b.y);
+  const hi = Math.max(a.y + a.h, b.y + b.h);
+  const spans = [a, b, ...boxes]
+    .filter((r) => r.y < hi && r.y + r.h > lo)
+    .map((r) => [r.x, r.x + r.w] as const)
+    .sort((p, q) => p[0] - q[0]);
+  const free: Array<[number, number]> = [];
+  let edge = span[0];
+  for (const [x0, x1] of spans) {
+    if (x0 > edge) free.push([edge, x0]);
+    edge = Math.max(edge, x1);
+  }
+  if (span[1] > edge) free.push([edge, span[1]]);
+  return free
+    .filter(([x0, x1]) => x1 - x0 >= 6)
+    .map(([x0, x1]): [number, number] => (x0 <= span[0] ? [Math.max(x0, x1 - 48), x1] : x1 >= span[1] ? [x0, Math.min(x1, x0 + 48)] : [x0, x1]));
+}
+
+/** whether a polyline of level and upright segments runs through the inside of `r` (1px in from its edges) */
+export function runsThrough(pts: Pt[], r: Rect): boolean {
+  for (let i = 0; i + 1 < pts.length; i += 1) {
+    const [x0, y0] = pts[i] as Pt;
+    const [x1, y1] = pts[i + 1] as Pt;
+    const across = (p0: number, p1: number, lo: number, size: number) => Math.max(p0, p1) > lo + 1 && Math.min(p0, p1) < lo + size - 1;
+    if (across(x0, x1, r.x, r.w) && across(y0, y1, r.y, r.h)) return true;
+  }
+  return false;
+}
+
 /** which side of each box an edge touches, from the grid rows and the columns */
 export type Side = 'top' | 'bottom' | 'left' | 'right';
-export function sidesOf(a: Rect, b: Rect, rows: number, detour = false): { from: Side; to: Side } {
-  if (detour) return { from: 'bottom', to: 'bottom' };
+export function sidesOf(a: Rect, b: Rect, rows: number): { from: Side; to: Side } {
   if (rows === 0) return a.x < b.x ? { from: 'right', to: 'left' } : { from: 'left', to: 'right' };
   return rows > 0 ? { from: 'bottom', to: 'top' } : { from: 'top', to: 'bottom' };
+}
+
+/** one way a wire may go: the sides of the two boxes it touches, and its polyline for given end points */
+export interface WireShape {
+  sides: { from: Side; to: Side };
+  /** the free column it runs down, for a wire beside the rows */
+  strip?: [number, number];
+  /** the polyline; `x` places a wire beside the rows inside its strip (default: the middle) */
+  path: (at?: { from: number; to: number }, x?: number) => Pt[];
+}
+
+/** the length of a polyline */
+const lengthOf = (pts: Pt[]): number => segmentsByLength(pts).reduce((n, s) => n + s.length, 0);
+
+/**
+ * How the wire from box `a` to box `b` goes: the first of these whose
+ * polyline (ends at `at` along the sides, by default their middles) runs
+ * through none of the other `boxes` — `rows` is the target's row minus the source's, `gap` the
+ * grid's row gap, `rowBottom` the lowest edge of the source's row and
+ * `span` the leftmost and rightmost edge of all the boxes:
+ *
+ *   - the direct route (`routeBetween`);
+ *   - on one row: under the row (`detourBelow`);
+ *   - across rows, columns apart: crossing right after the source's row;
+ *   - across rows: down one of the free columns (`detourBeside`), the
+ *     shortest first; then down a 16px strip past the right end of the
+ *     boxes, then the left, in the frame's margin.
+ *
+ * When every one runs through a box, the direct route.
+ */
+export function wireShape(a: Rect, b: Rect, rows: number, gap: number, rowBottom: number, boxes: Rect[], span: [number, number], at?: { from: number; to: number }): WireShape {
+  const direct: WireShape = { sides: sidesOf(a, b, rows), path: (at) => routeBetween(a, b, rows, gap, at) };
+  const shapes: WireShape[] = [direct];
+  if (rows === 0) {
+    shapes.push({ sides: { from: 'bottom', to: 'bottom' }, path: (at) => detourBelow(a, b, rowBottom, gap, at) });
+  } else {
+    shapes.push({ sides: direct.sides, path: (at) => routeBetween(a, b, rows, gap, at, true) });
+    const beside = (strip: [number, number]): WireShape => {
+      const mid = (strip[0] + strip[1]) / 2;
+      return { sides: { from: facing(a, mid), to: facing(b, mid) }, strip, path: (at, x = mid) => detourBeside(a, b, x, at) };
+    };
+    shapes.push(...freeColumns(a, b, boxes, span).map(beside).sort((p, q) => lengthOf(p.path()) - lengthOf(q.path())));
+    shapes.push(beside([span[1], span[1] + 16]), beside([span[0] - 16, span[0]]));
+  }
+  return shapes.find((s) => !boxes.some((r) => runsThrough(s.path(at), r))) ?? direct;
+}
+
+/**
+ * Where the wires that share one free column run down it, as x: spread
+ * evenly across the strip, ordered by where their two boxes lie (`centres`,
+ * the mean of their middles' x), so the left-hand wires keep to the left.
+ */
+export function stripLanes(strip: [number, number], centres: number[]): number[] {
+  const order = centres.map((c, i) => [c, i] as const).sort((p, q) => p[0] - q[0]);
+  const out = new Array<number>(centres.length);
+  order.forEach(([, i], k) => { out[i] = strip[0] + ((strip[1] - strip[0]) * (k + 1)) / (centres.length + 1); });
+  return out;
 }
 
 /**
@@ -287,6 +394,24 @@ export function columnGaps(spec: FlowSpec): number[] {
 }
 
 /**
+ * Whether a wire runs under the last row: two boxes of that row with another
+ * of its boxes between them are joined under the row (`detourBelow`), so the
+ * grid keeps room below it for that wire and its label.
+ */
+export function runsUnderLastRow(spec: FlowSpec): boolean {
+  const last = Math.max(...spec.nodes.map((n) => n.row));
+  const byId = new Map(spec.nodes.map((n) => [n.id, n]));
+  return (spec.edges ?? []).some((e) => {
+    const a = byId.get(e.from);
+    const b = byId.get(e.to);
+    if (!a || !b || a.row !== last || b.row !== last) return false;
+    const [left, right] = a.col < b.col ? [a, b] : [b, a];
+    const after = left.col + (left.span ?? 1) - 1;
+    return spec.nodes.some((n) => n.row === last && n !== a && n !== b && n.col > after && n.col < right.col);
+  });
+}
+
+/**
  * A label's lines placed at a segment point. Along a horizontal segment the
  * block is centred on the point's x: above it (`side` 1) or below it (-1),
  * 7px off, or on it (0), the block centred on the wire, whose stroke the
@@ -353,7 +478,7 @@ export function renderFlowDiagram(spec: FlowSpec): string {
   // the arrowheads are made in the browser with the wires, one id per diagram (see markerFor)
   const wires = '<svg class="flow-wires" aria-hidden="true"><defs></defs></svg>';
   const data = esc(JSON.stringify({ lanes: !!spec.lanes, rows: spec.nodes.map((n) => [n.id, n.row]), edges: spec.edges ?? [] }));
-  return `<div class="flow-grid" data-flow="${data}" style="grid-template-columns:${columns}">${wires}${parts.join('')}</div>`;
+  return `<div class="flow-grid${runsUnderLastRow(spec) ? ' under' : ''}" data-flow="${data}" style="grid-template-columns:${columns}">${wires}${parts.join('')}</div>`;
 }
 
 export interface FlowHandle {
@@ -399,31 +524,27 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
     return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
   };
   const rowsBetween = (from: string, to: string) => (rowOf.get(to) ?? 0) - (rowOf.get(from) ?? 0);
-  /** boxes of the same row as `from` and `to` that sit between them: a level wire would run through these */
-  const between = (from: string, to: string): Rect[] => {
-    if (rowsBetween(from, to) !== 0) return [];
-    const a = rect(from);
-    const b = rect(to);
-    const lo = Math.min(a.x + a.w, b.x + b.w);
-    const hi = Math.max(a.x, b.x);
-    return data.rows
-      .filter(([id, row]) => id !== from && id !== to && row === rowOf.get(from))
-      .map(([id]) => rect(id))
-      .filter((r) => r.x < hi && r.x + r.w > lo);
-  };
   /** the lowest edge of the boxes on `id`'s row */
   const rowBottom = (id: string): number =>
     Math.max(...data.rows.filter(([, row]) => row === rowOf.get(id)).map(([n]) => { const r = rect(n); return r.y + r.h; }));
+  /** how the wire from one box to another goes, around every other box (`wireShape`) */
+  const shapeOf = (from: string, to: string, at?: { from: number; to: number }): WireShape => {
+    const gap = Number.parseFloat(getComputedStyle(root).rowGap) || 34;
+    const all = data.rows.map(([id]) => [id, rect(id)] as const);
+    const span: [number, number] = [Math.min(...all.map(([, r]) => r.x)), Math.max(...all.map(([, r]) => r.x + r.w))];
+    const others = all.filter(([id]) => id !== from && id !== to).map(([, r]) => r);
+    return wireShape(rect(from), rect(to), rowsBetween(from, to), gap, rowBottom(from), others, span, at);
+  };
   /**
    * Where every edge meets its two boxes: the wires on one side of one box are
    * spread along it (`portFractions`), ordered by where their other end lies.
    */
-  const ports = (): Map<FlowEdge, { from: number; to: number }> => {
+  const ports = (shapes: Map<FlowEdge, WireShape>): Map<FlowEdge, { from: number; to: number }> => {
     const groups = new Map<string, Array<{ edge: FlowEdge; end: 'from' | 'to'; far: number }>>();
     for (const e of data.edges) {
       const a = rect(e.from);
       const b = rect(e.to);
-      const side = sidesOf(a, b, rowsBetween(e.from, e.to), between(e.from, e.to).length > 0);
+      const side = (shapes.get(e) ?? shapeOf(e.from, e.to)).sides;
       const along = (r: Rect, s: Side) => (s === 'top' || s === 'bottom' ? r.x + r.w / 2 : r.y + r.h / 2);
       for (const [end, id, s, far] of [['from', e.from, side.from, along(b, side.from)], ['to', e.to, side.to, along(a, side.to)]] as const) {
         const key = `${id}\u0000${s}`;
@@ -439,11 +560,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
     return out;
   };
   /** the route of one edge: grid rows decide the direction, the measured boxes the coordinates */
-  const route = (from: string, to: string, at?: { from: number; to: number }): Pt[] => {
-    const gap = Number.parseFloat(getComputedStyle(root).rowGap) || 34;
-    if (between(from, to).length) return detourBelow(rect(from), rect(to), rowBottom(from), gap, at);
-    return routeBetween(rect(from), rect(to), rowsBetween(from, to), gap, at);
-  };
+  const route = (from: string, to: string, at?: { from: number; to: number }): Pt[] => shapeOf(from, to).path(at);
   /** colour → arrowhead marker id; a marker per colour, made the first time a wire needs it,
    *  under an id no other diagram on the page carries */
   const markers = new Map<string, string>();
@@ -494,8 +611,19 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
     return { box: labelBox(label), moved: Math.hypot(dx, dy) };
   };
 
+  /**
+   * The legend under the diagram: a label that finds no spot clear of the
+   * boxes is drawn as a numbered key on its wire, and its words are listed
+   * here against that number, in the page's font and colours.
+   */
+  const legend = document.createElement('ol');
+  legend.className = 'flow-legend';
+  legend.hidden = true;
+  root.after(legend);
+
   function redraw(): void {
     for (const c of [...wires.children]) if (c !== defs) c.remove();
+    legend.replaceChildren();
     if (data.lanes) {
       const byRow = new Map<number, Rect[]>();
       for (const [id, row] of data.rows) byRow.set(row, [...(byRow.get(row) ?? []), rect(id)]);
@@ -507,15 +635,49 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
         wires.append(svgEl('line', { x1: 0, x2: root.clientWidth, y1: y, y2: y, class: 'sep' }));
       }
     }
-    const placed = ports();
+    // The shapes decide which sides the wires touch, and those sides decide the ports, where the ends
+    // sit. Starting from the sides' middles, the shapes are chosen again from the ports until no wire
+    // changes sides: then the ports stand, and every shape was checked against the ends it is drawn with.
+    let shapes = new Map(data.edges.map((e) => [e, shapeOf(e.from, e.to)] as const));
+    let placed = ports(shapes);
+    for (let pass = 0; pass <= data.edges.length; pass += 1) {
+      const next = new Map(data.edges.map((e) => [e, shapeOf(e.from, e.to, placed.get(e))] as const));
+      const settled = data.edges.every((e) => {
+        const was = shapes.get(e)?.sides;
+        const now = next.get(e)?.sides;
+        return was?.from === now?.from && was?.to === now?.to;
+      });
+      shapes = next;
+      if (settled) break;
+      placed = ports(shapes);
+    }
+    // the wires down one free column each get a lane of it
+    const lanes = new Map<FlowEdge, number>();
+    const byStrip = new Map<string, FlowEdge[]>();
+    for (const [e, shape] of shapes) if (shape.strip) byStrip.set(shape.strip.join(), [...(byStrip.get(shape.strip.join()) ?? []), e]);
+    const centre = (id: string) => { const r = rect(id); return r.x + r.w / 2; };
+    for (const group of byStrip.values()) {
+      const strip = shapes.get(group[0] as FlowEdge)?.strip;
+      if (!strip) continue;
+      const xs = stripLanes(strip, group.map((e) => (centre(e.from) + centre(e.to)) / 2));
+      group.forEach((e, k) => lanes.set(e, xs[k] ?? (strip[0] + strip[1]) / 2));
+    }
     const blocks = obstacles();
-    for (const e of data.edges) {
-      const pts = route(e.from, e.to, placed.get(e));
+    const routes = data.edges.map((e) => (shapes.get(e) ?? shapeOf(e.from, e.to)).path(placed.get(e), lanes.get(e)));
+    /** whether a box comes within 4px of a wire other than the `i`th: a label there would read as that wire's */
+    const nearWire = (box: Rect, i: number) => {
+      const grown = { x: box.x - 5, y: box.y - 5, w: box.w + 10, h: box.h + 10 };
+      return routes.some((r, j) => j !== i && runsThrough(r, grown));
+    };
+    for (const [i, e] of data.edges.entries()) {
+      const pts = routes[i] ?? [];
       const color = e.off ? undefined : toneColor(e.tone);
+      const stroke = e.off ? 'var(--color-accent3)' : (color ?? 'var(--color-ink-faint)');
       const path = svgEl('path', {
         d: pathOf(pts),
+        'data-edge': i,
         class: `wire${e.off ? ' off' : ''}${e.dashed ? ' dashed' : ''}`,
-        'marker-end': `url(#${markerFor(e.off ? 'var(--color-accent3)' : (color ?? 'var(--color-ink-faint)'))})`,
+        'marker-end': `url(#${markerFor(stroke)})`,
       });
       if (color) path.style.stroke = color;
       wires.append(path);
@@ -525,14 +687,15 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       // vertical one.
       // At each spot the settings `labelLayouts` gives for the room there are tried best first, each
       // pulled inside the diagram where it would cross an edge. The first that fits the room, lands on
-      // no box, heading or label drawn before it, and (beside a vertical segment, where a shift would
-      // cross the wire) did not have to move is kept; when none does, the one that covers the least
-      // of them, then moved the least, is.
+      // no box, heading or label drawn before it, keeps 4px off every other wire and (beside a vertical
+      // segment, where a shift would cross the wire) did not have to move is kept; when none does, the
+      // one of those clear of boxes, labels and other wires that moved the least is; and when there is
+      // no such one, the label goes to the legend.
       const label = svgEl('text', { class: `lbl${e.off ? ' off' : ''}` });
       wires.append(label);
       const width = root.clientWidth;
       const height = root.clientHeight;
-      let best: { cost: number; set: () => Rect } | undefined;
+      let best: { cost: number; clear: boolean; set: () => Rect } | undefined;
       spots: for (const seg of segmentsByLength(pts)) for (const t of [0.5, 0.25, 0.75]) {
         const at = segmentPoint(seg, t);
         for (const side of at.horizontal ? ([1, -1, 0] as const) : ([1, -1] as const)) {
@@ -543,16 +706,58 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
             const covered = blocks.reduce((a, r) => a + overlapArea(box, r), 0);
             const tall = box.h > height;
             const fits = box.w - 4 <= Math.max(room, 0) && !tall;
-            if (covered === 0 && fits && (at.horizontal || moved === 0)) { best = undefined; break spots; }
-            // taller than the diagram leaves it whatever the shift, so that ranks last
-            const cost = (tall ? 1e9 : 0) + covered * 1000 + moved + (fits ? 0 : 1);
-            if (!best || cost < best.cost) best = { cost, set };
+            const clear = covered === 0 && !tall && !nearWire(box, i);
+            if (clear && fits && (at.horizontal || moved === 0)) { best = undefined; break spots; }
+            const cost = (clear ? 0 : 1e9) + moved + (fits ? 0 : 1);
+            if (!best || cost < best.cost) best = { cost, clear, set };
           }
         }
       }
-      const box = best ? best.set() : labelBox(label);
-      blocks.push(box);
+      if (!best || best.clear) {
+        blocks.push(best ? best.set() : labelBox(label));
+        continue;
+      }
+      label.remove();
+      blocks.push(drawKey(pts, legend.children.length + 1, e, stroke, (box) => blocks.reduce((a, b) => a + overlapArea(box, b), 0) + (nearWire(box, i) ? 1000 : 0), width, height));
     }
+    legend.hidden = legend.children.length === 0;
+  }
+
+  /**
+   * A label's numbered key: a small disc on the wire, at the first spot along
+   * its segments (longest first; the middle, a quarter in from either end,
+   * then every tenth of the way) inside the diagram that `clash` finds clear
+   * of the boxes, headings, labels and keys drawn before it and of the other
+   * wires, else at the spot where it clashes least; and the label's words
+   * against the same number in the legend. Returns the disc's box.
+   */
+  function drawKey(pts: Pt[], n: number, e: FlowEdge, stroke: string, clash: (box: Rect) => number, width: number, height: number): Rect {
+    const r = 8;
+    const disc = (x: number, y: number): Rect => ({ x: x - r - 1, y: y - r - 1, w: 2 * r + 2, h: 2 * r + 2 });
+    let at = { x: pts[0]?.[0] ?? 0, y: pts[0]?.[1] ?? 0 };
+    let least = Number.POSITIVE_INFINITY;
+    spots: for (const seg of segmentsByLength(pts)) for (const t of [0.5, 0.25, 0.75, 0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9]) {
+      const p = segmentPoint(seg, t);
+      const box = disc(p.x, p.y);
+      const inside = box.x >= 0 && box.y >= 0 && box.x + box.w <= width && box.y + box.h <= height;
+      const cost = clash(box) + (inside ? 0 : 1e6);
+      if (cost < least) { least = cost; at = p; }
+      if (cost === 0) break spots;
+    }
+    const key = svgEl('g', { class: `key${e.off ? ' off' : ''}`, 'data-key': n });
+    const ring = svgEl('circle', { cx: at.x, cy: at.y, r });
+    ring.style.stroke = stroke;
+    key.append(ring, svgEl('text', { x: at.x, y: at.y + 3.5, 'text-anchor': 'middle' }, String(n)));
+    wires.append(key);
+    const item = document.createElement('li');
+    item.dataset['key'] = String(n);
+    const mark = document.createElement('span');
+    mark.className = `flow-key${e.off ? ' off' : ''}`;
+    mark.textContent = String(n);
+    mark.style.borderColor = stroke;
+    item.append(mark, document.createTextNode(e.label ?? ''));
+    legend.append(item);
+    return disc(at.x, at.y);
   }
 
   const ro = new ResizeObserver(() => redraw());
@@ -577,6 +782,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
     },
     destroy: () => {
       ro.disconnect();
+      legend.remove();
       root.remove();
     },
   };

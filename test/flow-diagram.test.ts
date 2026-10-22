@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { LABEL_GAPS_SHARE, LABEL_GAP_SHARE, LABEL_MIN_PX, LABEL_PX, columnGaps, detourBelow, labelLayouts, labelLines, portFractions, renderFlowDiagram, routeBetween, segmentPoint, segmentsByLength, sidesOf, toneColor, wrapLabel } from '../lib/flow-diagram.ts';
+import { LABEL_GAPS_SHARE, LABEL_GAP_SHARE, LABEL_MIN_PX, LABEL_PX, columnGaps, detourBelow, detourBeside, freeColumns, labelLayouts, labelLines, portFractions, renderFlowDiagram, routeBetween, runsThrough, runsUnderLastRow, segmentPoint, segmentsByLength, sidesOf, stripLanes, toneColor, wireShape, wrapLabel } from '../lib/flow-diagram.ts';
 import { estimateTextWidth } from '../lib/text-width.ts';
 
 const box = (x: number, y: number, w = 100, h = 40) => ({ x, y, w, h });
@@ -32,7 +32,83 @@ test('two wires meeting one side of a box get their own points, ordered so they 
 
 test('a wire past boxes of its own row goes under the row, bottom to bottom', () => {
   assert.deepEqual(detourBelow(box(0, 0), box(400, 0), 60, 40), [[50, 40], [50, 76], [450, 76], [450, 40]]);
-  assert.deepEqual(sidesOf(box(0, 0), box(400, 0), 0, true), { from: 'bottom', to: 'bottom' });
+  const shape = wireShape(box(0, 0), box(400, 0), 0, 40, 40, [box(200, 0)], [0, 500]);
+  assert.deepEqual(shape.sides, { from: 'bottom', to: 'bottom' });
+  assert.deepEqual(shape.path(), [[50, 40], [50, 56], [450, 56], [450, 40]]);
+});
+
+test('runsThrough: a segment through the inside of a box, not one along or short of its edge', () => {
+  assert.equal(runsThrough([[50, 0], [50, 200]], box(0, 80)), true);
+  assert.equal(runsThrough([[100, 0], [100, 200]], box(0, 80)), false, 'along the edge');
+  assert.equal(runsThrough([[50, 0], [50, 80]], box(0, 80)), false, 'ends at the edge');
+  assert.equal(runsThrough([[0, 100], [300, 100]], box(100, 80)), true);
+});
+
+test('a wire down one column past a box of a row in between goes down the free column gap beside them', () => {
+  // three rows in one column, the middle box in the way; the next column's boxes leave the gap 100–140 free
+  const a = box(0, 0);
+  const mid = box(0, 80);
+  const b = box(0, 160);
+  const right = [box(140, 0), box(140, 80), box(140, 160)];
+  assert.deepEqual(freeColumns(a, b, [mid, ...right], [0, 240]), [[100, 140]]);
+  const shape = wireShape(a, b, 2, 40, 40, [mid, ...right], [0, 240]);
+  assert.deepEqual(shape.sides, { from: 'right', to: 'right' });
+  assert.deepEqual(shape.strip, [100, 140]);
+  assert.deepEqual(shape.path(), [[100, 20], [120, 20], [120, 180], [100, 180]]);
+  assert.ok([mid, ...right].every((r) => !runsThrough(shape.path(), r)));
+  assert.deepEqual(detourBeside(b, a, 120, { from: 0.25, to: 0.75 }), [[100, 170], [120, 170], [120, 30], [100, 30]]);
+  // empty columns at the edge of the boxes: the 48px next to them
+  assert.deepEqual(freeColumns(a, b, [box(0, 80, 240)], [0, 400]), [[240, 288]]);
+  // one column, nothing beside it: down the margin to the right
+  assert.deepEqual(wireShape(a, b, 2, 40, 40, [mid], [0, 100]).path(), [[100, 20], [108, 20], [108, 180], [100, 180]]);
+});
+
+test('the shape is chosen for where the ports put the ends, not only for the middles', () => {
+  // A and B span the width; under A, L on the left and R on the right leave a gap in the middle
+  const a = box(0, 0, 240);
+  const b = box(0, 160, 240);
+  const others = [box(0, 80), box(140, 80)];
+  assert.deepEqual(wireShape(a, b, 2, 40, 40, others, [0, 240]).path(), [[120, 40], [120, 160]]);
+  // a third of the way along B's top the straight wire would cross L: it goes down the margin instead
+  const at = { from: 0.5, to: 1 / 3 };
+  const shape = wireShape(a, b, 2, 40, 40, others, [0, 240], at);
+  assert.ok(others.every((r) => !runsThrough(shape.path(at), r)));
+  assert.deepEqual(shape.sides, { from: 'right', to: 'right' });
+});
+
+test('a wire to a box of another column runs down the gap between them when its own column is blocked', () => {
+  // erect (row 1, column 1) to session (row 3, column 2), a box under erect and one above session
+  const erect = box(0, 0);
+  const session = box(140, 160);
+  const others = [box(0, 80), box(140, 80), box(140, 0)];
+  const shape = wireShape(erect, session, 2, 40, 40, others, [0, 240]);
+  assert.deepEqual(shape.sides, { from: 'right', to: 'left' });
+  assert.deepEqual(shape.path(), [[100, 20], [120, 20], [120, 180], [140, 180]]);
+});
+
+test('stripLanes: wires sharing a free column are spread across it, left-hand boxes on the left', () => {
+  assert.deepEqual(stripLanes([0, 30], [500]), [15]);
+  assert.deepEqual(stripLanes([0, 30], [600, 100]), [20, 10]);
+});
+
+test('runsUnderLastRow: two boxes of the last row joined past another of its boxes', () => {
+  const nodes = [{ id: 'a', title: 'A', col: 1, row: 1 }, { id: 'b', title: 'B', col: 2, row: 1 }, { id: 'c', title: 'C', col: 3, row: 1 }];
+  assert.equal(runsUnderLastRow({ cols: 3, nodes, edges: [{ from: 'c', to: 'a' }] }), true);
+  assert.equal(runsUnderLastRow({ cols: 3, nodes, edges: [{ from: 'a', to: 'b' }] }), false);
+  assert.equal(runsUnderLastRow({ cols: 3, nodes: [...nodes, { id: 'd', title: 'D', col: 1, row: 2 }], edges: [{ from: 'c', to: 'a' }] }), false, 'not the last row');
+  assert.match(renderFlowDiagram({ cols: 3, nodes, edges: [{ from: 'c', to: 'a' }] }), /class="flow-grid under"/);
+});
+
+test('a wire across rows and columns turns right after its own row when the gap before the target is blocked', () => {
+  const a = box(0, 0);
+  const b = box(300, 160);
+  const blocker = box(0, 80);
+  assert.equal(runsThrough(routeBetween(a, b, 2, 40), blocker), true);
+  const shape = wireShape(a, b, 2, 40, 40, [blocker], [0, 400]);
+  assert.deepEqual(shape.sides, { from: 'bottom', to: 'top' });
+  assert.deepEqual(shape.path(), [[50, 40], [50, 54], [350, 54], [350, 160]]);
+  // with nothing in the way, the direct route
+  assert.deepEqual(wireShape(a, b, 2, 40, 40, [], [0, 400]).path(), routeBetween(a, b, 2, 40));
 });
 
 test('segmentsByLength and segmentPoint: segments longest first, a point along one, and which way it runs', () => {

@@ -1831,6 +1831,10 @@ a.hub-card {
   line-height: 1.45;
   color: var(--color-ink);
 }
+/* a wire joins two boxes of the last row under it: room for the wire and its label */
+.flow-grid.under {
+  padding-bottom: 52px;
+}
 .flow-lane {
   align-self: start;
   padding-top: 6px;
@@ -1925,9 +1929,57 @@ a.hub-card {
 .flow-wires .dot {
   fill: var(--color-accent2);
 }
+/* a label with no spot clear of the boxes: a numbered key on its wire, its words in the legend below */
+.flow-wires .key circle {
+  fill: var(--color-bg-card);
+  stroke-width: 1.5;
+}
+.flow-wires .key text {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--color-ink-soft);
+}
+.flow-wires .key.off text {
+  fill: var(--color-accent3-text);
+}
+.flow-legend {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-ink-soft);
+}
+.flow-legend li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.flow-legend li + li {
+  margin-top: 4px;
+}
+.flow-key {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--color-ink-faint);
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+.flow-key.off {
+  color: var(--color-accent3-text);
+}
 @media (max-width: 640px) {
   .flow { padding: 14px; }
   .flow-grid { --flow-col-gap: 18px; row-gap: 26px; }
+  .flow-grid.under { padding-bottom: 44px; }
   .flow-node { padding: 6px 8px 7px; }
 }
 
