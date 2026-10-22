@@ -20,6 +20,8 @@
  *     hand-drawn SVG: every `<text>` whose box leaves its `<svg>` viewport.
  */
 
+import { isWide } from './text-width.ts';
+
 export type FlowTone = 'colleague' | 'admin' | 'machine' | 'blocked' | 'plain';
 
 export interface FlowNode {
@@ -189,9 +191,9 @@ export function labelAnchor(
   };
 }
 
-/** a label's width estimated from its characters (CJK 11px, others 6.5px at the 11px label size) */
+/** a label's width estimated from its characters (full-width 11px, others 6.5px at the 11px label size) */
 export function estimateLabelWidth(text: string): number {
-  return [...text].reduce((w, ch) => w + (/[　-鿿＀-￯]/.test(ch) ? 11 : 6.5), 0);
+  return [...text].reduce((w, ch) => w + (isWide(ch) ? 11 : 6.5), 0);
 }
 
 export const pathOf = (pts: Pt[]): string =>

@@ -10,6 +10,7 @@
  * e.g. a per-collection token) — the default is the accent.
  */
 import { componentWords } from '../lib/component-words.ts';
+import { isWide } from '../lib/text-width.ts';
 
 export interface LocalGraphNeighbor {
   id: string;
@@ -63,11 +64,11 @@ const labelX = (x: number, text: string): number => {
   return Math.min(Math.max(x, half), W - half);
 };
 
-/* A label gets about 14 Latin cells of room on the ellipse; a Hanzi takes two.
-   Clipping counts cells, so "三维高斯泼溅重建" and "Gaussian splatting" are
-   cut at the same visual width. */
+/* A label gets about 14 Latin cells of room on the ellipse; a full-width
+   character (Han, kana, Hangul) takes two. Clipping counts cells, so
+   "三维高斯泼溅重建" and "Gaussian splatting" are cut at the same visual width. */
 const CELLS = 14;
-const cellsOf = (ch: string): number => (/[\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef]/.test(ch) ? 2 : 1);
+const cellsOf = (ch: string): number => (isWide(ch) ? 2 : 1);
 const short = (s: string): string => {
   let used = 0;
   let out = '';

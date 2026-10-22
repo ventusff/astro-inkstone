@@ -6,7 +6,8 @@
  * dialogs included (static dialog markup is part of every pass; on one
  * representative route each `<dialog data-probe-open>` is also opened and
  * its layout checked): horizontal overflow of the page, elements wider than
- * their container with no scroll box to live in, classes no stylesheet rule
+ * their container with no scroll box to live in, words an SVG draws outside
+ * its own box (a diagram's labels, a chart's ticks), classes no stylesheet rule
  * styles, skipped heading levels, duplicate ids, images without an alt
  * attribute, in-page anchors and aria-controls pointing at ids that do not
  * exist. It makes no aesthetic judgement.
@@ -104,11 +105,12 @@ function routes(dir, prefix = '') {
 /* ------------------------------------------------------ page-side checks */
 // Evaluated inside the page: each function is self-contained.
 
-/** Viewport-dependent: the page's horizontal overflow, and elements wider
- *  than their container. `scope` is 'document' (everything under body) or
- *  'dialogs' (the contents of the open dialogs). */
+/** Viewport-dependent: the page's horizontal overflow, elements wider than
+ *  their container, and SVG text outside its SVG's box. `scope` is
+ *  'document' (everything under body) or 'dialogs' (the contents of the open
+ *  dialogs). */
 const layoutChecks = (scope) => {
-  const out = { hOverflow: null, wide: [] };
+  const out = { hOverflow: null, wide: [], svgText: [] };
   const de = document.documentElement;
   if (de.scrollWidth > de.clientWidth + 1)
     out.hOverflow = { doc: de.scrollWidth, view: de.clientWidth };
@@ -146,6 +148,19 @@ const layoutChecks = (scope) => {
     const intentionalBleed = el.classList.contains('wide');
     if (a.width > b.width + 2 && !intentionalBleed && !hasScrollAncestor(el))
       out.wide.push({ el: sel(el), w: Math.round(a.width), parent: sel(p), pw: Math.round(b.width) });
+  }
+  // An SVG's text is laid out in the SVG's own coordinates; with overflow
+  // visible it paints past the SVG's box onto whatever lies there, so words
+  // outside the box count as broken wherever they land.
+  for (const svg of document.querySelectorAll(scope === 'dialogs' ? 'dialog[open] svg' : 'body svg')) {
+    const b = svg.getBoundingClientRect();
+    if (b.width === 0 || b.height === 0) continue;
+    for (const t of svg.querySelectorAll('text')) {
+      const a = t.getBoundingClientRect();
+      if (a.width === 0) continue;
+      if (a.left < b.left - 1 || a.right > b.right + 1 || a.top < b.top - 1 || a.bottom > b.bottom + 1)
+        out.svgText.push({ svg: ['svg', ...(svg.getAttribute('class') ?? '').split(/\s+/).filter(Boolean)].join('.'), text: t.textContent.trim().slice(0, 40) });
+    }
   }
   return out;
 };
@@ -261,9 +276,9 @@ const closeDialogs = () => {
 const twoFrames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
 /* ------------------------------------------------------------- the sweep */
-const empty = () => ({ hOverflow: null, wide: [], unstyled: [], headingJump: [], noAlt: [], dupId: [], deadAnchor: [], deadControl: [] });
+const empty = () => ({ hOverflow: null, wide: [], svgText: [], unstyled: [], headingJump: [], noAlt: [], dupId: [], deadAnchor: [], deadControl: [] });
 const hit = (s) =>
-  s.hOverflow || s.wide.length || s.unstyled.length || s.headingJump.length ||
+  s.hOverflow || s.wide.length || s.svgText.length || s.unstyled.length || s.headingJump.length ||
   s.noAlt.length || s.dupId.length || s.deadAnchor.length || s.deadControl.length;
 
 /**
@@ -370,6 +385,7 @@ const brief = findings.map((f) => {
   const bits = [];
   if (f.hOverflow) bits.push(`page overflows horizontally doc=${f.hOverflow.doc} > view=${f.hOverflow.view}`);
   if (f.wide.length) bits.push('breaks its container: ' + [...new Set(f.wide.map((x) => `${x.el}(${x.w}) > ${x.parent}(${x.pw})`))].slice(0, 4).join('; '));
+  if (f.svgText.length) bits.push('words outside their svg: ' + [...new Set(f.svgText.map((x) => `${x.svg} "${x.text}"`))].slice(0, 4).join('; '));
   if (f.unstyled.length) bits.push('unstyled classes: ' + f.unstyled.map((x) => `${x.el}(${x.why})`).slice(0, 6).join(', '));
   if (f.headingJump.length) bits.push('heading level skips: ' + f.headingJump.map((x) => `${x.from}→${x.to}`).join(', '));
   if (f.noAlt.length) bits.push(`images without alt ×${f.noAlt.length}`);

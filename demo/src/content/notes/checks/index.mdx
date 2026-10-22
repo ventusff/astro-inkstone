@@ -65,7 +65,7 @@ node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
 
 ## The render-layer probe
 
-Source and output can both be right while the page is still broken — the classic case being landing cards that no stylesheet rule matches, rendering as one crammed line of bare text: link and anchor checks stay green because they never look at a rendered page. `ui_probe` drives a real browser over every page in `dist` at four viewport widths (1440/1024/768/430) and measures: horizontal overflow of the page, elements wider than their container with no scroll box to live in, classes no stylesheet rule styles, skipped heading levels, duplicate ids, images without an `alt` attribute, in-page anchors and `aria-controls` that point at nothing. It reports only what a machine can prove — no aesthetic judgment.
+Source and output can both be right while the page is still broken — the classic case being landing cards that no stylesheet rule matches, rendering as one crammed line of bare text: link and anchor checks stay green because they never look at a rendered page. `ui_probe` drives a real browser over every page in `dist` at four viewport widths (1440/1024/768/430) and measures: horizontal overflow of the page, elements wider than their container with no scroll box to live in, words an SVG draws outside its own box, classes no stylesheet rule styles, skipped heading levels, duplicate ids, images without an `alt` attribute, in-page anchors and `aria-controls` that point at nothing. It reports only what a machine can prove — no aesthetic judgment.
 
 ```bash title="needs a local Chrome/Chromium"
 npm run build

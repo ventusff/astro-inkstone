@@ -89,3 +89,9 @@ test('renderFlowDiagram: grid columns, lane column, node placement, escaped text
   const data = JSON.parse(html.match(/data-flow="([^"]+)"/)![1]!.replace(/&quot;/g, '"'));
   assert.deepEqual(data, { lanes: true, rows: [['x', 1], ['y', 1]], edges: [{ from: 'x', to: 'y', label: 'l', off: true }] });
 });
+
+test('estimateLabelWidth counts Hangul and kana as full width', () => {
+  assert.equal(estimateLabelWidth('한글'), 22);
+  assert.equal(estimateLabelWidth('カナ'), 22);
+  assert.equal(estimateLabelWidth('ｱ'), 6.5);
+});
