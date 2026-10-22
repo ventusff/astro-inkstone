@@ -1877,7 +1877,12 @@ a.hub-card {
 }
 .flow-node .tag {
   display: inline-block;
+  box-sizing: border-box;
+  /* a tag stays inside its box: it wraps between words, hyphenates per the page language, and only then breaks anywhere */
+  max-width: 100%;
   margin-top: 6px;
+  margin-right: 0;
+  overflow-wrap: anywhere;
   font-size: 11px;
   font-weight: 600;
 }
