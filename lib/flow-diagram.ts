@@ -256,8 +256,9 @@ export function labelLayouts(text: string, room: number): LabelLayout[] {
   return out;
 }
 
-/** the most of the diagram's width one column gap takes to make room for a label */
-export const LABEL_GAP_SHARE = '25%';
+/** the most of the diagram's width, in percent, one widened column gap takes, and all of them together */
+export const LABEL_GAP_SHARE = 25;
+export const LABEL_GAPS_SHARE = 50;
 
 /**
  * The width, in px, each gap between neighbouring columns asks for (index i is
@@ -266,7 +267,8 @@ export const LABEL_GAP_SHARE = '25%';
  * for the label's narrowest setting at LABEL_PX plus the 12px a level label
  * keeps from the wire's ends and its 2px padding on each side; 0 where no
  * labelled wire crosses. The grid grants it between the stylesheet's column
- * gap and LABEL_GAP_SHARE of the diagram's width.
+ * gap and an even split of LABEL_GAPS_SHARE of the diagram's width among the
+ * gaps that ask, LABEL_GAP_SHARE at most each.
  */
 export function columnGaps(spec: FlowSpec): number[] {
   const gaps = new Array<number>(Math.max(spec.cols - 1, 0)).fill(0);
@@ -274,7 +276,7 @@ export function columnGaps(spec: FlowSpec): number[] {
   for (const e of spec.edges ?? []) {
     const a = byId.get(e.from);
     const b = byId.get(e.to);
-    if (!e.label || !a || !b || a.row !== b.row) continue;
+    if (!e.label?.trim() || !a || !b || a.row !== b.row) continue;
     const [left, right] = a.col < b.col ? [a, b] : [b, a];
     const after = left.col + (left.span ?? 1) - 1;
     if (right.col !== after + 1 || after < 1 || after > gaps.length) continue;
@@ -325,9 +327,11 @@ export function renderFlowDiagram(spec: FlowSpec): string {
   // of a wire that crosses it: box column c sits on grid column 2c - 1 (+ 2 with
   // a lane column and the gap after it), and a span of s boxes covers 2s - 1 tracks.
   const laneCol = spec.lanes ? 2 : 0;
-  const gap = (asks: number) => (asks > 0 ? `max(var(--flow-col-gap), min(${asks}px, ${LABEL_GAP_SHARE}))` : 'var(--flow-col-gap)');
+  const asks = columnGaps(spec);
+  const share = Math.min(LABEL_GAP_SHARE, LABEL_GAPS_SHARE / Math.max(1, asks.filter((a) => a > 0).length));
+  const gap = (ask: number) => (ask > 0 ? `max(var(--flow-col-gap), min(${ask}px, ${+share.toFixed(2)}%))` : 'var(--flow-col-gap)');
   const tracks: string[] = spec.lanes ? ['max-content', gap(0)] : [];
-  columnGaps(spec).forEach((least) => tracks.push('minmax(0, 1fr)', gap(least)));
+  asks.forEach((ask) => tracks.push('minmax(0, 1fr)', gap(ask)));
   tracks.push('minmax(0, 1fr)');
   const columns = tracks.join(' ');
   const parts: string[] = [];
@@ -515,7 +519,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       });
       if (color) path.style.stroke = color;
       wires.append(path);
-      if (!e.label) continue;
+      if (!e.label?.trim()) continue;
       // Every label is drawn. Spots, in order: the segments longest first; on each, the middle, then a
       // quarter in from either end; above, below, then on a horizontal segment; right, then left of a
       // vertical one.
@@ -537,7 +541,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
             const set = () => setLabel(label, labelLines(at, side, layout), layout.px, width, height).box;
             const { box, moved } = setLabel(label, labelLines(at, side, layout), layout.px, width, height);
             const covered = blocks.reduce((a, r) => a + overlapArea(box, r), 0);
-            const fits = box.w - 4 <= Math.max(room, 0);
+            const fits = box.w - 4 <= Math.max(room, 0) && box.h <= height;
             if (covered === 0 && fits && (at.horizontal || moved === 0)) { best = undefined; break spots; }
             const cost = covered * 1000 + moved + (fits ? 0 : 1);
             if (!best || cost < best.cost) best = { cost, set };

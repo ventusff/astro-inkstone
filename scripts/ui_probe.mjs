@@ -174,11 +174,15 @@ const layoutChecks = (scope) => {
     if (g.width === 0 || g.height === 0) continue;
     let spec;
     try { spec = JSON.parse(grid.dataset.flow); } catch { out.lostLabel.push({ label: '(data-flow is not JSON)' }); continue; }
-    const drawn = [...grid.querySelectorAll('.flow-wires .lbl')]
-      .filter((t) => t.getBoundingClientRect().width > 0 && getComputedStyle(t).visibility === 'visible')
-      .map((t) => bare(t.textContent));
+    // shown: a box, visible, and no ancestor up to the diagram faded out
+    const shown = (t) => {
+      if (t.getBoundingClientRect().width === 0 || getComputedStyle(t).visibility !== 'visible') return false;
+      for (let n = t; n && n !== grid; n = n.parentElement) if (Number(getComputedStyle(n).opacity) === 0) return false;
+      return true;
+    };
+    const drawn = [...grid.querySelectorAll('.flow-wires .lbl')].filter(shown).map((t) => bare(t.textContent));
     for (const e of spec.edges ?? []) {
-      if (!e.label) continue;
+      if (!e.label || !bare(e.label)) continue;
       const i = drawn.indexOf(bare(e.label));
       if (i === -1) out.lostLabel.push({ label: e.label.slice(0, 40) });
       else drawn.splice(i, 1);

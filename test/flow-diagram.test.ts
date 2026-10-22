@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { LABEL_GAP_SHARE, LABEL_MIN_PX, LABEL_PX, columnGaps, detourBelow, labelLayouts, labelLines, portFractions, renderFlowDiagram, routeBetween, segmentPoint, segmentsByLength, sidesOf, toneColor, wrapLabel } from '../lib/flow-diagram.ts';
+import { LABEL_GAPS_SHARE, LABEL_GAP_SHARE, LABEL_MIN_PX, LABEL_PX, columnGaps, detourBelow, labelLayouts, labelLines, portFractions, renderFlowDiagram, routeBetween, segmentPoint, segmentsByLength, sidesOf, toneColor, wrapLabel } from '../lib/flow-diagram.ts';
 import { estimateTextWidth } from '../lib/text-width.ts';
 
 const box = (x: number, y: number, w = 100, h = 40) => ({ x, y, w, h });
@@ -138,11 +138,25 @@ test('columnGaps: a labelled wire between neighbouring boxes of one row asks its
   const gaps = columnGaps(spec);
   assert.deepEqual(gaps.slice(0, 2), [Math.ceil(estimateTextWidth('Rendering', LABEL_PX)) + 16, 0]);
   assert.ok(gaps[2]! > 150, 'a sentence asks for more than the share; the grid caps it');
-  assert.match(renderFlowDiagram(spec), new RegExp(`max\\(var\\(--flow-col-gap\\), min\\(${gaps[2]}px, ${LABEL_GAP_SHARE}\\)\\)`));
+  // two gaps ask, so each gets half of LABEL_GAPS_SHARE, LABEL_GAP_SHARE at most
+  const each = Math.min(LABEL_GAP_SHARE, LABEL_GAPS_SHARE / 2);
+  assert.match(renderFlowDiagram(spec), new RegExp(`max\\(var\\(--flow-col-gap\\), min\\(${gaps[2]}px, ${each}%\\)\\)`));
 });
 
 test('renderFlowDiagram: a span covers its boxes and the gaps between them', () => {
   const html = renderFlowDiagram({ cols: 3, nodes: [{ id: 'w', title: 'w', col: 1, row: 1, span: 3 }], edges: [] });
   assert.match(html, /grid-template-columns:minmax\(0, 1fr\) var\(--flow-col-gap\) minmax\(0, 1fr\) var\(--flow-col-gap\) minmax\(0, 1fr\)"/);
   assert.match(html, /data-node="w" style="grid-column:1 \/ span 5;/);
+});
+
+test('renderFlowDiagram: many widened gaps split the share between them', () => {
+  const nodes = Array.from({ length: 6 }, (_, i) => ({ id: `n${i}`, title: 'n', col: i + 1, row: 1 }));
+  const edges = nodes.slice(1).map((n, i) => ({ from: `n${i}`, to: n.id, label: 'internationalization' }));
+  const html = renderFlowDiagram({ cols: 6, nodes, edges });
+  assert.equal(html.match(/min\(\d+px, 10%\)/g)?.length, 5, 'five gaps, 50% between them');
+});
+
+test('columnGaps: a blank label asks for nothing', () => {
+  const spec = { cols: 2, nodes: [{ id: 'a', title: 'a', col: 1, row: 1 }, { id: 'b', title: 'b', col: 2, row: 1 }], edges: [{ from: 'a', to: 'b', label: '  ' }] };
+  assert.deepEqual(columnGaps(spec), [0]);
 });
