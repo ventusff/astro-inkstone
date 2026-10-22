@@ -160,8 +160,16 @@ export function portFractions(ends: number[]): number[] {
   return out;
 }
 
-/** the longest segment of a polyline and where along it (`t`, 0.5 = the middle) its label goes */
-export function labelAnchor(pts: Pt[], t = 0.5): { x: number; y: number; horizontal: boolean; length: number } {
+/**
+ * Where a label goes on the longest segment of a polyline, `t` along it (0.5 = the middle):
+ * centred above a horizontal segment; beside a vertical one, starting 8px to its right
+ * (`side` 1) or ending 8px to its left (`side` -1). `anchor` is the SVG text-anchor that goes with it.
+ */
+export function labelAnchor(
+  pts: Pt[],
+  t = 0.5,
+  side: 1 | -1 = 1,
+): { x: number; y: number; horizontal: boolean; length: number; anchor: 'middle' | 'start' | 'end' } {
   let best = -1;
   let p: Pt = pts[0] ?? [0, 0];
   let q: Pt = pts[1] ?? p;
@@ -173,10 +181,11 @@ export function labelAnchor(pts: Pt[], t = 0.5): { x: number; y: number; horizon
   }
   const horizontal = Math.abs(q[0] - p[0]) > Math.abs(q[1] - p[1]);
   return {
-    x: p[0] + (q[0] - p[0]) * t + (horizontal ? 0 : 8),
+    x: p[0] + (q[0] - p[0]) * t + (horizontal ? 0 : 8 * side),
     y: p[1] + (q[1] - p[1]) * t + (horizontal ? -7 : 4),
     horizontal,
     length: Math.max(best, 0),
+    anchor: horizontal ? 'middle' : side === 1 ? 'start' : 'end',
   };
 }
 
@@ -358,19 +367,25 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       wires.append(path);
       if (!e.label) continue;
       // the label goes at the middle of the longest segment, else a quarter in from either end;
-      // where every spot lands on a box or a heading, or the gap is narrower than the words, it is left out
+      // beside a vertical segment it takes the right side, else the left; a spot counts only when the
+      // words stay inside the diagram and off every box and heading. Where no spot does, or the gap
+      // along a horizontal segment is narrower than the words, the label is left out.
       const label = svgEl('text', { class: `lbl${e.off ? ' off' : ''}` }, e.label);
       wires.append(label);
+      const width = root.clientWidth;
       let placedLabel = false;
-      for (const t of [0.5, 0.25, 0.75]) {
-        const at = labelAnchor(pts, t);
-        label.setAttribute('x', String(at.x));
-        label.setAttribute('y', String(at.y));
-        label.setAttribute('text-anchor', at.horizontal ? 'middle' : 'start');
-        if (at.horizontal && at.length < Math.max(estimateLabelWidth(e.label), label.getComputedTextLength()) + 12) break;
-        const b = label.getBBox();
-        const box = { x: b.x - 2, y: b.y - 2, w: b.width + 4, h: b.height + 4 };
-        if (!blocks.some((r) => overlaps(box, r))) { placedLabel = true; break; }
+      spots: for (const t of [0.5, 0.25, 0.75]) {
+        for (const side of [1, -1] as const) {
+          const at = labelAnchor(pts, t, side);
+          label.setAttribute('x', String(at.x));
+          label.setAttribute('y', String(at.y));
+          label.setAttribute('text-anchor', at.anchor);
+          if (at.horizontal && at.length < Math.max(estimateLabelWidth(e.label), label.getComputedTextLength()) + 12) break spots;
+          const b = label.getBBox();
+          const box = { x: b.x - 2, y: b.y - 2, w: b.width + 4, h: b.height + 4 };
+          if (box.x >= 0 && box.x + box.w <= width && !blocks.some((r) => overlaps(box, r))) { placedLabel = true; break spots; }
+          if (at.horizontal) break;
+        }
       }
       if (!placedLabel) label.remove();
     }

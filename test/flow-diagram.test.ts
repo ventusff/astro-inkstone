@@ -45,7 +45,15 @@ test('labelAnchor sits above the longest horizontal segment, beside a vertical o
   const v = labelAnchor([[50, 0], [50, 10], [60, 10], [60, 200]]);
   assert.equal(v.horizontal, false);
   assert.equal(v.length, 190);
-  assert.deepEqual([v.x, v.y], [68, 109]);
+  assert.deepEqual([v.x, v.y, v.anchor], [68, 109, 'start']);
+  assert.equal(h.anchor, 'middle');
+});
+
+test('labelAnchor puts a vertical segment\'s label on its left, ending there, when asked', () => {
+  const v = labelAnchor([[60, 10], [60, 200]], 0.5, -1);
+  assert.deepEqual([v.x, v.y, v.anchor], [52, 109, 'end']);
+  const h = labelAnchor([[0, 10], [100, 10]], 0.5, -1);
+  assert.deepEqual([h.x, h.y, h.anchor], [50, 3, 'middle']);
 });
 
 test('estimateLabelWidth counts CJK wider than Latin', () => {
