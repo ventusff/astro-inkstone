@@ -7,7 +7,8 @@
  * representative route each `<dialog data-probe-open>` is also opened and
  * its layout checked): horizontal overflow of the page, elements wider than
  * their container with no scroll box to live in, words an SVG draws outside
- * its own box (a diagram's labels, a chart's ticks), classes no stylesheet rule
+ * its own box (a diagram's labels, a chart's ticks), FlowDiagram wire labels
+ * that are not drawn, classes no stylesheet rule
  * styles, skipped heading levels, duplicate ids, images without an alt
  * attribute, in-page anchors and aria-controls pointing at ids that do not
  * exist. It makes no aesthetic judgement.
@@ -106,11 +107,11 @@ function routes(dir, prefix = '') {
 // Evaluated inside the page: each function is self-contained.
 
 /** Viewport-dependent: the page's horizontal overflow, elements wider than
- *  their container, and SVG text outside its SVG's box. `scope` is
- *  'document' (everything under body) or 'dialogs' (the contents of the open
- *  dialogs). */
+ *  their container, SVG text outside its SVG's box, and FlowDiagram wire
+ *  labels missing from the drawing. `scope` is 'document' (everything under
+ *  body) or 'dialogs' (the contents of the open dialogs). */
 const layoutChecks = (scope) => {
-  const out = { hOverflow: null, wide: [], svgText: [] };
+  const out = { hOverflow: null, wide: [], svgText: [], lostLabel: [] };
   const de = document.documentElement;
   if (de.scrollWidth > de.clientWidth + 1)
     out.hOverflow = { doc: de.scrollWidth, view: de.clientWidth };
@@ -161,6 +162,26 @@ const layoutChecks = (scope) => {
       if (a.width === 0 || getComputedStyle(t).visibility !== 'visible') continue;
       if (a.left < b.left - 1 || a.right > b.right + 1 || a.top < b.top - 1 || a.bottom > b.bottom + 1)
         out.svgText.push({ svg: ['svg', ...(svg.getAttribute('class') ?? '').split(/\s+/).filter(Boolean)].join('.'), text: t.textContent.trim().slice(0, 40) });
+    }
+  }
+  // A FlowDiagram carries its spec in data-flow; every edge label in it must
+  // be drawn as visible words in the wire layer (lines wrap into tspans, so
+  // the words are compared without whitespace). A diagram laid out to no box
+  // (inside closed markup) draws nothing and is skipped.
+  const bare = (x) => x.replace(/\s+/g, '');
+  for (const grid of document.querySelectorAll(scope === 'dialogs' ? 'dialog[open] .flow-grid[data-flow]' : 'body .flow-grid[data-flow]')) {
+    const g = grid.getBoundingClientRect();
+    if (g.width === 0 || g.height === 0) continue;
+    let spec;
+    try { spec = JSON.parse(grid.dataset.flow); } catch { out.lostLabel.push({ label: '(data-flow is not JSON)' }); continue; }
+    const drawn = [...grid.querySelectorAll('.flow-wires .lbl')]
+      .filter((t) => t.getBoundingClientRect().width > 0 && getComputedStyle(t).visibility === 'visible')
+      .map((t) => bare(t.textContent));
+    for (const e of spec.edges ?? []) {
+      if (!e.label) continue;
+      const i = drawn.indexOf(bare(e.label));
+      if (i === -1) out.lostLabel.push({ label: e.label.slice(0, 40) });
+      else drawn.splice(i, 1);
     }
   }
   return out;
@@ -277,9 +298,9 @@ const closeDialogs = () => {
 const twoFrames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
 /* ------------------------------------------------------------- the sweep */
-const empty = () => ({ hOverflow: null, wide: [], svgText: [], unstyled: [], headingJump: [], noAlt: [], dupId: [], deadAnchor: [], deadControl: [] });
+const empty = () => ({ hOverflow: null, wide: [], svgText: [], lostLabel: [], unstyled: [], headingJump: [], noAlt: [], dupId: [], deadAnchor: [], deadControl: [] });
 const hit = (s) =>
-  s.hOverflow || s.wide.length || s.svgText.length || s.unstyled.length || s.headingJump.length ||
+  s.hOverflow || s.wide.length || s.svgText.length || s.lostLabel.length || s.unstyled.length || s.headingJump.length ||
   s.noAlt.length || s.dupId.length || s.deadAnchor.length || s.deadControl.length;
 
 /**
@@ -387,6 +408,7 @@ const brief = findings.map((f) => {
   if (f.hOverflow) bits.push(`page overflows horizontally doc=${f.hOverflow.doc} > view=${f.hOverflow.view}`);
   if (f.wide.length) bits.push('breaks its container: ' + [...new Set(f.wide.map((x) => `${x.el}(${x.w}) > ${x.parent}(${x.pw})`))].slice(0, 4).join('; '));
   if (f.svgText.length) bits.push('words outside their svg: ' + [...new Set(f.svgText.map((x) => `${x.svg} "${x.text}"`))].slice(0, 4).join('; '));
+  if (f.lostLabel.length) bits.push('diagram labels not drawn: ' + f.lostLabel.map((x) => `"${x.label}"`).slice(0, 4).join('; '));
   if (f.unstyled.length) bits.push('unstyled classes: ' + f.unstyled.map((x) => `${x.el}(${x.why})`).slice(0, 6).join(', '));
   if (f.headingJump.length) bits.push('heading level skips: ' + f.headingJump.map((x) => `${x.from}→${x.to}`).join(', '));
   if (f.noAlt.length) bits.push(`images without alt ×${f.noAlt.length}`);

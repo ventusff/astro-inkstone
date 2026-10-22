@@ -20,7 +20,7 @@
  *     hand-drawn SVG: every `<text>` whose box leaves its `<svg>` viewport.
  */
 
-import { isWide } from './text-width.ts';
+import { estimateTextWidth, isWide } from './text-width.ts';
 
 export type FlowTone = 'colleague' | 'admin' | 'machine' | 'blocked' | 'plain';
 
@@ -64,7 +64,8 @@ export interface FlowSpec {
   /** a small heading occupying a whole row of its own */
   heads?: Array<{ row: number; text: string }>;
   nodes: FlowNode[];
-  edges: FlowEdge[];
+  /** the wires; a diagram of boxes alone leaves it out */
+  edges?: FlowEdge[];
 }
 
 export type Pt = [number, number];
@@ -162,38 +163,152 @@ export function portFractions(ends: number[]): number[] {
   return out;
 }
 
-/**
- * Where a label goes on the longest segment of a polyline, `t` along it (0.5 = the middle):
- * centred above a horizontal segment; beside a vertical one, starting 8px to its right
- * (`side` 1) or ending 8px to its left (`side` -1). `anchor` is the SVG text-anchor that goes with it.
- */
-export function labelAnchor(
-  pts: Pt[],
-  t = 0.5,
-  side: 1 | -1 = 1,
-): { x: number; y: number; horizontal: boolean; length: number; anchor: 'middle' | 'start' | 'end' } {
-  let best = -1;
-  let p: Pt = pts[0] ?? [0, 0];
-  let q: Pt = pts[1] ?? p;
-  for (let i = 0; i < pts.length - 1; i += 1) {
-    const a = pts[i] ?? p;
-    const b = pts[i + 1] ?? q;
-    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    if (len > best) { best = len; p = a; q = b; }
+/** the segments of a polyline, longest first, each as its two ends, whether it runs horizontally, and its length */
+export function segmentsByLength(pts: Pt[]): Array<{ p: Pt; q: Pt; horizontal: boolean; length: number }> {
+  const out: Array<{ p: Pt; q: Pt; horizontal: boolean; length: number }> = [];
+  for (let i = 0; i + 1 < pts.length; i += 1) {
+    const p = pts[i] as Pt;
+    const q = pts[i + 1] as Pt;
+    const length = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (length > 0) out.push({ p, q, horizontal: Math.abs(q[0] - p[0]) > Math.abs(q[1] - p[1]), length });
   }
-  const horizontal = Math.abs(q[0] - p[0]) > Math.abs(q[1] - p[1]);
-  return {
-    x: p[0] + (q[0] - p[0]) * t + (horizontal ? 0 : 8 * side),
-    y: p[1] + (q[1] - p[1]) * t + (horizontal ? -7 : 4),
-    horizontal,
-    length: Math.max(best, 0),
-    anchor: horizontal ? 'middle' : side === 1 ? 'start' : 'end',
-  };
+  return out.sort((a, b) => b.length - a.length);
 }
 
-/** a label's width estimated from its characters (full-width 11px, others 6.5px at the 11px label size) */
-export function estimateLabelWidth(text: string): number {
-  return [...text].reduce((w, ch) => w + (isWide(ch) ? 11 : 6.5), 0);
+/** the point `t` along a segment (0.5 = the middle), with the segment's direction and length */
+export function segmentPoint(seg: { p: Pt; q: Pt; horizontal: boolean; length: number }, t = 0.5): { x: number; y: number; horizontal: boolean; length: number } {
+  return { x: seg.p[0] + (seg.q[0] - seg.p[0]) * t, y: seg.p[1] + (seg.q[1] - seg.p[1]) * t, horizontal: seg.horizontal, length: seg.length };
+}
+
+/** the label's font size, the smallest it may shrink to, and the most lines it may wrap into */
+export const LABEL_PX = 11;
+export const LABEL_MIN_PX = 9;
+export const LABEL_MAX_LINES = 3;
+
+/** a label set at one font size, broken into lines */
+export interface LabelLayout { px: number; lines: string[] }
+
+/**
+ * The words of a label as the pieces a line may break between: a run of
+ * characters between spaces, or a single full-width character (Han, kana and
+ * Hangul break between any two). `space` says whether a space precedes it.
+ */
+function pieces(text: string): Array<{ text: string; space: boolean }> {
+  const out: Array<{ text: string; space: boolean }> = [];
+  let space = false;
+  let run = '';
+  const flush = () => { if (run) { out.push({ text: run, space }); space = false; run = ''; } };
+  for (const ch of text.trim()) {
+    if (/\s/.test(ch)) { flush(); space = true; continue; }
+    if (isWide(ch)) { flush(); out.push({ text: ch, space }); space = false; continue; }
+    run += ch;
+  }
+  flush();
+  return out;
+}
+
+/**
+ * The label broken greedily into lines no wider than `maxWidth` at font size
+ * `px`, or null when a piece alone is wider or it takes more than `maxLines`.
+ */
+export function wrapLabel(text: string, maxWidth: number, px: number, maxLines = LABEL_MAX_LINES): string[] | null {
+  const lines: string[] = [];
+  for (const p of pieces(text)) {
+    if (estimateTextWidth(p.text, px) > maxWidth) return null;
+    const last = lines[lines.length - 1];
+    const joined = last === undefined ? p.text : last + (p.space ? ' ' : '') + p.text;
+    if (last !== undefined && estimateTextWidth(joined, px) <= maxWidth) lines[lines.length - 1] = joined;
+    else lines.push(p.text);
+  }
+  return lines.length <= maxLines ? lines : null;
+}
+
+/** the narrowest setting of a label in at most LABEL_MAX_LINES lines at font size `px`, and its widest line's width */
+export function narrowestWrap(text: string, px: number): { lines: string[]; width: number } {
+  let lo = 0;
+  let hi = estimateTextWidth(text, px);
+  for (let i = 0; i < 24; i += 1) {
+    const mid = (lo + hi) / 2;
+    if (wrapLabel(text, mid, px)) hi = mid; else lo = mid;
+  }
+  const lines = wrapLabel(text, hi, px) ?? [text];
+  return { lines, width: Math.max(...lines.map((l) => estimateTextWidth(l, px))) };
+}
+
+/**
+ * The ways to set a label in `room` px of width, best first: at each size from
+ * LABEL_PX down to LABEL_MIN_PX, the fewest lines up to LABEL_MAX_LINES that
+ * fit; when none does, at LABEL_MIN_PX as many lines as it takes to fit (a
+ * sentence of a label); last, whatever fits or not, the narrowest LABEL_MAX_LINES-line
+ * setting at LABEL_MIN_PX, so there is always one to draw.
+ */
+export function labelLayouts(text: string, room: number): LabelLayout[] {
+  const out: LabelLayout[] = [];
+  for (let px = LABEL_PX; px >= LABEL_MIN_PX; px -= 1) {
+    const lines = wrapLabel(text, room, px);
+    if (lines) out.push({ px, lines });
+  }
+  if (out.length === 0) {
+    const lines = wrapLabel(text, room, LABEL_MIN_PX, Number.POSITIVE_INFINITY);
+    if (lines) out.push({ px: LABEL_MIN_PX, lines });
+  }
+  out.push({ px: LABEL_MIN_PX, lines: narrowestWrap(text, LABEL_MIN_PX).lines });
+  return out;
+}
+
+/** the most of the diagram's width one column gap takes to make room for a label */
+export const LABEL_GAP_SHARE = '25%';
+
+/**
+ * The width, in px, each gap between neighbouring columns asks for (index i is
+ * the gap after column i + 1): a wire joining two boxes of one row across that
+ * gap runs straight through it and carries its label there, so the gap asks
+ * for the label's narrowest setting at LABEL_PX plus the 12px a level label
+ * keeps from the wire's ends and its 2px padding on each side; 0 where no
+ * labelled wire crosses. The grid grants it between the stylesheet's column
+ * gap and LABEL_GAP_SHARE of the diagram's width.
+ */
+export function columnGaps(spec: FlowSpec): number[] {
+  const gaps = new Array<number>(Math.max(spec.cols - 1, 0)).fill(0);
+  const byId = new Map(spec.nodes.map((n) => [n.id, n]));
+  for (const e of spec.edges ?? []) {
+    const a = byId.get(e.from);
+    const b = byId.get(e.to);
+    if (!e.label || !a || !b || a.row !== b.row) continue;
+    const [left, right] = a.col < b.col ? [a, b] : [b, a];
+    const after = left.col + (left.span ?? 1) - 1;
+    if (right.col !== after + 1 || after < 1 || after > gaps.length) continue;
+    const need = Math.ceil(narrowestWrap(e.label, LABEL_PX).width) + 16;
+    gaps[after - 1] = Math.max(gaps[after - 1] ?? 0, need);
+  }
+  return gaps;
+}
+
+/**
+ * A label's lines placed at a segment point. Along a horizontal segment the
+ * block is centred on the point's x: above it (`side` 1) or below it (-1),
+ * 7px off, or on it (0), the block centred on the wire, whose stroke the
+ * words' halo hides. Beside a vertical segment it starts 8px to the right (1)
+ * or ends 8px to the left (-1), the block centred on the point. Baselines are
+ * `y`; `anchor` is the SVG text-anchor.
+ */
+export function labelLines(
+  at: { x: number; y: number; horizontal: boolean },
+  side: 1 | 0 | -1,
+  layout: LabelLayout,
+): { anchor: 'middle' | 'start' | 'end'; lines: Array<{ x: number; y: number; text: string }> } {
+  const n = layout.lines.length;
+  const lh = Math.round(layout.px * 1.2);
+  const centred = at.y + Math.round(layout.px * 0.35) - ((n - 1) * lh) / 2;
+  if (at.horizontal) {
+    const first = side === 1 ? at.y - 7 - (n - 1) * lh : side === -1 ? at.y + 7 + Math.round(layout.px * 0.8) : centred;
+    return { anchor: 'middle', lines: layout.lines.map((text, i) => ({ x: at.x, y: first + i * lh, text })) };
+  }
+  const first = centred;
+  return {
+    anchor: side === 1 ? 'start' : 'end',
+    lines: layout.lines.map((text, i) => ({ x: at.x + 8 * (side || 1), y: first + i * lh, text })),
+  };
 }
 
 export const pathOf = (pts: Pt[]): string =>
@@ -206,8 +321,15 @@ export const pathOf = (pts: Pt[]): string =>
  * this one function, so the two never drift.
  */
 export function renderFlowDiagram(spec: FlowSpec): string {
-  const laneCol = spec.lanes ? 1 : 0;
-  const columns = `${spec.lanes ? 'max-content ' : ''}repeat(${spec.cols}, minmax(0, 1fr))`;
+  // Column gaps are grid tracks of their own, so each can widen for the label
+  // of a wire that crosses it: box column c sits on grid column 2c - 1 (+ 2 with
+  // a lane column and the gap after it), and a span of s boxes covers 2s - 1 tracks.
+  const laneCol = spec.lanes ? 2 : 0;
+  const gap = (asks: number) => (asks > 0 ? `max(var(--flow-col-gap), min(${asks}px, ${LABEL_GAP_SHARE}))` : 'var(--flow-col-gap)');
+  const tracks: string[] = spec.lanes ? ['max-content', gap(0)] : [];
+  columnGaps(spec).forEach((least) => tracks.push('minmax(0, 1fr)', gap(least)));
+  tracks.push('minmax(0, 1fr)');
+  const columns = tracks.join(' ');
   const parts: string[] = [];
   for (const h of spec.heads ?? []) {
     parts.push(`<div class="flow-head" style="grid-row:${h.row}">${esc(h.text)}</div>`);
@@ -219,14 +341,14 @@ export function renderFlowDiagram(spec: FlowSpec): string {
   for (const n of spec.nodes) {
     const color = toneColor(n.tone);
     const cls = `flow-node${n.ghost ? ' ghost' : ''}${n.mono ? ' mono' : ''}`;
-    const style = `grid-column:${n.col + laneCol} / span ${n.span ?? 1};grid-row:${n.row}${color && n.tone !== 'plain' ? `;border-color:${color}` : ''}`;
+    const style = `grid-column:${2 * n.col - 1 + laneCol} / span ${2 * (n.span ?? 1) - 1};grid-row:${n.row}${color && n.tone !== 'plain' ? `;border-color:${color}` : ''}`;
     const lines = (n.lines ?? []).map((l) => `<small>${esc(l)}</small>`).join('');
     const tag = n.tag ? `<span class="tag"${color ? ` style="color:${color}"` : ''}>${esc(n.tag)}</span>` : '';
     parts.push(`<div class="${cls}" data-node="${esc(n.id)}" style="${style}"><b>${esc(n.title)}</b>${lines}${tag}</div>`);
   }
   // the arrowheads are made in the browser with the wires, one id per diagram (see markerFor)
   const wires = '<svg class="flow-wires" aria-hidden="true"><defs></defs></svg>';
-  const data = esc(JSON.stringify({ lanes: !!spec.lanes, rows: spec.nodes.map((n) => [n.id, n.row]), edges: spec.edges }));
+  const data = esc(JSON.stringify({ lanes: !!spec.lanes, rows: spec.nodes.map((n) => [n.id, n.row]), edges: spec.edges ?? [] }));
   return `<div class="flow-grid" data-flow="${data}" style="grid-template-columns:${columns}">${wires}${parts.join('')}</div>`;
 }
 
@@ -340,7 +462,33 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
     });
   };
-  const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  const overlapArea = (a: Rect, b: Rect) =>
+    Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  /** a label's box, padded 2px */
+  const labelBox = (label: SVGTextElement): Rect => {
+    const b = label.getBBox();
+    return { x: b.x - 2, y: b.y - 2, w: b.width + 4, h: b.height + 4 };
+  };
+  /**
+   * Write a label's lines into its <text> at font size `px`, shift them as
+   * little as keeps the box (padded 2px) inside the diagram, `width` by
+   * `height`, and return the box and how far, in px, the lines moved.
+   */
+  const setLabel = (label: SVGTextElement, laid: ReturnType<typeof labelLines>, px: number, width: number, height: number): { box: Rect; moved: number } => {
+    label.replaceChildren(...laid.lines.map((l) => svgEl('tspan', { x: l.x, y: l.y }, l.text)));
+    label.setAttribute('text-anchor', laid.anchor);
+    label.style.fontSize = px === LABEL_PX ? '' : `${px}px`;
+    const b = labelBox(label);
+    const into = (lo: number, size: number, room: number) => (lo < 0 ? -lo : lo + size > room ? Math.max(room - (lo + size), -lo) : 0);
+    const dx = into(b.x, b.w, width);
+    const dy = into(b.y, b.h, height);
+    if (!dx && !dy) return { box: b, moved: 0 };
+    for (const ts of label.children) {
+      ts.setAttribute('x', String(Number(ts.getAttribute('x')) + dx));
+      ts.setAttribute('y', String(Number(ts.getAttribute('y')) + dy));
+    }
+    return { box: labelBox(label), moved: Math.hypot(dx, dy) };
+  };
 
   function redraw(): void {
     for (const c of [...wires.children]) if (c !== defs) c.remove();
@@ -368,28 +516,36 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       if (color) path.style.stroke = color;
       wires.append(path);
       if (!e.label) continue;
-      // the label goes at the middle of the longest segment, else a quarter in from either end;
-      // beside a vertical segment it takes the right side, else the left; a spot counts only when the
-      // words stay inside the diagram and off every box and heading. Where no spot does, or the gap
-      // along a horizontal segment is narrower than the words, the label is left out.
-      const label = svgEl('text', { class: `lbl${e.off ? ' off' : ''}` }, e.label);
+      // Every label is drawn. Spots, in order: the segments longest first; on each, the middle, then a
+      // quarter in from either end; above, below, then on a horizontal segment; right, then left of a
+      // vertical one.
+      // At each spot the settings `labelLayouts` gives for the room there are tried best first, each
+      // pulled inside the diagram where it would cross an edge. The first that fits the room, lands on
+      // no box, heading or label drawn before it, and (beside a vertical segment, where a shift would
+      // cross the wire) did not have to move is kept; when none does, the one that covers the least
+      // of them, then moved the least, is.
+      const label = svgEl('text', { class: `lbl${e.off ? ' off' : ''}` });
       wires.append(label);
       const width = root.clientWidth;
-      let placedLabel = false;
-      spots: for (const t of [0.5, 0.25, 0.75]) {
-        for (const side of [1, -1] as const) {
-          const at = labelAnchor(pts, t, side);
-          label.setAttribute('x', String(at.x));
-          label.setAttribute('y', String(at.y));
-          label.setAttribute('text-anchor', at.anchor);
-          if (at.horizontal && at.length < Math.max(estimateLabelWidth(e.label), label.getComputedTextLength()) + 12) break spots;
-          const b = label.getBBox();
-          const box = { x: b.x - 2, y: b.y - 2, w: b.width + 4, h: b.height + 4 };
-          if (box.x >= 0 && box.x + box.w <= width && !blocks.some((r) => overlaps(box, r))) { placedLabel = true; break spots; }
-          if (at.horizontal) break;
+      const height = root.clientHeight;
+      let best: { cost: number; set: () => Rect } | undefined;
+      spots: for (const seg of segmentsByLength(pts)) for (const t of [0.5, 0.25, 0.75]) {
+        const at = segmentPoint(seg, t);
+        for (const side of at.horizontal ? ([1, -1, 0] as const) : ([1, -1] as const)) {
+          const room = at.horizontal ? at.length - 12 : side === 1 ? width - at.x - 10 : at.x - 10;
+          for (const layout of labelLayouts(e.label, room)) {
+            const set = () => setLabel(label, labelLines(at, side, layout), layout.px, width, height).box;
+            const { box, moved } = setLabel(label, labelLines(at, side, layout), layout.px, width, height);
+            const covered = blocks.reduce((a, r) => a + overlapArea(box, r), 0);
+            const fits = box.w - 4 <= Math.max(room, 0);
+            if (covered === 0 && fits && (at.horizontal || moved === 0)) { best = undefined; break spots; }
+            const cost = covered * 1000 + moved + (fits ? 0 : 1);
+            if (!best || cost < best.cost) best = { cost, set };
+          }
         }
       }
-      if (!placedLabel) label.remove();
+      const box = best ? best.set() : labelBox(label);
+      blocks.push(box);
     }
   }
 

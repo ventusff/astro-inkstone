@@ -59,7 +59,7 @@ node vendor/astro-inkbrush/scripts/check-dist.mjs dist --base ${DEMO_BASE:-/}
 
 ## Phép dò tầng kết xuất
 
-Nguồn lẫn sản phẩm có thể cùng đúng mà trang vẫn hỏng — ca kinh điển là thẻ trên trang chủ không khớp rule stylesheet nào, render thành một dòng chữ trần chen chúc: phép kiểm liên kết và anchor vẫn xanh vì chúng chưa từng nhìn vào trang đã render. `ui_probe` lái một trình duyệt thật đi qua từng trang trong `dist` ở bốn bề rộng khung nhìn (1440/1024/768/430) và đo: tràn ngang của trang, phần tử rộng hơn khung chứa mà không có hộp cuộn để nương náu, chữ mà SVG vẽ ra ngoài khung của chính nó, class không rule stylesheet nào chải tới, cấp đề mục bị nhảy, id trùng, ảnh thiếu thuộc tính `alt`, anchor trong trang và `aria-controls` trỏ vào hư không. Nó chỉ báo những gì máy chứng minh được — không phán xét thẩm mỹ.
+Nguồn lẫn sản phẩm có thể cùng đúng mà trang vẫn hỏng — ca kinh điển là thẻ trên trang chủ không khớp rule stylesheet nào, render thành một dòng chữ trần chen chúc: phép kiểm liên kết và anchor vẫn xanh vì chúng chưa từng nhìn vào trang đã render. `ui_probe` lái một trình duyệt thật đi qua từng trang trong `dist` ở bốn bề rộng khung nhìn (1440/1024/768/430) và đo: tràn ngang của trang, phần tử rộng hơn khung chứa mà không có hộp cuộn để nương náu, chữ mà SVG vẽ ra ngoài khung của chính nó, nhãn dây trong FlowDiagram không được vẽ, class không rule stylesheet nào chải tới, cấp đề mục bị nhảy, id trùng, ảnh thiếu thuộc tính `alt`, anchor trong trang và `aria-controls` trỏ vào hư không. Nó chỉ báo những gì máy chứng minh được — không phán xét thẩm mỹ.
 
 ```bash title="cần Chrome/Chromium cài sẵn trên máy"
 npm run build

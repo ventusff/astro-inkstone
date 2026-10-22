@@ -1822,7 +1822,9 @@ a.hub-card {
 .flow-grid {
   position: relative;
   display: grid;
-  gap: 34px 36px;
+  /* the column gaps are tracks of their own (renderFlowDiagram), at least this wide */
+  --flow-col-gap: 36px;
+  gap: 34px 0;
   /* boxes on one row share its height, so a level wire meets both at mid-height */
   align-items: stretch;
   font-size: 12.5px;
@@ -1925,7 +1927,7 @@ a.hub-card {
 }
 @media (max-width: 640px) {
   .flow { padding: 14px; }
-  .flow-grid { gap: 26px 18px; }
+  .flow-grid { --flow-col-gap: 18px; row-gap: 26px; }
   .flow-node { padding: 6px 8px 7px; }
 }
 
