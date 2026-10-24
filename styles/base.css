@@ -90,6 +90,12 @@ h4 {
 .col {
   overflow-wrap: anywhere;
 }
+/* a table cell keeps each word whole: a column is at least as wide as its
+   longest word (a key name never breaks letter by letter), and a table wider
+   than the reading column scrolls inside its wrapper */
+.col :is(th, td) {
+  overflow-wrap: break-word;
+}
 .col h1 {
   font-size: 44px;
   line-height: 1.05;
