@@ -85,8 +85,42 @@ Sơ đồ có chữ thì dùng `FlowDiagram` (hoặc khối `mermaid`). `<svg>` 
     { from: 'review', to: 'build' },
   ],
 }}>
-  Làn gắn nhãn cho hàng và vẽ đường phân cách; tone tô viền và nhãn của ô; dây đi vòng qua mọi ô mà nó không nối; nhãn trên dây luôn được vẽ: dây nối hai ô kề nhau trên cùng một hàng nới rộng khoảng trống giữa chúng cho nhãn, nhãn xuống dòng hoặc thu nhỏ theo chỗ trống tìm được, còn nhãn không tìm được chỗ tránh các ô và các dây khác thì thành một con số trên dây của nó, chữ của nhãn được ghi dưới sơ đồ.
+  Làn gắn nhãn cho hàng và vẽ đường phân cách; tone tô viền và nhãn của ô; dây đi vòng qua mọi ô mà nó không nối và mọi tiêu đề; nhãn trên dây luôn được vẽ: dây nối hai ô kề nhau trên cùng một hàng nới rộng khoảng trống giữa chúng cho nhãn, nhãn xuống dòng hoặc thu nhỏ theo chỗ trống tìm được, còn nhãn không tìm được chỗ tránh các ô và các dây khác thì thành một con số trên dây của nó, chữ của nhãn được ghi dưới sơ đồ.
 </FlowDiagram>
+
+Mỗi mục trong `heads` là tiêu đề cho các hàng bên dưới nó, nên một sơ đồ chia nhóm là một hàng tiêu đề rồi đến các ô của nhóm; dây đi vòng qua chữ của tiêu đề giống như đi vòng qua một ô. Dây không tìm được đường giữa các ô sẽ chạy dọc lề của sơ đồ — dải hai bên các ô, nằm trong phần đệm của khung — và lớp dây phủ cả lề này, nên dây và con số của nó vẫn nằm trong hình:
+
+<FlowDiagram title="Hình — dây quay ngược lên trong một cột" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: 'Lên kế hoạch', lines: ['thay đổi gì'], col: 1, row: 1 },
+    { id: 'build', title: 'Xây dựng', col: 1, row: 2 },
+    { id: 'measure', title: 'Đo', lines: ['so với giá trị chuẩn'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: 'còn xa giá trị chuẩn: sửa kế hoạch', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="Hình — hai nhóm, dây giữa chúng" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'Mô hình nhận được gì' }, { row: 3, text: 'Mô hình tính ra gì từ đó' }],
+  nodes: [
+    { id: 'photos', title: 'Hình ảnh', lines: ['nhiều góc nhìn'], col: 1, row: 2 },
+    { id: 'cameras', title: 'Camera', lines: ['tư thế và ống kính'], col: 2, row: 2 },
+    { id: 'features', title: 'Đặc trưng từng góc nhìn', col: 1, row: 4 },
+    { id: 'fuse', title: 'Gộp các góc nhìn', col: 2, row: 4 },
+    { id: 'surface', title: 'Mặt kín', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## Phụ kiện không cần thành phần
 

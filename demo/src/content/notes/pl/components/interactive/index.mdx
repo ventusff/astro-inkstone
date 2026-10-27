@@ -85,8 +85,42 @@ Diagram niosący słowa to `FlowDiagram` (albo blok `mermaid`). Ręcznie pozycjo
     { from: 'review', to: 'build' },
   ],
 }}>
-  Tory etykietują wiersze i rysują separatory; tone koloruje obramowanie i etykietę ramki; linia omija każdą ramkę, której nie łączy; etykieta linii jest zawsze rysowana: linia między sąsiednimi ramkami jednego wiersza poszerza dla niej przerwę między nimi, etykieta łamie się lub zmniejsza zależnie od miejsca, które znajdzie, a etykieta bez miejsca wolnego od ramek i innych linii staje się numerem na swojej linii, a jej tekst trafia pod diagram.
+  Tory etykietują wiersze i rysują separatory; tone koloruje obramowanie i etykietę ramki; linia omija każdą ramkę, której nie łączy, i każdy nagłówek; etykieta linii jest zawsze rysowana: linia między sąsiednimi ramkami jednego wiersza poszerza dla niej przerwę między nimi, etykieta łamie się lub zmniejsza zależnie od miejsca, które znajdzie, a etykieta bez miejsca wolnego od ramek i innych linii staje się numerem na swojej linii, a jej tekst trafia pod diagram.
 </FlowDiagram>
+
+Wpis w `heads` jest nagłówkiem wierszy pod nim, więc diagram w grupach to wiersz nagłówka, a pod nim ramki grupy; linie omijają tekst nagłówka tak samo jak ramkę. Linia, która nie znajduje drogi między ramkami, biegnie marginesem diagramu — pasem po obu stronach ramek, wewnątrz dopełnienia obramowania — a warstwa linii obejmuje ten margines, więc linia i jej numer zostają w obrębie rysunku:
+
+<FlowDiagram title="Rys. — linia wracająca w górę jednej kolumny" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: 'Plan', lines: ['co zmienić'], col: 1, row: 1 },
+    { id: 'build', title: 'Budowa', col: 1, row: 2 },
+    { id: 'measure', title: 'Pomiar', lines: ['względem wzorca'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: 'wciąż daleko od wzorca: popraw plan', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="Rys. — dwie grupy, linie między nimi" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'Co dostaje model' }, { row: 3, text: 'Co model z tego oblicza' }],
+  nodes: [
+    { id: 'photos', title: 'Zdjęcia', lines: ['kilka widoków'], col: 1, row: 2 },
+    { id: 'cameras', title: 'Kamery', lines: ['pozy i obiektywy'], col: 2, row: 2 },
+    { id: 'features', title: 'Cechy każdego widoku', col: 1, row: 4 },
+    { id: 'fuse', title: 'Połączenie widoków', col: 2, row: 4 },
+    { id: 'surface', title: 'Zamknięta powierzchnia', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## Wyposażenie bez komponentu
 

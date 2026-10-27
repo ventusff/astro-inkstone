@@ -1830,7 +1830,20 @@ a.hub-card {
   display: grid;
   /* the column gaps are tracks of their own (renderFlowDiagram), at least this wide */
   --flow-col-gap: 36px;
-  gap: 34px 0;
+  --flow-row-gap: 34px;
+  /* the gutter: a strip either side of the boxes, inside the frame's padding,
+     that the wire layer covers. A wire with no way between the boxes runs
+     down it; it is wide enough for a label's key, an 18px disc, to sit on
+     that wire clear of the boxes. When more wires can only run down the
+     right-hand one, renderFlowDiagram sets --flow-gutter-lanes and the
+     gutter takes 15px per lane (a key and 6px on either side of it), 40% of
+     the width at most, the part past the frame's padding taken from the
+     boxes' width */
+  --flow-gutter: 22px;
+  padding-inline: var(--flow-gutter);
+  padding-right: max(var(--flow-gutter), min(calc(var(--flow-gutter-lanes, 0) * 15px), 40%));
+  margin-inline: calc(-1 * var(--flow-gutter));
+  gap: var(--flow-row-gap) 0;
   /* boxes on one row share its height, so a level wire meets both at mid-height */
   align-items: stretch;
   font-size: 12.5px;
@@ -1848,10 +1861,15 @@ a.hub-card {
   font-size: 12px;
   white-space: nowrap;
 }
+/* A heading titles the rows under it and is an obstacle the wires go around:
+   its box is as wide as its words, and they end 0.6 of a row gap above the
+   boxes under it, so a wire into those boxes crosses the gap below the words
+   (0.35 of the gap above the boxes, routeBetween). */
 .flow-head {
   grid-column: 1 / -1;
+  justify-self: start;
   align-self: end;
-  margin-bottom: -22px;
+  margin-bottom: calc(-0.4 * var(--flow-row-gap));
   font-size: 12px;
   font-weight: 600;
   color: var(--color-ink-faint);
@@ -1988,8 +2006,8 @@ a.hub-card {
   color: var(--color-accent3-text);
 }
 @media (max-width: 640px) {
-  .flow { padding: 14px; }
-  .flow-grid { --flow-col-gap: 18px; row-gap: 26px; }
+  .flow { padding: 14px 20px; }
+  .flow-grid { --flow-col-gap: 18px; --flow-row-gap: 26px; --flow-gutter: 20px; }
   .flow-grid.under { padding-bottom: 44px; }
   .flow-node { padding: 6px 8px 7px; }
 }

@@ -85,8 +85,42 @@ Un schéma qui porte des mots est un `FlowDiagram` (ou un bloc `mermaid`). Un `<
     { from: 'review', to: 'build' },
   ],
 }}>
-  Les couloirs étiquettent les lignes et tracent les séparations ; un tone colore la bordure et l'étiquette d'une boîte ; un fil contourne chaque boîte qu'il ne relie pas ; l'étiquette d'un fil est toujours dessinée : un fil entre deux boîtes voisines d'une même rangée élargit leur espace pour elle, l'étiquette passe à la ligne ou rétrécit selon la place qu'elle trouve, et une étiquette sans place à l'écart des boîtes et des autres fils devient un numéro sur son fil, son texte étant listé sous le diagramme.
+  Les couloirs étiquettent les lignes et tracent les séparations ; un tone colore la bordure et l'étiquette d'une boîte ; un fil contourne chaque boîte qu'il ne relie pas et chaque intitulé ; l'étiquette d'un fil est toujours dessinée : un fil entre deux boîtes voisines d'une même rangée élargit leur espace pour elle, l'étiquette passe à la ligne ou rétrécit selon la place qu'elle trouve, et une étiquette sans place à l'écart des boîtes et des autres fils devient un numéro sur son fil, son texte étant listé sous le diagramme.
 </FlowDiagram>
+
+Une entrée de `heads` sert d’intitulé aux rangées qui la suivent : un diagramme en groupes est donc une rangée d’intitulé suivie des boîtes du groupe, et les fils contournent le texte d’un intitulé comme ils contournent une boîte. Un fil qui ne trouve pas de passage entre les boîtes descend par la marge du diagramme — la bande de part et d’autre des boîtes, dans le remplissage du cadre — et la couche des fils couvre cette marge, si bien que le fil et son numéro restent dans la figure :
+
+<FlowDiagram title="Fig. — un fil qui remonte une colonne" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: 'Planifier', lines: ['ce qu’il faut changer'], col: 1, row: 1 },
+    { id: 'build', title: 'Construire', col: 1, row: 2 },
+    { id: 'measure', title: 'Mesurer', lines: ['face à la référence'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: 'encore loin de la référence : revoir le plan', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="Fig. — deux groupes, des fils entre eux" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'Ce que reçoit le modèle' }, { row: 3, text: 'Ce que le modèle en calcule' }],
+  nodes: [
+    { id: 'photos', title: 'Photos', lines: ['plusieurs vues'], col: 1, row: 2 },
+    { id: 'cameras', title: 'Caméras', lines: ['poses et objectifs'], col: 2, row: 2 },
+    { id: 'features', title: 'Traits par vue', col: 1, row: 4 },
+    { id: 'fuse', title: 'Fusionner les vues', col: 2, row: 4 },
+    { id: 'surface', title: 'Surface fermée', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## Du mobilier sans composant
 

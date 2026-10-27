@@ -85,8 +85,42 @@ canvas 上でポインタ入力を受け取るデモは `interactive` を渡し�
     { from: 'review', to: 'build' },
   ],
 }}>
-  レーンは行にラベルを付け区切り線を引きます。tone は枠の縁とタグに色を付けます。線はつないでいない枠をよけて通ります。線のラベルは必ず描かれます。同じ行の隣り合う枠をつなぐ線は、ラベルに合わせて枠の間の隙間を広げます。ラベルは見つかった場所に合わせて折り返すか小さくなります。枠にもほかの線にも重ならない場所がないラベルは、線の上の番号になり、その文は図の下に並びます。
+  レーンは行にラベルを付け区切り線を引きます。tone は枠の縁とタグに色を付けます。線はつないでいない枠と見出しをよけて通ります。線のラベルは必ず描かれます。同じ行の隣り合う枠をつなぐ線は、ラベルに合わせて枠の間の隙間を広げます。ラベルは見つかった場所に合わせて折り返すか小さくなります。枠にもほかの線にも重ならない場所がないラベルは、線の上の番号になり、その文は図の下に並びます。
 </FlowDiagram>
+
+`heads` の各項目は、その下の行の見出しになります。グループに分けた図は、見出しの行の下にそのグループの枠が並ぶ形になり、線は枠をよけるのと同じように見出しの文字もよけます。枠と枠の間に通り道のない線は、図の両側の余白(枠の左右、図の枠の内側の余白にある細い帯)を通ります。線の層はこの余白まで覆うので、線とその番号は図の中に収まります:
+
+<FlowDiagram title="図 — 一列の中で上に戻る線" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: '計画', lines: ['何を変えるか'], col: 1, row: 1 },
+    { id: 'build', title: '作る', col: 1, row: 2 },
+    { id: 'measure', title: '測る', lines: ['正解と比べる'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: '正解とまだ離れている:計画を見直す', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="図 — 二つのグループと、その間の線" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'モデルが受け取るもの' }, { row: 3, text: 'モデルがそこから計算するもの' }],
+  nodes: [
+    { id: 'photos', title: '写真', lines: ['複数の視点'], col: 1, row: 2 },
+    { id: 'cameras', title: 'カメラ', lines: ['位置と向きとレンズ'], col: 2, row: 2 },
+    { id: 'features', title: '視点ごとの情報', col: 1, row: 4 },
+    { id: 'fuse', title: '視点を統合', col: 2, row: 4 },
+    { id: 'surface', title: '閉じた曲面', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## コンポーネントを持たない調度
 

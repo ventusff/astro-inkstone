@@ -85,8 +85,42 @@ Diagram yang memuat kata adalah `FlowDiagram` (atau blok `mermaid`). `<svg>` yan
     { from: 'review', to: 'build' },
   ],
 }}>
-  Jalur memberi label baris dan menggambar pemisah; tone mewarnai tepi dan tag kotak; garis memutari setiap kotak yang tidak dihubungkannya; label pada garis selalu digambar: garis di antara kotak bertetangga dalam satu baris melebarkan celahnya untuk label itu, label dipecah ke beberapa baris atau dikecilkan sesuai ruang yang ada, dan label yang tidak mendapat ruang bebas dari kotak dan garis lain menjadi nomor di garisnya, dengan teksnya dicantumkan di bawah diagram.
+  Jalur memberi label baris dan menggambar pemisah; tone mewarnai tepi dan tag kotak; garis memutari setiap kotak yang tidak dihubungkannya dan setiap judul; label pada garis selalu digambar: garis di antara kotak bertetangga dalam satu baris melebarkan celahnya untuk label itu, label dipecah ke beberapa baris atau dikecilkan sesuai ruang yang ada, dan label yang tidak mendapat ruang bebas dari kotak dan garis lain menjadi nomor di garisnya, dengan teksnya dicantumkan di bawah diagram.
 </FlowDiagram>
+
+Satu entri `heads` menjadi judul bagi baris-baris di bawahnya, jadi diagram berkelompok adalah satu baris judul diikuti kotak-kotak kelompoknya; garis memutari teks judul seperti memutari kotak. Garis yang tidak menemukan jalan di antara kotak turun lewat tepi diagram — jalur di kedua sisi kotak, di dalam padding bingkai — dan lapisan garis mencakup tepi itu, sehingga garis dan nomornya tetap di dalam gambar:
+
+<FlowDiagram title="Gbr. — garis yang kembali ke atas dalam satu kolom" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: 'Rencana', lines: ['apa yang diubah'], col: 1, row: 1 },
+    { id: 'build', title: 'Bangun', col: 1, row: 2 },
+    { id: 'measure', title: 'Ukur', lines: ['terhadap nilai acuan'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: 'masih jauh dari acuan: ubah rencana', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="Gbr. — dua kelompok, garis di antaranya" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'Yang diterima model' }, { row: 3, text: 'Yang dihitung model darinya' }],
+  nodes: [
+    { id: 'photos', title: 'Foto', lines: ['beberapa sudut pandang'], col: 1, row: 2 },
+    { id: 'cameras', title: 'Kamera', lines: ['pose dan lensa'], col: 2, row: 2 },
+    { id: 'features', title: 'Fitur per sudut pandang', col: 1, row: 4 },
+    { id: 'fuse', title: 'Gabungkan sudut pandang', col: 2, row: 4 },
+    { id: 'surface', title: 'Permukaan tertutup', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## Perabot tanpa komponen
 

@@ -85,8 +85,42 @@ Eine Abbildung mit Wörtern ist ein `FlowDiagram` (oder ein `mermaid`-Block). Ei
     { from: 'review', to: 'build' },
   ],
 }}>
-  Bahnen beschriften die Zeilen und zeichnen die Trennlinien; ein tone färbt Rand und Tag eines Kastens; eine Linie führt um jeden Kasten herum, den sie nicht verbindet; die Beschriftung einer Linie wird immer gezeichnet: Eine Linie zwischen benachbarten Kästen einer Zeile verbreitert deren Lücke für sie, eine Beschriftung bricht um oder wird kleiner, je nach dem Platz, den sie findet, und eine Beschriftung ohne Platz abseits der Kästen und der anderen Linien wird zu einer Nummer auf ihrer Linie, ihr Text steht unter dem Diagramm.
+  Bahnen beschriften die Zeilen und zeichnen die Trennlinien; ein tone färbt Rand und Tag eines Kastens; eine Linie führt um jeden Kasten herum, den sie nicht verbindet, und um jede Überschrift; die Beschriftung einer Linie wird immer gezeichnet: Eine Linie zwischen benachbarten Kästen einer Zeile verbreitert deren Lücke für sie, eine Beschriftung bricht um oder wird kleiner, je nach dem Platz, den sie findet, und eine Beschriftung ohne Platz abseits der Kästen und der anderen Linien wird zu einer Nummer auf ihrer Linie, ihr Text steht unter dem Diagramm.
 </FlowDiagram>
+
+Ein Eintrag in `heads` ist die Überschrift der Zeilen darunter; ein Diagramm in Gruppen ist also je eine Überschriftenzeile mit den Kästen der Gruppe darunter, und Linien führen um den Text einer Überschrift herum wie um einen Kasten. Eine Linie, die zwischen den Kästen keinen Weg findet, läuft im Rand des Diagramms – dem Streifen links und rechts der Kästen, im Innenabstand des Rahmens –, und die Linienebene schließt diesen Rand ein, sodass Linie und Nummer im Bild bleiben:
+
+<FlowDiagram title="Abb. – eine Linie zurück nach oben in einer Spalte" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: 'Planen', lines: ['was sich ändern soll'], col: 1, row: 1 },
+    { id: 'build', title: 'Bauen', col: 1, row: 2 },
+    { id: 'measure', title: 'Messen', lines: ['gegen die Referenz'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: 'noch weit von der Referenz: Plan überarbeiten', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="Abb. – zwei Gruppen, Linien dazwischen" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'Was das Modell bekommt' }, { row: 3, text: 'Was das Modell daraus berechnet' }],
+  nodes: [
+    { id: 'photos', title: 'Fotos', lines: ['mehrere Ansichten'], col: 1, row: 2 },
+    { id: 'cameras', title: 'Kameras', lines: ['Posen und Objektive'], col: 2, row: 2 },
+    { id: 'features', title: 'Merkmale je Ansicht', col: 1, row: 4 },
+    { id: 'fuse', title: 'Ansichten zusammenführen', col: 2, row: 4 },
+    { id: 'surface', title: 'Geschlossene Fläche', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## Mobiliar ohne Komponente
 

@@ -85,8 +85,42 @@ A diagram that carries words is a `FlowDiagram` (or a `mermaid` fence). A hand-p
     { from: 'review', to: 'build' },
   ],
 }}>
-  Lanes label the rows and draw the separators; a tone colors a box's border and tag; a wire goes around every box it does not join; a wire's label is always drawn: a wire between neighbouring boxes of one row widens their gap for it, a label wraps or shrinks to the room it finds, and a label with no room clear of the boxes and the other wires becomes a numbered key on its wire, its words listed under the diagram.
+  Lanes label the rows and draw the separators; a tone colors a box's border and tag; a wire goes around every box it does not join and every heading; a wire's label is always drawn: a wire between neighbouring boxes of one row widens their gap for it, a label wraps or shrinks to the room it finds, and a label with no room clear of the boxes and the other wires becomes a numbered key on its wire, its words listed under the diagram.
 </FlowDiagram>
+
+A `heads` entry titles the rows under it, so a diagram drawn as groups is a heading row followed by the group's boxes; wires go around a heading's words as they go around a box. A wire with no way between the boxes runs down the diagram's gutter — the strip on either side of the boxes, inside the frame's padding — and the wire layer covers the gutter, so the wire and its key stay inside the figure:
+
+<FlowDiagram title="Fig. — a wire back up one column" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: 'Plan', lines: ['what to change'], col: 1, row: 1 },
+    { id: 'build', title: 'Build', col: 1, row: 2 },
+    { id: 'measure', title: 'Measure', lines: ['against the ground truth'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: 'still far from the truth: revise the plan', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="Fig. — two groups, wires between them" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'What the model is given' }, { row: 3, text: 'What the model computes from it' }],
+  nodes: [
+    { id: 'photos', title: 'Photos', lines: ['several views'], col: 1, row: 2 },
+    { id: 'cameras', title: 'Cameras', lines: ['poses and lenses'], col: 2, row: 2 },
+    { id: 'features', title: 'Features per view', col: 1, row: 4 },
+    { id: 'fuse', title: 'Fuse the views', col: 2, row: 4 },
+    { id: 'surface', title: 'Closed surface', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## Furniture without a component
 

@@ -85,8 +85,42 @@ Un diagramma che porta parole è un `FlowDiagram` (o un blocco `mermaid`). Un `<
     { from: 'review', to: 'build' },
   ],
 }}>
-  Le corsie etichettano le righe e tracciano i separatori; un tone colora bordo ed etichetta di un riquadro; un filo gira attorno a ogni riquadro che non collega; l'etichetta di un filo viene sempre disegnata: un filo tra riquadri vicini della stessa riga allarga per lei lo spazio tra loro, l'etichetta va a capo o si rimpicciolisce secondo lo spazio che trova, e un'etichetta senza spazio libero da riquadri e altri fili diventa un numero sul suo filo, con il testo elencato sotto il diagramma.
+  Le corsie etichettano le righe e tracciano i separatori; un tone colora bordo ed etichetta di un riquadro; un filo gira attorno a ogni riquadro che non collega e a ogni titolo; l'etichetta di un filo viene sempre disegnata: un filo tra riquadri vicini della stessa riga allarga per lei lo spazio tra loro, l'etichetta va a capo o si rimpicciolisce secondo lo spazio che trova, e un'etichetta senza spazio libero da riquadri e altri fili diventa un numero sul suo filo, con il testo elencato sotto il diagramma.
 </FlowDiagram>
+
+Una voce di `heads` fa da titolo alle righe sotto di sé, quindi un diagramma a gruppi è una riga di titolo seguita dai riquadri del gruppo; i fili girano attorno al testo di un titolo come attorno a un riquadro. Un filo che non trova strada tra i riquadri scende lungo il margine del diagramma — la striscia ai due lati dei riquadri, dentro il padding della cornice — e lo strato dei fili copre quel margine, così filo e numero restano dentro la figura:
+
+<FlowDiagram title="Fig. — un filo che risale una colonna" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: 'Pianificare', lines: ['cosa cambiare'], col: 1, row: 1 },
+    { id: 'build', title: 'Costruire', col: 1, row: 2 },
+    { id: 'measure', title: 'Misurare', lines: ['contro il riferimento'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: 'ancora lontano dal riferimento: rivedere il piano', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="Fig. — due gruppi, fili tra di loro" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'Cosa riceve il modello' }, { row: 3, text: 'Cosa ne calcola il modello' }],
+  nodes: [
+    { id: 'photos', title: 'Foto', lines: ['più viste'], col: 1, row: 2 },
+    { id: 'cameras', title: 'Fotocamere', lines: ['pose e obiettivi'], col: 2, row: 2 },
+    { id: 'features', title: 'Caratteristiche per vista', col: 1, row: 4 },
+    { id: 'fuse', title: 'Unire le viste', col: 2, row: 4 },
+    { id: 'surface', title: 'Superficie chiusa', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## Arredo senza componente
 

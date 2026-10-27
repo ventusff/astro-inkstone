@@ -85,8 +85,42 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
     { from: 'review', to: 'build' },
   ],
 }}>
-  레인은 행에 라벨을 붙이고 구분선을 그립니다. tone은 상자의 테두리와 태그에 색을 입힙니다. 선은 연결하지 않는 상자를 피해 돌아갑니다. 선의 라벨은 항상 그려집니다. 같은 행에서 이웃한 두 상자 사이의 선은 라벨에 맞춰 상자 사이의 틈을 넓히고, 라벨은 찾은 자리에 맞춰 줄을 바꾸거나 작아집니다. 상자와 다른 선을 피할 자리가 없는 라벨은 선 위의 번호가 되고, 그 글은 그림 아래에 적힙니다.
+  레인은 행에 라벨을 붙이고 구분선을 그립니다. tone은 상자의 테두리와 태그에 색을 입힙니다. 선은 연결하지 않는 상자와 제목을 피해 돌아갑니다. 선의 라벨은 항상 그려집니다. 같은 행에서 이웃한 두 상자 사이의 선은 라벨에 맞춰 상자 사이의 틈을 넓히고, 라벨은 찾은 자리에 맞춰 줄을 바꾸거나 작아집니다. 상자와 다른 선을 피할 자리가 없는 라벨은 선 위의 번호가 되고, 그 글은 그림 아래에 적힙니다.
 </FlowDiagram>
+
+`heads`의 각 항목은 그 아래 행들의 제목이 됩니다. 그룹으로 나눈 그림은 제목 행 하나와 그 아래 그룹의 상자들로 이루어지고, 선은 상자를 피하듯 제목 글자도 피해 갑니다. 상자 사이에 지나갈 길이 없는 선은 그림 양쪽 여백(상자 좌우, 틀 안쪽 여백에 있는 좁은 영역)을 따라갑니다. 선 레이어가 이 여백까지 덮으므로 선과 그 번호는 그림 안에 남습니다:
+
+<FlowDiagram title="그림 — 한 열 안에서 위로 돌아가는 선" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: '계획', lines: ['무엇을 바꿀지'], col: 1, row: 1 },
+    { id: 'build', title: '만들기', col: 1, row: 2 },
+    { id: 'measure', title: '측정', lines: ['정답과 비교'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: '정답과 아직 멀다: 계획 수정', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="그림 — 두 그룹, 그 사이의 선" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: '모델이 받는 것' }, { row: 3, text: '모델이 그것으로 계산하는 것' }],
+  nodes: [
+    { id: 'photos', title: '사진', lines: ['여러 시점'], col: 1, row: 2 },
+    { id: 'cameras', title: '카메라', lines: ['위치와 방향'], col: 2, row: 2 },
+    { id: 'features', title: '시점별 정보', col: 1, row: 4 },
+    { id: 'fuse', title: '시점 합치기', col: 2, row: 4 },
+    { id: 'surface', title: '닫힌 표면', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## 컴포넌트 없는 부속
 

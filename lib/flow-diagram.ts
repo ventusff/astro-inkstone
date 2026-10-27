@@ -117,16 +117,22 @@ export function routeBetween(a: Rect, b: Rect, rows: number, gap = 34, at: { fro
   const down = rows > 0;
   const sy = down ? a.y + a.h : a.y;
   const ty = down ? b.y : b.y + b.h;
-  const left = Math.max(a.x, b.x);
-  const right = Math.min(a.x + a.w, b.x + b.w);
-  if (right - left > 16) {
-    const x = left + (right - left) * at.to;
+  const both = sharedWidth(a, b);
+  if (both) {
+    const x = both[0] + (both[1] - both[0]) * at.to;
     return [[x, sy], [x, ty]];
   }
   const sx = a.x + a.w * at.from;
   const tx = b.x + b.w * at.to;
   const my = early ? (down ? sy + gap * 0.35 : sy - gap * 0.35) : down ? ty - gap * 0.35 : ty + gap * 0.35;
   return [[sx, sy], [sx, my], [tx, my], [tx, ty]];
+}
+
+/** the width two boxes of different rows share, when a straight vertical fits in it (more than 16px), else null */
+export function sharedWidth(a: Rect, b: Rect): [number, number] | null {
+  const left = Math.max(a.x, b.x);
+  const right = Math.min(a.x + a.w, b.x + b.w);
+  return right - left > 16 ? [left, right] : null;
 }
 
 /**
@@ -153,13 +159,38 @@ export function detourBeside(a: Rect, b: Rect, x: number, at: { from: number; to
   return [[facing(a, x) === 'right' ? a.x + a.w : a.x, ya], [x, ya], [x, yb], [facing(b, x) === 'right' ? b.x + b.w : b.x, yb]];
 }
 
+/**
+ * A wire between two rows that runs down a free column at `x` for part of
+ * the way and crosses a row gap for the rest: out of the source's side facing
+ * `x`, down the column to the gap right before the target's row, across it,
+ * into the target's near edge; `early`: out of the source's near edge, across
+ * the gap right after the source's row, down the column, into the target's
+ * side facing `x`. It reaches a box whose near edge a heading covers, where
+ * neither a straight wire nor one down the column alone gets through.
+ */
+export function detourAcross(a: Rect, b: Rect, rows: number, x: number, gap = 34, at: { from: number; to: number } = { from: 0.5, to: 0.5 }, early = false): Pt[] {
+  const down = rows > 0;
+  if (early) {
+    const sx = a.x + a.w * at.from;
+    const sy = down ? a.y + a.h : a.y;
+    const my = down ? sy + gap * 0.35 : sy - gap * 0.35;
+    const yb = b.y + b.h * at.to;
+    return [[sx, sy], [sx, my], [x, my], [x, yb], [facing(b, x) === 'right' ? b.x + b.w : b.x, yb]];
+  }
+  const ya = a.y + a.h * at.from;
+  const tx = b.x + b.w * at.to;
+  const ty = down ? b.y : b.y + b.h;
+  const my = down ? ty - gap * 0.35 : ty + gap * 0.35;
+  return [[facing(a, x) === 'right' ? a.x + a.w : a.x, ya], [x, ya], [x, my], [tx, my], [tx, ty]];
+}
+
 /** the side of `r` that faces the vertical line at `x` */
 const facing = (r: Rect, x: number): 'left' | 'right' => (x > r.x + r.w / 2 ? 'right' : 'left');
 
 /**
  * The strips of the boxes' extent `span` (the leftmost and rightmost edge of
- * all of them) that no box reaching into the rows from box `a` to box `b`
- * covers, at least 6px wide, left to right: the column gaps a wire beside
+ * all of them) that no box or heading reaching into the rows from box `a` to
+ * box `b` covers, at least 6px wide, left to right: the column gaps a wire beside
  * the rows can run down. A strip at the edge of the extent (empty columns)
  * keeps to the 48px next to the boxes.
  */
@@ -209,40 +240,88 @@ export interface WireShape {
   path: (at?: { from: number; to: number }, x?: number) => Pt[];
 }
 
+/**
+ * The x positions 6px past either side of each obstacle that lie inside
+ * `lo`…`hi` (6px in from both ends), nearest to `x` first: where an upright
+ * stretch of wire can pass an obstacle that covers part of a box's side.
+ */
+export function dodges(obstacles: Rect[], lo: number, hi: number, x: number): number[] {
+  return [...new Set(obstacles.flatMap((o) => [o.x - 6, o.x + o.w + 6]))]
+    .filter((v) => v >= lo + 6 && v <= hi - 6)
+    .sort((p, q) => Math.abs(p - x) - Math.abs(q - x));
+}
+
 /** the length of a polyline */
 const lengthOf = (pts: Pt[]): number => segmentsByLength(pts).reduce((n, s) => n + s.length, 0);
 
 /**
  * How the wire from box `a` to box `b` goes: the first of these whose
  * polyline (ends at `at` along the sides, by default their middles) runs
- * through none of the other `boxes` — `rows` is the target's row minus the source's, `gap` the
- * grid's row gap, `rowBottom` the lowest edge of the source's row and
- * `span` the leftmost and rightmost edge of all the boxes:
+ * through none of the `obstacles` (the other boxes and the headings) —
+ * `rows` is the target's row minus the source's, `gap` the grid's row gap,
+ * `rowBottom` the lowest edge of the source's row, `span` the leftmost and
+ * rightmost edge of all the boxes and `gutters` the widths of the strips
+ * left and right of them kept clear for wires:
  *
  *   - the direct route (`routeBetween`);
  *   - on one row: under the row (`detourBelow`);
  *   - across rows, columns apart: crossing right after the source's row;
+ *   - across rows: the direct route, then the one crossing right after the
+ *     source's row, with its long upright stretch moved off its port to just
+ *     past the side of an obstacle (`dodges`), nearest first — the way past a
+ *     heading's words that cover only part of the box's side;
  *   - across rows: down one of the free columns (`detourBeside`), the
- *     shortest first; then down a 16px strip past the right end of the
- *     boxes, then the left, in the frame's margin.
+ *     shortest first; then down the gutter past the right end of the
+ *     boxes, then the left;
+ *   - across rows: down part of the way in one of those columns and across
+ *     a row gap for the rest (`detourAcross`), crossing before the target's
+ *     row, then after the source's, in the same order of columns.
  *
- * When every one runs through a box, the direct route.
+ * When every one runs through an obstacle, the direct route.
  */
-export function wireShape(a: Rect, b: Rect, rows: number, gap: number, rowBottom: number, boxes: Rect[], span: [number, number], at?: { from: number; to: number }): WireShape {
+export function wireShape(a: Rect, b: Rect, rows: number, gap: number, rowBottom: number, obstacles: Rect[], span: [number, number], gutters: [number, number], at?: { from: number; to: number }): WireShape {
   const direct: WireShape = { sides: sidesOf(a, b, rows), path: (at) => routeBetween(a, b, rows, gap, at) };
   const shapes: WireShape[] = [direct];
   if (rows === 0) {
     shapes.push({ sides: { from: 'bottom', to: 'bottom' }, path: (at) => detourBelow(a, b, rowBottom, gap, at) });
   } else {
     shapes.push({ sides: direct.sides, path: (at) => routeBetween(a, b, rows, gap, at, true) });
+    const from = at?.from ?? 0.5;
+    const to = at?.to ?? 0.5;
+    const both = sharedWidth(a, b);
+    if (both) {
+      const [lo, hi] = both;
+      for (const x of dodges(obstacles, lo, hi, lo + (hi - lo) * to)) {
+        shapes.push({ sides: direct.sides, path: (at) => routeBetween(a, b, rows, gap, { from: at?.from ?? 0.5, to: (x - lo) / (hi - lo) }) });
+      }
+    } else {
+      for (const x of dodges(obstacles, a.x, a.x + a.w, a.x + a.w * from)) {
+        shapes.push({ sides: direct.sides, path: (at) => routeBetween(a, b, rows, gap, { from: (x - a.x) / a.w, to: at?.to ?? 0.5 }) });
+      }
+      for (const x of dodges(obstacles, b.x, b.x + b.w, b.x + b.w * to)) {
+        shapes.push({ sides: direct.sides, path: (at) => routeBetween(a, b, rows, gap, { from: at?.from ?? 0.5, to: (x - b.x) / b.w }, true) });
+      }
+    }
     const beside = (strip: [number, number]): WireShape => {
       const mid = (strip[0] + strip[1]) / 2;
       return { sides: { from: facing(a, mid), to: facing(b, mid) }, strip, path: (at, x = mid) => detourBeside(a, b, x, at) };
     };
-    shapes.push(...freeColumns(a, b, boxes, span).map(beside).sort((p, q) => lengthOf(p.path()) - lengthOf(q.path())));
-    shapes.push(beside([span[1], span[1] + 16]), beside([span[0] - 16, span[0]]));
+    const columns = [
+      ...freeColumns(a, b, obstacles, span).map(beside).sort((p, q) => lengthOf(p.path()) - lengthOf(q.path())),
+      beside([span[1], span[1] + gutters[1]]),
+      beside([span[0] - gutters[0], span[0]]),
+    ];
+    shapes.push(...columns);
+    for (const early of [false, true]) {
+      for (const { strip } of columns) {
+        if (!strip) continue;
+        const mid = (strip[0] + strip[1]) / 2;
+        const sides = early ? { from: direct.sides.from, to: facing(b, mid) } : { from: facing(a, mid), to: direct.sides.to };
+        shapes.push({ sides, strip, path: (at, x = mid) => detourAcross(a, b, rows, x, gap, at, early) });
+      }
+    }
   }
-  return shapes.find((s) => !boxes.some((r) => runsThrough(s.path(at), r))) ?? direct;
+  return shapes.find((s) => !obstacles.some((r) => runsThrough(s.path(at), r))) ?? direct;
 }
 
 /**
@@ -394,6 +473,24 @@ export function columnGaps(spec: FlowSpec): number[] {
 }
 
 /**
+ * How many wires can only run down the gutter: those joining two rows with a
+ * box between them that spans every column, so no wire gets past it inside
+ * the grid. They all take the right-hand gutter, and the grid widens it for
+ * them (`--flow-gutter-lanes`), so each has a lane wide enough for a label's
+ * key clear of its neighbours.
+ */
+export function gutterWires(spec: FlowSpec): number {
+  const byId = new Map(spec.nodes.map((n) => [n.id, n]));
+  return (spec.edges ?? []).filter((e) => {
+    const a = byId.get(e.from);
+    const b = byId.get(e.to);
+    if (!a || !b) return false;
+    const [lo, hi] = a.row < b.row ? [a.row, b.row] : [b.row, a.row];
+    return spec.nodes.some((n) => n.row > lo && n.row < hi && n.col === 1 && (n.span ?? 1) >= spec.cols);
+  }).length;
+}
+
+/**
  * Whether a wire runs under the last row: two boxes of that row with another
  * of its boxes between them are joined under the row (`detourBelow`), so the
  * grid keeps room below it for that wire and its label.
@@ -478,7 +575,10 @@ export function renderFlowDiagram(spec: FlowSpec): string {
   // the arrowheads are made in the browser with the wires, one id per diagram (see markerFor)
   const wires = '<svg class="flow-wires" aria-hidden="true"><defs></defs></svg>';
   const data = esc(JSON.stringify({ lanes: !!spec.lanes, rows: spec.nodes.map((n) => [n.id, n.row]), edges: spec.edges ?? [] }));
-  return `<div class="flow-grid${runsUnderLastRow(spec) ? ' under' : ''}" data-flow="${data}" style="grid-template-columns:${columns}">${wires}${parts.join('')}</div>`;
+  // one gutter wire fits the stylesheet's gutter; more ask it for a lane each, plus one lane's width of margin
+  const inGutter = gutterWires(spec);
+  const lanes = inGutter > 1 ? `;--flow-gutter-lanes:${inGutter + 1}` : '';
+  return `<div class="flow-grid${runsUnderLastRow(spec) ? ' under' : ''}" data-flow="${data}" style="grid-template-columns:${columns}${lanes}">${wires}${parts.join('')}</div>`;
 }
 
 export interface FlowHandle {
@@ -501,10 +601,10 @@ function svgEl<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<strin
   return node;
 }
 
-/** draw (and keep drawing) the wires of one rendered `.flow-grid` */
 /** diagrams mounted on this page so far: numbers each one's arrowhead ids */
 let mounted = 0;
 
+/** draw (and keep drawing) the wires of one rendered `.flow-grid` */
 export function mountFlowDiagram(root: HTMLElement): FlowHandle {
   const data = JSON.parse(root.dataset['flow'] ?? '{}') as FlowData;
   const layer = root.querySelector<SVGSVGElement>('svg.flow-wires');
@@ -516,24 +616,39 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
   for (const el of root.querySelectorAll<HTMLElement>('[data-node]')) nodes.set(el.dataset['node'] ?? '', el);
 
   const rowOf = new Map(data.rows);
-  const rect = (id: string): Rect => {
-    const el = nodes.get(id);
-    if (!el) throw new Error(`flow diagram: no node "${id}"`);
+  /** an element's box in the diagram's coordinates: the grid's top left corner is 0, 0 */
+  const boxOf = (el: Element): Rect => {
     const r = el.getBoundingClientRect();
     const o = root.getBoundingClientRect();
     return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
+  };
+  const rect = (id: string): Rect => {
+    const el = nodes.get(id);
+    if (!el) throw new Error(`flow diagram: no node "${id}"`);
+    return boxOf(el);
+  };
+  /** the row headings, each box as wide as its words */
+  const headings = (): Rect[] => [...root.querySelectorAll('.flow-head')].map(boxOf);
+  /**
+   * The widths of the gutters, the strips left and right of the boxes that
+   * the grid's padding keeps clear and the wire layer covers: wires with no
+   * way between the boxes run down them, and labels and keys may sit in them.
+   */
+  const gutters = (): [number, number] => {
+    const cs = getComputedStyle(root);
+    return [Number.parseFloat(cs.paddingLeft) || 0, Number.parseFloat(cs.paddingRight) || 0];
   };
   const rowsBetween = (from: string, to: string) => (rowOf.get(to) ?? 0) - (rowOf.get(from) ?? 0);
   /** the lowest edge of the boxes on `id`'s row */
   const rowBottom = (id: string): number =>
     Math.max(...data.rows.filter(([, row]) => row === rowOf.get(id)).map(([n]) => { const r = rect(n); return r.y + r.h; }));
-  /** how the wire from one box to another goes, around every other box (`wireShape`) */
+  /** how the wire from one box to another goes, around every other box and every heading (`wireShape`) */
   const shapeOf = (from: string, to: string, at?: { from: number; to: number }): WireShape => {
     const gap = Number.parseFloat(getComputedStyle(root).rowGap) || 34;
     const all = data.rows.map(([id]) => [id, rect(id)] as const);
     const span: [number, number] = [Math.min(...all.map(([, r]) => r.x)), Math.max(...all.map(([, r]) => r.x + r.w))];
-    const others = all.filter(([id]) => id !== from && id !== to).map(([, r]) => r);
-    return wireShape(rect(from), rect(to), rowsBetween(from, to), gap, rowBottom(from), others, span, at);
+    const others = [...all.filter(([id]) => id !== from && id !== to).map(([, r]) => r), ...headings()];
+    return wireShape(rect(from), rect(to), rowsBetween(from, to), gap, rowBottom(from), others, span, gutters(), at);
   };
   /**
    * Where every edge meets its two boxes: the wires on one side of one box are
@@ -576,13 +691,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
     return id;
   };
   /** what a label must not land on: the boxes and the row headings */
-  const obstacles = (): Rect[] => {
-    const o = root.getBoundingClientRect();
-    return [...root.querySelectorAll<HTMLElement>('[data-node], .flow-head')].map((el) => {
-      const r = el.getBoundingClientRect();
-      return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
-    });
-  };
+  const obstacles = (): Rect[] => [...root.querySelectorAll('[data-node], .flow-head')].map(boxOf);
   const overlapArea = (a: Rect, b: Rect) =>
     Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
   /** a label's box, padded 2px */

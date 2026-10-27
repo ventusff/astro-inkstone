@@ -85,8 +85,42 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
     { from: 'review', to: 'build' },
   ],
 }}>
-  泳道给行加标签、画分隔线;tone 给框的边和标签上色;线绕开不相连的框;线上的标注一定画出来:同一行相邻两框之间的线会为它把两框的空隙加宽;标注按找到的空间折行或缩小字号;找不到既不压框也不贴着别的线的位置时,标注换成线上的一个编号,文字列在图下。
+  泳道给行加标签、画分隔线;tone 给框的边和标签上色;线绕开不相连的框和分组标题;线上的标注一定画出来:同一行相邻两框之间的线会为它把两框的空隙加宽;标注按找到的空间折行或缩小字号;找不到既不压框也不贴着别的线的位置时,标注换成线上的一个编号,文字列在图下。
 </FlowDiagram>
+
+`heads` 里的一项是它下面那几行的标题,所以分组的图就是一行分组标题、下面跟着这一组的框;线绕开标题的文字,和绕开框一样。框与框之间找不到路的线,沿图两侧留出的空白走(框的左右两侧、图框内边距里的一条窄带);连线层把这条空白也包在里面,所以线和它的编号都留在图里:
+
+<FlowDiagram title="图 — 一列里往回走的线" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: '计划', lines: ['要改什么'], col: 1, row: 1 },
+    { id: 'build', title: '实现', col: 1, row: 2 },
+    { id: 'measure', title: '测量', lines: ['和真值比'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: '离真值还远:改计划', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="图 — 两组之间的线" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: '模型拿到什么' }, { row: 3, text: '模型从中算出什么' }],
+  nodes: [
+    { id: 'photos', title: '照片', lines: ['几个视角'], col: 1, row: 2 },
+    { id: 'cameras', title: '相机', lines: ['位姿和镜头'], col: 2, row: 2 },
+    { id: 'features', title: '每个视角的特征', col: 1, row: 4 },
+    { id: 'fuse', title: '融合各视角', col: 2, row: 4 },
+    { id: 'surface', title: '闭合曲面', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## 没有组件形态的配件
 

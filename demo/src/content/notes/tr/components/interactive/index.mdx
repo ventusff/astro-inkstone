@@ -85,8 +85,42 @@ Sözcük taşıyan bir şema `FlowDiagram`dır (ya da bir `mermaid` bloğu). Ell
     { from: 'review', to: 'build' },
   ],
 }}>
-  Şeritler satırları etiketler ve ayırıcıları çizer; tone bir kutunun kenarını ve etiketini renklendirir; bir tel bağlamadığı her kutunun etrafından dolaşır; bir telin etiketi her zaman çizilir: aynı satırdaki komşu kutuları bağlayan tel, aralarındaki boşluğu etiket için genişletir; etiket bulduğu yere göre satıra bölünür ya da küçülür; kutulardan ve öbür tellerden uzakta yer bulamayan etiket telinin üstünde bir numaraya dönüşür, yazısı diyagramın altında listelenir.
+  Şeritler satırları etiketler ve ayırıcıları çizer; tone bir kutunun kenarını ve etiketini renklendirir; bir tel bağlamadığı her kutunun ve her başlığın etrafından dolaşır; bir telin etiketi her zaman çizilir: aynı satırdaki komşu kutuları bağlayan tel, aralarındaki boşluğu etiket için genişletir; etiket bulduğu yere göre satıra bölünür ya da küçülür; kutulardan ve öbür tellerden uzakta yer bulamayan etiket telinin üstünde bir numaraya dönüşür, yazısı diyagramın altında listelenir.
 </FlowDiagram>
+
+`heads` içindeki bir giriş, altındaki satırların başlığıdır; yani gruplara ayrılmış bir diyagram, bir başlık satırı ve altında grubun kutularıdır. Teller bir başlığın yazısının etrafından, bir kutunun etrafından dolaştıkları gibi dolaşır. Kutular arasında yol bulamayan bir tel, diyagramın kenar payından geçer — kutuların iki yanında, çerçevenin iç boşluğundaki şerit — ve tel katmanı bu payı da kapsar; böylece tel ve numarası şeklin içinde kalır:
+
+<FlowDiagram title="Şek. — bir sütunda yukarı geri dönen tel" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: 'Planla', lines: ['neyin değişeceği'], col: 1, row: 1 },
+    { id: 'build', title: 'Kur', col: 1, row: 2 },
+    { id: 'measure', title: 'Ölç', lines: ['referansa karşı'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: 'referanstan hâlâ uzak: planı gözden geçir', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="Şek. — iki grup, aralarında teller" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'Modelin aldığı' }, { row: 3, text: 'Modelin bundan hesapladığı' }],
+  nodes: [
+    { id: 'photos', title: 'Fotoğraflar', lines: ['birkaç görünüm'], col: 1, row: 2 },
+    { id: 'cameras', title: 'Kameralar', lines: ['pozlar ve mercekler'], col: 2, row: 2 },
+    { id: 'features', title: 'Görünüm başına öznitelikler', col: 1, row: 4 },
+    { id: 'fuse', title: 'Görünümleri birleştir', col: 2, row: 4 },
+    { id: 'surface', title: 'Kapalı yüzey', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## Bileşensiz donatılar
 

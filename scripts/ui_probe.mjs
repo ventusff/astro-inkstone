@@ -9,8 +9,9 @@
  * their container with no scroll box to live in, words an SVG draws outside
  * its own box (a diagram's labels, a chart's ticks), FlowDiagram wire labels
  * that are not drawn (on the wire, or as a numbered key with its words in
- * the legend under the diagram), wire labels and keys that land on a box,
- * wires that run through a box they do not join, classes no stylesheet rule
+ * the legend under the diagram), wire labels and keys that land on a box
+ * or a row heading, wires that run through a box they do not join or
+ * through a row heading's words, classes no stylesheet rule
  * styles, skipped heading levels, duplicate ids, images without an alt
  * attribute, in-page anchors and aria-controls pointing at ids that do not
  * exist. It makes no aesthetic judgement.
@@ -170,9 +171,10 @@ const layoutChecks = (scope) => {
   // be drawn as visible words in the wire layer (lines wrap into tspans, so
   // the words are compared without whitespace), or as a visible numbered key
   // on the wire with the words against that number in the legend that
-  // follows the diagram. No label or key may land on a box, and no wire may
-  // run through a box other than the two it joins. A diagram laid out to no
-  // box (inside closed markup) draws nothing and is skipped.
+  // follows the diagram. No label or key may land on a box or a row heading,
+  // and no wire may run through a box other than the two it joins, or through
+  // a heading. A diagram laid out to no box (inside closed markup) draws
+  // nothing and is skipped.
   const bare = (x) => x.replace(/\s+/g, '');
   const overlap = (a, b) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1;
   for (const grid of document.querySelectorAll(scope === 'dialogs' ? 'dialog[open] .flow-grid[data-flow]' : 'body .flow-grid[data-flow]')) {
@@ -200,7 +202,10 @@ const layoutChecks = (scope) => {
       if (k !== -1) { listed.splice(k, 1); continue; }
       out.lostLabel.push({ label: e.label.slice(0, 40) });
     }
-    const boxes = [...grid.querySelectorAll('[data-node]')].map((n) => ({ id: n.dataset.node, r: n.getBoundingClientRect() }));
+    const boxes = [
+      ...[...grid.querySelectorAll('[data-node]')].map((n) => ({ id: n.dataset.node, r: n.getBoundingClientRect() })),
+      ...[...grid.querySelectorAll('.flow-head')].map((h) => ({ id: `heading "${h.textContent.trim().slice(0, 30)}"`, r: h.getBoundingClientRect() })),
+    ];
     for (const t of grid.querySelectorAll('.flow-wires .lbl, .flow-wires .key')) {
       if (!shown(t)) continue;
       const a = t.getBoundingClientRect();

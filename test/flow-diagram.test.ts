@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { LABEL_GAPS_SHARE, LABEL_GAP_SHARE, LABEL_MIN_PX, LABEL_PX, columnGaps, detourBelow, detourBeside, freeColumns, labelLayouts, labelLines, portFractions, renderFlowDiagram, routeBetween, runsThrough, runsUnderLastRow, segmentPoint, segmentsByLength, sidesOf, stripLanes, toneColor, wireShape, wrapLabel } from '../lib/flow-diagram.ts';
+import { LABEL_GAPS_SHARE, LABEL_GAP_SHARE, LABEL_MIN_PX, LABEL_PX, columnGaps, detourAcross, detourBelow, dodges, gutterWires, detourBeside, freeColumns, labelLayouts, labelLines, portFractions, renderFlowDiagram, routeBetween, runsThrough, runsUnderLastRow, segmentPoint, segmentsByLength, sidesOf, stripLanes, toneColor, wireShape, wrapLabel } from '../lib/flow-diagram.ts';
 import { estimateTextWidth } from '../lib/text-width.ts';
 
 const box = (x: number, y: number, w = 100, h = 40) => ({ x, y, w, h });
@@ -32,7 +32,7 @@ test('two wires meeting one side of a box get their own points, ordered so they 
 
 test('a wire past boxes of its own row goes under the row, bottom to bottom', () => {
   assert.deepEqual(detourBelow(box(0, 0), box(400, 0), 60, 40), [[50, 40], [50, 76], [450, 76], [450, 40]]);
-  const shape = wireShape(box(0, 0), box(400, 0), 0, 40, 40, [box(200, 0)], [0, 500]);
+  const shape = wireShape(box(0, 0), box(400, 0), 0, 40, 40, [box(200, 0)], [0, 500], [22, 22]);
   assert.deepEqual(shape.sides, { from: 'bottom', to: 'bottom' });
   assert.deepEqual(shape.path(), [[50, 40], [50, 56], [450, 56], [450, 40]]);
 });
@@ -51,7 +51,7 @@ test('a wire down one column past a box of a row in between goes down the free c
   const b = box(0, 160);
   const right = [box(140, 0), box(140, 80), box(140, 160)];
   assert.deepEqual(freeColumns(a, b, [mid, ...right], [0, 240]), [[100, 140]]);
-  const shape = wireShape(a, b, 2, 40, 40, [mid, ...right], [0, 240]);
+  const shape = wireShape(a, b, 2, 40, 40, [mid, ...right], [0, 240], [22, 22]);
   assert.deepEqual(shape.sides, { from: 'right', to: 'right' });
   assert.deepEqual(shape.strip, [100, 140]);
   assert.deepEqual(shape.path(), [[100, 20], [120, 20], [120, 180], [100, 180]]);
@@ -59,8 +59,8 @@ test('a wire down one column past a box of a row in between goes down the free c
   assert.deepEqual(detourBeside(b, a, 120, { from: 0.25, to: 0.75 }), [[100, 170], [120, 170], [120, 30], [100, 30]]);
   // empty columns at the edge of the boxes: the 48px next to them
   assert.deepEqual(freeColumns(a, b, [box(0, 80, 240)], [0, 400]), [[240, 288]]);
-  // one column, nothing beside it: down the margin to the right
-  assert.deepEqual(wireShape(a, b, 2, 40, 40, [mid], [0, 100]).path(), [[100, 20], [108, 20], [108, 180], [100, 180]]);
+  // one column, nothing beside it: down the middle of the gutter to the right
+  assert.deepEqual(wireShape(a, b, 2, 40, 40, [mid], [0, 100], [22, 22]).path(), [[100, 20], [111, 20], [111, 180], [100, 180]]);
 });
 
 test('the shape is chosen for where the ports put the ends, not only for the middles', () => {
@@ -68,12 +68,13 @@ test('the shape is chosen for where the ports put the ends, not only for the mid
   const a = box(0, 0, 240);
   const b = box(0, 160, 240);
   const others = [box(0, 80), box(140, 80)];
-  assert.deepEqual(wireShape(a, b, 2, 40, 40, others, [0, 240]).path(), [[120, 40], [120, 160]]);
-  // a third of the way along B's top the straight wire would cross L: it goes down the margin instead
+  assert.deepEqual(wireShape(a, b, 2, 40, 40, others, [0, 240], [22, 22]).path(), [[120, 40], [120, 160]]);
+  // a third of the way along B's top the straight wire would cross L: it moves to just past L's side, down the gap
   const at = { from: 0.5, to: 1 / 3 };
-  const shape = wireShape(a, b, 2, 40, 40, others, [0, 240], at);
+  const shape = wireShape(a, b, 2, 40, 40, others, [0, 240], [22, 22], at);
   assert.ok(others.every((r) => !runsThrough(shape.path(at), r)));
-  assert.deepEqual(shape.sides, { from: 'right', to: 'right' });
+  assert.deepEqual(shape.sides, { from: 'bottom', to: 'top' });
+  assert.deepEqual(shape.path(at), [[106, 40], [106, 160]]);
 });
 
 test('a wire to a box of another column runs down the gap between them when its own column is blocked', () => {
@@ -81,9 +82,79 @@ test('a wire to a box of another column runs down the gap between them when its 
   const erect = box(0, 0);
   const session = box(140, 160);
   const others = [box(0, 80), box(140, 80), box(140, 0)];
-  const shape = wireShape(erect, session, 2, 40, 40, others, [0, 240]);
+  const shape = wireShape(erect, session, 2, 40, 40, others, [0, 240], [22, 22]);
   assert.deepEqual(shape.sides, { from: 'right', to: 'left' });
   assert.deepEqual(shape.path(), [[100, 20], [120, 20], [120, 180], [140, 180]]);
+});
+
+test('a heading is an obstacle: a wire across its words goes around it', () => {
+  // two columns of boxes, rows 1 and 3; the heading of row 2 runs from the left edge past the middle of column 1
+  const a = box(0, 0);
+  const b = box(0, 160);
+  const heading = box(0, 105, 80, 17);
+  const right = [box(140, 0), box(140, 160)];
+  assert.equal(runsThrough(routeBetween(a, b, 2, 40), heading), true, 'straight down column 1 crosses the words');
+  const shape = wireShape(a, b, 2, 40, 40, [heading, ...right], [0, 240], [22, 22]);
+  assert.ok(![heading, ...right].some((r) => runsThrough(shape.path(), r)));
+  assert.deepEqual(shape.path(), [[86, 40], [86, 160]], 'straight down, 6px past the end of the words');
+  // a heading as wide as the boxes leaves only the gutters; column 2's boxes stand between column 1 and the right one
+  const wide = box(0, 105, 240, 17);
+  assert.deepEqual(wireShape(a, b, 2, 40, 40, [wide, ...right], [0, 240], [22, 22]).path(), [[0, 20], [-11, 20], [-11, 180], [0, 180]]);
+});
+
+test('a wire back up one column, past a box, runs down the gutter, inside the wire layer', () => {
+  const top = box(0, 0, 300);
+  const mid = box(0, 80, 300);
+  const bottom = box(0, 160, 300);
+  const gutter = 22;
+  const shape = wireShape(bottom, top, -2, 40, 200, [mid], [0, 300], [gutter, gutter]);
+  assert.deepEqual(shape.sides, { from: 'right', to: 'right' });
+  assert.deepEqual(shape.strip, [300, 300 + gutter]);
+  const xs = shape.path().map(([x]) => x);
+  // the layer spans -gutter … 300 + gutter; an 18px key disc centred on the wire clears the boxes and stays inside
+  assert.ok(Math.max(...xs) - 9 >= 300 && Math.max(...xs) + 9 <= 300 + gutter);
+});
+
+test('a wire into a box under a heading that covers the source\'s whole edge goes down a free column, then under the words', () => {
+  // the heading reaches past cameras' bottom edge; the free column between cameras and surface leads down past it
+  const cameras = box(140, 0);
+  const features = box(0, 160);
+  const heading = box(0, 105, 236, 17);
+  const others = [box(0, 0), heading, box(140, 160), box(260, 160)];
+  const shape = wireShape(cameras, features, 2, 40, 40, others, [0, 360], [22, 22]);
+  assert.ok(!others.some((r) => runsThrough(shape.path(), r)));
+  assert.deepEqual(shape.sides, { from: 'right', to: 'top' });
+  assert.deepEqual(shape.strip, [240, 260]);
+  assert.deepEqual(shape.path(), [[240, 20], [250, 20], [250, 146], [50, 146], [50, 160]]);
+  assert.deepEqual(detourAcross(features, cameras, -2, 250, 40, { from: 0.5, to: 0.5 }, true), [[50, 160], [50, 146], [250, 146], [250, 20], [240, 20]], 'early: the same way back up');
+});
+
+test('dodges: just past either side of each obstacle, inside the range, nearest first', () => {
+  assert.deepEqual(dodges([box(0, 0, 80, 17), box(140, 0)], 0, 300, 50), [86, 134, 246]);
+  assert.deepEqual(dodges([box(0, 0, 300, 17)], 0, 300, 50), [], 'an obstacle across the whole range leaves no way past');
+});
+
+test('a wire from one group into the next passes the heading beside its words', () => {
+  // cameras (column 2) to features (column 1, the next group); the heading runs from the left edge past the middle of column 2
+  const cameras = box(140, 0);
+  const features = box(0, 160);
+  const heading = box(0, 105, 200, 17);
+  const others = [box(0, 0), heading, box(140, 160)];
+  const shape = wireShape(cameras, features, 2, 40, 40, others, [0, 240], [22, 22]);
+  assert.ok(!others.some((r) => runsThrough(shape.path(), r)));
+  // down the part of cameras' bottom past the words, across under them, into features' top
+  assert.deepEqual(shape.path(), [[206, 40], [206, 146], [50, 146], [50, 160]]);
+});
+
+test('gutterWires: wires joining rows past a box that spans every column; two or more widen the gutter', () => {
+  const nodes = [1, 2, 3, 4].map((row) => ({ id: `n${row}`, title: 'n', col: 1, row }));
+  assert.equal(gutterWires({ cols: 1, nodes, edges: [{ from: 'n1', to: 'n2' }, { from: 'n4', to: 'n1' }] }), 1);
+  assert.doesNotMatch(renderFlowDiagram({ cols: 1, nodes, edges: [{ from: 'n4', to: 'n1' }] }), /--flow-gutter-lanes/);
+  const three = { cols: 1, nodes, edges: [{ from: 'n1', to: 'n3' }, { from: 'n4', to: 'n2' }, { from: 'n4', to: 'n1' }] };
+  assert.equal(gutterWires(three), 3);
+  assert.match(renderFlowDiagram(three), /style="grid-template-columns:minmax\(0, 1fr\);--flow-gutter-lanes:4"/);
+  // two columns, a box in one of them between the rows: the other column is a way past it
+  assert.equal(gutterWires({ cols: 2, nodes: [...nodes, { id: 'x', title: 'x', col: 2, row: 1 }], edges: [{ from: 'n1', to: 'n3' }] }), 0);
 });
 
 test('stripLanes: wires sharing a free column are spread across it, left-hand boxes on the left', () => {
@@ -104,11 +175,11 @@ test('a wire across rows and columns turns right after its own row when the gap 
   const b = box(300, 160);
   const blocker = box(0, 80);
   assert.equal(runsThrough(routeBetween(a, b, 2, 40), blocker), true);
-  const shape = wireShape(a, b, 2, 40, 40, [blocker], [0, 400]);
+  const shape = wireShape(a, b, 2, 40, 40, [blocker], [0, 400], [22, 22]);
   assert.deepEqual(shape.sides, { from: 'bottom', to: 'top' });
   assert.deepEqual(shape.path(), [[50, 40], [50, 54], [350, 54], [350, 160]]);
   // with nothing in the way, the direct route
-  assert.deepEqual(wireShape(a, b, 2, 40, 40, [], [0, 400]).path(), routeBetween(a, b, 2, 40));
+  assert.deepEqual(wireShape(a, b, 2, 40, 40, [], [0, 400], [22, 22]).path(), routeBetween(a, b, 2, 40));
 });
 
 test('segmentsByLength and segmentPoint: segments longest first, a point along one, and which way it runs', () => {

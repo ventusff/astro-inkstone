@@ -85,8 +85,42 @@ Um diagrama que carrega palavras é um `FlowDiagram` (ou um bloco `mermaid`). Um
     { from: 'review', to: 'build' },
   ],
 }}>
-  As raias rotulam as linhas e desenham os separadores; um tone colore a borda e a etiqueta de uma caixa; um fio contorna cada caixa que não liga; o rótulo de um fio é sempre desenhado: um fio entre caixas vizinhas de uma mesma linha alarga o vão entre elas para ele, o rótulo quebra em linhas ou encolhe conforme o espaço que encontra, e um rótulo sem espaço livre das caixas e dos outros fios vira um número sobre o seu fio, com o texto listado abaixo do diagrama.
+  As raias rotulam as linhas e desenham os separadores; um tone colore a borda e a etiqueta de uma caixa; um fio contorna cada caixa que não liga e cada título; o rótulo de um fio é sempre desenhado: um fio entre caixas vizinhas de uma mesma linha alarga o vão entre elas para ele, o rótulo quebra em linhas ou encolhe conforme o espaço que encontra, e um rótulo sem espaço livre das caixas e dos outros fios vira um número sobre o seu fio, com o texto listado abaixo do diagrama.
 </FlowDiagram>
+
+Uma entrada de `heads` dá título às linhas abaixo dela, então um diagrama em grupos é uma linha de título seguida das caixas do grupo; os fios contornam o texto de um título como contornam uma caixa. Um fio sem caminho entre as caixas desce pela margem do diagrama — a faixa dos dois lados das caixas, dentro do preenchimento da moldura — e a camada dos fios cobre essa margem, de modo que o fio e o seu número ficam dentro da figura:
+
+<FlowDiagram title="Fig. — um fio que volta para cima numa coluna" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: 'Planejar', lines: ['o que mudar'], col: 1, row: 1 },
+    { id: 'build', title: 'Construir', col: 1, row: 2 },
+    { id: 'measure', title: 'Medir', lines: ['contra a referência'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: 'ainda longe da referência: rever o plano', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="Fig. — dois grupos, fios entre eles" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'O que o modelo recebe' }, { row: 3, text: 'O que o modelo calcula a partir disso' }],
+  nodes: [
+    { id: 'photos', title: 'Fotos', lines: ['várias vistas'], col: 1, row: 2 },
+    { id: 'cameras', title: 'Câmeras', lines: ['poses e lentes'], col: 2, row: 2 },
+    { id: 'features', title: 'Características por vista', col: 1, row: 4 },
+    { id: 'fuse', title: 'Fundir as vistas', col: 2, row: 4 },
+    { id: 'surface', title: 'Superfície fechada', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## Mobiliário sem componente
 

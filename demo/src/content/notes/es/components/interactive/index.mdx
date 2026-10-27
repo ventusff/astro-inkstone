@@ -85,8 +85,42 @@ Un diagrama que lleva palabras es un `FlowDiagram` (o un bloque `mermaid`). Un `
     { from: 'review', to: 'build' },
   ],
 }}>
-  Los carriles etiquetan las filas y dibujan los separadores; un tone colorea el borde y la etiqueta de una caja; una línea rodea cada caja que no une; la etiqueta de una línea siempre se dibuja: una línea entre cajas vecinas de una misma fila ensancha su hueco para ella, la etiqueta se parte en líneas o se reduce según el espacio que encuentre, y una etiqueta sin espacio libre de cajas y de otras líneas se convierte en un número sobre su línea, con su texto debajo del diagrama.
+  Los carriles etiquetan las filas y dibujan los separadores; un tone colorea el borde y la etiqueta de una caja; una línea rodea cada caja que no une y cada encabezado; la etiqueta de una línea siempre se dibuja: una línea entre cajas vecinas de una misma fila ensancha su hueco para ella, la etiqueta se parte en líneas o se reduce según el espacio que encuentre, y una etiqueta sin espacio libre de cajas y de otras líneas se convierte en un número sobre su línea, con su texto debajo del diagrama.
 </FlowDiagram>
+
+Una entrada de `heads` titula las filas que tiene debajo, así que un diagrama por grupos es una fila de encabezado seguida de las cajas del grupo; las líneas rodean el texto de un encabezado igual que rodean una caja. Una línea sin camino entre las cajas baja por el margen del diagrama —la franja a cada lado de las cajas, dentro del relleno del marco— y la capa de líneas abarca ese margen, de modo que la línea y su número quedan dentro de la figura:
+
+<FlowDiagram title="Fig. — una línea que vuelve hacia arriba en una columna" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: 'Planificar', lines: ['qué cambiar'], col: 1, row: 1 },
+    { id: 'build', title: 'Construir', col: 1, row: 2 },
+    { id: 'measure', title: 'Medir', lines: ['contra la referencia'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: 'aún lejos de la referencia: revisar el plan', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="Fig. — dos grupos, líneas entre ellos" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'Lo que recibe el modelo' }, { row: 3, text: 'Lo que el modelo calcula con ello' }],
+  nodes: [
+    { id: 'photos', title: 'Fotos', lines: ['varias vistas'], col: 1, row: 2 },
+    { id: 'cameras', title: 'Cámaras', lines: ['poses y lentes'], col: 2, row: 2 },
+    { id: 'features', title: 'Rasgos por vista', col: 1, row: 4 },
+    { id: 'fuse', title: 'Fusionar las vistas', col: 2, row: 4 },
+    { id: 'surface', title: 'Superficie cerrada', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## Mobiliario sin componente
 

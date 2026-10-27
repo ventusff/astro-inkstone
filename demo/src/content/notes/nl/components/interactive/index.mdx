@@ -85,8 +85,42 @@ Een diagram met woorden is een `FlowDiagram` (of een `mermaid`-blok). Een handma
     { from: 'review', to: 'build' },
   ],
 }}>
-  Banen labelen de rijen en tekenen de scheidingslijnen; een tone kleurt rand en tag van een vak; een lijn loopt om elk vak heen dat ze niet verbindt; het label op een lijn wordt altijd getekend: een lijn tussen buurvakken in één rij maakt de ruimte ertussen breder voor het label, een label breekt af of krimpt naar de ruimte die het vindt, en een label zonder plek vrij van de vakken en de andere lijnen wordt een nummer op zijn lijn, met de tekst onder het diagram.
+  Banen labelen de rijen en tekenen de scheidingslijnen; een tone kleurt rand en tag van een vak; een lijn loopt om elk vak heen dat ze niet verbindt, en om elke kop; het label op een lijn wordt altijd getekend: een lijn tussen buurvakken in één rij maakt de ruimte ertussen breder voor het label, een label breekt af of krimpt naar de ruimte die het vindt, en een label zonder plek vrij van de vakken en de andere lijnen wordt een nummer op zijn lijn, met de tekst onder het diagram.
 </FlowDiagram>
+
+Een item in `heads` is de kop van de rijen eronder, dus een diagram in groepen is een koprij met daaronder de vakken van de groep; lijnen lopen om de tekst van een kop heen zoals om een vak. Een lijn die tussen de vakken geen weg vindt, loopt langs de rand van het diagram — de strook aan weerszijden van de vakken, binnen de opvulling van het kader — en de lijnenlaag omvat die rand, zodat lijn en nummer binnen de figuur blijven:
+
+<FlowDiagram title="Fig. — een lijn terug omhoog in één kolom" spec={{
+  cols: 1,
+  nodes: [
+    { id: 'plan', title: 'Plannen', lines: ['wat er moet veranderen'], col: 1, row: 1 },
+    { id: 'build', title: 'Bouwen', col: 1, row: 2 },
+    { id: 'measure', title: 'Meten', lines: ['tegen de referentie'], col: 1, row: 3 },
+  ],
+  edges: [
+    { from: 'plan', to: 'build' },
+    { from: 'build', to: 'measure' },
+    { from: 'measure', to: 'plan', label: 'nog ver van de referentie: plan herzien', dashed: true },
+  ],
+}} />
+
+<FlowDiagram title="Fig. — twee groepen, lijnen ertussen" spec={{
+  cols: 3,
+  heads: [{ row: 1, text: 'Wat het model krijgt' }, { row: 3, text: 'Wat het model daaruit berekent' }],
+  nodes: [
+    { id: 'photos', title: 'Foto’s', lines: ['meerdere aanzichten'], col: 1, row: 2 },
+    { id: 'cameras', title: 'Camera’s', lines: ['poses en lenzen'], col: 2, row: 2 },
+    { id: 'features', title: 'Kenmerken per aanzicht', col: 1, row: 4 },
+    { id: 'fuse', title: 'Aanzichten samenvoegen', col: 2, row: 4 },
+    { id: 'surface', title: 'Gesloten oppervlak', col: 3, row: 4, tone: 'machine' },
+  ],
+  edges: [
+    { from: 'photos', to: 'features' },
+    { from: 'cameras', to: 'features' },
+    { from: 'features', to: 'fuse' },
+    { from: 'fuse', to: 'surface' },
+  ],
+}} />
 
 ## Meubilair zonder component
 
