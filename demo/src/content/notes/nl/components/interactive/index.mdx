@@ -85,7 +85,7 @@ Een diagram met woorden is een `FlowDiagram` (of een `mermaid`-blok). Een handma
     { from: 'review', to: 'build' },
   ],
 }}>
-  Banen labelen de rijen en tekenen de scheidingslijnen; een tone kleurt rand en tag van een vak; een lijn loopt om elk vak heen dat ze niet verbindt, en om elke kop; het label op een lijn wordt altijd getekend: een lijn tussen buurvakken in één rij maakt de ruimte ertussen breder voor het label, een label breekt af of krimpt naar de ruimte die het vindt, en een label zonder plek vrij van de vakken en de andere lijnen wordt een nummer op zijn lijn, met de tekst onder het diagram.
+  Banen labelen de rijen en tekenen de scheidingslijnen; een tone kleurt rand en tag van een vak; een lijn loopt om elk vak heen dat ze niet verbindt, en om elke kop; het label op een lijn wordt altijd getekend: een lijn tussen buurvakken in één rij maakt de ruimte ertussen breder voor het label, een label breekt af of krimpt naar de ruimte die het vindt, en een label zonder plek vrij van de vakken en de andere lijnen wordt een nummer op zijn lijn of ernaast, vastgemaakt met een kort streepje, met de tekst onder het diagram.
 </FlowDiagram>
 
 Een item in `heads` is de kop van de rijen eronder, dus een diagram in groepen is een koprij met daaronder de vakken van de groep; lijnen lopen om de tekst van een kop heen zoals om een vak. Een lijn die tussen de vakken geen weg vindt, loopt langs de rand van het diagram — de strook aan weerszijden van de vakken, binnen de opvulling van het kader — en de lijnenlaag omvat die rand, zodat lijn en nummer binnen de figuur blijven:
@@ -119,6 +119,30 @@ Een item in `heads` is de kop van de rijen eronder, dus een diagram in groepen i
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+Gaan er meerdere gelabelde lijnen uit één vak, dan vindt soms een label geen plek vrij van de vakken en wordt het een nummer. Een nummer wordt geplaatst zoals een label: nooit op een vak, een kop, een label of een ander nummer. Het staat op zijn lijn waar die lijn een vrije plek heeft, en anders naast de lijn, eraan vastgemaakt met een kort streepje:
+
+<FlowDiagram title="Fig. — één vak, vijf gelabelde lijnen" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: 'Een straal komt de band in', col: 1, row: 1 },
+    { id: 'walk', title: 'Loop dit stuk af', lines: ['een budget van M cellen'], col: 1, row: 2 },
+    { id: 'coarser', title: 'Opnieuw, één niveau grover', lines: ['het interval bevat de treffer nog'], col: 1, row: 3 },
+    { id: 'unbounded', title: 'Loop het zonder budget af', lines: ['alleen op het grofste niveau'], col: 2, row: 3 },
+    { id: 'report', title: 'Geef het interval', lines: ['het bevat de eerste treffer'], col: 1, row: 4 },
+    { id: 'next', title: 'Neem de volgende doorgang', lines: ['geen meer: de straal mist'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: 'punt in het lichaam bereikt' },
+    { from: 'walk', to: 'next', label: 'stuk af, niets bereikt' },
+    { from: 'walk', to: 'coarser', label: 'budget op, boven het grofste niveau' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: 'budget op, op het grofste niveau' },
+    { from: 'unbounded', to: 'report', label: 'bereikt' },
+    { from: 'unbounded', to: 'next', label: 'niet bereikt' },
   ],
 }} />
 

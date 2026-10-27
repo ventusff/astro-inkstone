@@ -85,7 +85,7 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
     { from: 'review', to: 'build' },
   ],
 }}>
-  레인은 행에 라벨을 붙이고 구분선을 그립니다. tone은 상자의 테두리와 태그에 색을 입힙니다. 선은 연결하지 않는 상자와 제목을 피해 돌아갑니다. 선의 라벨은 항상 그려집니다. 같은 행에서 이웃한 두 상자 사이의 선은 라벨에 맞춰 상자 사이의 틈을 넓히고, 라벨은 찾은 자리에 맞춰 줄을 바꾸거나 작아집니다. 상자와 다른 선을 피할 자리가 없는 라벨은 선 위의 번호가 되고, 그 글은 그림 아래에 적힙니다.
+  레인은 행에 라벨을 붙이고 구분선을 그립니다. tone은 상자의 테두리와 태그에 색을 입힙니다. 선은 연결하지 않는 상자와 제목을 피해 돌아갑니다. 선의 라벨은 항상 그려집니다. 같은 행에서 이웃한 두 상자 사이의 선은 라벨에 맞춰 상자 사이의 틈을 넓히고, 라벨은 찾은 자리에 맞춰 줄을 바꾸거나 작아집니다. 상자와 다른 선을 피할 자리가 없는 라벨은 선 위에, 또는 선에서 조금 떨어져 짧은 선으로 이어진 번호가 되고, 그 글은 그림 아래에 적힙니다.
 </FlowDiagram>
 
 `heads`의 각 항목은 그 아래 행들의 제목이 됩니다. 그룹으로 나눈 그림은 제목 행 하나와 그 아래 그룹의 상자들로 이루어지고, 선은 상자를 피하듯 제목 글자도 피해 갑니다. 상자 사이에 지나갈 길이 없는 선은 그림 양쪽 여백(상자 좌우, 틀 안쪽 여백에 있는 좁은 영역)을 따라갑니다. 선 레이어가 이 여백까지 덮으므로 선과 그 번호는 그림 안에 남습니다:
@@ -119,6 +119,30 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+한 상자에서 라벨이 붙은 선이 여러 개 나가면, 상자를 피할 자리를 찾지 못한 라벨은 번호가 됩니다. 번호는 라벨과 똑같이 놓여서 상자, 제목, 라벨, 다른 번호와 절대 겹치지 않습니다. 선 위에 빈자리가 있으면 그 자리에, 없으면 선에서 조금 떨어진 곳에 놓이고 짧은 선으로 원래 선과 이어집니다:
+
+<FlowDiagram title="그림 — 한 상자에서 나가는 라벨 붙은 다섯 선" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: '광선이 이 수준에 들어온다', col: 1, row: 1 },
+    { id: 'walk', title: '이 구간을 간다', lines: ['예산은 M 칸'], col: 1, row: 2 },
+    { id: 'coarser', title: '한 단계 거친 수준에서 다시', lines: ['구간은 여전히 교점을 담는다'], col: 1, row: 3 },
+    { id: 'unbounded', title: '예산 없이 간다', lines: ['가장 거친 수준에서만'], col: 2, row: 3 },
+    { id: 'report', title: '구간을 내놓는다', lines: ['첫 교점을 담는다'], col: 1, row: 4 },
+    { id: 'next', title: '다음 통과로', lines: ['더 없음: 광선이 맞지 않는다'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: '물체 안의 점에 닿음' },
+    { from: 'walk', to: 'next', label: '구간을 다 감, 닿지 않음' },
+    { from: 'walk', to: 'coarser', label: '예산 초과, 가장 거친 수준보다 위' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: '예산 초과, 가장 거친 수준' },
+    { from: 'unbounded', to: 'report', label: '닿음' },
+    { from: 'unbounded', to: 'next', label: '닿지 않음' },
   ],
 }} />
 

@@ -85,7 +85,7 @@ Eine Abbildung mit Wörtern ist ein `FlowDiagram` (oder ein `mermaid`-Block). Ei
     { from: 'review', to: 'build' },
   ],
 }}>
-  Bahnen beschriften die Zeilen und zeichnen die Trennlinien; ein tone färbt Rand und Tag eines Kastens; eine Linie führt um jeden Kasten herum, den sie nicht verbindet, und um jede Überschrift; die Beschriftung einer Linie wird immer gezeichnet: Eine Linie zwischen benachbarten Kästen einer Zeile verbreitert deren Lücke für sie, eine Beschriftung bricht um oder wird kleiner, je nach dem Platz, den sie findet, und eine Beschriftung ohne Platz abseits der Kästen und der anderen Linien wird zu einer Nummer auf ihrer Linie, ihr Text steht unter dem Diagramm.
+  Bahnen beschriften die Zeilen und zeichnen die Trennlinien; ein tone färbt Rand und Tag eines Kastens; eine Linie führt um jeden Kasten herum, den sie nicht verbindet, und um jede Überschrift; die Beschriftung einer Linie wird immer gezeichnet: Eine Linie zwischen benachbarten Kästen einer Zeile verbreitert deren Lücke für sie, eine Beschriftung bricht um oder wird kleiner, je nach dem Platz, den sie findet, und eine Beschriftung ohne Platz abseits der Kästen und der anderen Linien wird zu einer Nummer auf ihrer Linie oder daneben, mit einem kurzen Strich angebunden, ihr Text steht unter dem Diagramm.
 </FlowDiagram>
 
 Ein Eintrag in `heads` ist die Überschrift der Zeilen darunter; ein Diagramm in Gruppen ist also je eine Überschriftenzeile mit den Kästen der Gruppe darunter, und Linien führen um den Text einer Überschrift herum wie um einen Kasten. Eine Linie, die zwischen den Kästen keinen Weg findet, läuft im Rand des Diagramms – dem Streifen links und rechts der Kästen, im Innenabstand des Rahmens –, und die Linienebene schließt diesen Rand ein, sodass Linie und Nummer im Bild bleiben:
@@ -119,6 +119,30 @@ Ein Eintrag in `heads` ist die Überschrift der Zeilen darunter; ein Diagramm in
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+Verlassen mehrere beschriftete Linien einen Kasten, findet manche Beschriftung keinen Platz abseits der Kästen und wird zu einer Nummer. Eine Nummer wird gesetzt wie eine Beschriftung: nie auf einen Kasten, eine Überschrift, eine Beschriftung oder eine andere Nummer. Sie sitzt auf ihrer Linie, wo die Linie eine freie Stelle hat, sonst neben der Linie, mit einem kurzen Strich an sie angebunden:
+
+<FlowDiagram title="Abb. – ein Kasten, fünf beschriftete Linien" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: 'Ein Strahl tritt ins Band', col: 1, row: 1 },
+    { id: 'walk', title: 'Diese Strecke gehen', lines: ['ein Budget von M Zellen'], col: 1, row: 2 },
+    { id: 'coarser', title: 'Eine Stufe gröber neu', lines: ['das Intervall enthält den Treffer weiter'], col: 1, row: 3 },
+    { id: 'unbounded', title: 'Ohne Budget gehen', lines: ['nur auf der gröbsten Stufe'], col: 2, row: 3 },
+    { id: 'report', title: 'Intervall ausgeben', lines: ['es enthält den ersten Treffer'], col: 1, row: 4 },
+    { id: 'next', title: 'Nächste Querung', lines: ['keine mehr: der Strahl trifft nichts'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: 'Punkt im Körper erreicht' },
+    { from: 'walk', to: 'next', label: 'Strecke fertig, nichts erreicht' },
+    { from: 'walk', to: 'coarser', label: 'Budget überschritten, über der gröbsten Stufe' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: 'Budget überschritten, auf der gröbsten Stufe' },
+    { from: 'unbounded', to: 'report', label: 'erreicht' },
+    { from: 'unbounded', to: 'next', label: 'nicht erreicht' },
   ],
 }} />
 

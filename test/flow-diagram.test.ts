@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { LABEL_GAPS_SHARE, LABEL_GAP_SHARE, LABEL_MIN_PX, LABEL_PX, columnGaps, detourAcross, detourBelow, dodges, gutterWires, detourBeside, freeColumns, labelLayouts, labelLines, portFractions, renderFlowDiagram, routeBetween, runsThrough, runsUnderLastRow, segmentPoint, segmentsByLength, sidesOf, stripLanes, toneColor, wireShape, wrapLabel } from '../lib/flow-diagram.ts';
+import { LABEL_GAPS_SHARE, LABEL_GAP_SHARE, LABEL_MIN_PX, LABEL_PX, columnGaps, detourAcross, detourBelow, dodges, gutterWires, keyBox, keySpot, detourBeside, freeColumns, labelLayouts, labelLines, portFractions, renderFlowDiagram, routeBetween, runsThrough, runsUnderLastRow, segmentPoint, segmentsByLength, sidesOf, stripLanes, toneColor, wireShape, wrapLabel } from '../lib/flow-diagram.ts';
 import { estimateTextWidth } from '../lib/text-width.ts';
 
 const box = (x: number, y: number, w = 100, h = 40) => ({ x, y, w, h });
@@ -155,6 +155,32 @@ test('gutterWires: wires joining rows past a box that spans every column; two or
   assert.match(renderFlowDiagram(three), /style="grid-template-columns:minmax\(0, 1fr\);--flow-gutter-lanes:4"/);
   // two columns, a box in one of them between the rows: the other column is a way past it
   assert.equal(gutterWires({ cols: 2, nodes: [...nodes, { id: 'x', title: 'x', col: 2, row: 1 }], edges: [{ from: 'n1', to: 'n3' }] }), 0);
+});
+
+test('keySpot: on the wire where it is clear, beside it on a lead where it is not, never on a box', () => {
+  const area = { x: 0, y: 0, w: 400, h: 300 };
+  const never = () => false;
+  // a free run of wire: the middle of its longest segment
+  assert.deepEqual(keySpot([[50, 0], [50, 200]], [], never, area), { x: 50, y: 100, at: [50, 100] });
+  // a wire down an 18px gap between two columns of boxes, rows 0–100 and 140–240: the disc fits in the row gap
+  const boxes = [box(0, 0, 100, 100), box(118, 0, 100, 100), box(0, 140, 100, 100), box(118, 140, 100, 100)];
+  const inGap = keySpot([[109, 50], [109, 190]], boxes, never, area);
+  assert.equal(inGap.x, 109);
+  assert.ok(inGap.y - 9 >= 100 && inGap.y + 9 <= 140, 'between the rows');
+  // a 14px gap whose only clear stretch, the row gap, already holds a key: the disc moves beside the wire on a lead, still in the row gap
+  const narrow = [box(0, 0, 100, 100), box(114, 0, 100, 100), box(0, 140, 100, 100), box(114, 140, 100, 100)];
+  const taken = keyBox(107, 120);
+  const off = keySpot([[107, 50], [107, 190]], [...narrow, taken], never, area);
+  const ob = keyBox(off.x, off.y);
+  assert.ok(![...narrow, taken].some((b) => ob.x < b.x + b.w && ob.x + ob.w > b.x && ob.y < b.y + b.h && ob.y + ob.h > b.y), 'clear of the boxes and the other key');
+  assert.notDeepEqual([off.x, off.y], off.at, 'joined to the wire by a lead');
+  assert.equal(off.at[0], 107);
+  // another key already on the clear stretch: the disc goes elsewhere
+  const first = keySpot([[50, 0], [50, 200]], [], never, area);
+  const second = keySpot([[50, 0], [50, 200]], [keyBox(first.x, first.y)], never, area);
+  const a = keyBox(first.x, first.y);
+  const b = keyBox(second.x, second.y);
+  assert.ok(a.y + a.h <= b.y || b.y + b.h <= a.y || a.x + a.w <= b.x || b.x + b.w <= a.x);
 });
 
 test('stripLanes: wires sharing a free column are spread across it, left-hand boxes on the left', () => {

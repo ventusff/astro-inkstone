@@ -85,7 +85,7 @@ Un diagrama que lleva palabras es un `FlowDiagram` (o un bloque `mermaid`). Un `
     { from: 'review', to: 'build' },
   ],
 }}>
-  Los carriles etiquetan las filas y dibujan los separadores; un tone colorea el borde y la etiqueta de una caja; una línea rodea cada caja que no une y cada encabezado; la etiqueta de una línea siempre se dibuja: una línea entre cajas vecinas de una misma fila ensancha su hueco para ella, la etiqueta se parte en líneas o se reduce según el espacio que encuentre, y una etiqueta sin espacio libre de cajas y de otras líneas se convierte en un número sobre su línea, con su texto debajo del diagrama.
+  Los carriles etiquetan las filas y dibujan los separadores; un tone colorea el borde y la etiqueta de una caja; una línea rodea cada caja que no une y cada encabezado; la etiqueta de una línea siempre se dibuja: una línea entre cajas vecinas de una misma fila ensancha su hueco para ella, la etiqueta se parte en líneas o se reduce según el espacio que encuentre, y una etiqueta sin espacio libre de cajas y de otras líneas se convierte en un número sobre su línea o junto a ella, unido por un trazo corto, con su texto debajo del diagrama.
 </FlowDiagram>
 
 Una entrada de `heads` titula las filas que tiene debajo, así que un diagrama por grupos es una fila de encabezado seguida de las cajas del grupo; las líneas rodean el texto de un encabezado igual que rodean una caja. Una línea sin camino entre las cajas baja por el margen del diagrama —la franja a cada lado de las cajas, dentro del relleno del marco— y la capa de líneas abarca ese margen, de modo que la línea y su número quedan dentro de la figura:
@@ -119,6 +119,30 @@ Una entrada de `heads` titula las filas que tiene debajo, así que un diagrama p
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+Cuando varias líneas con etiqueta salen de una caja, alguna etiqueta no encuentra sitio libre de cajas y se convierte en un número. Un número se coloca como una etiqueta: nunca sobre una caja, un encabezado, una etiqueta u otro número. Va sobre su línea donde la línea tiene un hueco libre y, si no, junto a ella, unido por un trazo corto:
+
+<FlowDiagram title="Fig. — una caja, cinco líneas con etiqueta" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: 'Un rayo entra en la banda', col: 1, row: 1 },
+    { id: 'walk', title: 'Recorrer este tramo', lines: ['un presupuesto de M celdas'], col: 1, row: 2 },
+    { id: 'coarser', title: 'Rehacer un nivel más grueso', lines: ['el intervalo sigue conteniendo el impacto'], col: 1, row: 3 },
+    { id: 'unbounded', title: 'Recorrerlo sin presupuesto', lines: ['solo en el nivel más grueso'], col: 2, row: 3 },
+    { id: 'report', title: 'Dar el intervalo', lines: ['contiene el primer impacto'], col: 1, row: 4 },
+    { id: 'next', title: 'Pasar al siguiente cruce', lines: ['no quedan: el rayo no impacta'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: 'llegó a un punto dentro del sólido' },
+    { from: 'walk', to: 'next', label: 'tramo hecho, sin llegar' },
+    { from: 'walk', to: 'coarser', label: 'sin presupuesto, por encima del nivel más grueso' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: 'sin presupuesto, en el nivel más grueso' },
+    { from: 'unbounded', to: 'report', label: 'llegó' },
+    { from: 'unbounded', to: 'next', label: 'no llegó' },
   ],
 }} />
 

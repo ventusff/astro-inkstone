@@ -85,7 +85,7 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
     { from: 'review', to: 'build' },
   ],
 }}>
-  泳道给行加标签、画分隔线;tone 给框的边和标签上色;线绕开不相连的框和分组标题;线上的标注一定画出来:同一行相邻两框之间的线会为它把两框的空隙加宽;标注按找到的空间折行或缩小字号;找不到既不压框也不贴着别的线的位置时,标注换成线上的一个编号,文字列在图下。
+  泳道给行加标签、画分隔线;tone 给框的边和标签上色;线绕开不相连的框和分组标题;线上的标注一定画出来:同一行相邻两框之间的线会为它把两框的空隙加宽;标注按找到的空间折行或缩小字号;找不到既不压框也不贴着别的线的位置时,标注换成线上的一个编号(线上没空处就放在线旁,用一小段线连回去),文字列在图下。
 </FlowDiagram>
 
 `heads` 里的一项是它下面那几行的标题,所以分组的图就是一行分组标题、下面跟着这一组的框;线绕开标题的文字,和绕开框一样。框与框之间找不到路的线,沿图两侧留出的空白走(框的左右两侧、图框内边距里的一条窄带);连线层把这条空白也包在里面,所以线和它的编号都留在图里:
@@ -119,6 +119,30 @@ import PartHero from 'astro-inkstone/components/PartHero.astro';
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+一个框连出好几条带标注的线时,有的标注找不到不压框的位置,就换成编号。编号和标注一样摆放:不压框、不压分组标题、不压别的标注和编号。线上有空的地方,编号就放在线上;没有,就放在线旁边,用一小段线连回去:
+
+<FlowDiagram title="图 — 一个框连出五条带标注的线" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: '光线进入这一级的带子', col: 1, row: 1 },
+    { id: 'walk', title: '沿带子走这一段', lines: ['预算 M 个格子'], col: 1, row: 2 },
+    { id: 'coarser', title: '退回粗一级重做', lines: ['区间仍含真交点'], col: 1, row: 3 },
+    { id: 'unbounded', title: '不设预算走完这段', lines: ['只在最粗一级'], col: 2, row: 3 },
+    { id: 'report', title: '输出区间', lines: ['一定含真首次交点'], col: 1, row: 4 },
+    { id: 'next', title: '处理下一段穿越', lines: ['都没有:光线没碰到物体'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: '到达实体里的点' },
+    { from: 'walk', to: 'next', label: '这段走完,没到达' },
+    { from: 'walk', to: 'coarser', label: '超出预算,还没到最粗一级' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: '超出预算,已在最粗一级' },
+    { from: 'unbounded', to: 'report', label: '到达' },
+    { from: 'unbounded', to: 'next', label: '没到达' },
   ],
 }} />
 

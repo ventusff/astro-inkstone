@@ -366,6 +366,57 @@ export function segmentPoint(seg: { p: Pt; q: Pt; horizontal: boolean; length: n
   return { x: seg.p[0] + (seg.q[0] - seg.p[0]) * t, y: seg.p[1] + (seg.q[1] - seg.p[1]) * t, horizontal: seg.horizontal, length: seg.length };
 }
 
+/** a label's numbered key: the disc's radius, and how far apart the spots beside the wire are tried */
+export const KEY_R = 8;
+const KEY_STEP = 14;
+
+/** the box a key's disc at `x`, `y` takes, with a 1px margin */
+export const keyBox = (x: number, y: number): Rect => ({ x: x - KEY_R - 1, y: y - KEY_R - 1, w: 2 * KEY_R + 2, h: 2 * KEY_R + 2 });
+
+const overlapArea = (a: Rect, b: Rect): number =>
+  Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+
+/**
+ * Where a label's numbered key goes on the wire `pts`: a spot whose disc lies
+ * inside `area` and on none of `blocks` (the boxes, headings, labels and keys
+ * placed before it). The spots run along the segments, longest first, from
+ * the middle outwards every 4px; at each, on the wire, then 14, 28 and 42px
+ * off it to either side, where a short lead joins the disc to the wire and
+ * runs through no block either. Of the spots clear of the blocks, the one
+ * nearest the wire wins, and a disc `crowded` by another wire counts as 60px
+ * off; the first clear spot on the wire and off every other wire ends the
+ * search. With no clear spot at all, the one that covers the blocks least.
+ * Returns the disc's centre and `at`, the point on the wire it belongs to.
+ */
+export function keySpot(pts: Pt[], blocks: Rect[], crowded: (box: Rect) => boolean, area: Rect): { x: number; y: number; at: Pt } {
+  const covered = (box: Rect) => blocks.reduce((a, b) => a + overlapArea(box, b), 0);
+  const inside = (box: Rect) => box.x >= area.x && box.y >= area.y && box.x + box.w <= area.x + area.w && box.y + box.h <= area.y + area.h;
+  const first = pts[0] ?? [0, 0];
+  let best = { cost: Number.POSITIVE_INFINITY, x: first[0], y: first[1], at: first as Pt };
+  for (const seg of segmentsByLength(pts)) {
+    const n = Math.max(1, Math.floor(seg.length / 4));
+    const ts = Array.from({ length: n + 1 }, (_, k) => k / n).sort((p, q) => Math.abs(p - 0.5) - Math.abs(q - 0.5));
+    for (const t of ts) {
+      const p = segmentPoint(seg, t);
+      for (const d of [0, KEY_STEP, -KEY_STEP, 2 * KEY_STEP, -2 * KEY_STEP, 3 * KEY_STEP, -3 * KEY_STEP]) {
+        const x = seg.horizontal ? p.x : p.x + d;
+        const y = seg.horizontal ? p.y + d : p.y;
+        const box = keyBox(x, y);
+        const near: Pt = seg.horizontal ? [x, y - Math.sign(d) * KEY_R] : [x - Math.sign(d) * KEY_R, y];
+        const lead = d === 0 ? false : blocks.some((b) => runsThrough([[p.x, p.y], near], b));
+        const over = covered(box);
+        const clear = inside(box) && over === 0 && !lead;
+        const cost = clear ? Math.abs(d) + (crowded(box) ? 60 : 0) : 1e9 + over + (inside(box) ? 0 : 1e6);
+        if (cost < best.cost) best = { cost, x, y, at: [p.x, p.y] };
+        if (cost === 0) break;
+      }
+      if (best.cost === 0) break;
+    }
+    if (best.cost === 0) break;
+  }
+  return { x: best.x, y: best.y, at: best.at };
+}
+
 /** the label's font size, the smallest it may shrink to, and the most lines it may wrap into */
 export const LABEL_PX = 11;
 export const LABEL_MIN_PX = 9;
@@ -692,8 +743,6 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
   };
   /** what a label must not land on: the boxes and the row headings */
   const obstacles = (): Rect[] => [...root.querySelectorAll('[data-node], .flow-head')].map(boxOf);
-  const overlapArea = (a: Rect, b: Rect) =>
-    Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
   /** a label's box, padded 2px */
   const labelBox = (label: SVGTextElement): Rect => {
     const b = label.getBBox();
@@ -778,6 +827,8 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       const grown = { x: box.x - 5, y: box.y - 5, w: box.w + 10, h: box.h + 10 };
       return routes.some((r, j) => j !== i && runsThrough(r, grown));
     };
+    // keys are drawn over every wire, so a wire passing by never crosses a disc
+    const keys: SVGGElement[] = [];
     for (const [i, e] of data.edges.entries()) {
       const pts = routes[i] ?? [];
       const color = e.off ? undefined : toneColor(e.tone);
@@ -827,37 +878,30 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
         continue;
       }
       label.remove();
-      blocks.push(drawKey(pts, legend.children.length + 1, e, stroke, (box) => blocks.reduce((a, b) => a + overlapArea(box, b), 0) + (nearWire(box, i) ? 1000 : 0), width, height));
+      const spot = keySpot(pts, blocks, (box) => nearWire(box, i), { x: 0, y: 0, w: width, h: height });
+      keys.push(drawKey(spot, legend.children.length + 1, e, stroke));
+      blocks.push(keyBox(spot.x, spot.y));
     }
+    wires.append(...keys);
     legend.hidden = legend.children.length === 0;
   }
 
   /**
-   * A label's numbered key: a small disc on the wire, at the first spot along
-   * its segments (longest first; the middle, a quarter in from either end,
-   * then every tenth of the way) inside the diagram that `clash` finds clear
-   * of the boxes, headings, labels and keys drawn before it and of the other
-   * wires, else at the spot where it clashes least; and the label's words
-   * against the same number in the legend. Returns the disc's box.
+   * A label's numbered key at `spot` (`keySpot`): a small disc, joined to its
+   * wire by a short lead when it sits beside it; and the label's words against
+   * the same number in the legend. Returns the key, for the caller to draw.
    */
-  function drawKey(pts: Pt[], n: number, e: FlowEdge, stroke: string, clash: (box: Rect) => number, width: number, height: number): Rect {
-    const r = 8;
-    const disc = (x: number, y: number): Rect => ({ x: x - r - 1, y: y - r - 1, w: 2 * r + 2, h: 2 * r + 2 });
-    let at = { x: pts[0]?.[0] ?? 0, y: pts[0]?.[1] ?? 0 };
-    let least = Number.POSITIVE_INFINITY;
-    spots: for (const seg of segmentsByLength(pts)) for (const t of [0.5, 0.25, 0.75, 0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.9]) {
-      const p = segmentPoint(seg, t);
-      const box = disc(p.x, p.y);
-      const inside = box.x >= 0 && box.y >= 0 && box.x + box.w <= width && box.y + box.h <= height;
-      const cost = clash(box) + (inside ? 0 : 1e6);
-      if (cost < least) { least = cost; at = p; }
-      if (cost === 0) break spots;
-    }
+  function drawKey(spot: { x: number; y: number; at: Pt }, n: number, e: FlowEdge, stroke: string): SVGGElement {
     const key = svgEl('g', { class: `key${e.off ? ' off' : ''}`, 'data-key': n });
-    const ring = svgEl('circle', { cx: at.x, cy: at.y, r });
+    const [ax, ay] = spot.at;
+    if (ax !== spot.x || ay !== spot.y) {
+      const lead = svgEl('line', { x1: ax, y1: ay, x2: spot.x, y2: spot.y });
+      lead.style.stroke = stroke;
+      key.append(lead);
+    }
+    const ring = svgEl('circle', { cx: spot.x, cy: spot.y, r: KEY_R });
     ring.style.stroke = stroke;
-    key.append(ring, svgEl('text', { x: at.x, y: at.y + 3.5, 'text-anchor': 'middle' }, String(n)));
-    wires.append(key);
+    key.append(ring, svgEl('text', { x: spot.x, y: spot.y + 3.5, 'text-anchor': 'middle' }, String(n)));
     const item = document.createElement('li');
     item.dataset['key'] = String(n);
     const mark = document.createElement('span');
@@ -866,7 +910,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
     mark.style.borderColor = stroke;
     item.append(mark, document.createTextNode(e.label ?? ''));
     legend.append(item);
-    return disc(at.x, at.y);
+    return key;
   }
 
   const ro = new ResizeObserver(() => redraw());

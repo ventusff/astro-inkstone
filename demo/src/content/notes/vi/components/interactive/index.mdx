@@ -85,7 +85,7 @@ Sơ đồ có chữ thì dùng `FlowDiagram` (hoặc khối `mermaid`). `<svg>` 
     { from: 'review', to: 'build' },
   ],
 }}>
-  Làn gắn nhãn cho hàng và vẽ đường phân cách; tone tô viền và nhãn của ô; dây đi vòng qua mọi ô mà nó không nối và mọi tiêu đề; nhãn trên dây luôn được vẽ: dây nối hai ô kề nhau trên cùng một hàng nới rộng khoảng trống giữa chúng cho nhãn, nhãn xuống dòng hoặc thu nhỏ theo chỗ trống tìm được, còn nhãn không tìm được chỗ tránh các ô và các dây khác thì thành một con số trên dây của nó, chữ của nhãn được ghi dưới sơ đồ.
+  Làn gắn nhãn cho hàng và vẽ đường phân cách; tone tô viền và nhãn của ô; dây đi vòng qua mọi ô mà nó không nối và mọi tiêu đề; nhãn trên dây luôn được vẽ: dây nối hai ô kề nhau trên cùng một hàng nới rộng khoảng trống giữa chúng cho nhãn, nhãn xuống dòng hoặc thu nhỏ theo chỗ trống tìm được, còn nhãn không tìm được chỗ tránh các ô và các dây khác thì thành một con số trên dây của nó hoặc cạnh dây, nối bằng một nét ngắn, chữ của nhãn được ghi dưới sơ đồ.
 </FlowDiagram>
 
 Mỗi mục trong `heads` là tiêu đề cho các hàng bên dưới nó, nên một sơ đồ chia nhóm là một hàng tiêu đề rồi đến các ô của nhóm; dây đi vòng qua chữ của tiêu đề giống như đi vòng qua một ô. Dây không tìm được đường giữa các ô sẽ chạy dọc lề của sơ đồ — dải hai bên các ô, nằm trong phần đệm của khung — và lớp dây phủ cả lề này, nên dây và con số của nó vẫn nằm trong hình:
@@ -119,6 +119,30 @@ Mỗi mục trong `heads` là tiêu đề cho các hàng bên dưới nó, nên 
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+Khi nhiều dây có nhãn đi ra từ một ô, có nhãn không tìm được chỗ tránh các ô và thành một con số. Con số được đặt như một nhãn: không bao giờ đè lên ô, tiêu đề, nhãn hay con số khác. Nó nằm trên dây của nó ở chỗ dây còn trống, nếu không thì nằm cạnh dây, nối với dây bằng một nét ngắn:
+
+<FlowDiagram title="Hình — một ô, năm dây có nhãn" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: 'Tia đi vào dải', col: 1, row: 1 },
+    { id: 'walk', title: 'Đi hết đoạn này', lines: ['ngân sách M ô lưới'], col: 1, row: 2 },
+    { id: 'coarser', title: 'Làm lại ở cấp thô hơn một bậc', lines: ['khoảng vẫn chứa điểm chạm'], col: 1, row: 3 },
+    { id: 'unbounded', title: 'Đi không giới hạn ngân sách', lines: ['chỉ ở cấp thô nhất'], col: 2, row: 3 },
+    { id: 'report', title: 'Trả về khoảng', lines: ['nó chứa điểm chạm đầu tiên'], col: 1, row: 4 },
+    { id: 'next', title: 'Sang lần cắt qua kế tiếp', lines: ['không còn: tia trượt'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: 'tới một điểm trong vật thể' },
+    { from: 'walk', to: 'next', label: 'xong đoạn, không tới' },
+    { from: 'walk', to: 'coarser', label: 'hết ngân sách, trên cấp thô nhất' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: 'hết ngân sách, ở cấp thô nhất' },
+    { from: 'unbounded', to: 'report', label: 'tới' },
+    { from: 'unbounded', to: 'next', label: 'không tới' },
   ],
 }} />
 

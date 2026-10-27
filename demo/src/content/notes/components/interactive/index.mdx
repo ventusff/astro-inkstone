@@ -85,7 +85,7 @@ A diagram that carries words is a `FlowDiagram` (or a `mermaid` fence). A hand-p
     { from: 'review', to: 'build' },
   ],
 }}>
-  Lanes label the rows and draw the separators; a tone colors a box's border and tag; a wire goes around every box it does not join and every heading; a wire's label is always drawn: a wire between neighbouring boxes of one row widens their gap for it, a label wraps or shrinks to the room it finds, and a label with no room clear of the boxes and the other wires becomes a numbered key on its wire, its words listed under the diagram.
+  Lanes label the rows and draw the separators; a tone colors a box's border and tag; a wire goes around every box it does not join and every heading; a wire's label is always drawn: a wire between neighbouring boxes of one row widens their gap for it, a label wraps or shrinks to the room it finds, and a label with no room clear of the boxes and the other wires becomes a numbered key on its wire, or beside it on a short lead, its words listed under the diagram.
 </FlowDiagram>
 
 A `heads` entry titles the rows under it, so a diagram drawn as groups is a heading row followed by the group's boxes; wires go around a heading's words as they go around a box. A wire with no way between the boxes runs down the diagram's gutter — the strip on either side of the boxes, inside the frame's padding — and the wire layer covers the gutter, so the wire and its key stay inside the figure:
@@ -119,6 +119,30 @@ A `heads` entry titles the rows under it, so a diagram drawn as groups is a head
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+When several labelled wires leave one box, some labels find no room clear of the boxes and become keys. A key is placed as a label is: never on a box, a heading, a label or another key. It sits on its wire where the wire has a clear spot, and otherwise beside the wire, joined to it by a short lead:
+
+<FlowDiagram title="Fig. — one box, five labelled wires" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: 'A ray enters the band', col: 1, row: 1 },
+    { id: 'walk', title: 'Walk this stretch', lines: ['a budget of M cells'], col: 1, row: 2 },
+    { id: 'coarser', title: 'Redo one level coarser', lines: ['the interval still holds the hit'], col: 1, row: 3 },
+    { id: 'unbounded', title: 'Walk it with no budget', lines: ['only at the coarsest level'], col: 2, row: 3 },
+    { id: 'report', title: 'Report the interval', lines: ['it holds the first hit'], col: 1, row: 4 },
+    { id: 'next', title: 'Take the next crossing', lines: ['none left: the ray misses'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: 'reached a point inside the solid' },
+    { from: 'walk', to: 'next', label: 'stretch done, nothing reached' },
+    { from: 'walk', to: 'coarser', label: 'over budget above the coarsest level' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: 'over budget at the coarsest level' },
+    { from: 'unbounded', to: 'report', label: 'reached' },
+    { from: 'unbounded', to: 'next', label: 'not reached' },
   ],
 }} />
 

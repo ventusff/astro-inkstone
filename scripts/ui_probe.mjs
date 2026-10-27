@@ -9,8 +9,8 @@
  * their container with no scroll box to live in, words an SVG draws outside
  * its own box (a diagram's labels, a chart's ticks), FlowDiagram wire labels
  * that are not drawn (on the wire, or as a numbered key with its words in
- * the legend under the diagram), wire labels and keys that land on a box
- * or a row heading, wires that run through a box they do not join or
+ * the legend under the diagram), wire labels and keys that land on a box,
+ * a row heading or each other, wires that run through a box they do not join or
  * through a row heading's words, classes no stylesheet rule
  * styles, skipped heading levels, duplicate ids, images without an alt
  * attribute, in-page anchors and aria-controls pointing at ids that do not
@@ -171,7 +171,7 @@ const layoutChecks = (scope) => {
   // be drawn as visible words in the wire layer (lines wrap into tspans, so
   // the words are compared without whitespace), or as a visible numbered key
   // on the wire with the words against that number in the legend that
-  // follows the diagram. No label or key may land on a box or a row heading,
+  // follows the diagram. No label or key may land on a box, a row heading or another label or key,
   // and no wire may run through a box other than the two it joins, or through
   // a heading. A diagram laid out to no box (inside closed markup) draws
   // nothing and is skipped.
@@ -206,11 +206,12 @@ const layoutChecks = (scope) => {
       ...[...grid.querySelectorAll('[data-node]')].map((n) => ({ id: n.dataset.node, r: n.getBoundingClientRect() })),
       ...[...grid.querySelectorAll('.flow-head')].map((h) => ({ id: `heading "${h.textContent.trim().slice(0, 30)}"`, r: h.getBoundingClientRect() })),
     ];
-    for (const t of grid.querySelectorAll('.flow-wires .lbl, .flow-wires .key')) {
-      if (!shown(t)) continue;
-      const a = t.getBoundingClientRect();
-      const on = boxes.find((b) => overlap(a, b.r));
-      if (on) out.onBox.push({ label: t.textContent.trim().slice(0, 40), box: on.id });
+    // a key is measured by its disc (its lead runs to the wire); labels and keys may not land on each other either
+    const marks = [...grid.querySelectorAll('.flow-wires .lbl, .flow-wires .key')].filter(shown)
+      .map((t) => ({ text: t.textContent.trim().slice(0, 40), r: (t.matches('.key') ? t.querySelector('circle') ?? t : t).getBoundingClientRect() }));
+    for (const [k, m] of marks.entries()) {
+      const on = boxes.find((b) => overlap(m.r, b.r)) ?? marks.slice(k + 1).map((o) => ({ id: `label "${o.text}"`, r: o.r })).find((o) => overlap(m.r, o.r));
+      if (on) out.onBox.push({ label: m.text, box: on.id });
     }
     for (const w of grid.querySelectorAll('.flow-wires path.wire[data-edge]')) {
       const e = spec.edges?.[Number(w.dataset.edge)];

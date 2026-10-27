@@ -85,7 +85,7 @@ Un schéma qui porte des mots est un `FlowDiagram` (ou un bloc `mermaid`). Un `<
     { from: 'review', to: 'build' },
   ],
 }}>
-  Les couloirs étiquettent les lignes et tracent les séparations ; un tone colore la bordure et l'étiquette d'une boîte ; un fil contourne chaque boîte qu'il ne relie pas et chaque intitulé ; l'étiquette d'un fil est toujours dessinée : un fil entre deux boîtes voisines d'une même rangée élargit leur espace pour elle, l'étiquette passe à la ligne ou rétrécit selon la place qu'elle trouve, et une étiquette sans place à l'écart des boîtes et des autres fils devient un numéro sur son fil, son texte étant listé sous le diagramme.
+  Les couloirs étiquettent les lignes et tracent les séparations ; un tone colore la bordure et l'étiquette d'une boîte ; un fil contourne chaque boîte qu'il ne relie pas et chaque intitulé ; l'étiquette d'un fil est toujours dessinée : un fil entre deux boîtes voisines d'une même rangée élargit leur espace pour elle, l'étiquette passe à la ligne ou rétrécit selon la place qu'elle trouve, et une étiquette sans place à l'écart des boîtes et des autres fils devient un numéro sur son fil ou à côté, relié par un court trait, son texte étant listé sous le diagramme.
 </FlowDiagram>
 
 Une entrée de `heads` sert d’intitulé aux rangées qui la suivent : un diagramme en groupes est donc une rangée d’intitulé suivie des boîtes du groupe, et les fils contournent le texte d’un intitulé comme ils contournent une boîte. Un fil qui ne trouve pas de passage entre les boîtes descend par la marge du diagramme — la bande de part et d’autre des boîtes, dans le remplissage du cadre — et la couche des fils couvre cette marge, si bien que le fil et son numéro restent dans la figure :
@@ -119,6 +119,30 @@ Une entrée de `heads` sert d’intitulé aux rangées qui la suivent : un diagr
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+Quand plusieurs fils étiquetés partent d’une même boîte, certaines étiquettes ne trouvent pas de place à l’écart des boîtes et deviennent des numéros. Un numéro se place comme une étiquette : jamais sur une boîte, un intitulé, une étiquette ou un autre numéro. Il se pose sur son fil là où le fil a une place libre, sinon à côté, relié au fil par un court trait :
+
+<FlowDiagram title="Fig. — une boîte, cinq fils étiquetés" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: 'Un rayon entre dans la bande', col: 1, row: 1 },
+    { id: 'walk', title: 'Parcourir ce tronçon', lines: ['un budget de M cellules'], col: 1, row: 2 },
+    { id: 'coarser', title: 'Refaire un niveau plus grossier', lines: ['l’intervalle contient toujours l’impact'], col: 1, row: 3 },
+    { id: 'unbounded', title: 'Le parcourir sans budget', lines: ['seulement au niveau le plus grossier'], col: 2, row: 3 },
+    { id: 'report', title: 'Donner l’intervalle', lines: ['il contient le premier impact'], col: 1, row: 4 },
+    { id: 'next', title: 'Passer à la traversée suivante', lines: ['plus aucune : le rayon manque l’objet'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: 'point atteint dans le solide' },
+    { from: 'walk', to: 'next', label: 'tronçon fini, rien atteint' },
+    { from: 'walk', to: 'coarser', label: 'budget dépassé, au-dessus du niveau le plus grossier' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: 'budget dépassé, au niveau le plus grossier' },
+    { from: 'unbounded', to: 'report', label: 'atteint' },
+    { from: 'unbounded', to: 'next', label: 'pas atteint' },
   ],
 }} />
 

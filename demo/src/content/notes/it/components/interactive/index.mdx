@@ -85,7 +85,7 @@ Un diagramma che porta parole è un `FlowDiagram` (o un blocco `mermaid`). Un `<
     { from: 'review', to: 'build' },
   ],
 }}>
-  Le corsie etichettano le righe e tracciano i separatori; un tone colora bordo ed etichetta di un riquadro; un filo gira attorno a ogni riquadro che non collega e a ogni titolo; l'etichetta di un filo viene sempre disegnata: un filo tra riquadri vicini della stessa riga allarga per lei lo spazio tra loro, l'etichetta va a capo o si rimpicciolisce secondo lo spazio che trova, e un'etichetta senza spazio libero da riquadri e altri fili diventa un numero sul suo filo, con il testo elencato sotto il diagramma.
+  Le corsie etichettano le righe e tracciano i separatori; un tone colora bordo ed etichetta di un riquadro; un filo gira attorno a ogni riquadro che non collega e a ogni titolo; l'etichetta di un filo viene sempre disegnata: un filo tra riquadri vicini della stessa riga allarga per lei lo spazio tra loro, l'etichetta va a capo o si rimpicciolisce secondo lo spazio che trova, e un'etichetta senza spazio libero da riquadri e altri fili diventa un numero sul suo filo o accanto, unito da un breve tratto, con il testo elencato sotto il diagramma.
 </FlowDiagram>
 
 Una voce di `heads` fa da titolo alle righe sotto di sé, quindi un diagramma a gruppi è una riga di titolo seguita dai riquadri del gruppo; i fili girano attorno al testo di un titolo come attorno a un riquadro. Un filo che non trova strada tra i riquadri scende lungo il margine del diagramma — la striscia ai due lati dei riquadri, dentro il padding della cornice — e lo strato dei fili copre quel margine, così filo e numero restano dentro la figura:
@@ -119,6 +119,30 @@ Una voce di `heads` fa da titolo alle righe sotto di sé, quindi un diagramma a 
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+Quando da un riquadro escono più fili con etichetta, qualche etichetta non trova spazio libero dai riquadri e diventa un numero. Un numero si colloca come un’etichetta: mai su un riquadro, un titolo, un’etichetta o un altro numero. Sta sul suo filo dove il filo ha un punto libero, altrimenti accanto, unito al filo da un breve tratto:
+
+<FlowDiagram title="Fig. — un riquadro, cinque fili con etichetta" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: 'Un raggio entra nella fascia', col: 1, row: 1 },
+    { id: 'walk', title: 'Percorri questo tratto', lines: ['un budget di M celle'], col: 1, row: 2 },
+    { id: 'coarser', title: 'Rifai un livello più grossolano', lines: ['l’intervallo contiene ancora l’urto'], col: 1, row: 3 },
+    { id: 'unbounded', title: 'Percorrilo senza budget', lines: ['solo al livello più grossolano'], col: 2, row: 3 },
+    { id: 'report', title: 'Restituisci l’intervallo', lines: ['contiene il primo urto'], col: 1, row: 4 },
+    { id: 'next', title: 'Passa all’attraversamento dopo', lines: ['non ce ne sono: il raggio manca'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: 'raggiunto un punto nel solido' },
+    { from: 'walk', to: 'next', label: 'tratto finito, niente raggiunto' },
+    { from: 'walk', to: 'coarser', label: 'budget superato, sopra il livello più grossolano' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: 'budget superato, al livello più grossolano' },
+    { from: 'unbounded', to: 'report', label: 'raggiunto' },
+    { from: 'unbounded', to: 'next', label: 'non raggiunto' },
   ],
 }} />
 

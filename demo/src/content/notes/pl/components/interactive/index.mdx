@@ -85,7 +85,7 @@ Diagram niosący słowa to `FlowDiagram` (albo blok `mermaid`). Ręcznie pozycjo
     { from: 'review', to: 'build' },
   ],
 }}>
-  Tory etykietują wiersze i rysują separatory; tone koloruje obramowanie i etykietę ramki; linia omija każdą ramkę, której nie łączy, i każdy nagłówek; etykieta linii jest zawsze rysowana: linia między sąsiednimi ramkami jednego wiersza poszerza dla niej przerwę między nimi, etykieta łamie się lub zmniejsza zależnie od miejsca, które znajdzie, a etykieta bez miejsca wolnego od ramek i innych linii staje się numerem na swojej linii, a jej tekst trafia pod diagram.
+  Tory etykietują wiersze i rysują separatory; tone koloruje obramowanie i etykietę ramki; linia omija każdą ramkę, której nie łączy, i każdy nagłówek; etykieta linii jest zawsze rysowana: linia między sąsiednimi ramkami jednego wiersza poszerza dla niej przerwę między nimi, etykieta łamie się lub zmniejsza zależnie od miejsca, które znajdzie, a etykieta bez miejsca wolnego od ramek i innych linii staje się numerem na swojej linii albo obok niej, połączonym krótką kreską, a jej tekst trafia pod diagram.
 </FlowDiagram>
 
 Wpis w `heads` jest nagłówkiem wierszy pod nim, więc diagram w grupach to wiersz nagłówka, a pod nim ramki grupy; linie omijają tekst nagłówka tak samo jak ramkę. Linia, która nie znajduje drogi między ramkami, biegnie marginesem diagramu — pasem po obu stronach ramek, wewnątrz dopełnienia obramowania — a warstwa linii obejmuje ten margines, więc linia i jej numer zostają w obrębie rysunku:
@@ -119,6 +119,30 @@ Wpis w `heads` jest nagłówkiem wierszy pod nim, więc diagram w grupach to wie
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+Gdy z jednej ramki wychodzi kilka linii z etykietami, niektóre etykiety nie znajdują miejsca wolnego od ramek i stają się numerami. Numer umieszcza się jak etykietę: nigdy na ramce, nagłówku, etykiecie ani innym numerze. Stoi na swojej linii tam, gdzie linia ma wolne miejsce, a jeśli go nie ma, obok niej, połączony z nią krótką kreską:
+
+<FlowDiagram title="Rys. — jedna ramka, pięć linii z etykietami" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: 'Promień wchodzi w pas', col: 1, row: 1 },
+    { id: 'walk', title: 'Przejdź ten odcinek', lines: ['budżet M komórek'], col: 1, row: 2 },
+    { id: 'coarser', title: 'Powtórz o poziom grubiej', lines: ['przedział nadal zawiera trafienie'], col: 1, row: 3 },
+    { id: 'unbounded', title: 'Przejdź go bez budżetu', lines: ['tylko na najgrubszym poziomie'], col: 2, row: 3 },
+    { id: 'report', title: 'Podaj przedział', lines: ['zawiera pierwsze trafienie'], col: 1, row: 4 },
+    { id: 'next', title: 'Weź następne przejście', lines: ['nie ma już: promień chybia'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: 'osiągnięto punkt w bryle' },
+    { from: 'walk', to: 'next', label: 'odcinek przebyty, nic nie osiągnięto' },
+    { from: 'walk', to: 'coarser', label: 'budżet przekroczony, powyżej najgrubszego poziomu' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: 'budżet przekroczony, na najgrubszym poziomie' },
+    { from: 'unbounded', to: 'report', label: 'osiągnięto' },
+    { from: 'unbounded', to: 'next', label: 'nie osiągnięto' },
   ],
 }} />
 

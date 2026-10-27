@@ -85,7 +85,7 @@ Diagram yang memuat kata adalah `FlowDiagram` (atau blok `mermaid`). `<svg>` yan
     { from: 'review', to: 'build' },
   ],
 }}>
-  Jalur memberi label baris dan menggambar pemisah; tone mewarnai tepi dan tag kotak; garis memutari setiap kotak yang tidak dihubungkannya dan setiap judul; label pada garis selalu digambar: garis di antara kotak bertetangga dalam satu baris melebarkan celahnya untuk label itu, label dipecah ke beberapa baris atau dikecilkan sesuai ruang yang ada, dan label yang tidak mendapat ruang bebas dari kotak dan garis lain menjadi nomor di garisnya, dengan teksnya dicantumkan di bawah diagram.
+  Jalur memberi label baris dan menggambar pemisah; tone mewarnai tepi dan tag kotak; garis memutari setiap kotak yang tidak dihubungkannya dan setiap judul; label pada garis selalu digambar: garis di antara kotak bertetangga dalam satu baris melebarkan celahnya untuk label itu, label dipecah ke beberapa baris atau dikecilkan sesuai ruang yang ada, dan label yang tidak mendapat ruang bebas dari kotak dan garis lain menjadi nomor di garisnya atau di sampingnya, tersambung lewat garis pendek, dengan teksnya dicantumkan di bawah diagram.
 </FlowDiagram>
 
 Satu entri `heads` menjadi judul bagi baris-baris di bawahnya, jadi diagram berkelompok adalah satu baris judul diikuti kotak-kotak kelompoknya; garis memutari teks judul seperti memutari kotak. Garis yang tidak menemukan jalan di antara kotak turun lewat tepi diagram — jalur di kedua sisi kotak, di dalam padding bingkai — dan lapisan garis mencakup tepi itu, sehingga garis dan nomornya tetap di dalam gambar:
@@ -119,6 +119,30 @@ Satu entri `heads` menjadi judul bagi baris-baris di bawahnya, jadi diagram berk
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+Bila beberapa garis berlabel keluar dari satu kotak, sebagian label tidak mendapat ruang bebas dari kotak dan menjadi nomor. Nomor ditempatkan seperti label: tidak pernah di atas kotak, judul, label, atau nomor lain. Ia berada di garisnya bila garis itu punya tempat kosong, dan bila tidak, di samping garis, tersambung lewat garis pendek:
+
+<FlowDiagram title="Gbr. — satu kotak, lima garis berlabel" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: 'Sinar masuk ke pita', col: 1, row: 1 },
+    { id: 'walk', title: 'Telusuri ruas ini', lines: ['anggaran M sel'], col: 1, row: 2 },
+    { id: 'coarser', title: 'Ulangi satu tingkat lebih kasar', lines: ['intervalnya tetap memuat titik temu'], col: 1, row: 3 },
+    { id: 'unbounded', title: 'Telusuri tanpa anggaran', lines: ['hanya di tingkat paling kasar'], col: 2, row: 3 },
+    { id: 'report', title: 'Keluarkan interval', lines: ['memuat titik temu pertama'], col: 1, row: 4 },
+    { id: 'next', title: 'Ambil perlintasan berikutnya', lines: ['tidak ada lagi: sinar tidak kena'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: 'sampai di titik dalam benda' },
+    { from: 'walk', to: 'next', label: 'ruas selesai, tidak sampai' },
+    { from: 'walk', to: 'coarser', label: 'anggaran habis, di atas tingkat paling kasar' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: 'anggaran habis, di tingkat paling kasar' },
+    { from: 'unbounded', to: 'report', label: 'sampai' },
+    { from: 'unbounded', to: 'next', label: 'tidak sampai' },
   ],
 }} />
 

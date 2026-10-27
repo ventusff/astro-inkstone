@@ -1958,9 +1958,13 @@ a.hub-card {
 .flow-wires .dot {
   fill: var(--color-accent2);
 }
-/* a label with no spot clear of the boxes: a numbered key on its wire, its words in the legend below */
+/* a label with no spot clear of the boxes: a numbered key on its wire (or beside it, joined by a short
+   lead), its words in the legend below */
 .flow-wires .key circle {
   fill: var(--color-bg-card);
+  stroke-width: 1.5;
+}
+.flow-wires .key line {
   stroke-width: 1.5;
 }
 .flow-wires .key text {

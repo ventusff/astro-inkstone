@@ -85,7 +85,7 @@ Sözcük taşıyan bir şema `FlowDiagram`dır (ya da bir `mermaid` bloğu). Ell
     { from: 'review', to: 'build' },
   ],
 }}>
-  Şeritler satırları etiketler ve ayırıcıları çizer; tone bir kutunun kenarını ve etiketini renklendirir; bir tel bağlamadığı her kutunun ve her başlığın etrafından dolaşır; bir telin etiketi her zaman çizilir: aynı satırdaki komşu kutuları bağlayan tel, aralarındaki boşluğu etiket için genişletir; etiket bulduğu yere göre satıra bölünür ya da küçülür; kutulardan ve öbür tellerden uzakta yer bulamayan etiket telinin üstünde bir numaraya dönüşür, yazısı diyagramın altında listelenir.
+  Şeritler satırları etiketler ve ayırıcıları çizer; tone bir kutunun kenarını ve etiketini renklendirir; bir tel bağlamadığı her kutunun ve her başlığın etrafından dolaşır; bir telin etiketi her zaman çizilir: aynı satırdaki komşu kutuları bağlayan tel, aralarındaki boşluğu etiket için genişletir; etiket bulduğu yere göre satıra bölünür ya da küçülür; kutulardan ve öbür tellerden uzakta yer bulamayan etiket telinin üstünde ya da kısa bir çizgiyle bağlı olarak yanında bir numaraya dönüşür, yazısı diyagramın altında listelenir.
 </FlowDiagram>
 
 `heads` içindeki bir giriş, altındaki satırların başlığıdır; yani gruplara ayrılmış bir diyagram, bir başlık satırı ve altında grubun kutularıdır. Teller bir başlığın yazısının etrafından, bir kutunun etrafından dolaştıkları gibi dolaşır. Kutular arasında yol bulamayan bir tel, diyagramın kenar payından geçer — kutuların iki yanında, çerçevenin iç boşluğundaki şerit — ve tel katmanı bu payı da kapsar; böylece tel ve numarası şeklin içinde kalır:
@@ -119,6 +119,30 @@ Sözcük taşıyan bir şema `FlowDiagram`dır (ya da bir `mermaid` bloğu). Ell
     { from: 'cameras', to: 'features' },
     { from: 'features', to: 'fuse' },
     { from: 'fuse', to: 'surface' },
+  ],
+}} />
+
+Bir kutudan etiketli birkaç tel çıktığında bazı etiketler kutulardan uzakta yer bulamaz ve numaraya dönüşür. Numara bir etiket gibi yerleştirilir: asla bir kutunun, başlığın, etiketin ya da başka bir numaranın üstüne gelmez. Telde boş yer varsa telin üstünde durur, yoksa telin yanında durur ve tele kısa bir çizgiyle bağlanır:
+
+<FlowDiagram title="Şek. — bir kutu, beş etiketli tel" spec={{
+  cols: 2,
+  nodes: [
+    { id: 'enter', title: 'Işın şeride girer', col: 1, row: 1 },
+    { id: 'walk', title: 'Bu kesimi yürü', lines: ['M hücrelik bütçe'], col: 1, row: 2 },
+    { id: 'coarser', title: 'Bir düzey kaba yeniden', lines: ['aralık isabeti hâlâ içerir'], col: 1, row: 3 },
+    { id: 'unbounded', title: 'Bütçesiz yürü', lines: ['yalnızca en kaba düzeyde'], col: 2, row: 3 },
+    { id: 'report', title: 'Aralığı ver', lines: ['ilk isabeti içerir'], col: 1, row: 4 },
+    { id: 'next', title: 'Sonraki geçişe geç', lines: ['kalmadı: ışın ıskalar'], col: 2, row: 4 },
+  ],
+  edges: [
+    { from: 'enter', to: 'walk' },
+    { from: 'walk', to: 'report', label: 'cismin içinde bir noktaya varıldı' },
+    { from: 'walk', to: 'next', label: 'kesim bitti, varılmadı' },
+    { from: 'walk', to: 'coarser', label: 'bütçe aşıldı, en kaba düzeyin üstünde' },
+    { from: 'coarser', to: 'walk' },
+    { from: 'walk', to: 'unbounded', label: 'bütçe aşıldı, en kaba düzeyde' },
+    { from: 'unbounded', to: 'report', label: 'varıldı' },
+    { from: 'unbounded', to: 'next', label: 'varılmadı' },
   ],
 }} />
 
