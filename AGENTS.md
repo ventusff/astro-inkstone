@@ -155,6 +155,8 @@ npm run build                        # build + engine check-dist (postbuild)
 npm run dev                          # the manual site
 npm run check                            # engine CLIs: content + wikilinks (strict)
 node scripts/probe.mjs ui                # render-layer probe, en+zh trees (needs Chrome)
+node ../scripts/ui_probe.mjs dist '' ui-probe.txt --only '<route regex>' --shots <dir>
+                                         # the pages a change touched, with full-page shots per width, light and dark
 node scripts/probe.mjs contrast          # WCAG contrast, en+zh trees, both themes
 node scripts/probe.mjs ui --all          # every locale's tree — before a release,
 node scripts/probe.mjs contrast --all    #   and after any language-shaped change

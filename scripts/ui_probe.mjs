@@ -7,7 +7,8 @@
  * representative route each `<dialog data-probe-open>` is also opened and
  * its layout checked): horizontal overflow of the page, elements wider than
  * their container with no scroll box to live in, words an SVG draws outside
- * its own box (a diagram's labels, a chart's ticks), FlowDiagram wire labels
+ * its own box (a diagram's labels, a chart's ticks, a rotated axis title —
+ * judged by the box it paints on screen, transforms included), FlowDiagram wire labels
  * that are not drawn (on the wire, or as a numbered key with its words in
  * the legend under the diagram), wire labels and keys that land on a box,
  * a row heading or each other, wires that run through a box they do not join or
@@ -25,11 +26,15 @@
  * nothing written to disk).
  *
  * Usage (site-agnostic — everything site-specific arrives via args/env):
- *   node scripts/ui_probe.mjs [distDir] [baseUrl] [outFile] [--exclude <route regex>]
+ *   node scripts/ui_probe.mjs [distDir] [baseUrl] [outFile] [--exclude <route regex>] [--only <route regex>]
+ *                            [--shots <dir>]
  *     distDir  build output directory, default ./dist (relative to cwd)
  *     baseUrl  optional address of an already-running static server; when
  *              omitted the probe serves distDir itself on an ephemeral port
  *     outFile  report file, default ui-probe.txt
+ *     --only   probe only the routes matching it (the pages a change touched)
+ *     --shots  also save a full-page screenshot of every probed route at every
+ *              width, in the light and the dark theme: <dir>/<route>@<width>-<theme>.png
  *   Environment:
  *     CHROME_PATH    Chrome/Chromium executable, default /usr/bin/google-chrome
  *     PROBE_WORKERS  tabs probing concurrently, default one per core
@@ -38,7 +43,7 @@
  * findings touch. Progress is written to stderr.
  */
 import puppeteer from 'puppeteer-core';
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { availableParallelism } from 'node:os';
 import { extname, join, resolve, sep } from 'node:path';
@@ -47,8 +52,18 @@ import { extname, join, resolve, sep } from 'node:path';
 // locale trees probes a representative subset by default and passes nothing
 // here for the full run.
 const __argv = process.argv.slice(2);
-const __ex = __argv.indexOf('--exclude');
-const EXCLUDE = __ex >= 0 ? new RegExp(__argv.splice(__ex, 2)[1]) : null;
+const option = (name) => {
+  const i = __argv.indexOf(name);
+  return i >= 0 ? __argv.splice(i, 2)[1] : null;
+};
+const __ex = option('--exclude');
+const EXCLUDE = __ex ? new RegExp(__ex) : null;
+// --only <regex>: only the routes matching it are probed
+const __only = option('--only');
+const ONLY = __only ? new RegExp(__only) : null;
+// --shots <dir>: a full-page screenshot of each probed route at each width, light and dark
+const SHOTS = option('--shots');
+if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 
 const DIST = __argv[0] || resolve('dist');
 const WIDTHS = [1440, 1024, 768, 430];
@@ -155,7 +170,10 @@ const layoutChecks = (scope) => {
   }
   // An SVG's text is laid out in the SVG's own coordinates; with overflow
   // visible it paints past the SVG's box onto whatever lies there, so words
-  // outside the box count as broken wherever they land.
+  // outside the box count as broken wherever they land. Both boxes are the
+  // ones painted on screen (getBoundingClientRect, every transform applied):
+  // a rotated axis title is judged where it stands, never by the unrotated
+  // box getBBox gives (test/ui-probe.test.ts).
   for (const svg of document.querySelectorAll(scope === 'dialogs' ? 'dialog[open] svg' : 'body svg')) {
     const b = svg.getBoundingClientRect();
     if (b.width === 0 || b.height === 0) continue;
@@ -336,6 +354,23 @@ const closeDialogs = () => {
   }
 };
 
+/** The route at this width as the reader sees it, in the light theme and in the dark one (the theme is the
+ *  `data-theme` attribute the appearance layer keys its dark styles on). */
+async function shoot(page, settle, route, width) {
+  const name = route.replace(/^\/|\/$/g, '').replace(/[^\w.-]+/g, '_') || 'index';
+  const before = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((t) => { document.documentElement.dataset.theme = t; }, theme);
+    await settle();
+    await page.screenshot({ path: join(SHOTS, `${name}@${width}-${theme}.png`), fullPage: true });
+  }
+  await page.evaluate((t) => {
+    if (t === null) document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
+  }, before);
+  await settle();
+}
+
 /** Two animation frames: resize handlers and container queries have run. */
 const twoFrames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
@@ -368,6 +403,7 @@ async function probeRoute(page, quiet, route, order) {
     await page.setViewport({ width, height: 1200 });
     await settle();
     samples.push({ order, route, width, dlg: 0, ...empty(), ...(await page.evaluate(layoutChecks, 'document')) });
+    if (SHOTS) await shoot(page, settle, route, width);
     // the markup checks see the document as every width left it
     if (i === WIDTHS.length - 1) Object.assign(samples[samples.length - 1], await page.evaluate(markupChecks));
   }
@@ -388,7 +424,7 @@ async function probeRoute(page, quiet, route, order) {
   return samples.filter(hit);
 }
 
-const routeList = routes(DIST).filter((r) => !EXCLUDE || !EXCLUDE.test(r));
+const routeList = routes(DIST).filter((r) => (!EXCLUDE || !EXCLUDE.test(r)) && (!ONLY || ONLY.test(r)));
 // the work list: longest pages first, so no worker is left on a long page
 // alone at the end (the representative route stays the first route in
 // sorted order, and findings are reported in that order)
