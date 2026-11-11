@@ -1143,17 +1143,19 @@ ol.steps {
   }
 }
 
-/* a wide figure breaks out of the reading column; its cap is the shell's
-   usable width (shell minus sidebar and margin), so it never leaves the screen */
+/* the note's main area is the container a wide figure measures: its content
+   box starts where the reading column starts and ends at the site's own
+   inline-end padding, whatever widths the site gives the sidebar and the
+   paddings */
+main.note-main {
+  container-type: inline-size;
+}
+/* a wide figure breaks out of the reading measure to the full content width
+   of the note's main area, so it ends where the main area's content ends and
+   never leaves the screen */
 .figure.wide,
 .figure-grid.wide {
-  width: min(1080px, calc(min(100vw, var(--shell-w)) - var(--sidebar-w) - 24px));
-}
-@media (max-width: 1100px) {
-  .figure.wide,
-  .figure-grid.wide {
-    width: 100%;
-  }
+  width: min(1080px, 100cqi);
 }
 
 /* lightbox */
