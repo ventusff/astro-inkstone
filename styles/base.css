@@ -1824,12 +1824,17 @@ a.hub-card {
   line-height: 1.5;
   color: var(--color-ink-soft);
 }
-.flow-grid {
-  position: relative;
-  display: grid;
+/* The grid's scroll box: a diagram whose columns' minimums are wider than the
+   frame scrolls sideways inside it, the title and the caption standing still.
+   It spans the frame's content and both gutters; the grid's sizes are set here
+   and the grid inherits them. */
+.flow-scroll {
   /* the column gaps are tracks of their own (renderFlowDiagram), at least this wide */
   --flow-col-gap: 36px;
   --flow-row-gap: 34px;
+  /* a box column is never narrower than this: wide enough for a word of ten letters, hyphenated past that,
+     and three columns still fit a phone's page column */
+  --flow-col-min: 7em;
   /* the gutter: a strip either side of the boxes, inside the frame's padding,
      that the wire layer covers. A wire with no way between the boxes runs
      down it; it is wide enough for a label's key, an 18px disc, to sit on
@@ -1839,9 +1844,18 @@ a.hub-card {
      the width at most, the part past the frame's padding taken from the
      boxes' width */
   --flow-gutter: 22px;
+  overflow-x: auto;
+  margin-inline: calc(-1 * var(--flow-gutter));
+}
+.flow-grid {
+  position: relative;
+  display: grid;
   padding-inline: var(--flow-gutter);
   padding-right: max(var(--flow-gutter), min(calc(var(--flow-gutter-lanes, 0) * 15px), 40%));
-  margin-inline: calc(-1 * var(--flow-gutter));
+  /* as wide as the scroll box, and never narrower than its columns' minimums */
+  box-sizing: border-box;
+  width: min-content;
+  min-width: 100%;
   gap: var(--flow-row-gap) 0;
   /* boxes on one row share its height, so a level wire meets both at mid-height */
   align-items: stretch;
@@ -2010,7 +2024,7 @@ a.hub-card {
 }
 @media (max-width: 640px) {
   .flow { padding: 14px 20px; }
-  .flow-grid { --flow-col-gap: 18px; --flow-row-gap: 26px; --flow-gutter: 20px; }
+  .flow-scroll { --flow-col-gap: 18px; --flow-row-gap: 26px; --flow-gutter: 20px; }
   .flow-grid.under { padding-bottom: 44px; }
   .flow-node { padding: 6px 8px 7px; }
 }

@@ -152,7 +152,7 @@ test('gutterWires: wires joining rows past a box that spans every column; two or
   assert.doesNotMatch(renderFlowDiagram({ cols: 1, nodes, edges: [{ from: 'n4', to: 'n1' }] }), /--flow-gutter-lanes/);
   const three = { cols: 1, nodes, edges: [{ from: 'n1', to: 'n3' }, { from: 'n4', to: 'n2' }, { from: 'n4', to: 'n1' }] };
   assert.equal(gutterWires(three), 3);
-  assert.match(renderFlowDiagram(three), /style="grid-template-columns:minmax\(0, 1fr\);--flow-gutter-lanes:4"/);
+  assert.match(renderFlowDiagram(three), /style="grid-template-columns:minmax\(var\(--flow-col-min\), 1fr\);--flow-gutter-lanes:4"/);
   // two columns, a box in one of them between the rows: the other column is a way past it
   assert.equal(gutterWires({ cols: 2, nodes: [...nodes, { id: 'x', title: 'x', col: 2, row: 1 }], edges: [{ from: 'n1', to: 'n3' }] }), 0);
 });
@@ -283,7 +283,7 @@ test('renderFlowDiagram: grid columns, lane column, node placement, escaped text
     edges: [{ from: 'x', to: 'y', label: 'l', off: true }],
   });
   // a lane track and its gap, then box, gap, box; the labelled wire widens its gap to the label's width plus 16px
-  assert.match(html, /grid-template-columns:max-content var\(--flow-col-gap\) minmax\(0, 1fr\) max\(var\(--flow-col-gap\), min\(23px, 25%\)\) minmax\(0, 1fr\)"/);
+  assert.match(html, /grid-template-columns:max-content var\(--flow-col-gap\) minmax\(var\(--flow-col-min\), 1fr\) max\(var\(--flow-col-gap\), min\(23px, 25%\)\) minmax\(var\(--flow-col-min\), 1fr\)"/);
   assert.match(html, /class="flow-lane" style="grid-column:1;grid-row:1;color:var\(--color-accent2\)"/);
   assert.match(html, /class="flow-head" style="grid-row:2"/);
   assert.match(html, /data-node="x" style="grid-column:3 \/ span 1;grid-row:1;border-color:var\(--color-accent\)"><b>a &lt;b&gt;<\/b><small>one<\/small><small>two<\/small><span class="tag" style="color:var\(--color-accent\)">who<\/span>/);
@@ -318,7 +318,7 @@ test('columnGaps: a labelled wire between neighbouring boxes of one row asks its
 
 test('renderFlowDiagram: a span covers its boxes and the gaps between them', () => {
   const html = renderFlowDiagram({ cols: 3, nodes: [{ id: 'w', title: 'w', col: 1, row: 1, span: 3 }], edges: [] });
-  assert.match(html, /grid-template-columns:minmax\(0, 1fr\) var\(--flow-col-gap\) minmax\(0, 1fr\) var\(--flow-col-gap\) minmax\(0, 1fr\)"/);
+  assert.match(html, /grid-template-columns:minmax\(var\(--flow-col-min\), 1fr\) var\(--flow-col-gap\) minmax\(var\(--flow-col-min\), 1fr\) var\(--flow-col-gap\) minmax\(var\(--flow-col-min\), 1fr\)"/);
   assert.match(html, /data-node="w" style="grid-column:1 \/ span 5;/);
 });
 

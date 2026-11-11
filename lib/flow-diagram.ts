@@ -590,7 +590,8 @@ export const pathOf = (pts: Pt[]): string =>
   pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join('');
 
 /**
- * The diagram's HTML: a grid of boxes plus the (still empty) wire layer.
+ * The diagram's HTML: a grid of boxes plus the (still empty) wire layer, in
+ * the scroll box that lets a grid wider than the column scroll sideways.
  * The spec travels along in `data-flow` so the browser can draw the wires.
  * Build-time (the component) and run-time (`diagram()`) render through
  * this one function, so the two never drift.
@@ -604,8 +605,8 @@ export function renderFlowDiagram(spec: FlowSpec): string {
   const share = Math.min(LABEL_GAP_SHARE, LABEL_GAPS_SHARE / Math.max(1, asks.filter((a) => a > 0).length));
   const gap = (ask: number) => (ask > 0 ? `max(var(--flow-col-gap), min(${ask}px, ${+share.toFixed(2)}%))` : 'var(--flow-col-gap)');
   const tracks: string[] = spec.lanes ? ['max-content', gap(0)] : [];
-  asks.forEach((ask) => tracks.push('minmax(0, 1fr)', gap(ask)));
-  tracks.push('minmax(0, 1fr)');
+  asks.forEach((ask) => tracks.push('minmax(var(--flow-col-min), 1fr)', gap(ask)));
+  tracks.push('minmax(var(--flow-col-min), 1fr)');
   const columns = tracks.join(' ');
   const parts: string[] = [];
   for (const h of spec.heads ?? []) {
@@ -629,7 +630,7 @@ export function renderFlowDiagram(spec: FlowSpec): string {
   // one gutter wire fits the stylesheet's gutter; more ask it for a lane each, plus one lane's width of margin
   const inGutter = gutterWires(spec);
   const lanes = inGutter > 1 ? `;--flow-gutter-lanes:${inGutter + 1}` : '';
-  return `<div class="flow-grid${runsUnderLastRow(spec) ? ' under' : ''}" data-flow="${data}" style="grid-template-columns:${columns}${lanes}">${wires}${parts.join('')}</div>`;
+  return `<div class="flow-scroll"><div class="flow-grid${runsUnderLastRow(spec) ? ' under' : ''}" data-flow="${data}" style="grid-template-columns:${columns}${lanes}">${wires}${parts.join('')}</div></div>`;
 }
 
 export interface FlowHandle {
@@ -955,8 +956,9 @@ export function mountFlowDiagrams(scope: ParentNode = document): FlowHandle[] {
 export function diagram(host: HTMLElement, spec: FlowSpec): FlowHandle {
   const wrap = document.createElement('div');
   wrap.innerHTML = renderFlowDiagram(spec);
-  const root = wrap.firstElementChild as HTMLElement;
-  host.append(root);
+  const scroll = wrap.firstElementChild as HTMLElement;
+  const root = scroll.firstElementChild as HTMLElement;
+  host.append(scroll);
   root.dataset['flowMounted'] = '1';
   return mountFlowDiagram(root);
 }
