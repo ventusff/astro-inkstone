@@ -88,6 +88,9 @@ export function toneColor(tone: FlowTone | string | undefined): string | undefin
 const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+/** a box's words, escaped; a snake_case name may break after each underscore, so a narrow box splits it between its parts, not inside one */
+const boxText = (s: string): string => esc(s).replace(/_(?=[A-Za-z0-9])/g, '_<wbr>');
+
 /**
  * The polyline between two boxes. Which way it goes is decided by where the
  * boxes sit in the grid (`rows`: the target's row minus the source's), never
@@ -493,7 +496,12 @@ export function labelLayouts(text: string, room: number): LabelLayout[] {
   return out;
 }
 
-/** the most of the diagram's width, in percent, one widened column gap takes, and all of them together */
+/**
+ * The most of the diagram's width, in percent, one widened column gap takes,
+ * and all of them together. The width is the scroll box's (`cqi`), not the
+ * grid's: the grid's own width follows from its tracks, so a track sized by
+ * it would make the grid's width depend on itself.
+ */
 export const LABEL_GAP_SHARE = 25;
 export const LABEL_GAPS_SHARE = 50;
 
@@ -603,10 +611,10 @@ export function renderFlowDiagram(spec: FlowSpec): string {
   const laneCol = spec.lanes ? 2 : 0;
   const asks = columnGaps(spec);
   const share = Math.min(LABEL_GAP_SHARE, LABEL_GAPS_SHARE / Math.max(1, asks.filter((a) => a > 0).length));
-  const gap = (ask: number) => (ask > 0 ? `max(var(--flow-col-gap), min(${ask}px, ${+share.toFixed(2)}%))` : 'var(--flow-col-gap)');
+  const gap = (ask: number) => (ask > 0 ? `max(var(--flow-col-gap), min(${ask}px, ${+share.toFixed(2)}cqi))` : 'var(--flow-col-gap)');
   const tracks: string[] = spec.lanes ? ['max-content', gap(0)] : [];
-  asks.forEach((ask) => tracks.push('minmax(var(--flow-col-min), 1fr)', gap(ask)));
-  tracks.push('minmax(var(--flow-col-min), 1fr)');
+  asks.forEach((ask) => tracks.push('minmax(min-content, 1fr)', gap(ask)));
+  tracks.push('minmax(min-content, 1fr)');
   const columns = tracks.join(' ');
   const parts: string[] = [];
   for (const h of spec.heads ?? []) {
@@ -620,9 +628,9 @@ export function renderFlowDiagram(spec: FlowSpec): string {
     const color = toneColor(n.tone);
     const cls = `flow-node${n.ghost ? ' ghost' : ''}${n.mono ? ' mono' : ''}`;
     const style = `grid-column:${2 * n.col - 1 + laneCol} / span ${2 * (n.span ?? 1) - 1};grid-row:${n.row}${color && n.tone !== 'plain' ? `;border-color:${color}` : ''}`;
-    const lines = (n.lines ?? []).map((l) => `<small>${esc(l)}</small>`).join('');
-    const tag = n.tag ? `<span class="tag"${color ? ` style="color:${color}"` : ''}>${esc(n.tag)}</span>` : '';
-    parts.push(`<div class="${cls}" data-node="${esc(n.id)}" style="${style}"><b>${esc(n.title)}</b>${lines}${tag}</div>`);
+    const lines = (n.lines ?? []).map((l) => `<small>${boxText(l)}</small>`).join('');
+    const tag = n.tag ? `<span class="tag"${color ? ` style="color:${color}"` : ''}>${boxText(n.tag)}</span>` : '';
+    parts.push(`<div class="${cls}" data-node="${esc(n.id)}" style="${style}"><b>${boxText(n.title)}</b>${lines}${tag}</div>`);
   }
   // the arrowheads are made in the browser with the wires, one id per diagram (see markerFor)
   const wires = '<svg class="flow-wires" aria-hidden="true"><defs></defs></svg>';
@@ -952,7 +960,11 @@ export function mountFlowDiagrams(scope: ParentNode = document): FlowHandle[] {
   return out;
 }
 
-/** build a diagram inside `host` in the browser (demo modules) */
+/**
+ * Build a diagram inside `host` in the browser (demo modules). The host sets
+ * the diagram's width: the scroll box is a size container and takes no width
+ * from its content, so a host sized to its content gives it none.
+ */
 export function diagram(host: HTMLElement, spec: FlowSpec): FlowHandle {
   const wrap = document.createElement('div');
   wrap.innerHTML = renderFlowDiagram(spec);

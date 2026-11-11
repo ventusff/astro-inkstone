@@ -23,9 +23,10 @@
  * (colleague / admin / machine / blocked / plain) or a CSS color; `ghost`
  * dashes the box, `mono` sets its small lines in the mono font.
  *
- * A box column is never narrower than `--flow-col-min`; on a page column too
- * narrow for them all, the grid scrolls sideways inside the frame and the
- * title and caption stand still.
+ * A box is never narrower than `--flow-col-min`, and a column is as wide as
+ * the longest word in its boxes, so no word is split (a snake_case name may
+ * break after an underscore). On a page column too narrow for them all, the
+ * grid scrolls sideways inside the frame and the title and caption stand still.
  */
 import { type FlowSpec, renderFlowDiagram } from '../lib/flow-diagram.ts';
 

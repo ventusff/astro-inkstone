@@ -1832,8 +1832,8 @@ a.hub-card {
   /* the column gaps are tracks of their own (renderFlowDiagram), at least this wide */
   --flow-col-gap: 36px;
   --flow-row-gap: 34px;
-  /* a box column is never narrower than this: wide enough for a word of ten letters, hyphenated past that,
-     and three columns still fit a phone's page column */
+  /* a box is never narrower than this, and three such columns fit a phone's page column;
+     a column is also as wide as the longest word in its boxes, so no word is split */
   --flow-col-min: 7em;
   /* the gutter: a strip either side of the boxes, inside the frame's padding,
      that the wire layer covers. A wire with no way between the boxes runs
@@ -1841,17 +1841,21 @@ a.hub-card {
      that wire clear of the boxes. When more wires can only run down the
      right-hand one, renderFlowDiagram sets --flow-gutter-lanes and the
      gutter takes 15px per lane (a key and 6px on either side of it), 40% of
-     the width at most, the part past the frame's padding taken from the
-     boxes' width */
+     the scroll box's width at most, the part past the frame's padding taken
+     from the boxes' width */
   --flow-gutter: 22px;
   overflow-x: auto;
+  /* the query container whose width (cqi) the label gaps and the gutter are
+     measured against: the grid's width follows from its tracks, so neither
+     may be a percentage of it */
+  container-type: inline-size;
   margin-inline: calc(-1 * var(--flow-gutter));
 }
 .flow-grid {
   position: relative;
   display: grid;
   padding-inline: var(--flow-gutter);
-  padding-right: max(var(--flow-gutter), min(calc(var(--flow-gutter-lanes, 0) * 15px), 40%));
+  padding-right: max(var(--flow-gutter), min(calc(var(--flow-gutter-lanes, 0) * 15px), 40cqi));
   /* as wide as the scroll box, and never narrower than its columns' minimums */
   box-sizing: border-box;
   width: min-content;
@@ -1891,14 +1895,14 @@ a.hub-card {
   position: relative;
   z-index: 1;
   box-sizing: border-box;
-  min-width: 0;
+  min-width: var(--flow-col-min);
   padding: 8px 11px 9px;
   border: 1.5px solid var(--color-line);
   border-radius: 8px;
   background: var(--color-bg-soft);
-  /* long words break at hyphenation points (per the page language), and only then anywhere */
-  hyphens: auto;
-  overflow-wrap: break-word;
+  /* words stay whole, so each counts toward its column's min-content width
+     (the reading column's `anywhere` would split them and count nothing) */
+  overflow-wrap: normal;
 }
 .flow-node b {
   display: block;
@@ -1915,11 +1919,10 @@ a.hub-card {
 .flow-node .tag {
   display: inline-block;
   box-sizing: border-box;
-  /* a tag stays inside its box: it wraps between words, hyphenates per the page language, and only then breaks anywhere */
+  /* a tag stays inside its box: it wraps between words, and its longest word widens the column like any other */
   max-width: 100%;
   margin-top: 6px;
   margin-right: 0;
-  overflow-wrap: anywhere;
   font-size: 11px;
   font-weight: 600;
 }
