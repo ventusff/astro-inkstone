@@ -1814,7 +1814,6 @@ a.hub-card {
   font-family: var(--font-ui);
   font-weight: 700;
   font-size: 13px;
-  text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--color-accent);
   margin-bottom: 12px;
