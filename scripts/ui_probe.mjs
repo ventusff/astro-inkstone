@@ -43,10 +43,12 @@
  * findings touch. Progress is written to stderr.
  */
 import puppeteer from 'puppeteer-core';
-import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { availableParallelism } from 'node:os';
 import { extname, join, resolve, sep } from 'node:path';
+
+import { builtPages } from './built-pages.mjs';
 
 // --exclude <regex>: routes matching it are not probed. A site with many
 // locale trees probes a representative subset by default and passes nothing
@@ -101,24 +103,6 @@ if (!BASE) {
   });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   BASE = `http://127.0.0.1:${server.address().port}`;
-}
-
-/** an Astro `redirects` entry: a stub page whose only job is a meta refresh */
-const REDIRECT_STUB = /<meta\s+http-equiv=["']refresh["']/i;
-const isRedirectStub = (file) => REDIRECT_STUB.test(readFileSync(file, 'utf8').slice(0, 2048));
-
-function routes(dir, prefix = '') {
-  let out = [];
-  for (const e of readdirSync(dir)) {
-    const p = join(dir, e);
-    if (statSync(p).isDirectory()) out = out.concat(routes(p, `${prefix}${e}/`));
-    // Redirect stubs navigate away as soon as they load, which tears down the
-    // page's execution context under the checks; they render nothing of their
-    // own, so there is nothing to probe.
-    else if (e === 'index.html') { if (!isRedirectStub(p)) out.push(`/${prefix}`); }
-    else if (e.endsWith('.html')) { if (!isRedirectStub(p)) out.push(`/${prefix}${e}`); } // flat pages, 404.html
-  }
-  return out.sort();
 }
 
 /* ------------------------------------------------------ page-side checks */
@@ -427,7 +411,7 @@ async function probeRoute(page, quiet, route, order) {
   return samples.filter(hit);
 }
 
-const routeList = routes(DIST).filter((r) => (!EXCLUDE || !EXCLUDE.test(r)) && (!ONLY || ONLY.test(r)));
+const routeList = builtPages(DIST).filter((r) => (!EXCLUDE || !EXCLUDE.test(r)) && (!ONLY || ONLY.test(r)));
 // the work list: longest pages first, so no worker is left on a long page
 // alone at the end (the representative route stays the first route in
 // sorted order, and findings are reported in that order)

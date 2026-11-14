@@ -69,12 +69,14 @@
  * stderr.
  */
 import puppeteer from 'puppeteer-core';
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { availableParallelism } from 'node:os';
 import { extname, join, resolve, sep } from 'node:path';
 import { Worker, isMainThread, parentPort } from 'node:worker_threads';
 import { inflateSync } from 'node:zlib';
+
+import { builtPages } from './built-pages.mjs';
 
 // --exclude <regex>: routes matching it are not probed. A site with many
 // locale trees probes a representative subset by default and passes nothing
@@ -625,19 +627,9 @@ if (isMainThread) {
     BASE = `http://127.0.0.1:${server.address().port}`;
   }
 
-  const routes = (dir, prefix = '') => {
-    let out = [];
-    for (const e of readdirSync(dir)) {
-      const p = join(dir, e);
-      if (statSync(p).isDirectory()) out = out.concat(routes(p, `${prefix}/${e}`));
-      else if (e === 'index.html') out.push(`${prefix}/`);
-      else if (e.endsWith('.html')) out.push(`${prefix}/${e}`); // flat pages, 404.html
-    }
-    return out.sort(); // deterministic order — the dialog pass runs on the first route
-  };
-
   /* -------------------------------------------------------------- sweep */
-  const routeList = routes(DIST).filter((r) => !EXCLUDE || !EXCLUDE.test(r));
+  // sorted, so the run is deterministic: the dialog pass runs on the first route
+  const routeList = builtPages(DIST).filter((r) => !EXCLUDE || !EXCLUDE.test(r));
   // the work list: longest pages first, so no worker is left sweeping a
   // long page alone at the end (the representative route stays the first
   // route in sorted order)
