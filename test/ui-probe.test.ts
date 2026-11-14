@@ -50,3 +50,32 @@ test(
     }
   },
 );
+
+test(
+  'ui_probe counts a class styled only through its ::before as styled',
+  { skip: existsSync(CHROME) ? false : `no Chrome at ${CHROME} (CHROME_PATH)` },
+  () => {
+    const dist = mkdtempSync(join(tmpdir(), 'ui-probe-test-'));
+    try {
+      mkdirSync(join(dist, 'pseudo'));
+      writeFileSync(
+        join(dist, 'pseudo', 'index.html'),
+        `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>arrow</title>
+<style>.flow .arrow::before { content: '→'; } .flow .arrow:not(.done)::after { content: ''; }</style></head>
+<body><h1>arrow</h1><div class="flow"><span class="arrow"></span></div><p class="nowhere">text</p></body></html>`,
+      );
+      const report = join(dist, 'report.txt');
+      const run = spawnSync(process.execPath, [PROBE, dist, '', report, '--only', '^/pseudo/$'], {
+        encoding: 'utf8',
+        timeout: 120_000,
+        env: { ...process.env, CHROME_PATH: CHROME, PROBE_WORKERS: '1' },
+      });
+      assert.equal(run.error, undefined);
+      const text = readFileSync(report, 'utf8');
+      assert.doesNotMatch(text, /\.arrow\(/);
+      assert.match(text, /\.nowhere\(no stylesheet rule mentions it\)/);
+    } finally {
+      rmSync(dist, { recursive: true, force: true });
+    }
+  },
+);
