@@ -292,7 +292,7 @@ test('renderFlowDiagram: grid columns, lane column, node placement, escaped text
   // no ids in the markup: any number of diagrams share a page (arrowheads are made per diagram when it mounts)
   assert.doesNotMatch(html, /\sid="/);
   const data = JSON.parse(html.match(/data-flow="([^"]+)"/)![1]!.replace(/&quot;/g, '"'));
-  assert.deepEqual(data, { lanes: true, rows: [['x', 1], ['y', 1]], edges: [{ from: 'x', to: 'y', label: 'l', off: true }] });
+  assert.deepEqual(data, { lanes: true, rows: [['x', 1], ['y', 1]], edges: [{ from: 'x', to: 'y', label: 'l', off: true }], steps: [] });
 });
 
 test('columnGaps: a labelled wire between neighbouring boxes of one row asks its gap for the label\'s width', () => {
