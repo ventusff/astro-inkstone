@@ -124,7 +124,9 @@
   margin-top: 0;
 }
 
-.slide-canvas :is(h1, h2) {
+/* headings and lists carry `.deck` so they hold over the page column's own heading and list rules
+   (base.css `.col h2`, `.col ul`), whichever stylesheet a page loads last */
+.deck .slide-canvas :is(h1, h2) {
   margin: 0 0 18px;
   padding: 0;
   border: 0;
@@ -136,7 +138,7 @@
   text-wrap: balance;
 }
 
-.slide-canvas h3 {
+.deck .slide-canvas h3 {
   margin: 20px 0 8px;
   font-family: var(--font-display);
   font-size: 24px;
@@ -161,7 +163,7 @@
   color: var(--color-ink-soft);
 }
 
-.slide-canvas :is(ul, ol) {
+.deck .slide-canvas :is(ul, ol) {
   padding-inline-start: 1.1em;
 }
 
@@ -278,11 +280,11 @@
   translate: none;
 }
 
-/* a slide's notes: the chip in its lower left shows their first line */
+/* a slide's notes: the chip in its upper right shows their first line */
 .slide-canvas > .deck-notes.wiki-block {
-  top: auto;
-  bottom: 10px;
-  left: 10px;
+  top: 10px;
+  right: 10px;
+  left: auto;
   max-width: 50%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -292,6 +294,7 @@
 .slide-canvas > .deck-notes.wiki-block > p {
   display: inline;
   margin: 0;
+  text-wrap: nowrap;
   font: inherit;
   color: inherit;
 }
@@ -965,6 +968,11 @@ html.deck-presenting {
   margin: 0;
   box-shadow: none;
   outline: 1px solid var(--color-line);
+}
+
+/* the copy shows the slide as the audience will see it: no editor chips for its markers and notes */
+.deck-presenter-view .slide-canvas .deck-marker.wiki-block {
+  display: none;
 }
 
 .deck-presenter-notes {

@@ -223,10 +223,14 @@ function groupSlides(host: HTMLElement): HTMLElement[] {
   return slides;
 }
 
-/** one heading and at most one paragraph */
+/** one heading and at most one paragraph of words */
 function isSectionShaped(shown: Element[]): boolean {
   const [first, second, ...rest] = shown;
-  return rest.length === 0 && /^H[12]$/.test(first?.tagName ?? '') && (second === undefined || second.tagName === 'P');
+  return (
+    rest.length === 0 &&
+    /^H[12]$/.test(first?.tagName ?? '') &&
+    (second === undefined || (second.tagName === 'P' && !isMedia(second)))
+  );
 }
 
 /** an image, a video, a figure, a diagram or a demo: what an image layout puts on its side */
