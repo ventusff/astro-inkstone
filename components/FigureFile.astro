@@ -1,0 +1,39 @@
+---
+/**
+ * A box-and-arrow figure kept in its own JSON file (lib/figure-file.ts),
+ * drawn by FlowDiagram with every word in the page's language. The file sits
+ * beside the page that answers it; any other page or slide imports the same
+ * file by its path from the site root, so no site needs an alias for it:
+ *
+ *   import FigureFile from 'astro-inkstone/components/FigureFile.astro';
+ *   import threeViews from '/src/content/docs/digital-twin/views/three-views.json';
+ *
+ *   <FigureFile of={threeViews} />
+ *
+ * The file holds `title`, an optional `caption` and `flow`, a FlowDiagram
+ * spec; every word in it is an object of the languages, and a word with no
+ * text in the page's language shows in the language the figure was written
+ * in. The page's language is the route's (`Astro.currentLocale`) unless
+ * `locale` names another.
+ */
+import FlowDiagram from './FlowDiagram.astro';
+import { type FigureFileData, inLocale } from '../lib/figure-file.ts';
+import type { FlowSpec } from '../lib/flow-diagram.ts';
+
+interface Props {
+  /** the figure file, as imported */
+  of: FigureFileData;
+  locale?: string | undefined;
+}
+const { of: file, locale = Astro.currentLocale } = Astro.props;
+if (file.flow === undefined) throw new Error(`<FigureFile>: the figure file has no "flow" to draw (title ${JSON.stringify(file.title)})`);
+const figure = inLocale<{ title: string; caption?: string; flow: FlowSpec }>(file, locale);
+---
+
+{
+  figure.caption ? (
+    <FlowDiagram title={figure.title} spec={figure.flow}>{figure.caption}</FlowDiagram>
+  ) : (
+    <FlowDiagram title={figure.title} spec={figure.flow} />
+  )
+}

@@ -215,9 +215,11 @@ const layoutChecks = (scope) => {
       const on = boxes.find((b) => overlap(m.r, b.r)) ?? marks.slice(k + 1).map((o) => ({ id: `label "${o.text}"`, r: o.r })).find((o) => overlap(m.r, o.r));
       if (on) out.onBox.push({ label: m.text, box: on.id });
     }
+    // the wire layer is in the diagram's own CSS pixels; a scaled ancestor (a slide) shrinks it on screen by that scale
+    const scale = grid.offsetWidth > 0 ? g.width / grid.offsetWidth : 1;
     for (const w of grid.querySelectorAll('.flow-wires path.wire[data-edge]')) {
       const e = spec.edges?.[Number(w.dataset.edge)];
-      const pts = [...(w.getAttribute('d') ?? '').matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map((m) => [g.left + Number(m[1]), g.top + Number(m[2])]);
+      const pts = [...(w.getAttribute('d') ?? '').matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map((m) => [g.left + scale * Number(m[1]), g.top + scale * Number(m[2])]);
       for (const b of boxes) {
         if (!e || b.id === e.from || b.id === e.to) continue;
         const through = pts.slice(1).some(([x1, y1], j) => {

@@ -1,0 +1,386 @@
+/* ============================================================
+   deck.css — the slide deck (components/Deck.astro, lib/deck.ts).
+
+   A slide is a 960 × 540 canvas scaled by --deck-k to the width it is shown
+   at; --deck-h is the canvas's own height when it holds more than one
+   slide's worth. Reading view: a stack of slides in the page column, each
+   with a title block in its corner (part name and slide number). Presenting:
+   one slide at a time, letterboxed over the viewport. Narrow (a phone): a
+   slide is laid out unscaled at the column's width.
+   ============================================================ */
+
+.deck {
+  --deck-k: 1;
+  margin-block: 8px 32px;
+}
+
+/* the slides' margins stay inside the stack */
+.deck-slides {
+  display: flow-root;
+}
+
+.deck:not([data-ready]) .deck-slides {
+  visibility: hidden;
+  animation: deck-reveal 0s 2s forwards;
+}
+
+@keyframes deck-reveal {
+  to {
+    visibility: visible;
+  }
+}
+
+/* ---- reading view: the bar above the stack ---- */
+
+.deck-bar {
+  position: sticky;
+  top: var(--nav-h);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  background: var(--color-bg);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--color-ink-soft);
+}
+
+.deck-present {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px 6px 10px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.deck-present svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.deck-present:focus-visible,
+.deck-controls button:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}
+
+/* ---- a slide ---- */
+
+.slide {
+  position: relative;
+  height: calc(var(--deck-h, 540px) * var(--deck-k));
+  margin-block: 0 22px;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-bg-card);
+  scroll-margin-top: calc(var(--nav-h) + 52px);
+}
+
+.slide-canvas {
+  position: relative;
+  box-sizing: border-box;
+  width: 960px;
+  min-height: 540px;
+  padding: 40px 56px 64px;
+  transform: scale(var(--deck-k));
+  transform-origin: 0 0;
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+
+.slide-canvas > hr {
+  display: none;
+}
+
+/* the slide's first block, after the title block, the break and an edit anchor */
+.slide-canvas > .slide-mark + :not(hr, template),
+.slide-canvas > .slide-mark + :is(hr, template) + :not(hr, template),
+.slide-canvas > .slide-mark + hr + template + * {
+  margin-top: 0;
+}
+
+.slide-canvas h1,
+.slide-canvas h2 {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0;
+  border: 0;
+  padding: 0;
+}
+
+.slide-canvas h3 {
+  margin: 18px 0 8px;
+  font-size: 22px;
+}
+
+.slide-canvas .num {
+  display: none;
+}
+
+.slide-canvas p,
+.slide-canvas li {
+  max-width: 40em;
+}
+
+.slide-canvas h2 + p {
+  margin-top: 0;
+  font-size: 22px;
+  color: var(--color-ink-soft);
+}
+
+.slide-canvas ul,
+.slide-canvas ol {
+  padding-inline-start: 1.2em;
+}
+
+.slide-canvas li + li {
+  margin-top: 6px;
+}
+
+.slide-canvas figure,
+.slide-canvas .flow {
+  margin-block: 14px;
+}
+
+.slide-canvas img,
+.slide-canvas video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* the title block: part name and slide number, in the canvas's corner */
+.slide-mark {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  display: flex;
+  border: 1px solid var(--color-line);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1;
+  color: var(--color-ink-faint);
+  text-decoration: none;
+  background: var(--color-bg-card);
+}
+
+.slide-mark > span {
+  padding: 6px 9px;
+}
+
+.slide-part {
+  max-width: 22em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-inline-end: 1px solid var(--color-line);
+}
+
+.slide-num {
+  min-width: 2.2em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-soft);
+}
+
+.slide-mark:hover .slide-num {
+  color: var(--color-accent-text);
+}
+
+/* a divider opens a part: the heading large, ruled in the accent */
+.slide--divider .slide-canvas {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 540px;
+  padding-inline: 96px;
+}
+
+.slide--divider .slide-canvas h1,
+.slide--divider .slide-canvas h2 {
+  padding-inline-start: 28px;
+  border-inline-start: 6px solid var(--color-accent);
+  font-size: 54px;
+}
+
+.slide--divider .slide-canvas h2 + p {
+  margin-top: 18px;
+  padding-inline-start: 34px;
+  font-size: 24px;
+}
+
+/* ---- narrow: unscaled at the column's width ---- */
+
+.deck.is-narrow .slide {
+  height: auto;
+}
+
+.deck.is-narrow .slide-canvas {
+  width: auto;
+  min-height: 0;
+  padding: 18px 16px 52px;
+  transform: none;
+  font-size: inherit;
+}
+
+.deck.is-narrow .slide-canvas h1,
+.deck.is-narrow .slide-canvas h2 {
+  font-size: 1.4em;
+}
+
+.deck.is-narrow .slide-canvas h2 + p {
+  font-size: 1.05em;
+}
+
+.deck.is-narrow .slide--divider .slide-canvas {
+  height: auto;
+  padding: 32px 16px 52px;
+}
+
+.deck.is-narrow .slide--divider .slide-canvas h2 {
+  font-size: 1.8em;
+}
+
+/* ---- presenting ---- */
+
+.deck-controls,
+.deck-progress {
+  display: none;
+}
+
+html.deck-presenting {
+  overflow: hidden;
+}
+
+/* over a site's sticky nav bar (1000), under the editor's toolbars and dialogs (1150 and up) */
+.deck.is-presenting {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  background: var(--color-bg-soft);
+  touch-action: pan-y pinch-zoom;
+}
+
+.deck.is-presenting .deck-bar {
+  display: none;
+}
+
+.deck.is-presenting .deck-slides {
+  width: calc(960px * var(--deck-k));
+}
+
+.deck.is-presenting .slide {
+  display: none;
+  height: calc(540px * var(--deck-k));
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.deck.is-presenting .slide.is-current {
+  display: block;
+}
+
+.deck.is-presenting .slide-canvas {
+  height: 540px;
+  overflow: hidden;
+}
+
+.deck.is-presenting .deck-controls {
+  position: fixed;
+  right: 14px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--color-ink-soft);
+}
+
+.deck-controls button {
+  display: inline-grid;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.deck-controls button:hover {
+  background: var(--color-row-hover);
+}
+
+.deck-controls svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
+.deck-position {
+  min-width: 7em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.deck.is-presenting .deck-progress {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  display: block;
+  width: calc(var(--deck-progress, 0) * 100%);
+  height: 3px;
+  background: var(--color-accent);
+}
+
+/* ---- print: one slide per 10 × 5.625 in page; the rest of the page keeps its own pages ---- */
+
+@page deck-slide {
+  size: 10in 5.625in;
+  margin: 0;
+}
+
+@media print {
+  .deck-bar,
+  .deck-controls,
+  .deck-progress {
+    display: none;
+  }
+
+  .slide {
+    page: deck-slide;
+    width: 960px;
+    height: 540px;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    break-after: page;
+    break-inside: avoid;
+  }
+}

@@ -5,10 +5,14 @@ part: 3
 navLabel: Interactive & furniture
 ---
 
+import Deck from 'astro-inkstone/components/Deck.astro';
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
+import FigureFile from 'astro-inkstone/components/FigureFile.astro';
 import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
 import LocalToc from 'astro-inkstone/components/LocalToc.astro';
 import PartHero from 'astro-inkstone/components/PartHero.astro';
+
+import deckPipeline from '/src/content/notes/components/interactive/deck-pipeline.json';
 
 <PartHero kicker={props.partLabel} title="Interactive & furniture">
   A live canvas demo and the contract behind it, then the quiet components every note is framed by — the ones you have been looking at since the first page.
@@ -27,6 +31,10 @@ A demo that takes pointer input on its canvas passes `interactive` — the stage
 </DemoMount>
 
 The module contract is one default export, `mount(ctx)`, returning a cleanup function; the loader resolves module ids like `waves/interference` however the site pleases (`import.meta.glob` here).
+
+A demo can also live beside the page that shows it, with no loader of the site's own: name its module by its path from the site root with `module`, and the engine loads it (`lib/page-demos.ts` finds every `.ts` under `src/content/`). The module is handed the mount's `root`, `stage`, `canvases`, `controls` and the page's `locale`, and reads its words from a JSON beside it with `inLocale` (`lib/figure-file.ts`), so the Chinese page shows the same module and the same file in Chinese:
+
+<DemoMount module="/src/content/notes/components/interactive/slide-scale.ts" title="Demo · How a slide scales" />
 
 ## Page furniture
 
@@ -147,6 +155,34 @@ When several labelled wires leave one box, some labels find no room clear of the
     { from: 'unbounded', to: 'next', label: 'not reached' },
   ],
 }} />
+
+## Deck — slides made of a note
+
+`Deck` turns the content it wraps into slides: a thematic break (`---` on a line of its own, a blank line before it) ends a slide, and a slide with only a heading and at most one paragraph is a divider whose name every slide of its part prints in its corner. The content stays the note's own blocks, so a site that wraps a whole note's `<Content />` in a `Deck` keeps in-place editing, wikilinks and every component inside the slides. The reader sees a stack of 16:9 slides; **Present** shows one at a time over the whole screen from the slide in view (→ ← Space PageUp PageDown Home End, Esc leaves, a swipe on touch screens), and the slide number is the location hash, so `#/3` links to the third slide. Every slide is laid out on a 960 × 540 canvas and scaled to the width it is shown at, so it looks the same in the column, on a projector and in print (one slide per 10 × 5.625 in page); on a phone a slide is laid out unscaled at the column's width.
+
+A figure that more than one place shows is kept in its own JSON file beside the page that answers it, and drawn by `FigureFile`: the file holds `title`, an optional `caption` and `flow` (a FlowDiagram spec), every word an object of the languages (`{ "en": …, "zh": … }`). Every place imports the file by its path from the site root (`import deckPipeline from '/src/content/notes/components/interactive/deck-pipeline.json'`), so no site needs an alias, and changing the file changes every place. A word with no text in the page's language shows in the language the figure was written in, the first key of its `title`. The same file, once here and once on the third slide below:
+
+<FigureFile of={deckPipeline} />
+
+<Deck>
+
+## A deck inside a note
+
+The first slide: a heading, one sentence, and whatever the slide shows.
+
+---
+
+## Part two
+
+A divider: only a heading and one sentence.
+
+---
+
+## Diagrams scale with the slide
+
+<FigureFile of={deckPipeline} />
+
+</Deck>
 
 ## Furniture without a component
 

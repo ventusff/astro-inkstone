@@ -1,0 +1,6 @@
+{
+  "title": { "en": "One canvas, any width", "zh": "一块画布,任意宽度" },
+  "width": { "en": "Shown width", "zh": "显示宽度" },
+  "scale": { "en": "scale", "zh": "缩放" },
+  "slide": { "en": "A slide is laid out at 960 × 540", "zh": "一张片排在 960 × 540 上" }
+}

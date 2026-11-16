@@ -125,8 +125,16 @@ whose content is the package's own manual.
   renders the taxonomy strip, the hub crumb, linked mentions, prev/next and
   the footer around them, and the sidebar carries the note's brand, the
   generated ToC and its local link graph.
-- `components/DemoMount.astro` renders mount markup only; the demo-module
-  loader is site-owned (call your `mountAllDemos()` from the site layout).
+- `components/DemoMount.astro` names its module one of two ways: `module`,
+  the site-root path of a `.ts` under `src/content/` (beside its page),
+  which the engine loads (`lib/page-demos.ts`, from DemoMount's own
+  script); or `demo`, an id the site's own loader resolves (call your
+  `mountAllDemos()` from the site layout).
+- A figure shown in more than one place is one JSON file beside the page
+  that answers it (`lib/figure-file.ts`: `title`, `caption`, `flow`, every
+  word an object of the languages), imported by its site-root path and drawn
+  by `components/FigureFile.astro`; an interactive figure's module reads its
+  words from such a file with `inLocale`.
 - The demo speaks every language in `_meta/locales.ts` — the locale registry
   that drives the routes, the nav bar's language menu (the site's ONE
   language control), the hreflang alternates, the wikilink resolver's locale

@@ -1,0 +1,51 @@
+---
+/**
+ * A slide deck made of the note it wraps. Put the note's rendered content
+ * inside; a thematic break (`---` on a line of its own, a blank line before
+ * it) ends a slide. The content stays the note's ordinary blocks, so in-place
+ * editing, wikilinks and every component work inside a slide (lib/deck.ts).
+ *
+ *   <Deck><Content /></Deck>
+ *
+ * The page reads it as a stack of 16:9 slides; "Present" shows one slide at a
+ * time over the whole screen, from the slide in view. A slide with only a
+ * heading (and at most one paragraph) is a divider that names a part.
+ * Labels default to the page language's words (lib/component-words.ts).
+ */
+import '../styles/deck.css';
+import { type ComponentWords, componentWords } from '../lib/component-words.ts';
+
+interface Props {
+  locale?: string | undefined;
+  labels?: Partial<ComponentWords['deck']> | undefined;
+}
+const words = { ...componentWords(Astro.props.locale ?? Astro.currentLocale).deck, ...Astro.props.labels };
+const { deck: deckLabel, ...clientWords } = words;
+---
+
+<div class="deck" data-deck data-words={JSON.stringify(clientWords)} role="region" aria-label={deckLabel}>
+  <div class="deck-bar">
+    <button type="button" class="deck-present" data-deck-present>
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"></path></svg>
+      {words.present}
+    </button>
+  </div>
+  <div class="deck-slides" data-deck-slides><slot /></div>
+  <div class="deck-controls">
+    <button type="button" data-deck-prev aria-label={words.previous}>
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3 5.5 8l5 5"></path></svg>
+    </button>
+    <span class="deck-position" data-deck-position aria-live="polite"></span>
+    <button type="button" data-deck-next aria-label={words.next}>
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m5.5 3 5 5-5 5"></path></svg>
+    </button>
+    <button type="button" data-deck-exit>{words.exit}</button>
+  </div>
+  <div class="deck-progress" data-deck-progress></div>
+</div>
+
+<script>
+  import { mountDecks } from '../lib/deck.ts';
+  mountDecks();
+  document.addEventListener('astro:page-load', () => mountDecks());
+</script>

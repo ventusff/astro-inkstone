@@ -676,11 +676,16 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
   for (const el of root.querySelectorAll<HTMLElement>('[data-node]')) nodes.set(el.dataset['node'] ?? '', el);
 
   const rowOf = new Map(data.rows);
-  /** an element's box in the diagram's coordinates: the grid's top left corner is 0, 0 */
+  /**
+   * An element's box in the diagram's coordinates: the grid's top left corner
+   * is 0, 0 and a unit is one of the grid's own CSS pixels, so a diagram inside
+   * a scaled ancestor (a slide) draws its wires where its boxes are.
+   */
   const boxOf = (el: Element): Rect => {
     const r = el.getBoundingClientRect();
     const o = root.getBoundingClientRect();
-    return { x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height };
+    const k = root.offsetWidth > 0 ? o.width / root.offsetWidth : 1;
+    return { x: (r.left - o.left) / k, y: (r.top - o.top) / k, w: r.width / k, h: r.height / k };
   };
   const rect = (id: string): Rect => {
     const el = nodes.get(id);

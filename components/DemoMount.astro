@@ -21,16 +21,27 @@
  *   crosshair cursor. A passive demo leaves it off, so a swipe over the
  *   canvas scrolls the page.
  *
- * Runtime contract (site-owned): this component only renders the mount
- * markup — `.demo[data-demo]` plus the stage and slots. The site provides
- * the loader and calls its `mountAllDemos()` once from its layout script;
- * the loader finds every `[data-demo]`, resolves the demo id to a module
- * (typically a dynamic import map over co-located `<id>.ts` files next to
- * the content), and calls the module's default export `mount(ctx)`, which
- * returns a cleanup function.
+ * Which module runs the demo is named in one of two ways:
+ *
+ * - `module` — the path, from the site root, of a `.ts` file under
+ *   `src/content/`, usually beside the page that shows it (an interactive
+ *   figure and its JSON live with the page that answers them). The engine
+ *   loads and mounts it (lib/page-demos.ts); the site wires nothing.
+ *
+ *     <DemoMount module="/src/content/docs/skills/start-range/entry-paths.ts" title="…" canvas={{ w: 720, h: 360 }} />
+ *
+ * - `demo` — an id the site's own loader resolves: this component renders
+ *   `.demo[data-demo]` plus the stage and slots, and the site calls its
+ *   `mountAllDemos()` from its layout script, which finds every
+ *   `[data-demo]` and maps the id to a module (typically an import map over
+ *   `<id>.ts` files of the site).
+ *
+ * Either module default-exports `mount(ctx)` and returns a cleanup function.
  */
-interface Props {
-  demo: string;
+type Props = (
+  | { /** a `.ts` under `src/content/`, by its path from the site root */ module: string; demo?: never }
+  | { /** an id the site's loader resolves */ demo: string; module?: never }
+) & {
   title: string;
   canvas?: { w: number; h: number } | undefined;
   stages?: number | undefined;
@@ -38,25 +49,30 @@ interface Props {
    *  shows a crosshair; off for passive (render-only) demos */
   interactive?: boolean | undefined;
   id?: string | undefined;
-}
-const { demo, title, canvas, stages = 1, interactive = false, id } = Astro.props;
+  /** the language of the words the module shows; default the route's */
+  locale?: string | undefined;
+};
+const { demo, module, title, canvas, stages = 1, interactive = false, id, locale = Astro.currentLocale } = Astro.props;
+const name = demo ?? module;
 if (!Number.isInteger(stages) || stages < 1) {
-  throw new Error(`<DemoMount demo="${demo}">: stages must be a positive integer, got ${String(stages)}`);
+  throw new Error(`<DemoMount ${name}>: stages must be a positive integer, got ${String(stages)}`);
 }
 if (canvas && (!(canvas.w > 0) || !(canvas.h > 0))) {
-  throw new Error(`<DemoMount demo="${demo}">: canvas width and height must be positive, got ${String(canvas.w)}×${String(canvas.h)}`);
+  throw new Error(`<DemoMount ${name}>: canvas width and height must be positive, got ${String(canvas.w)}×${String(canvas.h)}`);
 }
 const canvases = canvas ? Array.from({ length: stages }) : [];
 // caption id for aria-describedby — derived from the explicit id when given,
-// else from the demo id (give repeated mounts of one demo explicit ids)
+// else from the demo id or module path (give repeated mounts of one demo explicit ids)
 const hasCaption = Astro.slots.has('caption');
-const captionId = hasCaption ? `${id ?? `demo-${demo.replace(/[^\w-]+/g, '-')}`}-caption` : undefined;
+const captionId = hasCaption ? `${id ?? `demo-${name.replace(/^\/|\.ts$/g, '').replace(/[^\w-]+/g, '-')}`}-caption` : undefined;
 ---
 
 <section
   class="demo"
   id={id}
   data-demo={demo}
+  data-demo-module={module}
+  data-locale={module ? locale : undefined}
   data-interactive={interactive ? '' : undefined}
   aria-label={title}
   aria-describedby={captionId}
@@ -88,3 +104,9 @@ const captionId = hasCaption ? `${id ?? `demo-${demo.replace(/[^\w-]+/g, '-')}`}
     )
   }
 </section>
+
+<script>
+  import { mountPageDemos } from '../lib/page-demos.ts';
+  mountPageDemos();
+  document.addEventListener('astro:page-load', () => mountPageDemos());
+</script>

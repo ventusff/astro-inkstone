@@ -1435,6 +1435,10 @@ section:has(.hero) + h2 {
   border: 1px solid var(--color-line);
   overflow: hidden;
 }
+/* a DOM demo builds its own content into the stage: keep it off the frame */
+.demo-stage.dom {
+  padding: 16px;
+}
 .demo-stage.multi {
   display: flex;
   gap: 8px;

@@ -203,7 +203,9 @@ renders wrong" cannot happen.
   and reading paths, reference lists, reduced-motion handling, a print stylesheet that turns any
   page into a clean PDF. **`browse.css`** — masthead, ruled shelves, card grid, status legend,
   instant filters, tag cloud.
-- **31 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
+- **33 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
+  `Deck` (a note's own content as slides), `FigureFile` (a figure kept in one JSON file, read by
+  every page and slide that shows it),
   `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `SearchPalette` (the ⌘K overlay), `LanguageMenu`
   (autonym rows glossed in English or in the page's language, with each language's translation
   state; links per language, or a form that records the reader's language), `TranslationPending`
