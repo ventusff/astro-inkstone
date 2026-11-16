@@ -204,8 +204,8 @@ renders wrong" cannot happen.
   page into a clean PDF. **`browse.css`** — masthead, ruled shelves, card grid, status legend,
   instant filters, tag cloud.
 - **37 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
-  `Deck` (a note's own content as slides, presented full screen with clicks, an overview and the
-  place in the location hash) with its markers `Layout`, `Column`, `Build` and `Stretch` (blocks
+  `Deck` (a note's own content as slides, presented full screen with clicks, an overview, a
+  presenter view with speaker notes in a second window, and the place in the location hash) with its markers `Layout`, `Column`, `Build` and `Stretch` (blocks
   of their own that shape a slide and wrap nothing), `FigureFile` (a figure kept in one JSON file, read by
   every page and slide that shows it),
   `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `SearchPalette` (the ⌘K overlay), `LanguageMenu`

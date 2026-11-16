@@ -1,0 +1,139 @@
+---
+title: Slides made of a note
+description: A sample deck. The whole note is the deck, one slide per thematic break; present it, open the presenter view, and edit any block in place.
+chapters: false
+deck: true
+---
+
+import Build from 'astro-inkstone/components/Build.astro';
+import Column from 'astro-inkstone/components/Column.astro';
+import FigureFile from 'astro-inkstone/components/FigureFile.astro';
+import Layout from 'astro-inkstone/components/Layout.astro';
+import Stretch from 'astro-inkstone/components/Stretch.astro';
+
+import deckPipeline from '/src/content/notes/components/interactive/deck-pipeline.json';
+
+<Layout name="cover" />
+
+## Slides made of a note
+
+One file to read and to present, every block still editable in place.
+
+astro-inkstone · the deck
+
+---
+
+## One file, two ways to read it
+
+<Build />
+
+- The reading view is a stack of slides in the page column.
+- Presenting shows one slide at a time, full screen.
+- Each block is the note's own: click it to edit, while reading or presenting.
+
+{/* Click three times: one line per click. Then open the presenter view with P and point at these notes. */}
+
+---
+
+## Layouts
+
+Thirteen of them, named by a marker that opens the slide.
+
+---
+
+<Layout name="two-cols" />
+
+## Two columns
+
+The blocks before `<Column />` fill the left column; the heading above spans both.
+
+A list reads well on the left:
+
+- markers wrap nothing
+- every block stays its own
+
+<Column />
+
+<FigureFile of={deckPipeline} />
+
+---
+
+<Layout name="image-right" />
+
+## Media on one half
+
+The slide's first image, video, figure or demo takes one half edge to edge; the words take the other.
+
+![The engine's cover card](/og.png)
+
+---
+
+<Layout name="image" />
+
+![The engine's cover card](/og.png)
+
+## Media over the whole slide
+
+The words sit on a card in the lower left.
+
+---
+
+<Layout name="statement" />
+
+A deck is a note you can stand in front of.
+
+---
+
+<Layout name="fact" />
+
+960 × 540
+
+The canvas every slide is laid out on, in CSS pixels, scaled to the width it is shown at.
+
+---
+
+<Layout name="quote" />
+
+> The content stays the note's own blocks.
+
+From the Deck component's own description
+
+---
+
+## Clicks
+
+What appears when, and figures that follow along.
+
+---
+
+## A figure that lights up click by click
+
+Each click lights the next box of the figure; the wire into it comes with it.
+
+<FigureFile of={deckPipeline} />
+
+{/* Four clicks here: each lights the next box, so say what the box does before the next click. */}
+
+---
+
+## An image as large as the slide allows
+
+<Stretch />
+
+![The engine's cover card](/og.png)
+
+---
+
+<Layout name="center" />
+
+## Centred
+
+For a slide that is one thought, set on the middle axis.
+
+---
+
+<Layout name="end" />
+
+## Thank you
+
+The deck's manual is the page [Interactive](/components/interactive/).

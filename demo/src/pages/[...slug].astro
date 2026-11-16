@@ -10,11 +10,13 @@
  * Everything the sidebar shows — the ToC, the hub rail, backlinks and the
  * local link graph — is assembled here at build time from the collection;
  * frontmatter contributes the hub's `nav` order and display strings (title,
- * brand, subtitle, navLabel), nothing more.
+ * brand, subtitle, navLabel), nothing more. A note marked `deck` is shown as
+ * slides: its whole content inside a `Deck`.
  */
 import { getCollection, render } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 
+import Deck from 'astro-inkstone/components/Deck.astro';
 import { roman } from 'astro-inkstone/lib/rehype-chapters';
 import { getToc } from 'astro-inkstone/lib/toc';
 import NoteLayout, { type HubPageChrome } from '../layouts/NoteLayout.astro';
@@ -227,5 +229,13 @@ const brandHref = hub ? hub.hubHref : routeTo(entry.id);
   published={entry.data.created}
   modified={entry.data.updated}
 >
-  <Content partLabel={hubPage?.crumbLabel} toc={toc} />
+  {
+    entry.data.deck ? (
+      <Deck locale={locale}>
+        <Content partLabel={hubPage?.crumbLabel} toc={toc} />
+      </Deck>
+    ) : (
+      <Content partLabel={hubPage?.crumbLabel} toc={toc} />
+    )
+  }
 </NoteLayout>

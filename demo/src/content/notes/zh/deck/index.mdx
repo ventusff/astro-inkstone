@@ -1,0 +1,139 @@
+---
+title: 一篇笔记做成的幻灯片
+description: 一份示例演示稿。整篇笔记就是演示稿,每条分隔线分出一张;可以放映、打开演讲者视图,也可以就地编辑任何一块。
+chapters: false
+deck: true
+---
+
+import Build from 'astro-inkstone/components/Build.astro';
+import Column from 'astro-inkstone/components/Column.astro';
+import FigureFile from 'astro-inkstone/components/FigureFile.astro';
+import Layout from 'astro-inkstone/components/Layout.astro';
+import Stretch from 'astro-inkstone/components/Stretch.astro';
+
+import deckPipeline from '/src/content/notes/components/interactive/deck-pipeline.json';
+
+<Layout name="cover" />
+
+## 一篇笔记做成的幻灯片
+
+一个文件,既能读也能放映,每个块都还能就地编辑。
+
+astro-inkstone · 演示稿
+
+---
+
+## 一个文件,两种读法
+
+<Build />
+
+- 阅读视图是页面栏里的一叠幻灯片。
+- 放映时一次一张,铺满屏幕。
+- 每个块都是笔记自己的:读的时候、放映的时候,点它就能编辑。
+
+{/* 点三下,一次出一行。然后按 P 打开演讲者视图,指给大家看这段备注。 */}
+
+---
+
+## 版式
+
+一共十三种,由一张开头的标记指定。
+
+---
+
+<Layout name="two-cols" />
+
+## 两栏
+
+`<Column />` 之前的块排在左栏;上面的标题横跨两栏。
+
+左栏放列表很合适:
+
+- 标记什么都不包
+- 每个块都是它自己
+
+<Column />
+
+<FigureFile of={deckPipeline} locale="zh" />
+
+---
+
+<Layout name="image-right" />
+
+## 媒体占半边
+
+这一张的第一张图片、视频、框图或演示占满半边,文字占另一半。
+
+![引擎的封面卡片](/og.png)
+
+---
+
+<Layout name="image" />
+
+![引擎的封面卡片](/og.png)
+
+## 媒体铺满整张
+
+文字放在左下角的一张卡片上。
+
+---
+
+<Layout name="statement" />
+
+演示稿就是一篇能站在它前面讲的笔记。
+
+---
+
+<Layout name="fact" />
+
+960 × 540
+
+每张幻灯片排版用的画布,单位是 CSS 像素,再按显示宽度缩放。
+
+---
+
+<Layout name="quote" />
+
+> 内容仍是笔记自己的块。
+
+摘自 Deck 组件自己的说明
+
+---
+
+## 点击
+
+什么时候出现什么,以及跟着点击变化的框图。
+
+---
+
+## 随点击点亮的框图
+
+每次点击点亮框图的下一个框,连进它的线一起出现。
+
+<FigureFile of={deckPipeline} locale="zh" />
+
+{/* 这里有四次点击,每次亮一个框:先讲这个框做什么,再点下一次。 */}
+
+---
+
+## 图片尽量大
+
+<Stretch />
+
+![引擎的封面卡片](/og.png)
+
+---
+
+<Layout name="center" />
+
+## 居中
+
+只讲一件事的一张,放在中轴线上。
+
+---
+
+<Layout name="end" />
+
+## 谢谢
+
+演示稿的用法写在[交互与页面配件](/zh/components/interactive/)这一页。

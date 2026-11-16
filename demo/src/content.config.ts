@@ -58,6 +58,9 @@ const notes = defineCollection({
     tocDepth: z.union([z.literal(2), z.literal(3)]).default(2),
     /** `false` switches chapter numbering off (a hub's overview page) */
     chapters: z.boolean().default(true),
+    /** the note is a slide deck: the page shows its whole content in a `Deck`,
+     *  one slide per thematic break */
+    deck: z.boolean().default(false),
   }),
 });
 
