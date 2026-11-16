@@ -68,6 +68,7 @@ export default defineConfig({
               ...sitePluginSets({
                 math: true,
                 callouts: true,
+                deckNotes: true,
                 gemoji: true,
                 mermaid: true,
                 base: BASE_PREFIX,
@@ -112,6 +113,7 @@ export default defineConfig({
       codeFrame: true,
       mermaid: true,
       callouts: true,
+      deckNotes: true,
       gemoji: true,
       readingTime: true,
       wikiBlocks: WIKI_MODE || PLAYGROUND,

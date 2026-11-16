@@ -2,8 +2,8 @@
  * sitePluginSets — the site-side remark/rehype plugin arrays alone,
  * everything siteMarkdown mounts beyond the engine dialect, in the
  * contractual order:
- * - remark: gemoji → math → headingAttrs → callouts → readingTime → wikilinks →
- *   mentions
+ * - remark: gemoji → math → headingAttrs → callouts → deckNotes → readingTime →
+ *   wikilinks → mentions
  * - rehype: numbering (chapters/sections — before katex, so ToC labels keep
  *   their raw TeX) → katex → tblWrap → taskLists → mermaidClient → (baseLinks) →
  *   wikiBlocks always last (inkbrush contract: stamp final top-level blocks
@@ -34,6 +34,7 @@ import { rehypeSections } from './rehype-sections.ts';
 import { rehypeTaskLists } from './rehype-task-lists.ts';
 import { rehypeTblWrap } from './rehype-tbl-wrap.ts';
 import { remarkCallouts } from './remark-callouts.ts';
+import { remarkDeckNotes } from './remark-deck-notes.ts';
 import { remarkHeadingAttrs } from './remark-heading-attrs.ts';
 import { remarkReadingTime } from './remark-reading-time.ts';
 
@@ -56,6 +57,11 @@ export interface SiteMarkdownOptions {
   callouts?: boolean;
   /** default callout titles per variant keyword (see remark-callouts) */
   calloutLabels?: Record<string, string>;
+  /** a comment that ends a slide becomes the slide's speaker notes, shown in
+   *  the deck's presenter view (see remark-deck-notes). For a site whose notes
+   *  are decks; elsewhere a comment's text would reach the page's HTML.
+   *  Default off */
+  deckNotes?: boolean;
   /** inject reading minutes into frontmatter. Default off */
   readingTime?: boolean;
   /** turn mermaid fences into client-rendered placeholders. Default off */
@@ -117,6 +123,7 @@ export function sitePluginSets(opts: SiteMarkdownOptions = {}): SitePluginSet {
     gemoji = false,
     callouts = false,
     calloutLabels,
+    deckNotes = false,
     readingTime = false,
     mermaid = false,
     wikilinks = false,
@@ -139,6 +146,7 @@ export function sitePluginSets(opts: SiteMarkdownOptions = {}): SitePluginSet {
             : remarkCallouts) as unknown as RemarkPlugin,
         ]
       : []),
+    ...(deckNotes ? [remarkDeckNotes as RemarkPlugin] : []),
     ...(readingTime ? [remarkReadingTime as RemarkPlugin] : []),
     ...(wikilinks
       ? [

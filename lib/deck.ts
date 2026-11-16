@@ -45,11 +45,22 @@
  * the editor's toolbars, stay above the slide): → ↓ PageDown Space go one
  * click forward, ← ↑ PageUp one back (to the previous slide's last step), Home
  * and End jump, O shows every slide as a grid (a section slide opens each
- * row) to pick one from, Esc leaves; a horizontal swipe turns the page on
- * touch screens. Keys typed into an editor, and keys the page has already
- * handled, are left alone. Changes of slide and step run as view transitions:
+ * row) to pick one from, F switches full screen on and off, Esc leaves; a
+ * horizontal swipe turns the page on touch screens. Keys typed into an
+ * editor, and keys the page has already handled, are left alone. Leaving full
+ * screen leaves the show, unless a presenter view this window opened is open. Changes of slide and step run as view transitions:
  * a heading or an image a slide shares with the one before keeps its place
  * and morphs, everything else crossfades.
+ *
+ * The presenter view. P opens the same page in a second window with
+ * `?presenter` (`PRESENTER_PARAM`) in its address, and that window presents
+ * the deck as the presenter sees it: the slide, a still copy of what the next
+ * click shows, the slide's speaker notes and a clock (time since the view
+ * opened, and the time of day). Every window presenting the deck follows
+ * every other: a window that changes slide or step on its own announces the
+ * place on a `BroadcastChannel` named `deck:<path>`, and the others go there
+ * without announcing it again. A slide's notes are a hidden
+ * `[data-deck-marker="notes"]` block (lib/remark-deck-notes.ts).
  *
  * The location hash is the place: `#/<slide>` in the reading view (the slide
  * in view), `#/<slide>.<step>` while presenting (`.0` left out). A link opens
@@ -64,6 +75,8 @@ export const CANVAS_H = 540;
 export const NARROW = 600;
 /** the least height, in canvas pixels, a stretched block is given when the slide has no room left */
 const STRETCH_MIN = 80;
+/** the search parameter that opens a page as the presenter view of its deck */
+export const PRESENTER_PARAM = 'presenter';
 
 /** the layouts a slide can name with `<Layout name="…" />` */
 export const SLIDE_LAYOUTS = [
@@ -92,6 +105,12 @@ export interface DeckWords {
   /** `{n}` and `{total}` are filled in */
   position: string;
   slide: string;
+  presenter: string;
+  upNext: string;
+  notes: string;
+  noNotes: string;
+  end: string;
+  restartClock: string;
 }
 
 /** `detail` of the `deck:step` event */
@@ -294,6 +313,35 @@ function planSlide(slide: HTMLElement): { layout: SlideLayout; steps: number } {
   return { layout, steps };
 }
 
+/** a still copy of a slide shown at a step: no ids and no view-transition names of its own, its later blocks hidden */
+function slideCopy(slide: HTMLElement, at: number): HTMLElement {
+  const copy = slide.cloneNode(true) as HTMLElement;
+  copy.classList.remove('is-current');
+  copy.classList.add('slide-copy');
+  for (const attribute of ['role', 'aria-roledescription', 'aria-label']) copy.removeAttribute(attribute);
+  for (const el of [copy, ...copy.querySelectorAll<HTMLElement>('*')]) {
+    el.removeAttribute('id');
+    el.style?.removeProperty('view-transition-name');
+  }
+  for (const el of copy.querySelectorAll<HTMLElement>('[data-deck-at]')) el.classList.toggle('deck-later', Number(el.dataset['deckAt']) > at);
+  return copy;
+}
+
+/** elapsed time as m:ss, or h:mm:ss from an hour on */
+function formatElapsed(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const h = Math.floor(s / 3600);
+  const m = Math.floor(s / 60) % 60;
+  return h > 0 ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`;
+}
+
+/** switch the page's full screen on or off */
+function toggleFullscreen(): void {
+  if (document.fullscreenElement) void document.exitFullscreen();
+  else if (document.fullscreenEnabled) void document.documentElement.requestFullscreen().catch(() => undefined);
+}
+
 /** an event aimed at something the reader is typing into */
 function isTyping(e: Event): boolean {
   const t = e.target;
@@ -361,11 +409,14 @@ interface Deck {
   fit(): void;
   setPrinting(printing: boolean): void;
   isPresenting(): boolean;
+  /** a presenter view this window opened is open */
+  hasPresenterView(): boolean;
   forward(): void;
   back(): void;
   jump(to: 'first' | 'last'): void;
   goTo(place: DeckPlace): void;
   toggleOverview(): void;
+  openPresenterView(): void;
   leave(): void;
 }
 
@@ -388,6 +439,8 @@ function listenOnce(): void {
     else if (key === 'Home') deck.jump('first');
     else if (key === 'End') deck.jump('last');
     else if (key === 'o' || key === 'O') deck.toggleOverview();
+    else if (key === 'p' || key === 'P') deck.openPresenterView();
+    else if (key === 'f' || key === 'F') toggleFullscreen();
     else if (key === 'Escape') deck.leave();
     else return;
     e.preventDefault();
@@ -398,7 +451,8 @@ function listenOnce(): void {
     if (place) presenting()?.goTo(place);
   });
   document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement) presenting()?.leave();
+    const deck = presenting();
+    if (!document.fullscreenElement && deck && !deck.hasPresenterView()) deck.leave();
   });
   addEventListener('beforeprint', () => live().forEach((d) => d.setPrinting(true)));
   addEventListener('afterprint', () => live().forEach((d) => d.setPrinting(false)));
@@ -446,16 +500,22 @@ export function mountDeck(root: HTMLElement): void {
 
   const label = root.querySelector<HTMLElement>('[data-deck-position]')!;
   const progress = root.querySelector<HTMLElement>('[data-deck-progress]')!;
+  const nextView = root.querySelector<HTMLElement>('[data-deck-next-view]')!;
+  const notesView = root.querySelector<HTMLElement>('[data-deck-notes]')!;
+  /** this window is the presenter view of the deck */
+  let presenterView = new URLSearchParams(location.search).has(PRESENTER_PARAM);
 
   // ---- scale ------------------------------------------------------------
   let showing = false;
   let overview = false;
   let printing = false;
   const fit = () => {
+    // presenting, the slide fits the viewport; in the presenter view, the room the panel leaves it
+    const stage = presenterView ? host : root;
     const shown = printing
       ? CANVAS_W
       : showing
-        ? Math.min(root.clientWidth, (root.clientHeight * CANVAS_W) / CANVAS_H)
+        ? Math.min(stage.clientWidth, (stage.clientHeight * CANVAS_W) / CANVAS_H)
         : slides[0]!.clientWidth;
     const narrow = !showing && !printing && shown < NARROW;
     root.classList.toggle('is-narrow', narrow);
@@ -463,6 +523,7 @@ export function mountDeck(root: HTMLElement): void {
     // the overview fits about five slides across, at most a third of the canvas each
     const across = Math.max(2, Math.min(5, Math.floor(root.clientWidth / 260)));
     host.style.setProperty('--deck-thumb-k', String(Math.min(1 / 3, (root.clientWidth - 48 - (across - 1) * 20) / across / CANVAS_W)));
+    nextView.style.setProperty('--deck-k', String(nextView.clientWidth / CANVAS_W));
     for (const slide of slides) stretch(slide);
   };
   /** grow a slide's `<Stretch />`ed block to the height the canvas has left below its content */
@@ -500,6 +561,8 @@ export function mountDeck(root: HTMLElement): void {
 
   // ---- which slide, which step -------------------------------------------
   const storeKey = `deck:${location.pathname}`;
+  /** the windows presenting this deck tell each other the place */
+  const channel = 'BroadcastChannel' in window ? new BroadcastChannel(storeKey) : null;
   let current = 0;
   let step = 0;
   /** show a slide at a step: later blocks hidden while presenting, the slide's components told */
@@ -516,8 +579,16 @@ export function mountDeck(root: HTMLElement): void {
     if (hash === location.hash || (!place && !parsePlace(location.hash))) return;
     history.replaceState(history.state, '', hash || location.pathname + location.search);
   };
-  /** present slide `i` at step `at` */
-  const show = (i: number, at: number) => {
+  /** the presenter view's panel: the next click's look and the slide's notes */
+  const showPanel = () => {
+    const notes = slides[current]!.querySelector('.deck-notes');
+    const emptyLine = (text: string) => Object.assign(document.createElement('p'), { className: 'deck-presenter-empty', textContent: text });
+    notesView.replaceChildren(...(notes ? [...notes.cloneNode(true).childNodes] : [emptyLine(words.noNotes)]));
+    const next = step < clicks[current]! ? { slide: current, step: step + 1 } : current < total - 1 ? { slide: current + 1, step: 0 } : null;
+    nextView.replaceChildren(next ? slideCopy(slides[next.slide]!, next.step) : emptyLine(words.end));
+  };
+  /** present slide `i` at step `at`; `announce`: tell the other windows presenting the deck */
+  const show = (i: number, at: number, announce: boolean) => {
     const was = current;
     current = Math.min(Math.max(i, 0), total - 1);
     step = Math.min(Math.max(at, 0), clicks[current]!);
@@ -527,11 +598,13 @@ export function mountDeck(root: HTMLElement): void {
     label.textContent = position(current + 1);
     progress.style.setProperty('--deck-progress', String((current + 1) / total));
     writePlace({ slide: current, step });
+    if (presenterView) showPanel();
+    if (announce) channel?.postMessage({ slide: current, step } satisfies DeckPlace);
   };
-  const go = (i: number, at: number) => {
+  const go = (i: number, at: number, announce = true) => {
     const target = Math.min(Math.max(i, 0), total - 1);
     if (target === current && at === step) return;
-    transition(slides[current]!, slides[target]!, () => show(target, at));
+    transition(slides[current]!, slides[target]!, () => show(target, at, announce));
   };
   const forward = () => (step < clicks[current]! ? go(current, step + 1) : current < total - 1 && go(current + 1, 0));
   const back = () => (step > 0 ? go(current, step - 1) : current > 0 && go(current - 1, clicks[current - 1]!));
@@ -567,7 +640,7 @@ export function mountDeck(root: HTMLElement): void {
     root.classList.add('is-presenting');
     document.documentElement.classList.add('deck-presenting');
     sessionStorage.setItem(storeKey, '1');
-    show(place.slide, place.step);
+    show(place.slide, place.step, true);
     fit();
     if (fullscreen && document.fullscreenEnabled) void document.documentElement.requestFullscreen().catch(() => undefined);
   };
@@ -576,6 +649,13 @@ export function mountDeck(root: HTMLElement): void {
     if (overview) {
       setOverview(false);
       return;
+    }
+    if (presenterView) {
+      // the presenter view closes; a window that was not opened as one stays, as an ordinary page
+      window.close();
+      presenterView = false;
+      root.classList.remove('is-presenter');
+      clearInterval(clock);
     }
     showing = false;
     root.classList.remove('is-presenting');
@@ -590,20 +670,46 @@ export function mountDeck(root: HTMLElement): void {
   };
 
   /** go to a place; from the overview, the slide grows back into the show */
-  const goTo = (place: DeckPlace) => {
-    if (!overview) return go(place.slide, place.step);
+  const goTo = (place: DeckPlace, announce = true) => {
+    if (!overview) return go(place.slide, place.step, announce);
     const i = Math.min(Math.max(place.slide, 0), total - 1);
     transition(slides[i]!, slides[i]!, () => {
       overview = false;
       root.classList.remove('is-overview');
-      show(i, place.step);
+      show(i, place.step, announce);
     });
   };
+  channel?.addEventListener('message', (e: MessageEvent<DeckPlace>) => {
+    if (showing) goTo(e.data, false);
+  });
+
+  // ---- the presenter view ------------------------------------------------
+  let presenterWindow: Window | null = null;
+  const openPresenterView = () => {
+    if (presenterView) return;
+    const url = new URL(location.href);
+    url.searchParams.set(PRESENTER_PARAM, '');
+    url.hash = formatPlace({ slide: current, step });
+    presenterWindow = window.open(url, `deck-presenter:${location.pathname}`, 'popup,width=1280,height=800');
+  };
+  const clockKey = `deck-clock:${location.pathname}`;
+  let clockStart = Number(sessionStorage.getItem(clockKey)) || Date.now();
+  let clock = 0;
+  const tick = () => {
+    root.querySelector('[data-deck-elapsed]')!.textContent = formatElapsed(Date.now() - clockStart);
+    root.querySelector('[data-deck-time]')!.textContent = new Date().toLocaleTimeString(document.documentElement.lang || undefined, { hour: '2-digit', minute: '2-digit' });
+  };
+  root.querySelector('[data-deck-clock-restart]')?.addEventListener('click', () => {
+    clockStart = Date.now();
+    sessionStorage.setItem(clockKey, String(clockStart));
+    tick();
+  });
 
   root.querySelector('[data-deck-present]')?.addEventListener('click', () => enter({ slide: inView(), step: 0 }, true));
   root.querySelector('[data-deck-prev]')?.addEventListener('click', back);
   root.querySelector('[data-deck-next]')?.addEventListener('click', forward);
   root.querySelector('[data-deck-overview]')?.addEventListener('click', () => setOverview(!overview));
+  root.querySelector('[data-deck-presenter-open]')?.addEventListener('click', openPresenterView);
   root.querySelector('[data-deck-exit]')?.addEventListener('click', () => {
     setOverview(false);
     leave();
@@ -640,11 +746,13 @@ export function mountDeck(root: HTMLElement): void {
       fit();
     },
     isPresenting: () => showing,
+    hasPresenterView: () => presenterWindow !== null && !presenterWindow.closed,
     forward,
     back,
     jump: (to) => go(to === 'first' ? 0 : total - 1, 0),
     goTo,
     toggleOverview: () => setOverview(!overview),
+    openPresenterView,
     leave,
   });
   listenOnce();
@@ -654,7 +762,13 @@ export function mountDeck(root: HTMLElement): void {
   root.dataset['ready'] = '';
   const place = parsePlace(location.hash);
   const at = place ? { slide: Math.min(place.slide, total - 1), step: place.step } : null;
-  if (sessionStorage.getItem(storeKey) && isReload()) enter(at ?? { slide: 0, step: 0 }, false);
+  if (presenterView) {
+    root.classList.add('is-presenter');
+    sessionStorage.setItem(clockKey, String(clockStart));
+    tick();
+    clock = window.setInterval(tick, 1000);
+    enter(at ?? { slide: 0, step: 0 }, false);
+  } else if (sessionStorage.getItem(storeKey) && isReload()) enter(at ?? { slide: 0, step: 0 }, false);
   else {
     sessionStorage.removeItem(storeKey);
     if (at && !isReload()) slides[at.slide]!.scrollIntoView({ block: 'start' });

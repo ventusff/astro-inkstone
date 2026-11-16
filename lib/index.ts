@@ -28,6 +28,7 @@ export { rehypeBaseLinks } from './rehype-base-links.ts';
 export { rehypeMermaidClient } from './rehype-mermaid-client.ts';
 export { remarkHeadingAttrs } from './remark-heading-attrs.ts';
 export { remarkCallouts, type CalloutOptions } from './remark-callouts.ts';
+export { remarkDeckNotes } from './remark-deck-notes.ts';
 export { remarkReadingTime } from './remark-reading-time.ts';
 export { transformerCodeFrame, type CodeFrameLabels } from './code-frame.ts';
 export { componentWords, type ComponentWords } from './component-words.ts';

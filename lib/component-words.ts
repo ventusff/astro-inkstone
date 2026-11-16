@@ -39,6 +39,18 @@ export interface ComponentWords {
     position: string;
     /** what one slide is, for assistive technology (aria-roledescription) */
     slide: string;
+    /** the button and key (P) that opens the presenter view in a second window */
+    presenter: string;
+    /** the presenter view's heading over what the next click shows */
+    upNext: string;
+    /** the presenter view's heading over the slide's speaker notes */
+    notes: string;
+    /** in place of the notes, on a slide that has none */
+    noNotes: string;
+    /** in place of the next click, after the last slide's last click */
+    end: string;
+    /** the button that starts the presenter view's clock from zero again */
+    restartClock: string;
   };
 }
 
@@ -57,7 +69,7 @@ const WORDS = {
       unit: 'pages',
     },
     facets: { kind: 'Kind', domain: 'Domain', status: 'Status', tag: 'Tags', people: 'Authors', all: 'All →', aria: 'Browse index' },
-    deck: { present: 'Present', exit: 'Exit', previous: 'Previous slide', next: 'Next slide', overview: 'Overview', deck: 'Slides', position: 'Slide {n} of {total}', slide: 'slide' },
+    deck: { present: 'Present', exit: 'Exit', previous: 'Previous slide', next: 'Next slide', overview: 'Overview', deck: 'Slides', position: 'Slide {n} of {total}', slide: 'slide', presenter: 'Presenter view', upNext: 'Next', notes: 'Notes', noNotes: 'No notes on this slide.', end: 'The last slide ends here.', restartClock: 'Restart the clock' },
   },
   zh: {
     backlinks: { heading: '反向链接', sub: 'Linked mentions' },
@@ -73,7 +85,7 @@ const WORDS = {
       unit: '页',
     },
     facets: { kind: '形式', domain: '方向', status: '成熟度', tag: '标签', people: '作者', all: '全部 →', aria: '导览索引' },
-    deck: { present: '放映', exit: '退出放映', previous: '上一张', next: '下一张', overview: '概览', deck: '演示稿', position: '第 {n} 张,共 {total} 张', slide: '幻灯片' },
+    deck: { present: '放映', exit: '退出放映', previous: '上一张', next: '下一张', overview: '概览', deck: '演示稿', position: '第 {n} 张,共 {total} 张', slide: '幻灯片', presenter: '演讲者视图', upNext: '下一步', notes: '备注', noNotes: '这一张没有备注。', end: '这是最后一张的最后一步。', restartClock: '计时从零开始' },
   },
   de: {
     backlinks: { heading: 'Backlinks', sub: '' },
@@ -89,7 +101,7 @@ const WORDS = {
       unit: 'Seiten',
     },
     facets: { kind: 'Form', domain: 'Richtung', status: 'Reifegrad', tag: 'Tags', people: 'Autoren', all: 'Alle →', aria: 'Index durchstöbern' },
-    deck: { present: 'Präsentieren', exit: 'Beenden', previous: 'Vorherige Folie', next: 'Nächste Folie', overview: 'Übersicht', deck: 'Folien', position: 'Folie {n} von {total}', slide: 'Folie' },
+    deck: { present: 'Präsentieren', exit: 'Beenden', previous: 'Vorherige Folie', next: 'Nächste Folie', overview: 'Übersicht', deck: 'Folien', position: 'Folie {n} von {total}', slide: 'Folie', presenter: 'Referentenansicht', upNext: 'Als Nächstes', notes: 'Notizen', noNotes: 'Keine Notizen zu dieser Folie.', end: 'Hier endet die letzte Folie.', restartClock: 'Uhr neu starten' },
   },
 } satisfies Record<string, ComponentWords>;
 

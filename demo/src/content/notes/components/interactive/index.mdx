@@ -170,8 +170,9 @@ A slide is shaped by markers, self-closing components that are blocks of their o
 - `<Column />` ends a column and starts the next; a heading that opens the slide spans them all.
 - `<Build />` makes the blocks after it appear one click at a time while presenting, a list one item per click. A `FlowDiagram` with `steps` lights its boxes and wires click by click (`steps[k]` names what lights at click k + 1, boxes by id and wires as `'from>to'`); any component follows its own clicks through the `deck:step` event with `onDeckStep` from `lib/deck.ts`.
 - `<Stretch />` grows the block after it to the height the slide has left: the way to show an image or a figure as large as the slide allows.
+- A comment that ends a slide, `{/* … */}` as the slide's last block, is its speaker notes: the page never shows it, the presenter view does. A site turns this on with the markdown preset's `deckNotes` option.
 
-While presenting: → ↓ Space PageDown go one click forward, ← ↑ PageUp one back, Home and End jump, **O** shows every slide as a grid to jump from (each section slide opens a row), Esc leaves, and a swipe turns the page on touch screens. Slides and clicks change as view transitions: a heading or an image two slides share keeps its place and morphs. The place is the location hash: `#/3` is the third slide, `#/3.2` its second click, so a link lands where it was copied, and a reload comes back to the same slide and click.
+While presenting: → ↓ Space PageDown go one click forward, ← ↑ PageUp one back, Home and End jump, **O** shows every slide as a grid to jump from (each section slide opens a row), **P** opens the presenter view in a second window (the slide, what the next click shows, the notes and a clock; the two windows follow each other's clicks), **F** toggles full screen, Esc leaves, and a swipe turns the page on touch screens. Slides and clicks change as view transitions: a heading or an image two slides share keeps its place and morphs. The place is the location hash: `#/3` is the third slide, `#/3.2` its second click, so a link lands where it was copied, and a reload comes back to the same slide and click.
 
 A figure that more than one place shows is kept in its own JSON file beside the page that answers it, and drawn by `FigureFile`: the file holds `title`, an optional `caption` and `flow` (a FlowDiagram spec, its `steps` included), every word an object of the languages (`{ "en": …, "zh": … }`). Every place imports the file by its path from the site root (`import deckPipeline from '/src/content/notes/components/interactive/deck-pipeline.json'`), so no site needs an alias, and changing the file changes every place. A word with no text in the page's language shows in the language the figure was written in, the first key of its `title`. The same file, once here complete, and once on a slide below where it lights up click by click:
 
@@ -196,6 +197,8 @@ astro-inkstone · the deck
 - The reading view is a stack of slides in the page column.
 - Presenting shows one slide at a time, full screen.
 - Each block is the note's own: click it to edit, while reading or presenting.
+
+{/* Click three times: one line per click. Then open the presenter view with P and point at these notes. */}
 
 ---
 
@@ -275,6 +278,8 @@ What appears when, and figures that follow along.
 Each click lights the next box of the figure; the wire into it comes with it.
 
 <FigureFile of={deckPipeline} />
+
+{/* Four clicks here: each lights the next box, so say what the box does before the next click. */}
 
 ---
 

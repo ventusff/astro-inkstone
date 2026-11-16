@@ -15,6 +15,7 @@ test('the preset assembles the contracted pipeline order', () => {
     numbering: 'chapters',
     math: true,
     callouts: true,
+    deckNotes: true,
     readingTime: true,
     mermaid: true,
     codeFrame: true,
@@ -24,9 +25,9 @@ test('the preset assembles the contracted pipeline order', () => {
   }) as { processor: ProcessorShape; syntaxHighlight?: unknown; shikiConfig: { transformers?: { name: string }[] } };
 
   const remark = (cfg.processor.options.remarkPlugins ?? []).map(nameOf);
-  // remark contract: headingAttrs → callouts → readingTime, in this order
-  const order = ['remarkHeadingAttrs', 'remarkCallouts', 'remarkReadingTime'].map((n) => remark.indexOf(n));
-  assert.ok(order.every((i) => i >= 0) && order[0]! < order[1]! && order[1]! < order[2]!, `remark order broken: ${remark}`);
+  // remark contract: headingAttrs → callouts → deckNotes → readingTime, in this order
+  const order = ['remarkHeadingAttrs', 'remarkCallouts', 'remarkDeckNotes', 'remarkReadingTime'].map((n) => remark.indexOf(n));
+  assert.ok(order.every((i, k) => i >= 0 && (k === 0 || i > order[k - 1]!)), `remark order broken: ${remark}`);
 
   const rehype = (cfg.processor.options.rehypePlugins ?? []).map(nameOf);
   // rehype contract: numbering before katex, baseLinks after the rest, wikiBlocks last

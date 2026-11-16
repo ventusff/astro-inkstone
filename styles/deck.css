@@ -6,8 +6,10 @@
    slide's worth. Reading view: a stack of slides in the page column, each
    with a corner block (part name and slide number). Presenting: one slide at
    a time, letterboxed over the viewport; the overview lays every slide out
-   as a grid at --deck-thumb-k. Narrow (a phone): a slide is laid out unscaled
-   at the column's width, its regions stacked.
+   as a grid at --deck-thumb-k; the presenter view puts the slide beside a
+   panel with a copy of the next click, the notes and a clock. Narrow (a
+   phone): a slide is laid out unscaled at the column's width, its regions
+   stacked.
 
    A slide's layout is `data-layout` on `.slide` (lib/deck.ts SLIDE_LAYOUTS).
    Its type is one scale on the canvas: 21px body, 24 / 36 / 48 / 60 for
@@ -274,6 +276,28 @@
   top: 10px;
   left: 10px;
   translate: none;
+}
+
+/* a slide's notes: the chip in its lower left shows their first line */
+.slide-canvas > .deck-notes.wiki-block {
+  top: auto;
+  bottom: 10px;
+  left: 10px;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  translate: none;
+}
+
+.slide-canvas > .deck-notes.wiki-block > p {
+  display: inline;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
+.slide-canvas > .deck-notes.wiki-block > p + p {
+  display: none;
 }
 
 /* ============================================================
@@ -891,6 +915,153 @@ html.deck-presenting {
   pointer-events: none;
 }
 
+/* ---- the presenter view: the slide on the left; the next click, the notes and the clock beside it ---- */
+
+.deck-presenter {
+  display: none;
+}
+
+.deck.is-presenting.is-presenter {
+  grid-template-columns: minmax(0, 1fr) clamp(300px, 32vw, 560px);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 28px;
+  place-items: stretch;
+  padding: 28px 28px 72px;
+}
+
+.deck.is-presenter .deck-slides {
+  display: grid;
+  place-items: center;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.deck.is-presenter .slide.is-current {
+  width: calc(960px * var(--deck-k));
+}
+
+.deck.is-presenter .deck-presenter {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 0;
+  font-family: var(--font-ui);
+  color: var(--color-ink-soft);
+}
+
+.deck .deck-presenter-label {
+  max-width: none;
+  margin: 0 0 8px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-ink-soft);
+}
+
+.deck.is-presenting .deck-presenter-view .slide {
+  display: block;
+  margin: 0;
+  box-shadow: none;
+  outline: 1px solid var(--color-line);
+}
+
+.deck-presenter-notes {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.deck-presenter-text {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.55;
+  color: var(--color-ink);
+}
+
+.deck .deck-presenter-text p {
+  max-width: none;
+  margin: 0 0 0.75em;
+}
+
+.deck .deck-presenter-empty {
+  max-width: none;
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  color: var(--color-ink-faint);
+}
+
+.deck-presenter-clock {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-line);
+  font-variant-numeric: tabular-nums;
+}
+
+.deck-presenter-elapsed {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-ink);
+}
+
+.deck-presenter-time {
+  font-size: 15px;
+}
+
+.deck-presenter-clock button {
+  margin-left: auto;
+  padding: 6px 10px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.deck-presenter-clock button:hover {
+  background: var(--color-row-hover);
+}
+
+.deck-presenter-clock button:focus-visible {
+  outline: 2px solid var(--color-accent-text);
+  outline-offset: 2px;
+}
+
+.deck.is-presenter .deck-controls {
+  opacity: 1;
+}
+
+.deck.is-presenter [data-deck-presenter-open] {
+  display: none;
+}
+
+.deck.is-presenter.is-overview .deck-presenter {
+  display: none;
+}
+
+/* a narrow window: the slide above, the notes and the clock below */
+@media (max-width: 760px) {
+  .deck.is-presenting.is-presenter {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 45%);
+  }
+
+  .deck.is-presenter .deck-presenter-next {
+    display: none;
+  }
+}
+
 /* changes of slide and step: a quick crossfade, shared headings and images morphing */
 html.deck-presenting::view-transition-group(*) {
   animation-duration: 0.32s;
@@ -912,6 +1083,7 @@ html.deck-presenting::view-transition-new(root) {
 @media print {
   .deck-bar,
   .deck-controls,
+  .deck-presenter,
   .deck-progress {
     display: none;
   }
