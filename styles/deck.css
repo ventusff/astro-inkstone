@@ -124,9 +124,10 @@
   margin-top: 0;
 }
 
-/* headings and lists carry `.deck` so they hold over the page column's own heading and list rules
-   (base.css `.col h2`, `.col ul`), whichever stylesheet a page loads last */
-.deck .slide-canvas :is(h1, h2) {
+/* headings and lists carry the slide's attribute so they hold over the page column's own heading and
+   list rules (base.css `.col h2`, `.col ul`), whichever stylesheet a page loads last; the slide alone
+   decides how its content looks, so a copy of it (an editor's preview) looks the same */
+[data-deck-slide] .slide-canvas :is(h1, h2) {
   margin: 0 0 18px;
   padding: 0;
   border: 0;
@@ -138,7 +139,7 @@
   text-wrap: balance;
 }
 
-.deck .slide-canvas h3 {
+[data-deck-slide] .slide-canvas h3 {
   margin: 20px 0 8px;
   font-family: var(--font-display);
   font-size: 24px;
@@ -163,7 +164,7 @@
   color: var(--color-ink-soft);
 }
 
-.deck .slide-canvas :is(ul, ol) {
+[data-deck-slide] .slide-canvas :is(ul, ol) {
   padding-inline-start: 1.1em;
 }
 
@@ -255,12 +256,15 @@
   color: var(--color-accent-text);
 }
 
-/* ---- markers: invisible on the slide; a chip in the margin while the editor binds them ---- */
+/* ---- markers: invisible on the slide; while the editor binds them, a chip beside the block it shapes,
+   shown while the pointer is on it or on that block, or while a block of the slide is being edited ---- */
 
 .slide-canvas .deck-marker.wiki-block {
   position: absolute;
   z-index: 3;
   display: block;
+  opacity: 0;
+  transition: opacity 0.15s ease;
   translate: calc(-100% - 10px) 0;
   padding: 2px 7px;
   border: 1px dashed var(--color-ink-faint);
@@ -280,7 +284,14 @@
   translate: none;
 }
 
-/* a slide's notes: the chip in its upper right shows their first line */
+.slide-canvas .deck-marker.wiki-block:is(:hover, :focus-visible),
+.slide-canvas .deck-marker.wiki-block:has(+ :hover, + template + :hover),
+.slide-canvas:has([data-wiki-editing]) .deck-marker.wiki-block {
+  opacity: 1;
+}
+
+/* a slide's notes: the chip in its upper right shows their first line, while the pointer is on the slide in
+   the reading view; presented, notes are the presenter view's and show on the slide only while it is edited */
 .slide-canvas > .deck-notes.wiki-block {
   top: 10px;
   right: 10px;
@@ -301,6 +312,18 @@
 
 .slide-canvas > .deck-notes.wiki-block > p + p {
   display: none;
+}
+
+.deck:not(.is-presenting) .slide:hover > .slide-canvas > .deck-notes.wiki-block {
+  opacity: 1;
+}
+
+.deck.is-presenting .slide-canvas > .deck-notes.wiki-block {
+  display: none;
+}
+
+.deck.is-presenting .slide-canvas:has([data-wiki-editing]) > .deck-notes.wiki-block {
+  display: block;
 }
 
 /* ============================================================
@@ -724,10 +747,11 @@
   text-align: start;
 }
 
-/* the editor's chips have no margin to sit in: each takes its place in the flow */
+/* the editor's chips have no margin to sit in and no pointer to wait for: each takes its place in the flow */
 .deck.is-narrow .slide-canvas .deck-marker.wiki-block {
   position: static;
   display: inline-block;
+  opacity: 1;
   max-width: 100%;
   margin: 0 8px 10px 0;
   translate: none;
@@ -852,14 +876,31 @@ html.deck-presenting {
   font-family: var(--font-ui);
   font-size: 13px;
   color: var(--color-ink-soft);
-  opacity: 0.5;
-  transition: opacity 0.15s ease;
+  transition:
+    opacity 0.2s ease,
+    visibility 0s;
 }
 
-/* quiet over a slide, plain when reached for or in the overview */
-.deck.is-presenting .deck-controls:is(:hover, :focus-within),
-.deck.is-overview .deck-controls {
-  opacity: 1;
+/* the pointer at rest (html.deck-idle, lib/deck.ts): what is not the slide leaves it; the controls stay
+   where the band under the slide holds them, in the presenter view, in the overview and while focused */
+html.deck-idle .deck.is-presenting:not(.is-presenter, .is-overview, .has-room-below) .deck-controls:not(:focus-within),
+html.deck-idle .deck.is-presenting:not(.is-presenter, .is-overview, .has-room-below) .deck-progress,
+html.deck-presenting.deck-idle .wiki-handle.wiki-handle-on-slide,
+html.deck-presenting.deck-idle .wiki-fab,
+html.deck-presenting.deck-idle astro-dev-toolbar {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.4s ease,
+    visibility 0s 0.4s;
+}
+
+html.deck-idle .deck.is-presenting:not(.is-presenter) {
+  cursor: none;
+}
+
+.deck.has-room-below .deck-controls {
+  bottom: var(--deck-band-bottom);
 }
 
 .deck-controls button {

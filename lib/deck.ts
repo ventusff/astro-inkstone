@@ -48,9 +48,15 @@
  * row) to pick one from, F switches full screen on and off, Esc leaves; a
  * horizontal swipe turns the page on touch screens. Keys typed into an
  * editor, and keys the page has already handled, are left alone. Leaving full
- * screen leaves the show, unless a presenter view this window opened is open. Changes of slide and step run as view transitions:
- * a heading or an image a slide shares with the one before keeps its place
- * and morphs, everything else crossfades.
+ * screen leaves the show, unless a presenter view this window opened is open.
+ * Changes of slide and step run as view transitions: a heading or an image a
+ * slide shares with the one before keeps its place and morphs, everything
+ * else crossfades. A presented slide shows its content and nothing else: the
+ * controls sit in the band under the slide when it holds them, and otherwise
+ * leave, with the progress line, an editor's handle and the page's floating
+ * tools, once the pointer has rested for `IDLE_MS`; markers and notes are not
+ * drawn on it (a marker's chip shows while the pointer is on it or on the
+ * block it shapes, or while a block of the slide is being edited).
  *
  * The presenter view. P opens the same page in a second window with
  * `?presenter` (`PRESENTER_PARAM`) in its address, and that window presents
@@ -77,6 +83,10 @@ export const NARROW = 600;
 const STRETCH_MIN = 80;
 /** the search parameter that opens a page as the presenter view of its deck */
 export const PRESENTER_PARAM = 'presenter';
+/** how long, in milliseconds, the pointer rests before the controls and the page's floating tools leave a presented slide */
+const IDLE_MS = 2500;
+/** the least space, in CSS pixels, between the controls and the slide or the window's edge when they sit in the band under a slide */
+const BAND_MARGIN = 4;
 
 /** the layouts a slide can name with `<Layout name="…" />` */
 export const SLIDE_LAYOUTS = [
@@ -506,6 +516,7 @@ export function mountDeck(root: HTMLElement): void {
   const progress = root.querySelector<HTMLElement>('[data-deck-progress]')!;
   const nextView = root.querySelector<HTMLElement>('[data-deck-next-view]')!;
   const notesView = root.querySelector<HTMLElement>('[data-deck-notes]')!;
+  const controls = root.querySelector<HTMLElement>('.deck-controls')!;
   /** this window is the presenter view of the deck */
   let presenterView = new URLSearchParams(location.search).has(PRESENTER_PARAM);
 
@@ -528,6 +539,12 @@ export function mountDeck(root: HTMLElement): void {
     const across = Math.max(2, Math.min(5, Math.floor(root.clientWidth / 260)));
     host.style.setProperty('--deck-thumb-k', String(Math.min(1 / 3, (root.clientWidth - 48 - (across - 1) * 20) / across / CANVAS_W)));
     nextView.style.setProperty('--deck-k', String(nextView.clientWidth / CANVAS_W));
+    // the controls sit in the middle of the band under a presented slide when the band holds them with
+    // BAND_MARGIN above and below, and rest over the slide otherwise
+    const band = (root.clientHeight - (shown * CANVAS_H) / CANVAS_W) / 2;
+    const roomBelow = showing && !presenterView && band >= controls.offsetHeight + 2 * BAND_MARGIN;
+    root.classList.toggle('has-room-below', roomBelow);
+    root.style.setProperty('--deck-band-bottom', `${roomBelow ? (band - controls.offsetHeight) / 2 : 0}px`);
     for (const slide of slides) stretch(slide);
   };
   /** grow a slide's `<Stretch />`ed block to the height the canvas has left below its content */
@@ -638,6 +655,19 @@ export function mountDeck(root: HTMLElement): void {
     });
   };
 
+  // ---- the pointer at rest -------------------------------------------------
+  // while a slide is presented, a pointer that rests for IDLE_MS marks the page idle (html.deck-idle):
+  // the controls, the progress line, an editor's handle and the page's floating tools leave the slide; moving it brings them back
+  let idleTimer = 0;
+  const wake = () => {
+    document.documentElement.classList.remove('deck-idle');
+    clearTimeout(idleTimer);
+    if (showing) idleTimer = window.setTimeout(() => document.documentElement.classList.add('deck-idle'), IDLE_MS);
+  };
+  addEventListener('pointermove', () => {
+    if (showing) wake();
+  });
+
   const enter = (place: DeckPlace, fullscreen: boolean) => {
     showing = true;
     reading.disconnect();
@@ -646,6 +676,7 @@ export function mountDeck(root: HTMLElement): void {
     sessionStorage.setItem(storeKey, '1');
     show(place.slide, place.step, true);
     fit();
+    wake();
     if (fullscreen && document.fullscreenEnabled) void document.documentElement.requestFullscreen().catch(() => undefined);
   };
   const leave = () => {
@@ -664,6 +695,7 @@ export function mountDeck(root: HTMLElement): void {
     showing = false;
     root.classList.remove('is-presenting');
     document.documentElement.classList.remove('deck-presenting');
+    wake();
     sessionStorage.removeItem(storeKey);
     if (document.fullscreenElement) void document.exitFullscreen();
     setStep(current, clicks[current]!);
