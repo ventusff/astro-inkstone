@@ -572,6 +572,11 @@
   margin-top: 4px;
 }
 
+/* a link on the soft ground takes the small-text accent, which keeps its contrast there */
+.slide[data-layout='end'] .slide-canvas a {
+  color: var(--color-accent-text);
+}
+
 /* ---- columns (`<Column />`): a heading that opens the slide spans them ---- */
 
 .slide-cols {
@@ -695,7 +700,8 @@
   margin-bottom: 0;
 }
 
-.slide[data-layout='image'] .slide-canvas .slide-corner {
+/* the corner over media (the whole slide, or the right half) sits on a card of its own */
+.slide:is([data-layout='image'], [data-layout='image-right']) .slide-canvas .slide-corner {
   padding: 6px 8px;
   border-radius: 4px;
   background: var(--color-bg-card);
@@ -716,6 +722,25 @@
   transform: none;
   font-size: inherit;
   text-align: start;
+}
+
+/* the editor's chips have no margin to sit in: each takes its place in the flow */
+.deck.is-narrow .slide-canvas .deck-marker.wiki-block {
+  position: static;
+  display: inline-block;
+  max-width: 100%;
+  margin: 0 8px 10px 0;
+  translate: none;
+  vertical-align: top;
+}
+
+/* a stretched block has no slide height to fill: its media takes its own height at the column's width */
+.deck.is-narrow .deck-stretch > :is(img, video, picture, canvas, iframe, svg),
+.deck.is-narrow .deck-stretch > a > img,
+.deck.is-narrow .deck-stretch > picture > img,
+.deck.is-narrow .deck-stretch :is(.demo-stage) {
+  flex: none;
+  height: auto;
 }
 
 .deck.is-narrow .slide-cols {
@@ -1065,7 +1090,7 @@ html.deck-presenting {
     grid-template-rows: minmax(0, 1fr) minmax(0, 45%);
   }
 
-  .deck.is-presenter .deck-presenter-next {
+  .deck-presenter-next {
     display: none;
   }
 }
