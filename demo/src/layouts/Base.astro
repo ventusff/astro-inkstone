@@ -19,6 +19,7 @@ import 'katex/dist/katex.min.css';
 import '../styles/site.css';
 import { pageLabelStyle } from 'astro-inkstone/lib/page-labels';
 import Breadcrumb from '../components/Breadcrumb.astro';
+import LinkPreview from 'astro-inkstone/components/LinkPreview.astro';
 import SearchPalette from 'astro-inkstone/components/SearchPalette.astro';
 import { KINDS } from '../content/notes/_meta/taxonomy';
 import ThemeInit from '../components/ThemeInit.astro';
@@ -215,6 +216,7 @@ const playground = Boolean(import.meta.env.PLAYGROUND ?? process.env.PLAYGROUND)
       <img alt="" />
       <div class="cap"></div>
     </dialog>
+    <LinkPreview />
     <SearchPalette
       indexUrl={href('search-index.json')}
       locale={locale}

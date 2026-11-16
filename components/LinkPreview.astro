@@ -1,0 +1,17 @@
+---
+/**
+ * Hover previews of [[wikilinks]] on every page of the site: resting the
+ * pointer on a link to another note, or focusing it, opens a card with the
+ * note's title and opening, or the opening of the section the link names
+ * (lib/link-preview.ts). The card shows over a presented deck too. Mount it
+ * once, in the layout every page uses:
+ *
+ *   <LinkPreview />
+ */
+---
+
+<script>
+  import { mountLinkPreviews } from '../lib/link-preview.ts';
+
+  mountLinkPreviews();
+</script>
