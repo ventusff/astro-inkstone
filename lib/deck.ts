@@ -37,8 +37,11 @@
  * start in `data-deck-from`. Step 0 shows the slide before its first click.
  * Each time a slide's step changes the deck dispatches `deck:step` on the
  * slide (it bubbles; `detail` is `DeckStep`), and a component follows its own
- * clicks with `onDeckStep`. The reading view shows every slide at its last
- * step; so do the slides around the one being presented.
+ * clicks with `onDeckStep`. Its parts that a click lights declare it in
+ * `data-deck-lit` and are lit by `lightDeckParts`, so a still copy of the
+ * slide at another step (the presenter view's next click) is lit as that step
+ * shows it. The reading view shows every slide at its last step; so do the
+ * slides around the one being presented.
  *
  * Presenting shows one slide at a time over the whole viewport (the page goes
  * full screen when the browser grants it, so the page's own overlays, such as
@@ -70,9 +73,33 @@
  *
  * The location hash is the place: `#/<slide>` in the reading view (the slide
  * in view), `#/<slide>.<step>` while presenting (`.0` left out). A link opens
- * at its slide; a reload (an edit's save reloads the page) comes back
- * presenting the same slide at the same step. A page holds one deck.
+ * at its slide; a reload comes back presenting the same slide at the same
+ * step. A page holds one deck.
+ *
+ * Time. Each slide is planned a time (`plannedSeconds`: its `<Time>`
+ * marker's, or its words at a speaking pace); the bar beside "Present" gives
+ * the deck's sum, and the presenter view the time on the slide against its
+ * plan and how far the talk is ahead of or behind the plan up to there.
+ *
+ * Print. A printed deck has one 10 × 5.625 in page for every step: before
+ * each slide's own page (its last step), a still copy of each earlier step.
+ * "Print or PDF" opens the browser's print dialog, which saves a PDF.
+ *
+ * A docked panel. A panel docked at the window's right edge (an editor's)
+ * declares its width as `--deck-inset-inline-end` on the root element; the
+ * deck fits beside it, presented or in the reading view, its bar and its
+ * slides in view.
+ *
+ * Saved edits. An editing host that re-renders the page after a save
+ * (astro-inkbrush offers the fresh page as the cancelable `inkbrush:content`
+ * event, its `detail.doc` a Document) has the deck take it in place: every
+ * window showing the deck swaps the slides whose content changed, keeps the
+ * others and its place, and goes on presenting. The deck mounts before the
+ * components inside it (its script comes first in the component), so the
+ * content it compares is the content as served.
  */
+
+import type { ComponentWords } from './component-words.ts';
 
 /** the canvas every slide is laid out on, in CSS pixels: 10 × 5.625 inches, a 16:9 print page */
 export const CANVAS_W = 960;
@@ -87,6 +114,16 @@ export const PRESENTER_PARAM = 'presenter';
 const IDLE_MS = 2500;
 /** the least space, in CSS pixels, between the controls and the slide or the window's edge when they sit in the band under a slide */
 const BAND_MARGIN = 4;
+/** the space, in CSS pixels, between a deck in the reading view and a panel docked at the window's right edge */
+const PANEL_GAP = 16;
+/** the speaking pace a slide that names no time is planned at: words per minute of a measured talk */
+const SPOKEN_WORDS_PER_MIN = 140;
+/** the same pace in Chinese and Japanese characters per minute */
+const SPOKEN_CJK_PER_MIN = 250;
+/** the least time, in seconds, a slide is planned for: showing it and saying its title */
+const SLIDE_MIN_S = 15;
+/** how far, in seconds, the talk may be from its plan and still read as keeping to it */
+const ON_PLAN_S = 15;
 
 /** the layouts a slide can name with `<Layout name="…" />` */
 export const SLIDE_LAYOUTS = [
@@ -106,22 +143,8 @@ export const SLIDE_LAYOUTS = [
 ] as const;
 export type SlideLayout = (typeof SLIDE_LAYOUTS)[number];
 
-export interface DeckWords {
-  present: string;
-  exit: string;
-  previous: string;
-  next: string;
-  overview: string;
-  /** `{n}` and `{total}` are filled in */
-  position: string;
-  slide: string;
-  presenter: string;
-  upNext: string;
-  notes: string;
-  noNotes: string;
-  end: string;
-  restartClock: string;
-}
+/** the words the deck's script prints: the component's words but the deck's own label (lib/component-words.ts) */
+export type DeckWords = Omit<ComponentWords['deck'], 'deck'>;
 
 /** `detail` of the `deck:step` event */
 export interface DeckStep {
@@ -161,13 +184,7 @@ export function formatPlace({ slide, step }: DeckPlace): string {
  * Returns the function that stops following.
  */
 export function onDeckStep(el: HTMLElement, show: (done: number, presented: boolean) => void): () => void {
-  const total = Number(el.dataset['deckSteps'] ?? 0);
-  const done = (): number => {
-    const step = el.closest<HTMLElement>('.slide')?.dataset['step'];
-    const from = Number(el.dataset['deckFrom']);
-    if (step === undefined || Number.isNaN(from)) return total;
-    return Math.min(Math.max(Number(step) - from + 1, 0), total);
-  };
+  const done = () => clicksDone(el, el.closest<HTMLElement>('.slide')?.dataset['step']);
   const presented = () => el.closest('.deck.is-presenting:not(.is-overview) .slide.is-current') !== null;
   const listener = (e: Event) => {
     if (e.target instanceof Element && e.target.contains(el)) show(done(), presented());
@@ -175,6 +192,29 @@ export function onDeckStep(el: HTMLElement, show: (done: number, presented: bool
   document.addEventListener('deck:step', listener);
   show(done(), presented());
   return () => document.removeEventListener('deck:step', listener);
+}
+
+/** how many of the clicks `el` declared (`data-deck-steps`) are done when its slide shows `step`; all of them outside a deck */
+function clicksDone(el: HTMLElement, step: string | number | undefined): number {
+  const total = Number(el.dataset['deckSteps'] ?? 0);
+  const from = Number(el.dataset['deckFrom']);
+  if (step === undefined || Number.isNaN(from)) return total;
+  return Math.min(Math.max(Number(step) - from + 1, 0), total);
+}
+
+/**
+ * Light the parts of an element that follows clicks: a part declaring
+ * `data-deck-lit="k"` (lit by the element's k-th click; 0, lit from the
+ * element's appearance) is unlit (`is-unlit`) while fewer than k clicks are
+ * done, and, while `presented`, marked as lit by the click just made
+ * (`is-lit-now`) when k is the last one done.
+ */
+export function lightDeckParts(el: Element, done: number, presented: boolean): void {
+  for (const part of el.querySelectorAll<HTMLElement | SVGElement>('[data-deck-lit]')) {
+    const at = Number(part.dataset['deckLit']);
+    part.classList.toggle('is-unlit', at > done);
+    part.classList.toggle('is-lit-now', presented && at > 0 && at === done);
+  }
 }
 
 /** a top-level block of a slide and the nodes that travel with it: its edit anchors and the whitespace before it */
@@ -231,6 +271,27 @@ function groupSlides(host: HTMLElement): HTMLElement[] {
   close();
   host.replaceChildren(...slides);
   return slides;
+}
+
+/** the dataset key of an editing host's source stamp on a block (astro-inkbrush: the block's source lines) */
+const EDIT_STAMP = 'wikiSrc';
+
+/**
+ * A slide's content as the page serves it, read before the deck or anything
+ * inside the slide has touched it: what tells the slides a re-rendered page
+ * changed. Edit stamps (`EDIT_STAMP`, source line numbers that every edit
+ * above shifts) and island ids (new at every render) are left out.
+ */
+function servedContent(slide: HTMLElement): string {
+  const canvas = slide.querySelector('.slide-canvas')!.cloneNode(true) as HTMLElement;
+  for (const el of editStamped(canvas)) delete el.dataset[EDIT_STAMP];
+  for (const island of canvas.querySelectorAll('astro-island')) island.removeAttribute('uid');
+  return canvas.innerHTML;
+}
+
+/** the elements under `root` carrying an edit stamp, in document order */
+function editStamped(root: Element): HTMLElement[] {
+  return [...root.querySelectorAll<HTMLElement>('*')].filter((el) => el.dataset?.[EDIT_STAMP] !== undefined);
 }
 
 /** one heading and at most one paragraph of words */
@@ -327,7 +388,7 @@ function planSlide(slide: HTMLElement): { layout: SlideLayout; steps: number } {
   return { layout, steps };
 }
 
-/** a still copy of a slide shown at a step: no ids and no view-transition names of its own, its later blocks hidden */
+/** a still copy of a slide shown at a step, as presenting shows it: no ids and no view-transition names of its own, its later blocks hidden, its stepping parts lit as of that step */
 function slideCopy(slide: HTMLElement, at: number): HTMLElement {
   const copy = slide.cloneNode(true) as HTMLElement;
   copy.classList.remove('is-current');
@@ -338,7 +399,32 @@ function slideCopy(slide: HTMLElement, at: number): HTMLElement {
     el.style?.removeProperty('view-transition-name');
   }
   for (const el of copy.querySelectorAll<HTMLElement>('[data-deck-at]')) el.classList.toggle('deck-later', Number(el.dataset['deckAt']) > at);
+  for (const el of copy.querySelectorAll<HTMLElement>('[data-deck-steps]')) lightDeckParts(el, clicksDone(el, at), true);
   return copy;
+}
+
+const CJK = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/g;
+
+/**
+ * The time, in seconds, a slide is planned to take: its `<Time minutes>`
+ * marker's, else its words spoken at `SPOKEN_WORDS_PER_MIN` (Chinese and
+ * Japanese characters at `SPOKEN_CJK_PER_MIN`): its speaker notes when it
+ * has them, else the words it shows. At least `SLIDE_MIN_S`.
+ */
+function plannedSeconds(slide: HTMLElement): number {
+  const named = slide.querySelector<HTMLElement>('[data-deck-marker="time"]');
+  if (named) return Number(named.dataset['minutes']) * 60;
+  const notes = slide.querySelector('.deck-notes');
+  let text: string;
+  if (notes) text = notes.textContent ?? '';
+  else {
+    const canvas = slide.querySelector('.slide-canvas')!.cloneNode(true) as HTMLElement;
+    for (const el of canvas.querySelectorAll('[data-deck-marker], .slide-corner, template')) el.remove();
+    text = canvas.textContent ?? '';
+  }
+  const characters = text.match(CJK)?.length ?? 0;
+  const words = text.replace(CJK, ' ').split(/\s+/).filter((w) => /\p{L}|\p{N}/u.test(w)).length;
+  return Math.max(SLIDE_MIN_S, (words / SPOKEN_WORDS_PER_MIN + characters / SPOKEN_CJK_PER_MIN) * 60);
 }
 
 /** elapsed time as m:ss, or h:mm:ss from an hour on */
@@ -468,49 +554,68 @@ function listenOnce(): void {
     const deck = presenting();
     if (!document.fullscreenElement && deck && !deck.hasPresenterView()) deck.leave();
   });
+  // a panel docked at the window's right edge declares its width on the root element (`--deck-inset-inline-end`)
+  new MutationObserver(() => live().forEach((d) => d.fit())).observe(document.documentElement, { attributeFilter: ['style'] });
   addEventListener('beforeprint', () => live().forEach((d) => d.setPrinting(true)));
   addEventListener('afterprint', () => live().forEach((d) => d.setPrinting(false)));
 }
 
 export function mountDeck(root: HTMLElement): void {
+  root.dataset['deckMounted'] = '';
   const host = root.querySelector<HTMLElement>('[data-deck-slides]')!;
   const words = JSON.parse(root.dataset['words'] ?? '{}') as DeckWords;
   const slides = groupSlides(host);
   const total = slides.length;
   const position = (n: number) => words.position.replace('{n}', String(n)).replace('{total}', String(total));
+  /** each slide's content as served, and its edit stamps in served order (`takeRendering`) */
+  const served = slides.map(servedContent);
+  const stamps = slides.map(editStamped);
   const clicks = slides.map((slide) => planSlide(slide).steps);
+  /** each slide's planned time, in seconds (`plannedSeconds`) */
+  const planned = slides.map(plannedSeconds);
+  const plannedLabel = root.querySelector<HTMLElement>('[data-deck-planned]')!;
+  const writePlan = () => {
+    const minutes = Math.max(1, Math.round(planned.reduce((a, b) => a + b, 0) / 60));
+    plannedLabel.textContent = words.planned.replace('{minutes}', String(minutes));
+  };
+  writePlan();
 
-  let part = '';
-  slides.forEach((slide, i) => {
-    const canvas = slide.querySelector('.slide-canvas')!;
-    const n = i + 1;
-    const layout = slide.dataset['layout'];
-    slide.id = `/${n}`;
-    slide.dataset['deckSlide'] = String(n);
-    slide.setAttribute('role', 'group');
-    slide.setAttribute('aria-roledescription', words.slide);
-    slide.setAttribute('aria-label', position(n));
-    if (layout === 'section') {
-      const heading = canvas.querySelector('h1, h2');
-      part = heading ? headingText(heading) : '';
-    }
-    if (layout === 'cover' || layout === 'end') return;
-    const corner = document.createElement('a');
-    corner.className = 'slide-corner';
-    corner.href = `#/${n}`;
-    if (part && layout !== 'section') {
-      const name = document.createElement('span');
-      name.className = 'slide-part';
-      name.textContent = part;
-      corner.append(name);
-    }
-    const num = document.createElement('span');
-    num.className = 'slide-num';
-    num.textContent = String(n);
-    corner.append(num);
-    // first in the canvas (it is placed absolutely): an edit anchor at the slide's end binds to the next block, never to it
-    canvas.prepend(corner);
-  });
+  /** number and label every slide, and give each its corner: its number, and the part it belongs to */
+  const dress = () => {
+    let part = '';
+    slides.forEach((slide, i) => {
+      const canvas = slide.querySelector('.slide-canvas')!;
+      const n = i + 1;
+      const layout = slide.dataset['layout'];
+      slide.id = `/${n}`;
+      slide.dataset['deckSlide'] = String(n);
+      slide.setAttribute('role', 'group');
+      slide.setAttribute('aria-roledescription', words.slide);
+      slide.setAttribute('aria-label', position(n));
+      canvas.querySelector(':scope > .slide-corner')?.remove();
+      if (layout === 'section') {
+        const heading = canvas.querySelector('h1, h2');
+        part = heading ? headingText(heading) : '';
+      }
+      if (layout === 'cover' || layout === 'end') return;
+      const corner = document.createElement('a');
+      corner.className = 'slide-corner';
+      corner.href = `#/${n}`;
+      if (part && layout !== 'section') {
+        const name = document.createElement('span');
+        name.className = 'slide-part';
+        name.textContent = part;
+        corner.append(name);
+      }
+      const num = document.createElement('span');
+      num.className = 'slide-num';
+      num.textContent = String(n);
+      corner.append(num);
+      // first in the canvas (it is placed absolutely): an edit anchor at the slide's end binds to the next block, never to it
+      canvas.prepend(corner);
+    });
+  };
+  dress();
 
   const label = root.querySelector<HTMLElement>('[data-deck-position]')!;
   const progress = root.querySelector<HTMLElement>('[data-deck-progress]')!;
@@ -525,6 +630,13 @@ export function mountDeck(root: HTMLElement): void {
   let overview = false;
   let printing = false;
   const fit = () => {
+    // in the reading view the deck, its bar and its slides, ends where a panel docked at the window's right edge begins
+    root.style.removeProperty('margin-inline-end');
+    if (!showing && !printing) {
+      const inset = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--deck-inset-inline-end')) || 0;
+      const over = inset > 0 ? root.getBoundingClientRect().right - (innerWidth - inset) + PANEL_GAP : 0;
+      if (over > 0) root.style.marginInlineEnd = `${over}px`;
+    }
     // presenting, the slide fits the viewport; in the presenter view, the room the panel leaves it
     const stage = presenterView ? host : root;
     const shown = printing
@@ -613,7 +725,10 @@ export function mountDeck(root: HTMLElement): void {
     const was = current;
     current = Math.min(Math.max(i, 0), total - 1);
     step = Math.min(Math.max(at, 0), clicks[current]!);
-    if (was !== current) setStep(was, clicks[was]!);
+    if (was !== current) {
+      setStep(was, clicks[was]!);
+      enteredAt = Date.now();
+    }
     slides.forEach((s, j) => s.classList.toggle('is-current', j === current));
     setStep(current, step);
     label.textContent = position(current + 1);
@@ -731,9 +846,26 @@ export function mountDeck(root: HTMLElement): void {
   const clockKey = `deck-clock:${location.pathname}`;
   let clockStart = Number(sessionStorage.getItem(clockKey)) || Date.now();
   let clock = 0;
+  /** when the current slide was shown, in ms since the epoch */
+  let enteredAt = Date.now();
+  const pace = root.querySelector<HTMLElement>('[data-deck-pace]')!;
   const tick = () => {
-    root.querySelector('[data-deck-elapsed]')!.textContent = formatElapsed(Date.now() - clockStart);
+    const now = Date.now();
+    root.querySelector('[data-deck-elapsed]')!.textContent = formatElapsed(now - clockStart);
     root.querySelector('[data-deck-time]')!.textContent = new Date().toLocaleTimeString(document.documentElement.lang || undefined, { hour: '2-digit', minute: '2-digit' });
+    // how late the talk is: the time spent against the plan of the slides before this one and as much of this one's as has passed
+    const onSlide = now - enteredAt;
+    const plan = planned[current]! * 1000;
+    const late = now - clockStart - planned.slice(0, current).reduce((a, b) => a + b, 0) * 1000 - Math.min(onSlide, plan);
+    const slideLine = Object.assign(document.createElement('span'), {
+      className: onSlide > plan ? 'is-over' : '',
+      textContent: words.slideTime.replace('{elapsed}', formatElapsed(onSlide)).replace('{planned}', formatElapsed(plan)),
+    });
+    const paceLine = Object.assign(document.createElement('span'), {
+      className: late > ON_PLAN_S * 1000 ? 'is-over' : '',
+      textContent: Math.abs(late) <= ON_PLAN_S * 1000 ? words.onPlan : (late > 0 ? words.behind : words.ahead).replace('{t}', formatElapsed(Math.abs(late))),
+    });
+    pace.replaceChildren(slideLine, paceLine);
   };
   root.querySelector('[data-deck-clock-restart]')?.addEventListener('click', () => {
     clockStart = Date.now();
@@ -742,6 +874,7 @@ export function mountDeck(root: HTMLElement): void {
   });
 
   root.querySelector('[data-deck-present]')?.addEventListener('click', () => enter({ slide: inView(), step: 0 }, true));
+  root.querySelector('[data-deck-export]')?.addEventListener('click', () => print());
   root.querySelector('[data-deck-prev]')?.addEventListener('click', back);
   root.querySelector('[data-deck-next]')?.addEventListener('click', forward);
   root.querySelector('[data-deck-overview]')?.addEventListener('click', () => setOverview(!overview));
@@ -774,11 +907,70 @@ export function mountDeck(root: HTMLElement): void {
     if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) (dx < 0 ? forward : back)();
   });
 
+  /**
+   * Take a re-rendering of the page (`detail.doc`, the page as the server now
+   * renders it) in place: each slide whose content changed is swapped for its
+   * new rendering, laid out and mounted anew; the others keep their nodes and
+   * take the new edit stamps. Returns false, leaving the page as it is, when
+   * the slides were added or removed or the page around the deck changed
+   * (its title, its frontmatter's rendering).
+   */
+  const takeRendering = (doc: Document): boolean => {
+    const freshHost = doc.querySelector<HTMLElement>('[data-deck] [data-deck-slides]');
+    const head = (d: Document) => `${d.title}\n${d.querySelector('[data-inkbrush-slot="frontmatter"]')?.textContent ?? ''}`;
+    if (!freshHost || head(doc) !== head(document)) return false;
+    const fresh = groupSlides(document.importNode(freshHost, true));
+    if (fresh.length !== total) return false;
+    let swapped = false;
+    fresh.forEach((next, i) => {
+      const nextStamps = editStamped(next);
+      const content = servedContent(next);
+      if (content === served[i]) {
+        stamps[i]!.forEach((el, k) => (el.dataset[EDIT_STAMP] = nextStamps[k]!.dataset[EDIT_STAMP]));
+        return;
+      }
+      const slide = slides[i]!;
+      const canvas = next.querySelector<HTMLElement>('.slide-canvas')!;
+      heights.unobserve(slide.querySelector('.slide-canvas')!);
+      slide.replaceChildren(canvas);
+      heights.observe(canvas);
+      served[i] = content;
+      stamps[i] = nextStamps;
+      clicks[i] = planSlide(slide).steps;
+      planned[i] = plannedSeconds(slide);
+      swapped = true;
+    });
+    if (!swapped) return true;
+    dress();
+    writePlan();
+    step = Math.min(step, clicks[current]!);
+    slides.forEach((_, i) => setStep(i, showing && i === current ? step : clicks[i]!));
+    fit();
+    // the components on the new slides mount as on a page the router swapped in, before the presenter view copies them
+    document.dispatchEvent(new Event('astro:page-load'));
+    if (presenterView) showPanel();
+    return true;
+  };
+  document.addEventListener('inkbrush:content', (event) => {
+    if (root.isConnected && takeRendering((event as CustomEvent<{ doc: Document }>).detail.doc)) event.preventDefault();
+  });
+
   decks.add({
     root,
     fit,
     setPrinting: (on) => {
       printing = on;
+      // a printed deck has a page for every step: still copies of each step before a slide's last, which the slide itself shows
+      for (const copy of host.querySelectorAll(':scope > .deck-print-step')) copy.remove();
+      if (on) {
+        slides.forEach((slide, i) => {
+          for (let at = 0; at < clicks[i]!; at += 1) {
+            const copy = slideCopy(slide, at);
+            copy.classList.add('deck-print-step');
+            slide.before(copy);
+          }
+        });
+      }
       fit();
     },
     isPresenting: () => showing,
@@ -793,26 +985,42 @@ export function mountDeck(root: HTMLElement): void {
   });
   listenOnce();
 
-  slides.forEach((_, i) => setStep(i, clicks[i]!));
-  fit();
-  root.dataset['ready'] = '';
-  const place = parsePlace(location.hash);
-  const at = place ? { slide: Math.min(place.slide, total - 1), step: place.step } : null;
-  if (presenterView) {
-    root.classList.add('is-presenter');
-    sessionStorage.setItem(clockKey, String(clockStart));
-    tick();
-    clock = window.setInterval(tick, 1000);
-    enter(at ?? { slide: 0, step: 0 }, false);
-  } else if (sessionStorage.getItem(storeKey) && isReload()) enter(at ?? { slide: 0, step: 0 }, false);
-  else {
-    sessionStorage.removeItem(storeKey);
-    if (at && !isReload()) slides[at.slide]!.scrollIntoView({ block: 'start' });
-    for (const slide of slides) reading.observe(slide);
-  }
+  // the first step shown, the first copies for the presenter view and the place the page opens at
+  afterPageScripts(() => {
+    slides.forEach((_, i) => setStep(i, clicks[i]!));
+    fit();
+    root.dataset['ready'] = '';
+    const linked = parsePlace(location.hash);
+    const at = linked ? { slide: Math.min(linked.slide, total - 1), step: linked.step } : null;
+    if (presenterView) {
+      root.classList.add('is-presenter');
+      sessionStorage.setItem(clockKey, String(clockStart));
+      tick();
+      clock = window.setInterval(tick, 1000);
+      enter(at ?? { slide: 0, step: 0 }, false);
+    } else if (sessionStorage.getItem(storeKey) && isReload()) enter(at ?? { slide: 0, step: 0 }, false);
+    else {
+      sessionStorage.removeItem(storeKey);
+      if (at && !isReload()) slides[at.slide]!.scrollIntoView({ block: 'start' });
+      for (const slide of slides) reading.observe(slide);
+    }
+  });
+}
+
+/**
+ * Run `then` once every script of the page has run, so the components on the
+ * slides are mounted before the deck shows a step or copies a slide for the
+ * presenter view (the deck mounts first, to read its slides as served): at
+ * DOMContentLoaded on a page's first load, and after the task that mounted
+ * the deck on a page the router swapped in.
+ */
+function afterPageScripts(then: () => void): void {
+  const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+  if (navigation && navigation.domContentLoadedEventStart > 0) setTimeout(then);
+  else document.addEventListener('DOMContentLoaded', then, { once: true });
 }
 
 /** mount every deck on the page that is not mounted yet */
 export function mountDecks(): void {
-  for (const root of document.querySelectorAll<HTMLElement>('[data-deck]:not([data-ready])')) mountDeck(root);
+  for (const root of document.querySelectorAll<HTMLElement>('[data-deck]:not([data-deck-mounted])')) mountDeck(root);
 }

@@ -1,0 +1,23 @@
+---
+/**
+ * Plans the time the slide it is on takes to present: put it on the slide, as
+ * a block of its own. A slide without one is planned from its words, spoken
+ * at a speaking pace: its speaker notes when it has them, else its own words
+ * (lib/deck.ts). The deck's plan is the sum of its slides'; the presenter view
+ * sets the time on each slide against its plan, and the talk against the plan
+ * up to that slide.
+ *
+ *   <Time minutes={1.5} />
+ *
+ * It renders a marker the deck reads at mount, and declares its one
+ * parameter for an editor's form (`data-inkbrush-props`).
+ */
+interface Props {
+  minutes: number | string;
+}
+const minutes = Number(Astro.props.minutes);
+if (!(minutes > 0)) throw new Error(`<Time minutes={${Astro.props.minutes}}>: minutes is a number above 0`);
+const props = [{ name: 'minutes', kind: 'number', min: 0.25, step: 0.25 }];
+---
+
+<div class="deck-marker" data-deck-marker="time" data-minutes={minutes} data-inkbrush-props={JSON.stringify(props)} aria-hidden="true">Time: {minutes} min</div>

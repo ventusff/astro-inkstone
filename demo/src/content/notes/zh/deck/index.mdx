@@ -10,6 +10,7 @@ import Column from 'astro-inkstone/components/Column.astro';
 import FigureFile from 'astro-inkstone/components/FigureFile.astro';
 import Layout from 'astro-inkstone/components/Layout.astro';
 import Stretch from 'astro-inkstone/components/Stretch.astro';
+import Time from 'astro-inkstone/components/Time.astro';
 
 import deckPipeline from '/src/content/notes/components/interactive/deck-pipeline.json';
 
@@ -29,7 +30,7 @@ astro-inkstone · 演示稿
 
 - 阅读视图是页面栏里的一叠幻灯片。
 - 放映时一次一张,铺满屏幕。
-- 每个块都是笔记自己的:读的时候、放映的时候,点它就能编辑。
+- 每个块都是笔记自己的:读的时候、放映的时候,点它就能编辑([[inkbrush/editing|逐块编辑]])。
 
 {/* 点三下,一次出一行。然后按 P 打开演讲者视图,指给大家看这段备注。 */}
 
@@ -107,6 +108,8 @@ astro-inkstone · 演示稿
 ---
 
 ## 随点击点亮的框图
+
+<Time minutes={1.5} />
 
 每次点击点亮框图的下一个框,连进它的线一起出现。
 

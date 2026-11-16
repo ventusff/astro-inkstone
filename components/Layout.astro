@@ -12,7 +12,8 @@
  *   ## The slide's title
  *
  * A slide without one is laid out `default`, or `section` when it holds only a
- * heading and at most one paragraph.
+ * heading and at most one paragraph. It declares its one parameter for an
+ * editor's form (`data-inkbrush-props`).
  */
 import { type SlideLayout, SLIDE_LAYOUTS } from '../lib/deck.ts';
 
@@ -21,6 +22,7 @@ interface Props {
 }
 const { name } = Astro.props;
 if (!SLIDE_LAYOUTS.includes(name)) throw new Error(`<Layout name="${name}">: not a layout; the layouts are ${SLIDE_LAYOUTS.join(', ')}`);
+const props = [{ name: 'name', kind: 'choice', choices: SLIDE_LAYOUTS }];
 ---
 
-<div class="deck-marker" data-deck-marker="layout" data-layout={name} aria-hidden="true">Layout: {name}</div>
+<div class="deck-marker" data-deck-marker="layout" data-layout={name} data-inkbrush-props={JSON.stringify(props)} aria-hidden="true">Layout: {name}</div>

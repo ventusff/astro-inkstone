@@ -20,7 +20,7 @@
  *     hand-drawn SVG: every `<text>` whose box leaves its `<svg>` viewport.
  */
 
-import { onDeckStep } from './deck.ts';
+import { lightDeckParts, onDeckStep } from './deck.ts';
 import { estimateTextWidth, isWide } from './text-width.ts';
 
 export type FlowTone = 'colleague' | 'admin' | 'machine' | 'blocked' | 'plain';
@@ -649,7 +649,8 @@ export function renderFlowDiagram(spec: FlowSpec): string {
   const inGutter = gutterWires(spec);
   const lanes = inGutter > 1 ? `;--flow-gutter-lanes:${inGutter + 1}` : '';
   const steps = spec.steps?.length ? ` data-deck-steps="${spec.steps.length}"` : '';
-  return `<div class="flow-scroll"><div class="flow-grid${runsUnderLastRow(spec) ? ' under' : ''}"${steps} data-flow="${data}" style="grid-template-columns:${columns}${lanes}">${wires}${parts.join('')}</div></div>`;
+  // the clicks are declared on the scroll box, which holds both the boxes and the legend the browser adds
+  return `<div class="flow-scroll"${steps}><div class="flow-grid${runsUnderLastRow(spec) ? ' under' : ''}" data-flow="${data}" style="grid-template-columns:${columns}${lanes}">${wires}${parts.join('')}</div></div>`;
 }
 
 export interface FlowHandle {
@@ -917,18 +918,20 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
   data.steps.forEach((names, k) => names.forEach((name) => litAt.set(name, k + 1)));
   const nodeStep = (id: string) => litAt.get(id) ?? 0;
   const edgeStep = (e: FlowEdge) => litAt.get(`${e.from}>${e.to}`) ?? Math.max(nodeStep(e.from), nodeStep(e.to));
+  /** the element declaring the clicks: the scroll box around the boxes and the legend */
+  const stepping = root.parentElement!;
   let done = data.steps.length;
   let presented = false;
   function light(): void {
-    const mark = (el: Element, at: number) => {
-      el.classList.toggle('is-unlit', at > done);
-      el.classList.toggle('is-lit-now', presented && at > 0 && at === done);
+    const mark = (el: HTMLElement | SVGElement, at: number) => {
+      el.dataset['deckLit'] = String(at);
     };
     for (const [id, el] of nodes) mark(el, nodeStep(id));
     data.edges.forEach((e, i) => {
-      for (const el of root.querySelectorAll(`[data-edge="${i}"]`)) mark(el, edgeStep(e));
-      for (const el of legend.querySelectorAll(`[data-edge="${i}"]`)) mark(el, edgeStep(e));
+      for (const el of root.querySelectorAll<SVGElement>(`[data-edge="${i}"]`)) mark(el, edgeStep(e));
+      for (const el of legend.querySelectorAll<HTMLElement>(`[data-edge="${i}"]`)) mark(el, edgeStep(e));
     });
+    lightDeckParts(stepping, done, presented);
   }
 
   /**
@@ -964,7 +967,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
   document.fonts?.ready.then(() => redraw(), () => undefined);
   redraw();
   const unfollow = data.steps.length
-    ? onDeckStep(root, (n, live) => {
+    ? onDeckStep(stepping, (n, live) => {
         done = n;
         presented = live;
         light();

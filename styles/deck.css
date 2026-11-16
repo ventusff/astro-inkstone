@@ -76,7 +76,39 @@
   fill: currentColor;
 }
 
+.deck-planned {
+  font-variant-numeric: tabular-nums;
+}
+
+.deck-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 5px 10px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.deck-export:hover {
+  background: var(--color-row-hover);
+}
+
+.deck-export svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+}
+
 .deck-present:focus-visible,
+.deck-export:focus-visible,
 .deck-controls button:focus-visible {
   outline: 2px solid var(--color-accent-text);
   outline-offset: 2px;
@@ -280,6 +312,12 @@
 
 .slide-canvas > .deck-marker[data-deck-marker='layout'].wiki-block {
   top: 10px;
+  left: 10px;
+  translate: none;
+}
+
+.slide-canvas > .deck-marker[data-deck-marker='time'].wiki-block {
+  bottom: 10px;
   left: 10px;
   translate: none;
 }
@@ -823,10 +861,11 @@ html.deck-presenting {
   overflow: hidden;
 }
 
-/* over a site's sticky nav bar (1000), under the editor's toolbars and dialogs (1150 and up) */
+/* over a site's sticky nav bar (1000), under the editor's toolbars and dialogs (1150 and up); a panel docked at
+   the window's right edge declares its width as --deck-inset-inline-end, and the slide fits beside it */
 .deck.is-presenting {
   position: fixed;
-  inset: 0;
+  inset: 0 var(--deck-inset-inline-end, 0px) 0 0;
   z-index: 1100;
   display: grid;
   place-items: center;
@@ -1071,6 +1110,21 @@ html.deck-idle .deck.is-presenting:not(.is-presenter) {
   color: var(--color-ink-faint);
 }
 
+.deck .deck-presenter-pace {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  max-width: none;
+  margin: 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.deck-presenter-pace .is-over {
+  color: var(--color-accent-text);
+  font-weight: 600;
+}
+
 .deck-presenter-clock {
   display: flex;
   align-items: baseline;
@@ -1155,6 +1209,11 @@ html.deck-presenting::view-transition-new(root) {
 }
 
 @media print {
+  /* the slides fill their pages edge to edge: nothing of the deck's own sits above the first */
+  .deck {
+    margin-block: 0;
+  }
+
   .deck-bar,
   .deck-controls,
   .deck-presenter,

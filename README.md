@@ -203,12 +203,14 @@ renders wrong" cannot happen.
   and reading paths, reference lists, reduced-motion handling, a print stylesheet that turns any
   page into a clean PDF. **`browse.css`** — masthead, ruled shelves, card grid, status legend,
   instant filters, tag cloud.
-- **37 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
+- **39 Astro components** — `Hero`, `Part`, `PartHero`, `Callout`, `Steps`, `Grid`, `PaperCard`,
   `Deck` (a note's own content as slides, presented full screen with clicks, an overview, a
-  presenter view with speaker notes in a second window, and the place in the location hash) with its markers `Layout`, `Column`, `Build` and `Stretch` (blocks
+  presenter view with speaker notes and the pace against the deck's time plan in a second window, the place in the location hash, and printing
+  or exporting one page per click, `scripts/export-deck.mjs` writing the PDF and an image per click) with its markers `Layout`, `Column`, `Build`, `Stretch` and `Time` (blocks
   of their own that shape a slide and wrap nothing), `FigureFile` (a figure kept in one JSON file, read by
   every page and slide that shows it),
-  `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `SearchPalette` (the ⌘K overlay), `LanguageMenu`
+  `HubCard`, `Stats`, `LocalToc`, `Backlinks`, `LinkPreview` (a card with a
+  [[wikilink]]'s target note, title and opening, on hover or focus, over a presented deck too), `SearchPalette` (the ⌘K overlay), `LanguageMenu`
   (autonym rows glossed in English or in the page's language, with each language's translation
   state; links per language, or a form that records the reader's language), `TranslationPending`
   (the page a language has no text for yet: a note in that language that reloads when the text
