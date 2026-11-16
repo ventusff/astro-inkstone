@@ -1,0 +1,26 @@
+---
+/**
+ * Marks the slide it opens with a layout: put it first on the slide, as a
+ * block of its own. It renders a marker the deck reads at mount
+ * (lib/deck.ts), so every other block of the slide stays a top-level block of
+ * the note and keeps its own in-place editing.
+ *
+ *   ---
+ *
+ *   <Layout name="image-right" />
+ *
+ *   ## The slide's title
+ *
+ * A slide without one is laid out `default`, or `section` when it holds only a
+ * heading and at most one paragraph.
+ */
+import { type SlideLayout, SLIDE_LAYOUTS } from '../lib/deck.ts';
+
+interface Props {
+  name: SlideLayout;
+}
+const { name } = Astro.props;
+if (!SLIDE_LAYOUTS.includes(name)) throw new Error(`<Layout name="${name}">: not a layout; the layouts are ${SLIDE_LAYOUTS.join(', ')}`);
+---
+
+<div class="deck-marker" data-deck-marker="layout" data-layout={name} aria-hidden="true">Layout: {name}</div>

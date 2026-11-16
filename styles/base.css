@@ -1940,6 +1940,28 @@ a.hub-card {
   font-family: var(--font-mono);
   font-size: 11px;
 }
+/* clicks on a slide (FlowSpec.steps): a box before its click is faint, a wire
+   is not drawn yet; what the presented click lights is marked in the accent */
+.flow-node.is-unlit {
+  border-style: dashed;
+  background: transparent;
+  color: var(--color-ink-faint);
+}
+.flow-node.is-unlit small,
+.flow-node.is-unlit .tag {
+  color: var(--color-ink-faint) !important;
+}
+.flow-node.is-lit-now {
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+}
+.flow-wires .is-unlit,
+.flow-legend .is-unlit {
+  visibility: hidden;
+}
+.flow-wires .wire.is-lit-now {
+  stroke: var(--color-accent) !important;
+}
 .flow-wires {
   position: absolute;
   inset: 0;

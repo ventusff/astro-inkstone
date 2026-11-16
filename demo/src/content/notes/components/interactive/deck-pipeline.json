@@ -1,5 +1,5 @@
 {
-  "title": { "en": "From a note to slides", "zh": "从笔记到片" },
+  "title": { "en": "From a note to slides", "zh": "从笔记到幻灯片" },
   "caption": {
     "en": "The note's blocks stay its own; Deck only groups them at each break and scales the group.",
     "zh": "笔记的块还是它自己的;Deck 只在每条分隔线处分组,再把每组缩放。"
@@ -8,9 +8,10 @@
     "cols": 3,
     "nodes": [
       { "id": "note", "title": { "en": "note", "zh": "笔记" }, "lines": [{ "en": "blocks + breaks", "zh": "块 + 分隔线" }], "col": 1, "row": 1 },
-      { "id": "deck", "title": "Deck", "lines": [{ "en": "groups at each break", "zh": "按分隔线分片" }], "col": 2, "row": 1, "tone": "machine" },
-      { "id": "slides", "title": { "en": "slides", "zh": "片" }, "lines": [{ "en": "960 × 540, scaled", "zh": "960 × 540,缩放" }], "col": 3, "row": 1 }
+      { "id": "deck", "title": "Deck", "lines": [{ "en": "groups at each break", "zh": "按分隔线分组" }], "col": 2, "row": 1, "tone": "machine" },
+      { "id": "slides", "title": { "en": "slides", "zh": "幻灯片" }, "lines": [{ "en": "960 × 540, scaled", "zh": "960 × 540,缩放" }], "col": 3, "row": 1 }
     ],
-    "edges": [{ "from": "note", "to": "deck" }, { "from": "deck", "to": "slides" }]
+    "edges": [{ "from": "note", "to": "deck" }, { "from": "deck", "to": "slides" }],
+    "steps": [["deck"], ["slides"]]
   }
 }

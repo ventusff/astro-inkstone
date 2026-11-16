@@ -5,7 +5,11 @@ navLabel: 交互与配件
 part: 3
 ---
 
+import Build from 'astro-inkstone/components/Build.astro';
+import Column from 'astro-inkstone/components/Column.astro';
 import Deck from 'astro-inkstone/components/Deck.astro';
+import Layout from 'astro-inkstone/components/Layout.astro';
+import Stretch from 'astro-inkstone/components/Stretch.astro';
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
 import FigureFile from 'astro-inkstone/components/FigureFile.astro';
 import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
@@ -158,29 +162,143 @@ import deckPipeline from '/src/content/notes/components/interactive/deck-pipelin
 
 ## Deck——用一篇笔记做的演示稿
 
-`Deck` 把它包住的内容做成一叠片:单独一行的分隔线(`---`,前面空一行)结束一张片;只有一个标题、至多一段话的片是分隔片,它的名字印在这一部分每张片的角上。内容仍是笔记自己的块,所以站点把整篇笔记的 `<Content />` 包进 `Deck`,片里照样能就地编辑、写双链、用所有组件。读者看到的是一叠 16:9 的片;按**放映**从眼前这张起一次放一张、铺满屏幕(→ ← 空格 PageUp PageDown Home End 翻页,Esc 退出,触屏左右滑),片号就是地址里的 `#/<n>`,`#/3` 链到第三张。每张片都排在 960 × 540 的画布上、按显示宽度缩放,所以在页面栏里、投影上、打印出来(一页一张,10 × 5.625 英寸)都一样;手机上片按栏宽排、不缩放。
+`Deck` 把它包住的内容做成一叠幻灯片:单独一行的分隔线(`---`,前面空一行)结束一张。内容仍是笔记自己的块,所以站点把整篇笔记的 `<Content />` 包进 `Deck`,幻灯片里照样能就地编辑、写双链、用所有组件。读者看到的是一叠 16:9 的幻灯片;按**放映**,从眼前这张起一次放一张、铺满屏幕。每张都排在 960 × 540 的画布上、按显示宽度缩放,所以在页面栏里、投影上、打印出来(一页一张,10 × 5.625 英寸)都一样;手机上按栏宽排、不缩放。
 
-不止一处要用的图,存成一个 JSON 文件,放在回答它的那一页旁边,由 `FigureFile` 画出:文件里有 `title`、可选的 `caption` 和 `flow`(一份 FlowDiagram 的 spec),每处文字都是一个各语言的对象(`{ "en": …, "zh": … }`)。每一处都按从站点根算起的路径 import 它(`import deckPipeline from '/src/content/notes/components/interactive/deck-pipeline.json'`),站点不用另设别名,改一次文件处处都变。某种语言还没有的文字,显示图的原文语言,也就是 `title` 的第一个键。同一个文件,这里一次,下面第三张片上再一次:
+一张幻灯片的样子由标记决定。标记是自闭合的组件,自己就是一个块,什么都不包,所以这张上别的块仍各自能编辑:
+
+- `<Layout name="…" />` 放在一张的开头,给出它的版式:`cover`、`section`、`center`、`default`、`full`、`image`、`image-left`、`image-right`、`two-cols`、`quote`、`fact`、`statement` 或 `end`。没有这个标记的是 `default`;只有一个标题、至多一段话的是 `section`。`section` 开始一个部分,这一部分每张的角上都印着它的名字。
+- `<Column />` 结束一栏、开始下一栏;开头的标题横跨所有栏。
+- `<Build />` 之后的块在放映时一次点击出来一个,列表一次出来一项。带 `steps` 的 `FlowDiagram` 随点击逐个点亮框和连线(`steps[k]` 写第 k + 1 次点击点亮什么,框写 id,连线写 `'from>to'`);别的组件用 `lib/deck.ts` 的 `onDeckStep` 听 `deck:step` 事件,跟着自己的点击变化。
+- `<Stretch />` 让它后面那个块长到这张剩下的高度:图片或框图要尽量大时用它。
+
+放映时:→ ↓ 空格 PageDown 前进一次点击,← ↑ PageUp 后退一次,Home 和 End 跳到头尾,**O** 打开概览(所有幻灯片排成网格,点一张跳过去,每个 `section` 另起一行),Esc 退出,触屏左右滑翻页。换张、换点击都是 view transition:相邻两张共有的标题或图片留在原处、平滑变形过去。位置记在地址的 `#` 后面:`#/3` 是第三张,`#/3.2` 是它的第二次点击,所以链接打开就在复制它的地方,刷新后也回到同一张、同一次点击。
+
+不止一处要用的图,存成一个 JSON 文件,放在回答它的那一页旁边,由 `FigureFile` 画出:文件里有 `title`、可选的 `caption` 和 `flow`(一份 FlowDiagram 的 spec,`steps` 也在里面),每处文字都是一个各语言的对象(`{ "en": …, "zh": … }`)。每一处都按从站点根算起的路径 import 它(`import deckPipeline from '/src/content/notes/components/interactive/deck-pipeline.json'`),站点不用另设别名,改一次文件处处都变。某种语言还没有的文字,显示图的原文语言,也就是 `title` 的第一个键。同一个文件,这里完整显示一次,下面再在一张幻灯片上随点击逐个点亮:
 
 <FigureFile of={deckPipeline} locale="zh" />
 
 <Deck locale="zh">
 
-## 笔记里的一套片
+<Layout name="cover" />
 
-第一张:一个标题、一句话,再加这张片要展示的东西。
+## 一篇笔记做成的幻灯片
 
----
+一个文件,既能读也能放映,每个块都还能就地编辑。
 
-## 第二部分
-
-分隔片:只有一个标题和一句话。
+astro-inkstone · 演示稿
 
 ---
 
-## 框图随片缩放
+## 一个文件,两种读法
+
+<Build />
+
+- 阅读视图是页面栏里的一叠幻灯片。
+- 放映时一次一张,铺满屏幕。
+- 每个块都是笔记自己的:读的时候、放映的时候,点它就能编辑。
+
+---
+
+## 版式
+
+一共十三种,由一张开头的标记指定。
+
+---
+
+<Layout name="two-cols" />
+
+## 两栏
+
+`<Column />` 之前的块排在左栏;上面的标题横跨两栏。
+
+左栏放列表很合适:
+
+- 标记什么都不包
+- 每个块都是它自己
+
+<Column />
 
 <FigureFile of={deckPipeline} locale="zh" />
+
+---
+
+<Layout name="image-right" />
+
+## 媒体占半边
+
+这一张的第一张图片、视频、框图或演示占满半边,文字占另一半。
+
+![引擎的封面卡片](/og.png)
+
+---
+
+<Layout name="image" />
+
+![引擎的封面卡片](/og.png)
+
+## 媒体铺满整张
+
+文字放在左下角的一张卡片上。
+
+---
+
+<Layout name="statement" />
+
+演示稿就是一篇能站在它前面讲的笔记。
+
+---
+
+<Layout name="fact" />
+
+960 × 540
+
+每张幻灯片排版用的画布,单位是 CSS 像素,再按显示宽度缩放。
+
+---
+
+<Layout name="quote" />
+
+> 内容仍是笔记自己的块。
+
+摘自 Deck 组件自己的说明
+
+---
+
+## 点击
+
+什么时候出现什么,以及跟着点击变化的框图。
+
+---
+
+## 随点击点亮的框图
+
+每次点击点亮框图的下一个框,连进它的线一起出现。
+
+<FigureFile of={deckPipeline} locale="zh" />
+
+---
+
+## 图片尽量大
+
+<Stretch />
+
+![引擎的封面卡片](/og.png)
+
+---
+
+<Layout name="center" />
+
+## 居中
+
+只讲一件事的一张,放在中轴线上。
+
+---
+
+<Layout name="end" />
+
+## 谢谢
+
+演示稿的用法就写在这一页。
 
 </Deck>
 

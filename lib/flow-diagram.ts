@@ -20,6 +20,7 @@
  *     hand-drawn SVG: every `<text>` whose box leaves its `<svg>` viewport.
  */
 
+import { onDeckStep } from './deck.ts';
 import { estimateTextWidth, isWide } from './text-width.ts';
 
 export type FlowTone = 'colleague' | 'admin' | 'machine' | 'blocked' | 'plain';
@@ -66,6 +67,15 @@ export interface FlowSpec {
   nodes: FlowNode[];
   /** the wires; a diagram of boxes alone leaves it out */
   edges?: FlowEdge[];
+  /**
+   * Clicks, on a slide: `steps[k]` names what lights at click k + 1, boxes by
+   * id and wires as `'from>to'`. A box named in no step is lit from the
+   * start; a wire named in none lights with the later of its two boxes. Before
+   * its click a box is drawn faint and a wire not at all; the box or wire a
+   * click lights is marked while that click is the one being presented.
+   * Outside a presented slide every step is lit (lib/deck.ts, `onDeckStep`).
+   */
+  steps?: string[][];
 }
 
 export type Pt = [number, number];
@@ -634,11 +644,12 @@ export function renderFlowDiagram(spec: FlowSpec): string {
   }
   // the arrowheads are made in the browser with the wires, one id per diagram (see markerFor)
   const wires = '<svg class="flow-wires" aria-hidden="true"><defs></defs></svg>';
-  const data = esc(JSON.stringify({ lanes: !!spec.lanes, rows: spec.nodes.map((n) => [n.id, n.row]), edges: spec.edges ?? [] }));
+  const data = esc(JSON.stringify({ lanes: !!spec.lanes, rows: spec.nodes.map((n) => [n.id, n.row]), edges: spec.edges ?? [], steps: spec.steps ?? [] }));
   // one gutter wire fits the stylesheet's gutter; more ask it for a lane each, plus one lane's width of margin
   const inGutter = gutterWires(spec);
   const lanes = inGutter > 1 ? `;--flow-gutter-lanes:${inGutter + 1}` : '';
-  return `<div class="flow-scroll"><div class="flow-grid${runsUnderLastRow(spec) ? ' under' : ''}" data-flow="${data}" style="grid-template-columns:${columns}${lanes}">${wires}${parts.join('')}</div></div>`;
+  const steps = spec.steps?.length ? ` data-deck-steps="${spec.steps.length}"` : '';
+  return `<div class="flow-scroll"><div class="flow-grid${runsUnderLastRow(spec) ? ' under' : ''}"${steps} data-flow="${data}" style="grid-template-columns:${columns}${lanes}">${wires}${parts.join('')}</div></div>`;
 }
 
 export interface FlowHandle {
@@ -651,7 +662,7 @@ export interface FlowHandle {
   destroy(): void;
 }
 
-interface FlowData { lanes: boolean; rows: Array<[string, number]>; edges: FlowEdge[] }
+interface FlowData { lanes: boolean; rows: Array<[string, number]>; edges: FlowEdge[]; steps: string[][] }
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 function svgEl<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number>, text?: string): SVGElementTagNameMap[K] {
@@ -865,7 +876,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       // segment, where a shift would cross the wire) did not have to move is kept; when none does, the
       // one of those clear of boxes, labels and other wires that moved the least is; and when there is
       // no such one, the label goes to the legend.
-      const label = svgEl('text', { class: `lbl${e.off ? ' off' : ''}` });
+      const label = svgEl('text', { class: `lbl${e.off ? ' off' : ''}`, 'data-edge': i });
       wires.append(label);
       const width = root.clientWidth;
       const height = root.clientHeight;
@@ -893,11 +904,31 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       }
       label.remove();
       const spot = keySpot(pts, blocks, (box) => nearWire(box, i), { x: 0, y: 0, w: width, h: height });
-      keys.push(drawKey(spot, legend.children.length + 1, e, stroke));
+      keys.push(drawKey(spot, legend.children.length + 1, e, stroke, i));
       blocks.push(keyBox(spot.x, spot.y));
     }
     wires.append(...keys);
     legend.hidden = legend.children.length === 0;
+    light();
+  }
+
+  // ---- clicks: which boxes and wires are lit (FlowSpec.steps) ----
+  const litAt = new Map<string, number>();
+  data.steps.forEach((names, k) => names.forEach((name) => litAt.set(name, k + 1)));
+  const nodeStep = (id: string) => litAt.get(id) ?? 0;
+  const edgeStep = (e: FlowEdge) => litAt.get(`${e.from}>${e.to}`) ?? Math.max(nodeStep(e.from), nodeStep(e.to));
+  let done = data.steps.length;
+  let presented = false;
+  function light(): void {
+    const mark = (el: Element, at: number) => {
+      el.classList.toggle('is-unlit', at > done);
+      el.classList.toggle('is-lit-now', presented && at > 0 && at === done);
+    };
+    for (const [id, el] of nodes) mark(el, nodeStep(id));
+    data.edges.forEach((e, i) => {
+      for (const el of root.querySelectorAll(`[data-edge="${i}"]`)) mark(el, edgeStep(e));
+      for (const el of legend.querySelectorAll(`[data-edge="${i}"]`)) mark(el, edgeStep(e));
+    });
   }
 
   /**
@@ -905,8 +936,8 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
    * wire by a short lead when it sits beside it; and the label's words against
    * the same number in the legend. Returns the key, for the caller to draw.
    */
-  function drawKey(spot: { x: number; y: number; at: Pt }, n: number, e: FlowEdge, stroke: string): SVGGElement {
-    const key = svgEl('g', { class: `key${e.off ? ' off' : ''}`, 'data-key': n });
+  function drawKey(spot: { x: number; y: number; at: Pt }, n: number, e: FlowEdge, stroke: string, edge: number): SVGGElement {
+    const key = svgEl('g', { class: `key${e.off ? ' off' : ''}`, 'data-key': n, 'data-edge': edge });
     const [ax, ay] = spot.at;
     if (ax !== spot.x || ay !== spot.y) {
       const lead = svgEl('line', { x1: ax, y1: ay, x2: spot.x, y2: spot.y });
@@ -918,6 +949,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
     key.append(ring, svgEl('text', { x: spot.x, y: spot.y + 3.5, 'text-anchor': 'middle' }, String(n)));
     const item = document.createElement('li');
     item.dataset['key'] = String(n);
+    item.dataset['edge'] = String(edge);
     const mark = document.createElement('span');
     mark.className = `flow-key${e.off ? ' off' : ''}`;
     mark.textContent = String(n);
@@ -931,6 +963,13 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
   ro.observe(root);
   document.fonts?.ready.then(() => redraw(), () => undefined);
   redraw();
+  const unfollow = data.steps.length
+    ? onDeckStep(root, (n, live) => {
+        done = n;
+        presented = live;
+        light();
+      })
+    : () => undefined;
 
   return {
     root,
@@ -948,6 +987,7 @@ export function mountFlowDiagram(root: HTMLElement): FlowHandle {
       return out;
     },
     destroy: () => {
+      unfollow();
       ro.disconnect();
       legend.remove();
       root.remove();

@@ -4,9 +4,17 @@
    A slide is a 960 × 540 canvas scaled by --deck-k to the width it is shown
    at; --deck-h is the canvas's own height when it holds more than one
    slide's worth. Reading view: a stack of slides in the page column, each
-   with a title block in its corner (part name and slide number). Presenting:
-   one slide at a time, letterboxed over the viewport. Narrow (a phone): a
-   slide is laid out unscaled at the column's width.
+   with a corner block (part name and slide number). Presenting: one slide at
+   a time, letterboxed over the viewport; the overview lays every slide out
+   as a grid at --deck-thumb-k. Narrow (a phone): a slide is laid out unscaled
+   at the column's width, its regions stacked.
+
+   A slide's layout is `data-layout` on `.slide` (lib/deck.ts SLIDE_LAYOUTS).
+   Its type is one scale on the canvas: 21px body, 24 / 36 / 48 / 60 for
+   headings and statements, the display face for every title. One mark runs
+   through the deck's set pieces: the accent stroke, a 6px rule of ink in the
+   accent that stands beside a cover's title, a section's name and a
+   statement, and under an end slide's words.
    ============================================================ */
 
 .deck {
@@ -90,69 +98,82 @@
   box-sizing: border-box;
   width: 960px;
   min-height: 540px;
-  padding: 40px 56px 64px;
+  padding: 44px 64px 64px;
   transform: scale(var(--deck-k));
   transform-origin: 0 0;
-  font-size: 20px;
+  font-family: var(--font-body);
+  font-size: 21px;
   line-height: 1.5;
   color: var(--color-ink);
 }
 
-.slide-canvas > hr {
+.slide-canvas > hr,
+.deck-marker {
   display: none;
 }
 
-/* the slide's first block, after the title block, the break and an edit anchor */
-.slide-canvas > .slide-mark + :not(hr, template),
-.slide-canvas > .slide-mark + :is(hr, template) + :not(hr, template),
-.slide-canvas > .slide-mark + hr + template + * {
+/* the first block of the canvas, a region or a column sits on its padding */
+.slide-canvas > :is(.slide-corner, hr, template, .deck-marker) + :not(hr, template, .deck-marker),
+.slide-canvas > :is(.slide-corner, hr, template, .deck-marker) + :is(hr, template, .deck-marker) + :not(hr, template, .deck-marker),
+.slide-canvas > :is(.slide-corner, hr, template, .deck-marker) + :is(hr, template, .deck-marker) + :is(hr, template, .deck-marker) + :not(hr, template, .deck-marker),
+:is(.slide-col, .slide-body) > :not(template, .deck-marker):first-child,
+:is(.slide-col, .slide-body) > :is(template, .deck-marker) + :not(template, .deck-marker),
+:is(.slide-col, .slide-body) > :is(template, .deck-marker) + :is(template, .deck-marker) + :not(template, .deck-marker) {
   margin-top: 0;
 }
 
-.slide-canvas h1,
-.slide-canvas h2 {
-  margin: 0 0 14px;
-  font-family: var(--font-display);
-  font-size: 34px;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: 0;
-  border: 0;
+.slide-canvas :is(h1, h2) {
+  margin: 0 0 18px;
   padding: 0;
+  border: 0;
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.18;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
 }
 
 .slide-canvas h3 {
-  margin: 18px 0 8px;
-  font-size: 22px;
+  margin: 20px 0 8px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .slide-canvas .num {
   display: none;
 }
 
-.slide-canvas p,
-.slide-canvas li {
-  max-width: 40em;
+.slide-canvas :is(p, li) {
+  max-width: 36em;
+  text-wrap: pretty;
 }
 
-.slide-canvas h2 + p {
+/* the line under a title: the slide's one-sentence point */
+.slide-canvas :is(h1, h2) + p {
   margin-top: 0;
-  font-size: 22px;
+  font-size: 24px;
+  line-height: 1.4;
   color: var(--color-ink-soft);
 }
 
-.slide-canvas ul,
-.slide-canvas ol {
-  padding-inline-start: 1.2em;
+.slide-canvas :is(ul, ol) {
+  padding-inline-start: 1.1em;
 }
 
 .slide-canvas li + li {
-  margin-top: 6px;
+  margin-top: 8px;
+}
+
+.slide-canvas li::marker {
+  color: var(--color-accent);
 }
 
 .slide-canvas figure,
 .slide-canvas .flow {
-  margin-block: 14px;
+  margin-block: 16px;
 }
 
 .slide-canvas img,
@@ -161,99 +182,561 @@
   height: auto;
 }
 
-/* the title block: part name and slide number, in the canvas's corner */
-.slide-mark {
-  position: absolute;
-  right: 20px;
-  bottom: 16px;
+/* a block that appears at a later click, while the slide is presented */
+.deck-later {
+  visibility: hidden;
+}
+
+/* `<Stretch />`: the block after it takes the height the slide has left (set by lib/deck.ts);
+   a block of fixed size inside it, such as a flow diagram, sits in its middle */
+.deck-stretch {
   display: flex;
-  border: 1px solid var(--color-line);
+  flex-direction: column;
+  justify-content: center;
+  min-height: 0;
+  margin-block: 12px 0;
+}
+
+.deck-stretch > :is(img, video, picture, canvas, iframe, svg),
+.deck-stretch > a > img,
+.deck-stretch :is(.demo-stage) {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.deck-stretch > picture > img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ---- the corner: part name and slide number ---- */
+
+.slide-canvas .slide-corner {
+  position: absolute;
+  z-index: 2;
+  right: 24px;
+  bottom: 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  border: 0;
   font-family: var(--font-ui);
   font-size: 12px;
   line-height: 1;
   color: var(--color-ink-faint);
   text-decoration: none;
-  background: var(--color-bg-card);
-}
-
-.slide-mark > span {
-  padding: 6px 9px;
 }
 
 .slide-part {
-  max-width: 22em;
+  max-width: 24em;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  border-inline-end: 1px solid var(--color-line);
 }
 
 .slide-num {
-  min-width: 2.2em;
-  text-align: center;
+  min-width: 1.6em;
+  text-align: end;
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
   color: var(--color-ink-soft);
 }
 
-.slide-mark:hover .slide-num {
+.slide-canvas .slide-corner:hover,
+.slide-canvas .slide-corner:hover .slide-num {
   color: var(--color-accent-text);
 }
 
-/* a divider opens a part: the heading large, ruled in the accent */
-.slide--divider .slide-canvas {
+/* ---- markers: invisible on the slide; a chip in the margin while the editor binds them ---- */
+
+.slide-canvas .deck-marker.wiki-block {
+  position: absolute;
+  z-index: 3;
+  display: block;
+  translate: calc(-100% - 10px) 0;
+  padding: 2px 7px;
+  border: 1px dashed var(--color-ink-faint);
+  border-radius: 4px;
+  background: var(--color-bg-card);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+
+.slide-canvas > .deck-marker[data-deck-marker='layout'].wiki-block {
+  top: 10px;
+  left: 10px;
+  translate: none;
+}
+
+/* ============================================================
+   Layouts
+   ============================================================ */
+
+/* the accent stroke: the deck's one mark */
+.slide:is([data-layout='cover'], [data-layout='section'], [data-layout='statement']) .slide-canvas :is(h1, h2):first-of-type {
+  position: relative;
+}
+
+/* ---- cover: the title set large and low, its stroke beside it ---- */
+
+.slide[data-layout='cover'] .slide-canvas {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 540px;
+  padding: 64px 96px 72px;
+}
+
+.slide[data-layout='cover'] .slide-canvas :is(h1, h2) {
+  max-width: 13em;
+  margin-bottom: 20px;
+  font-size: 60px;
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.015em;
+}
+
+.slide[data-layout='cover'] .slide-canvas :is(h1, h2)::before {
+  content: '';
+  position: absolute;
+  top: 0.12em;
+  bottom: 0.08em;
+  left: -34px;
+  width: 6px;
+  background: var(--color-accent);
+}
+
+.slide[data-layout='cover'] .slide-canvas :is(h1, h2) + p {
+  max-width: 30em;
+  margin-bottom: 0;
+  font-size: 24px;
+}
+
+/* who and when: the cover's small print, after the subtitle */
+.slide[data-layout='cover'] .slide-canvas :is(h1, h2) + p ~ p {
+  margin-top: 36px;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  color: var(--color-ink-faint);
+}
+
+.slide[data-layout='cover'] .slide-canvas :is(h1, h2) + p ~ p ~ p {
+  margin-top: 4px;
+}
+
+/* ---- section: a part's name, stroked, at the slide's middle ---- */
+
+.slide[data-layout='section'] .slide-canvas {
   display: flex;
   flex-direction: column;
   justify-content: center;
   height: 540px;
-  padding-inline: 96px;
+  padding-inline: 112px;
+  background: var(--color-bg-soft);
 }
 
-.slide--divider .slide-canvas h1,
-.slide--divider .slide-canvas h2 {
-  padding-inline-start: 28px;
-  border-inline-start: 6px solid var(--color-accent);
-  font-size: 54px;
+.slide[data-layout='section'] .slide-canvas :is(h1, h2) {
+  max-width: 14em;
+  margin: 0;
+  font-size: 48px;
+  line-height: 1.12;
 }
 
-.slide--divider .slide-canvas h2 + p {
+.slide[data-layout='section'] .slide-canvas :is(h1, h2)::before,
+.slide[data-layout='statement'] .slide-canvas > :first-of-type:is(p, h1, h2)::before {
+  content: '';
+  position: absolute;
+  top: 0.14em;
+  bottom: 0.1em;
+  left: -34px;
+  width: 6px;
+  background: var(--color-accent);
+}
+
+.slide[data-layout='section'] .slide-canvas :is(h1, h2) + p {
+  max-width: 28em;
   margin-top: 18px;
-  padding-inline-start: 34px;
-  font-size: 24px;
+  font-size: 22px;
 }
 
-/* ---- narrow: unscaled at the column's width ---- */
+/* ---- center: everything on the middle axis ---- */
+
+.slide[data-layout='center'] .slide-canvas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 540px;
+  text-align: center;
+}
+
+.slide[data-layout='center'] .slide-canvas > * {
+  margin-inline: auto;
+}
+
+/* ---- full: no margins, the content edge to edge ---- */
+
+.slide[data-layout='full'] .slide-canvas {
+  height: 540px;
+  padding: 0;
+}
+
+.slide[data-layout='full'] .slide-canvas > :is(figure, .flow, .demo, p, img, video) {
+  margin: 0;
+}
+
+.slide[data-layout='full'] .slide-canvas > :is(img, video),
+.slide[data-layout='full'] .slide-canvas > p > :is(img, video) {
+  display: block;
+  width: 960px;
+  height: 540px;
+  object-fit: cover;
+}
+
+/* ---- statement: one sentence, large ---- */
+
+.slide[data-layout='statement'] .slide-canvas {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 540px;
+  padding-inline: 112px;
+}
+
+.slide[data-layout='statement'] .slide-canvas > :first-of-type:is(p, h1, h2) {
+  position: relative;
+  max-width: 17em;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 44px;
+  font-weight: 500;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+}
+
+.slide[data-layout='statement'] .slide-canvas > :first-of-type:is(p, h1, h2) ~ p {
+  margin-top: 26px;
+  font-size: 21px;
+  color: var(--color-ink-soft);
+}
+
+/* ---- fact: one number, then what it counts ---- */
+
+.slide[data-layout='fact'] .slide-canvas {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 540px;
+  padding-inline: 112px;
+}
+
+.slide[data-layout='fact'] .slide-canvas > :first-of-type:is(p, h1, h2) {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-size: 132px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: lining-nums;
+  color: var(--color-accent-text);
+}
+
+.slide[data-layout='fact'] .slide-canvas > :first-of-type:is(p, h1, h2) ~ :is(p, h2, h3) {
+  max-width: 24em;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--color-ink-soft);
+}
+
+/* ---- quote: the words in the display italic, the source under them ---- */
+
+.slide[data-layout='quote'] .slide-canvas {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 540px;
+  padding-inline: 132px 112px;
+}
+
+.slide[data-layout='quote'] .slide-canvas blockquote {
+  position: relative;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--color-ink);
+}
+
+.slide[data-layout='quote'] .slide-canvas blockquote::before {
+  content: '\201C';
+  position: absolute;
+  top: -0.2em;
+  left: -0.62em;
+  font-size: 2.4em;
+  font-style: normal;
+  line-height: 1;
+  color: var(--color-accent);
+}
+
+.slide[data-layout='quote'] .slide-canvas blockquote p {
+  max-width: 22em;
+  margin: 0;
+}
+
+.slide[data-layout='quote'] .slide-canvas blockquote + p {
+  margin-top: 28px;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  color: var(--color-ink-soft);
+}
+
+/* ---- end: the closing words centred over a short stroke ---- */
+
+.slide[data-layout='end'] .slide-canvas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 540px;
+  text-align: center;
+  background: var(--color-bg-soft);
+}
+
+.slide[data-layout='end'] .slide-canvas :is(h1, h2) {
+  margin: 0;
+  font-size: 48px;
+}
+
+.slide[data-layout='end'] .slide-canvas :is(h1, h2)::after {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 6px;
+  margin: 26px auto 0;
+  background: var(--color-accent);
+}
+
+.slide[data-layout='end'] .slide-canvas :is(h1, h2) ~ p {
+  max-width: 30em;
+  margin: 22px auto 0;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  color: var(--color-ink-soft);
+}
+
+.slide[data-layout='end'] .slide-canvas :is(h1, h2) ~ p ~ p {
+  margin-top: 4px;
+}
+
+/* ---- columns (`<Column />`): a heading that opens the slide spans them ---- */
+
+.slide-cols {
+  display: grid;
+  grid-template-columns: repeat(var(--deck-cols, 2), minmax(0, 1fr));
+  gap: 48px;
+  align-items: start;
+}
+
+.slide[data-layout='two-cols'] .slide-col + .slide-col {
+  padding-inline-start: 47px;
+  margin-inline-start: -48px;
+  border-inline-start: 1px solid var(--color-line);
+}
+
+.slide-col > :last-child {
+  margin-bottom: 0;
+}
+
+.slide-col :is(p, li) {
+  max-width: none;
+}
+
+/* ---- image-left, image-right: the media one half, edge to edge; the words the other ---- */
+
+.slide:is([data-layout='image-left'], [data-layout='image-right']) .slide-canvas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas: 'body media';
+  height: 540px;
+  padding: 0;
+}
+
+.slide[data-layout='image-left'] .slide-canvas {
+  grid-template-areas: 'media body';
+}
+
+.slide:is([data-layout='image-left'], [data-layout='image-right']) .slide-body {
+  grid-area: body;
+  align-self: center;
+  padding: 44px 48px 64px 56px;
+}
+
+.slide:is([data-layout='image-left'], [data-layout='image-right']) .slide-media {
+  grid-area: media;
+  height: 540px;
+  overflow: hidden;
+  background: var(--color-bg-soft);
+}
+
+/* an image or a video fills its half; a diagram or a demo sits in it with room around */
+.slide-media > :is(img, video),
+.slide-media > :is(p, picture, a) > :is(img, video),
+.slide-media > :is(p, a) > picture > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+}
+
+.slide-media > :is(p, picture, a) {
+  max-width: none;
+  height: 100%;
+  margin: 0;
+}
+
+.slide-media > :is(figure, .flow, .demo) {
+  box-sizing: border-box;
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.slide-media > figure:not(.flow) img {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* ---- image: the media fills the slide, the words on a card in its lower left ---- */
+
+.slide[data-layout='image'] .slide-canvas {
+  height: 540px;
+  padding: 0;
+}
+
+.slide[data-layout='image'] .slide-media {
+  position: absolute;
+  inset: 0;
+}
+
+.slide[data-layout='image'] .slide-body {
+  position: absolute;
+  z-index: 1;
+  left: 40px;
+  bottom: 40px;
+  max-width: 520px;
+  padding: 22px 28px 24px;
+  border-radius: var(--radius);
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow);
+}
+
+.slide[data-layout='image'] .slide-body :is(h1, h2) {
+  font-size: 30px;
+  margin-bottom: 10px;
+}
+
+.slide[data-layout='image'] .slide-body :is(h1, h2) + p {
+  font-size: 19px;
+}
+
+.slide[data-layout='image'] .slide-body > :last-child {
+  margin-bottom: 0;
+}
+
+.slide[data-layout='image'] .slide-canvas .slide-corner {
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--color-bg-card);
+}
+
+/* ---- narrow: unscaled at the column's width, regions stacked ---- */
 
 .deck.is-narrow .slide {
   height: auto;
 }
 
-.deck.is-narrow .slide-canvas {
+.deck.is-narrow .slide .slide-canvas {
+  display: block;
   width: auto;
+  height: auto;
   min-height: 0;
   padding: 18px 16px 52px;
   transform: none;
   font-size: inherit;
+  text-align: start;
 }
 
-.deck.is-narrow .slide-canvas h1,
-.deck.is-narrow .slide-canvas h2 {
-  font-size: 1.4em;
+.deck.is-narrow .slide-cols {
+  display: block;
 }
 
-.deck.is-narrow .slide-canvas h2 + p {
+.deck.is-narrow .slide .slide-col + .slide-col {
+  margin: 18px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.deck.is-narrow .slide .slide-media,
+.deck.is-narrow .slide .slide-body {
+  position: static;
+  height: auto;
+  max-width: none;
+  margin: 0 0 14px;
+  padding: 0;
+  box-shadow: none;
+  background: none;
+}
+
+.deck.is-narrow .slide-canvas :is(h1, h2),
+.deck.is-narrow .slide[data-layout] .slide-canvas :is(h1, h2),
+.deck.is-narrow .slide[data-layout] .slide-canvas > :first-of-type:is(p, h1, h2) {
+  font-size: 1.45em;
+}
+
+.deck.is-narrow .slide-canvas :is(h1, h2) + p,
+.deck.is-narrow .slide[data-layout] .slide-canvas blockquote {
   font-size: 1.05em;
 }
 
-.deck.is-narrow .slide--divider .slide-canvas {
-  height: auto;
-  padding: 32px 16px 52px;
+.deck.is-narrow .slide[data-layout] .slide-canvas :is(h1, h2)::before {
+  display: none;
 }
 
-.deck.is-narrow .slide--divider .slide-canvas h2 {
-  font-size: 1.8em;
+.deck.is-narrow .slide[data-layout='quote'] .slide-canvas blockquote::before {
+  position: static;
+  display: block;
+  height: 0.5em;
+  font-size: 1.6em;
 }
 
-/* ---- presenting ---- */
+/* ============================================================
+   Presenting and the overview
+   ============================================================ */
 
 .deck-controls,
 .deck-progress {
@@ -290,6 +773,7 @@ html.deck-presenting {
   margin: 0;
   border: 0;
   border-radius: 0;
+  box-shadow: var(--shadow);
 }
 
 .deck.is-presenting .slide.is-current {
@@ -303,11 +787,12 @@ html.deck-presenting {
 
 .deck.is-presenting .deck-controls {
   position: fixed;
-  right: 14px;
+  left: 14px;
   bottom: 12px;
+  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   padding: 4px;
   border: 1px solid var(--color-line);
   border-radius: var(--radius);
@@ -315,6 +800,14 @@ html.deck-presenting {
   font-family: var(--font-ui);
   font-size: 13px;
   color: var(--color-ink-soft);
+  opacity: 0.5;
+  transition: opacity 0.15s ease;
+}
+
+/* quiet over a slide, plain when reached for or in the overview */
+.deck.is-presenting .deck-controls:is(:hover, :focus-within),
+.deck.is-overview .deck-controls {
+  opacity: 1;
 }
 
 .deck-controls button {
@@ -357,6 +850,56 @@ html.deck-presenting {
   width: calc(var(--deck-progress, 0) * 100%);
   height: 3px;
   background: var(--color-accent);
+}
+
+/* the overview: every slide as a thumbnail; a section slide opens a row */
+.deck.is-presenting.is-overview {
+  display: block;
+  overflow-y: auto;
+  padding: 24px 24px 72px;
+  touch-action: auto;
+}
+
+.deck.is-presenting.is-overview .deck-slides {
+  --deck-k: var(--deck-thumb-k);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, calc(960px * var(--deck-thumb-k)));
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.deck.is-overview .slide {
+  display: block;
+  cursor: pointer;
+  outline: 1px solid var(--color-line);
+}
+
+.deck.is-overview .slide[data-layout='section'] {
+  grid-column-start: 1;
+}
+
+.deck.is-overview .slide:hover {
+  outline: 2px solid var(--color-ink-faint);
+}
+
+.deck.is-overview .slide.is-current {
+  outline: 3px solid var(--color-accent);
+}
+
+.deck.is-overview .slide-canvas {
+  pointer-events: none;
+}
+
+/* changes of slide and step: a quick crossfade, shared headings and images morphing */
+html.deck-presenting::view-transition-group(*) {
+  animation-duration: 0.32s;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+html.deck-presenting::view-transition-old(root),
+html.deck-presenting::view-transition-new(root) {
+  animation-duration: 0.22s;
 }
 
 /* ---- print: one slide per 10 × 5.625 in page; the rest of the page keeps its own pages ---- */

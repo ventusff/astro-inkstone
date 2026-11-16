@@ -5,7 +5,11 @@ part: 3
 navLabel: Interactive & furniture
 ---
 
+import Build from 'astro-inkstone/components/Build.astro';
+import Column from 'astro-inkstone/components/Column.astro';
 import Deck from 'astro-inkstone/components/Deck.astro';
+import Layout from 'astro-inkstone/components/Layout.astro';
+import Stretch from 'astro-inkstone/components/Stretch.astro';
 import DemoMount from 'astro-inkstone/components/DemoMount.astro';
 import FigureFile from 'astro-inkstone/components/FigureFile.astro';
 import FlowDiagram from 'astro-inkstone/components/FlowDiagram.astro';
@@ -158,29 +162,143 @@ When several labelled wires leave one box, some labels find no room clear of the
 
 ## Deck — slides made of a note
 
-`Deck` turns the content it wraps into slides: a thematic break (`---` on a line of its own, a blank line before it) ends a slide, and a slide with only a heading and at most one paragraph is a divider whose name every slide of its part prints in its corner. The content stays the note's own blocks, so a site that wraps a whole note's `<Content />` in a `Deck` keeps in-place editing, wikilinks and every component inside the slides. The reader sees a stack of 16:9 slides; **Present** shows one at a time over the whole screen from the slide in view (→ ← Space PageUp PageDown Home End, Esc leaves, a swipe on touch screens), and the slide number is the location hash, so `#/3` links to the third slide. Every slide is laid out on a 960 × 540 canvas and scaled to the width it is shown at, so it looks the same in the column, on a projector and in print (one slide per 10 × 5.625 in page); on a phone a slide is laid out unscaled at the column's width.
+`Deck` turns the content it wraps into slides: a thematic break (`---` on a line of its own, a blank line before it) ends a slide. The content stays the note's own blocks, so a site that wraps a whole note's `<Content />` in a `Deck` keeps in-place editing, wikilinks and every component inside the slides. The reader sees a stack of 16:9 slides; **Present** shows one at a time over the whole screen from the slide in view. Every slide is laid out on a 960 × 540 canvas and scaled to the width it is shown at, so it looks the same in the column, on a projector and in print (one slide per 10 × 5.625 in page); on a phone a slide is laid out unscaled at the column's width.
 
-A figure that more than one place shows is kept in its own JSON file beside the page that answers it, and drawn by `FigureFile`: the file holds `title`, an optional `caption` and `flow` (a FlowDiagram spec), every word an object of the languages (`{ "en": …, "zh": … }`). Every place imports the file by its path from the site root (`import deckPipeline from '/src/content/notes/components/interactive/deck-pipeline.json'`), so no site needs an alias, and changing the file changes every place. A word with no text in the page's language shows in the language the figure was written in, the first key of its `title`. The same file, once here and once on the third slide below:
+A slide is shaped by markers, self-closing components that are blocks of their own and wrap nothing, so every other block of the slide stays editable on its own:
+
+- `<Layout name="…" />`, first on a slide, names its layout: `cover`, `section`, `center`, `default`, `full`, `image`, `image-left`, `image-right`, `two-cols`, `quote`, `fact`, `statement` or `end`. A slide without one is `default`, or `section` when it holds only a heading and at most one paragraph; a section slide opens a part, and the part's name is printed in the corner of every slide of that part.
+- `<Column />` ends a column and starts the next; a heading that opens the slide spans them all.
+- `<Build />` makes the blocks after it appear one click at a time while presenting, a list one item per click. A `FlowDiagram` with `steps` lights its boxes and wires click by click (`steps[k]` names what lights at click k + 1, boxes by id and wires as `'from>to'`); any component follows its own clicks through the `deck:step` event with `onDeckStep` from `lib/deck.ts`.
+- `<Stretch />` grows the block after it to the height the slide has left: the way to show an image or a figure as large as the slide allows.
+
+While presenting: → ↓ Space PageDown go one click forward, ← ↑ PageUp one back, Home and End jump, **O** shows every slide as a grid to jump from (each section slide opens a row), Esc leaves, and a swipe turns the page on touch screens. Slides and clicks change as view transitions: a heading or an image two slides share keeps its place and morphs. The place is the location hash: `#/3` is the third slide, `#/3.2` its second click, so a link lands where it was copied, and a reload comes back to the same slide and click.
+
+A figure that more than one place shows is kept in its own JSON file beside the page that answers it, and drawn by `FigureFile`: the file holds `title`, an optional `caption` and `flow` (a FlowDiagram spec, its `steps` included), every word an object of the languages (`{ "en": …, "zh": … }`). Every place imports the file by its path from the site root (`import deckPipeline from '/src/content/notes/components/interactive/deck-pipeline.json'`), so no site needs an alias, and changing the file changes every place. A word with no text in the page's language shows in the language the figure was written in, the first key of its `title`. The same file, once here complete, and once on a slide below where it lights up click by click:
 
 <FigureFile of={deckPipeline} />
 
 <Deck>
 
-## A deck inside a note
+<Layout name="cover" />
 
-The first slide: a heading, one sentence, and whatever the slide shows.
+## Slides made of a note
 
----
+One file to read and to present, every block still editable in place.
 
-## Part two
-
-A divider: only a heading and one sentence.
+astro-inkstone · the deck
 
 ---
 
-## Diagrams scale with the slide
+## One file, two ways to read it
+
+<Build />
+
+- The reading view is a stack of slides in the page column.
+- Presenting shows one slide at a time, full screen.
+- Each block is the note's own: click it to edit, while reading or presenting.
+
+---
+
+## Layouts
+
+Thirteen of them, named by a marker that opens the slide.
+
+---
+
+<Layout name="two-cols" />
+
+## Two columns
+
+The blocks before `<Column />` fill the left column; the heading above spans both.
+
+A list reads well on the left:
+
+- markers wrap nothing
+- every block stays its own
+
+<Column />
 
 <FigureFile of={deckPipeline} />
+
+---
+
+<Layout name="image-right" />
+
+## Media on one half
+
+The slide's first image, video, figure or demo takes one half edge to edge; the words take the other.
+
+![The engine's cover card](/og.png)
+
+---
+
+<Layout name="image" />
+
+![The engine's cover card](/og.png)
+
+## Media over the whole slide
+
+The words sit on a card in the lower left.
+
+---
+
+<Layout name="statement" />
+
+A deck is a note you can stand in front of.
+
+---
+
+<Layout name="fact" />
+
+960 × 540
+
+The canvas every slide is laid out on, in CSS pixels, scaled to the width it is shown at.
+
+---
+
+<Layout name="quote" />
+
+> The content stays the note's own blocks.
+
+From the Deck component's own description
+
+---
+
+## Clicks
+
+What appears when, and figures that follow along.
+
+---
+
+## A figure that lights up click by click
+
+Each click lights the next box of the figure; the wire into it comes with it.
+
+<FigureFile of={deckPipeline} />
+
+---
+
+## An image as large as the slide allows
+
+<Stretch />
+
+![The engine's cover card](/og.png)
+
+---
+
+<Layout name="center" />
+
+## Centred
+
+For a slide that is one thought, set on the middle axis.
+
+---
+
+<Layout name="end" />
+
+## Thank you
+
+The deck's manual is this page.
 
 </Deck>
 

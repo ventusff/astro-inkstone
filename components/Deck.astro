@@ -8,9 +8,11 @@
  *   <Deck><Content /></Deck>
  *
  * The page reads it as a stack of 16:9 slides; "Present" shows one slide at a
- * time over the whole screen, from the slide in view. A slide with only a
- * heading (and at most one paragraph) is a divider that names a part.
- * Labels default to the page language's words (lib/component-words.ts).
+ * time over the whole screen, from the slide in view. Markers shape a slide
+ * from inside it, each a block of its own: `<Layout name="…" />` (its
+ * layout), `<Column />`, `<Build />` and `<Stretch />` (Layout.astro,
+ * Column.astro, Build.astro, Stretch.astro). Labels default to the page
+ * language's words (lib/component-words.ts).
  */
 import '../styles/deck.css';
 import { type ComponentWords, componentWords } from '../lib/component-words.ts';
@@ -38,6 +40,9 @@ const { deck: deckLabel, ...clientWords } = words;
     <span class="deck-position" data-deck-position aria-live="polite"></span>
     <button type="button" data-deck-next aria-label={words.next}>
       <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m5.5 3 5 5-5 5"></path></svg>
+    </button>
+    <button type="button" data-deck-overview aria-label={words.overview} title={`${words.overview} (O)`}>
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 2.5h4v4h-4zM9.5 2.5h4v4h-4zM2.5 9.5h4v4h-4zM9.5 9.5h4v4h-4z"></path></svg>
     </button>
     <button type="button" data-deck-exit>{words.exit}</button>
   </div>

@@ -31,6 +31,8 @@ export interface ComponentWords {
     exit: string;
     previous: string;
     next: string;
+    /** the button and key (O) that shows every slide as a grid to jump from */
+    overview: string;
     /** the label of the deck as a whole, for assistive technology */
     deck: string;
     /** a slide's position: "Slide 3 of 42"; `{n}` and `{total}` are filled in */
@@ -55,7 +57,7 @@ const WORDS = {
       unit: 'pages',
     },
     facets: { kind: 'Kind', domain: 'Domain', status: 'Status', tag: 'Tags', people: 'Authors', all: 'All →', aria: 'Browse index' },
-    deck: { present: 'Present', exit: 'Exit', previous: 'Previous slide', next: 'Next slide', deck: 'Slides', position: 'Slide {n} of {total}', slide: 'slide' },
+    deck: { present: 'Present', exit: 'Exit', previous: 'Previous slide', next: 'Next slide', overview: 'Overview', deck: 'Slides', position: 'Slide {n} of {total}', slide: 'slide' },
   },
   zh: {
     backlinks: { heading: '反向链接', sub: 'Linked mentions' },
@@ -71,7 +73,7 @@ const WORDS = {
       unit: '页',
     },
     facets: { kind: '形式', domain: '方向', status: '成熟度', tag: '标签', people: '作者', all: '全部 →', aria: '导览索引' },
-    deck: { present: '放映', exit: '退出放映', previous: '上一张', next: '下一张', deck: '演示稿', position: '第 {n} 张,共 {total} 张', slide: '幻灯片' },
+    deck: { present: '放映', exit: '退出放映', previous: '上一张', next: '下一张', overview: '概览', deck: '演示稿', position: '第 {n} 张,共 {total} 张', slide: '幻灯片' },
   },
   de: {
     backlinks: { heading: 'Backlinks', sub: '' },
@@ -87,7 +89,7 @@ const WORDS = {
       unit: 'Seiten',
     },
     facets: { kind: 'Form', domain: 'Richtung', status: 'Reifegrad', tag: 'Tags', people: 'Autoren', all: 'Alle →', aria: 'Index durchstöbern' },
-    deck: { present: 'Präsentieren', exit: 'Beenden', previous: 'Vorherige Folie', next: 'Nächste Folie', deck: 'Folien', position: 'Folie {n} von {total}', slide: 'Folie' },
+    deck: { present: 'Präsentieren', exit: 'Beenden', previous: 'Vorherige Folie', next: 'Nächste Folie', overview: 'Übersicht', deck: 'Folien', position: 'Folie {n} von {total}', slide: 'Folie' },
   },
 } satisfies Record<string, ComponentWords>;
 
