@@ -142,11 +142,18 @@ const layoutChecks = (scope) => {
     while (n && n.tagName !== 'BODY' && getComputedStyle(n).display === 'contents') n = n.parentElement;
     return n;
   };
+  // The body of a closed <details> paints nothing, and Chrome keeps its last
+  // layout for find-in-page: its boxes report the width of whichever viewport
+  // last laid them out. Only the summary of a closed <details> is judged.
+  const inClosedDetails = (el) => {
+    const closed = el.closest('details:not([open])');
+    return Boolean(closed) && el.closest('summary')?.parentElement !== closed;
+  };
   const elements = document.querySelectorAll(scope === 'dialogs' ? 'dialog[open] *' : 'body *');
   for (const el of elements) {
     const p = boxedParent(el);
     if (!p) continue;
-    if (el.closest('.katex-mathml, math, .katex')) continue;
+    if (el.closest('.katex-mathml, math, .katex') || inClosedDetails(el)) continue;
     const a = el.getBoundingClientRect(), b = p.getBoundingClientRect();
     const intentionalBleed = el.classList.contains('wide');
     if (a.width > b.width + 2 && !intentionalBleed && !hasScrollAncestor(el))
