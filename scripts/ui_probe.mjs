@@ -290,8 +290,12 @@ const markupChecks = () => {
         const compounds = one.trim().split(/\s*[>+~]\s*|\s+/);
         return compounds.slice(0, -1).some((c) => clsRe.test(c));
       });
-      // a pseudo-element styles the element it hangs on: `.x::before` applies wherever `.x` matches
-      const originating = (s) => s.replace(/::?(?:before|after|marker|placeholder|selection|first-line|first-letter|backdrop|file-selector-button)(?![\w-])/g, '');
+      // a pseudo-element styles the element it hangs on (`.x::before` applies wherever `.x` matches),
+      // and an interaction state styles the element in that state (`.x:hover` is a rule for `.x`,
+      // which a page sampled without a pointer or focus never shows matching)
+      const originating = (s) => s
+        .replace(/::?(?:before|after|marker|placeholder|selection|first-line|first-letter|backdrop|file-selector-button)(?![\w-])/g, '')
+        .replace(/:(?:hover|active|focus|focus-visible|focus-within|visited)(?![\w-])/g, '');
       // a selector the browser cannot parse matches nothing
       const matched = cands.some((s) => {
         const o = originating(s);
