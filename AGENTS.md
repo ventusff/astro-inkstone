@@ -172,6 +172,11 @@ PLAYGROUND=1 npm run build               # the Pages shape: block stamps, per-pa
 node ../scripts/playground_probe.mjs dist    # the browser-local editor end to end, every note's block map
 ```
 
+Every browser a test, probe or script starts runs headless
+(`--headless=new`, puppeteer's default) and never opens a window: the
+machine it runs on is someone's desktop, and a window there takes their
+mouse and keyboard.
+
 Library changes go through the unit tests; style/component changes through a
 demo build + both probes — all green before committing. The probes default
 to the en and zh trees (the registry-driven wrapper passes `--exclude` to
