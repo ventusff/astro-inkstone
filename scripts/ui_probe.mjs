@@ -359,12 +359,20 @@ const closeDialogs = () => {
 async function shoot(page, settle, route, width) {
   const name = route.replace(/^\/|\/$/g, '').replace(/[^\w.-]+/g, '_') || 'index';
   const before = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+  // a theme switch fades colours in over a CSS transition; the shot shows the theme it settles on
+  await page.evaluate(() => {
+    const still = document.createElement('style');
+    still.id = 'probe-still';
+    still.textContent = '*, *::before, *::after { transition: none !important; }';
+    document.head.append(still);
+  });
   for (const theme of ['light', 'dark']) {
     await page.evaluate((t) => { document.documentElement.dataset.theme = t; }, theme);
     await settle();
     await page.screenshot({ path: join(SHOTS, `${name}@${width}-${theme}.png`), fullPage: true });
   }
   await page.evaluate((t) => {
+    document.getElementById('probe-still')?.remove();
     if (t === null) document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', t);
   }, before);
