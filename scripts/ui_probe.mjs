@@ -23,9 +23,9 @@
  * A route is loaded once and re-laid out in place at every width. Before
  * the checks and screenshots at a width or theme, the page is brought to
  * what a reader sees once everything has come in: each lazy image is
- * scrolled into view so it loads, and the probe waits until the page has
- * stopped rebuilding itself, fonts, images and mermaid diagrams are in and
- * the images decoded. The layout checks
+ * scrolled into view so it loads, and the probe waits until fonts, images
+ * and mermaid diagrams are in (after a theme flip, until the page has
+ * stopped redrawing) and the images decoded. The layout checks
  * (page overflow, container breaks, diagrams) run at every width; the
  * markup checks (classes, headings, alt, images, ids, anchors,
  * aria-controls) do not depend on the viewport and run once per route,
@@ -391,7 +391,7 @@ async function shoot(page, settle, route, width) {
   });
   for (const theme of ['light', 'dark']) {
     await page.evaluate((t) => { document.documentElement.dataset.theme = t; }, theme);
-    await settle();
+    await settle({ restyled: true });
     await page.screenshot({ path: join(SHOTS, `${name}@${width}-${theme}.png`), fullPage: true });
   }
   await page.evaluate((t) => {
@@ -399,7 +399,7 @@ async function shoot(page, settle, route, width) {
     if (t === null) document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', t);
   }, before);
-  await settle();
+  await settle({ restyled: true });
 }
 
 /** Two animation frames: resize handlers and container queries have run. */
@@ -421,8 +421,8 @@ const bringImagesIn = async () => {
 
 /** Whether the page has stopped rebuilding itself: no node added, removed or rewritten for `ms` since `since`
  *  (the mutation clock is kept by the observer every document gets, see the worker). A page reacts to a
- *  new width or theme a moment later — a diagram loader puts the source back before drawing it again —
- *  so the wait starts before that reaction and lasts until it is over. */
+ *  theme flip a moment later — a diagram loader puts the source back before drawing it in the new theme's
+ *  colours — so the wait starts before that reaction and lasts until it is over. */
 const still = (since, ms) => performance.now() - Math.max(since, window.__probeMutated ?? 0) >= ms;
 
 /** Whether the page has drawn what it draws after load: web fonts in, every image in reach finished (loaded
@@ -451,15 +451,16 @@ const hit = (s) =>
  */
 async function probeRoute(page, quiet, route, order) {
   const samples = [];
-  // the page as the reader sees it once everything has come in: what the new width or theme fetched and
-  // redrew, the images they scroll to, the diagrams the page draws; what is still missing after the wait is what the
-  // checks report (images that did not load, diagrams not drawn)
-  const settle = async () => {
+  // the page as the reader sees it once everything has come in: what the new width or theme fetched, what
+  // a theme flip (`restyled`) has the page redraw, the images they scroll to, the diagrams the page draws;
+  // what is still missing after the wait is what the checks report (images that did not load, diagrams not
+  // drawn)
+  const settle = async ({ restyled = false } = {}) => {
     const since = await page.evaluate(() => performance.now());
     await page.evaluate(twoFrames);
     await quiet(150, 2_000);
     await page.evaluate(bringImagesIn);
-    await page.waitForFunction(still, { polling: 'raf', timeout: 5_000 }, since, 300).catch(() => {});
+    if (restyled) await page.waitForFunction(still, { polling: 'raf', timeout: 5_000 }, since, 300).catch(() => {});
     await page.waitForFunction(drawn, { polling: 'raf', timeout: 15_000 }).catch(() => {});
     await page.evaluate(decodeImages);
   };
