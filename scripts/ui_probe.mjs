@@ -12,16 +12,24 @@
  * that are not drawn (on the wire, or as a numbered key with its words in
  * the legend under the diagram), wire labels and keys that land on a box,
  * a row heading or each other, wires that run through a box they do not join or
- * through a row heading's words, classes no stylesheet rule
+ * through a row heading's words, diagrams the page draws in the browser
+ * that are not drawn (a mermaid block still source or showing mermaid's
+ * error, a FlowDiagram missing wires), classes no stylesheet rule
  * styles, skipped heading levels, duplicate ids, images without an alt
- * attribute, in-page anchors and aria-controls pointing at ids that do not
- * exist. It makes no aesthetic judgement.
+ * attribute, images in the reader's reach that did not load, in-page
+ * anchors and aria-controls pointing at ids that do not exist. It makes no
+ * aesthetic judgement.
  *
- * A route is loaded once and re-laid out in place at every width. The
- * layout checks (page overflow, container breaks) run at every width; the
- * markup checks (classes, headings, alt, ids, anchors, aria-controls) do not
- * depend on the viewport and run once per route, reported with the last
- * width. Routes are probed concurrently, longest pages first, each worker
+ * A route is loaded once and re-laid out in place at every width. Before
+ * the checks and screenshots at a width or theme, the page is brought to
+ * what a reader sees once everything has come in: each lazy image is
+ * scrolled into view so it loads, and the probe waits until the page has
+ * stopped rebuilding itself, fonts, images and mermaid diagrams are in and
+ * the images decoded. The layout checks
+ * (page overflow, container breaks, diagrams) run at every width; the
+ * markup checks (classes, headings, alt, images, ids, anchors,
+ * aria-controls) do not depend on the viewport and run once per route,
+ * reported with the last width. Routes are probed concurrently, longest pages first, each worker
  * a tab in its own incognito context of one browser (storage in memory,
  * nothing written to disk).
  *
@@ -34,7 +42,8 @@
  *     outFile  report file, default ui-probe.txt
  *     --only   probe only the routes matching it (the pages a change touched)
  *     --shots  also save a full-page screenshot of every probed route at every
- *              width, in the light and the dark theme: <dir>/<route>@<width>-<theme>.png
+ *              width, in the light and the dark theme, of the page drawn as
+ *              above: <dir>/<route>@<width>-<theme>.png
  *   Environment:
  *     CHROME_PATH    Chrome/Chromium executable, default /usr/bin/google-chrome
  *     PROBE_WORKERS  tabs probing concurrently, default one per core
@@ -113,7 +122,7 @@ if (!BASE) {
  *  labels missing from the drawing. `scope` is 'document' (everything under
  *  body) or 'dialogs' (the contents of the open dialogs). */
 const layoutChecks = (scope) => {
-  const out = { hOverflow: null, wide: [], svgText: [], lostLabel: [], onBox: [], throughBox: [] };
+  const out = { hOverflow: null, wide: [], svgText: [], lostLabel: [], onBox: [], throughBox: [], undrawn: [] };
   const de = document.documentElement;
   if (de.scrollWidth > de.clientWidth + 1)
     out.hOverflow = { doc: de.scrollWidth, view: de.clientWidth };
@@ -191,6 +200,8 @@ const layoutChecks = (scope) => {
     if (g.width === 0 || g.height === 0) continue;
     let spec;
     try { spec = JSON.parse(grid.dataset.flow); } catch { out.lostLabel.push({ label: '(data-flow is not JSON)' }); continue; }
+    const wired = grid.querySelectorAll('.flow-wires path.wire').length;
+    if (wired < (spec.edges?.length ?? 0)) out.undrawn.push({ what: `FlowDiagram with ${wired} of ${spec.edges.length} wires drawn` });
     // shown: a box, visible, and neither it nor an ancestor up to the diagram itself faded out
     const shown = (t) => {
       if (t.getBoundingClientRect().width === 0 || getComputedStyle(t).visibility !== 'visible') return false;
@@ -237,13 +248,21 @@ const layoutChecks = (scope) => {
       }
     }
   }
+  // A mermaid placeholder must have become its diagram, not stayed source or turned into mermaid's error
+  // drawing. One that renders no box (closed markup) is out of the reader's reach and skipped.
+  for (const b of document.querySelectorAll(scope === 'dialogs' ? 'dialog[open] pre.mermaid' : 'body pre.mermaid')) {
+    if (!b.checkVisibility()) continue;
+    if (!b.querySelector('svg')) out.undrawn.push({ what: `mermaid "${b.textContent.trim().slice(0, 40)}"` });
+    else if (/Syntax error/i.test(b.textContent)) out.undrawn.push({ what: 'mermaid (syntax error drawn instead)' });
+  }
   return out;
 };
 
 /** Viewport-independent: classes without a rule, heading level skips,
- *  images without alt, duplicate ids, dead anchors and aria-controls. */
+ *  images without alt, images that did not load, duplicate ids, dead
+ *  anchors and aria-controls. */
 const markupChecks = () => {
-  const out = { unstyled: [], headingJump: [], noAlt: [], dupId: [], deadAnchor: [], deadControl: [] };
+  const out = { unstyled: [], headingJump: [], noAlt: [], unloaded: [], dupId: [], deadAnchor: [], deadControl: [] };
   const sel = (el) => {
     const cls = (el.className && typeof el.className === 'string') ? '.' + el.className.trim().split(/\s+/).join('.') : '';
     return el.tagName.toLowerCase() + cls;
@@ -313,6 +332,10 @@ const markupChecks = () => {
   }
   // 3) Images without an alt attribute (alt="" is a declared decorative image)
   for (const img of document.querySelectorAll('img')) if (!img.hasAttribute('alt')) out.noAlt.push({ src: img.getAttribute('src') });
+  //    and images in the reader's reach that have a source but no picture: failed, or still not in
+  for (const img of document.querySelectorAll('img')) {
+    if (img.currentSrc && img.checkVisibility() && (!img.complete || img.naturalWidth === 0)) out.unloaded.push({ src: img.currentSrc });
+  }
   // 4) Duplicate ids: an anchor must have one target
   const seenId = new Map();
   for (const el of document.querySelectorAll('[id]')) {
@@ -382,11 +405,43 @@ async function shoot(page, settle, route, width) {
 /** Two animation frames: resize handlers and container queries have run. */
 const twoFrames = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
+/** Scroll each image the reader can scroll to and that has not loaded into view for two frames, then back:
+ *  a lazy image starts loading only near the viewport, and a full-page screenshot does not scroll. An image
+ *  that renders no box (closed markup, a closed dialog) is out of the reader's reach and left alone. */
+const bringImagesIn = async () => {
+  const pending = [...document.images].filter((img) => !img.complete && img.checkVisibility());
+  if (!pending.length) return;
+  const { scrollX, scrollY } = window;
+  for (const img of pending) {
+    img.scrollIntoView({ block: 'center', behavior: 'instant' });
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  }
+  window.scrollTo({ left: scrollX, top: scrollY, behavior: 'instant' });
+};
+
+/** Whether the page has stopped rebuilding itself: no node added, removed or rewritten for `ms` since `since`
+ *  (the mutation clock is kept by the observer every document gets, see the worker). A page reacts to a
+ *  new width or theme a moment later — a diagram loader puts the source back before drawing it again —
+ *  so the wait starts before that reaction and lasts until it is over. */
+const still = (since, ms) => performance.now() - Math.max(since, window.__probeMutated ?? 0) >= ms;
+
+/** Whether the page has drawn what it draws after load: web fonts in, every image in reach finished (loaded
+ *  or failed), every mermaid placeholder in reach turned into its svg (the page's loader redraws them when
+ *  the theme flips). */
+const drawn = () =>
+  document.fonts.status === 'loaded' &&
+  [...document.images].every((img) => img.complete || !img.checkVisibility()) &&
+  [...document.querySelectorAll('pre.mermaid')].every((b) => b.querySelector('svg') || !b.checkVisibility());
+
+/** Decode every loaded image, so a screenshot paints it rather than the empty box of a `decoding="async"` image. */
+const decodeImages = () =>
+  Promise.allSettled([...document.images].filter((img) => img.complete && img.naturalWidth > 0).map((img) => img.decode())).then(() => undefined);
+
 /* ------------------------------------------------------------- the sweep */
-const empty = () => ({ hOverflow: null, wide: [], svgText: [], lostLabel: [], onBox: [], throughBox: [], unstyled: [], headingJump: [], noAlt: [], dupId: [], deadAnchor: [], deadControl: [] });
+const empty = () => ({ hOverflow: null, wide: [], svgText: [], lostLabel: [], onBox: [], throughBox: [], undrawn: [], unstyled: [], headingJump: [], noAlt: [], unloaded: [], dupId: [], deadAnchor: [], deadControl: [] });
 const hit = (s) =>
-  s.hOverflow || s.wide.length || s.svgText.length || s.lostLabel.length || s.onBox.length || s.throughBox.length || s.unstyled.length || s.headingJump.length ||
-  s.noAlt.length || s.dupId.length || s.deadAnchor.length || s.deadControl.length;
+  s.hOverflow || s.wide.length || s.svgText.length || s.lostLabel.length || s.onBox.length || s.throughBox.length || s.undrawn.length || s.unstyled.length ||
+  s.headingJump.length || s.noAlt.length || s.unloaded.length || s.dupId.length || s.deadAnchor.length || s.deadControl.length;
 
 /**
  * One route on one tab: load, lay out at every width, then the markup
@@ -396,9 +451,17 @@ const hit = (s) =>
  */
 async function probeRoute(page, quiet, route, order) {
   const samples = [];
+  // the page as the reader sees it once everything has come in: what the new width or theme fetched and
+  // redrew, the images they scroll to, the diagrams the page draws; what is still missing after the wait is what the
+  // checks report (images that did not load, diagrams not drawn)
   const settle = async () => {
+    const since = await page.evaluate(() => performance.now());
     await page.evaluate(twoFrames);
-    await quiet(150, 2_000); // anything the new width fetched
+    await quiet(150, 2_000);
+    await page.evaluate(bringImagesIn);
+    await page.waitForFunction(still, { polling: 'raf', timeout: 5_000 }, since, 300).catch(() => {});
+    await page.waitForFunction(drawn, { polling: 'raf', timeout: 15_000 }).catch(() => {});
+    await page.evaluate(decodeImages);
   };
   await page.setViewport({ width: WIDTHS[0], height: 1200 });
   // 'load' + a capped quiet-period wait: strict networkidle0 can hang
@@ -466,6 +529,13 @@ try {
     // cost its own page at most once — never the whole run.
     let lastRequest = Date.now();
     page.on('request', () => { lastRequest = Date.now(); });
+    // the clock `still` reads: the last time a node was added, removed or rewritten (attribute changes are
+    // left out, so an element animated through its attributes does not hold the wait open)
+    await page.evaluateOnNewDocument(() => {
+      window.__probeMutated = 0;
+      new MutationObserver(() => { window.__probeMutated = performance.now(); })
+        .observe(document, { childList: true, characterData: true, subtree: true });
+    });
     const quiet = async (idleMs, capMs) => {
       const start = Date.now();
       while (Date.now() - lastRequest < idleMs && Date.now() - start < capMs) {
@@ -497,9 +567,11 @@ const brief = findings.map((f) => {
   if (f.lostLabel.length) bits.push('diagram labels not drawn: ' + f.lostLabel.map((x) => `"${x.label}"`).slice(0, 4).join('; '));
   if (f.onBox.length) bits.push('diagram labels on a box: ' + f.onBox.map((x) => `"${x.label}" on ${x.box}`).slice(0, 4).join('; '));
   if (f.throughBox.length) bits.push('diagram wires through a box: ' + f.throughBox.map((x) => `${x.wire} through ${x.box}`).slice(0, 4).join('; '));
+  if (f.undrawn.length) bits.push('diagrams not drawn: ' + f.undrawn.map((x) => x.what).slice(0, 4).join('; '));
   if (f.unstyled.length) bits.push('unstyled classes: ' + f.unstyled.map((x) => `${x.el}(${x.why})`).slice(0, 6).join(', '));
   if (f.headingJump.length) bits.push('heading level skips: ' + f.headingJump.map((x) => `${x.from}→${x.to}`).join(', '));
   if (f.noAlt.length) bits.push(`images without alt ×${f.noAlt.length}`);
+  if (f.unloaded.length) bits.push('images that did not load: ' + f.unloaded.map((x) => x.src).slice(0, 4).join(', '));
   if (f.dupId.length) bits.push('duplicate ids: ' + f.dupId.map((x) => `#${x.id}`).join(', '));
   if (f.deadAnchor.length) bits.push('dead anchors: ' + f.deadAnchor.map((x) => `${x.href}(${x.text})`).join(', '));
   if (f.deadControl.length) bits.push('aria-controls without target: ' + f.deadControl.map((x) => `${x.el}→#${x.id}`).join(', '));

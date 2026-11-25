@@ -259,8 +259,10 @@ renders wrong" cannot happen.
   the store's origin, as the deployment's reverse proxy does in production, and a build refuses a site
   that carries video files of its own.
 - **Render-layer probes** — `ui_probe` (every page at four widths: overflow, unstyled classes,
-  dead anchors, missing alt text, skipped headings, duplicate ids, dangling `aria-controls`, words an SVG
-  paints outside its box, a rotated axis title judged where it is painted; redirect stubs from Astro's
+  dead anchors, missing alt text, images that did not load, mermaid diagrams and FlowDiagram wires left
+  undrawn, skipped headings, duplicate ids, dangling `aria-controls`, words an SVG
+  paints outside its box, a rotated axis title judged where it is painted; each page is checked once it
+  has finished drawing — lazy images scrolled to, diagrams drawn; redirect stubs from Astro's
   `redirects` are skipped; `--only` probes the pages a change touched, `--shots` saves full-page
   screenshots at every width in both themes) and
   `contrast_probe` (every rendered text run, both themes, sampled from pixels). Unit tests cover
