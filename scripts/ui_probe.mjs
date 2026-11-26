@@ -392,7 +392,13 @@ async function shoot(page, settle, route, width) {
   for (const theme of ['light', 'dark']) {
     await page.evaluate((t) => { document.documentElement.dataset.theme = t; }, theme);
     await settle({ restyled: true });
-    await page.screenshot({ path: join(SHOTS, `${name}@${width}-${theme}.png`), fullPage: true });
+    // the page is named as a clip of the document's own size: Chrome draws a clip of any height, and its own
+    // full-page capture (no clip) answers `Page is too large` from 131072 px of height on
+    const clip = await page.evaluate(() => {
+      const { scrollWidth: width, scrollHeight: height } = document.documentElement;
+      return { x: 0, y: 0, width, height };
+    });
+    await page.screenshot({ path: join(SHOTS, `${name}@${width}-${theme}.png`), clip });
   }
   await page.evaluate((t) => {
     document.getElementById('probe-still')?.remove();
